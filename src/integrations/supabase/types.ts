@@ -14,16 +14,441 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          addresses: Json | null
+          created_at: string | null
+          email: string | null
+          id: string
+          last_order_at: string | null
+          name: string | null
+          phone: string | null
+          total_spent: number | null
+        }
+        Insert: {
+          addresses?: Json | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          last_order_at?: string | null
+          name?: string | null
+          phone?: string | null
+          total_spent?: number | null
+        }
+        Update: {
+          addresses?: Json | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          last_order_at?: string | null
+          name?: string | null
+          phone?: string | null
+          total_spent?: number | null
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          id: string
+          issued_at: string | null
+          number: number
+          order_id: string
+          pdf_path: string | null
+          total: number
+        }
+        Insert: {
+          id?: string
+          issued_at?: string | null
+          number?: number
+          order_id: string
+          pdf_path?: string | null
+          total: number
+        }
+        Update: {
+          id?: string
+          issued_at?: string | null
+          number?: number
+          order_id?: string
+          pdf_path?: string | null
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movements: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          qty: number
+          reason: string | null
+          store_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          qty: number
+          reason?: string | null
+          store_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          qty?: number
+          reason?: string | null
+          store_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          id: string
+          name: string
+          order_id: string
+          price: number
+          product_id: string | null
+          qty: number
+          subtotal: number | null
+          tax: number | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          order_id: string
+          price: number
+          product_id?: string | null
+          qty: number
+          subtotal?: number | null
+          tax?: number | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          order_id?: string
+          price?: number
+          product_id?: string | null
+          qty?: number
+          subtotal?: number | null
+          tax?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          assigned_driver: string | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          payment: Json | null
+          status: string | null
+          store_id: string
+          subtotal: number
+          tax: number | null
+          total: number
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_driver?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          payment?: Json | null
+          status?: string | null
+          store_id: string
+          subtotal: number
+          tax?: number | null
+          total: number
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_driver?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          payment?: Json | null
+          status?: string | null
+          store_id?: string
+          subtotal?: number
+          tax?: number | null
+          total?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_assigned_driver_fkey"
+            columns: ["assigned_driver"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean | null
+          cost: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          images: string[] | null
+          name: string
+          price: number
+          recipe: Json | null
+          sku: string | null
+          variants: Json | null
+        }
+        Insert: {
+          active?: boolean | null
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          name: string
+          price: number
+          recipe?: Json | null
+          sku?: string | null
+          variants?: Json | null
+        }
+        Update: {
+          active?: boolean | null
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          name?: string
+          price?: number
+          recipe?: Json | null
+          sku?: string | null
+          variants?: Json | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          store_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          name?: string | null
+          phone?: string | null
+          store_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          store_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_stock: {
+        Row: {
+          batch_info: Json | null
+          id: string
+          min_qty: number | null
+          product_id: string
+          qty: number | null
+          store_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          batch_info?: Json | null
+          id?: string
+          min_qty?: number | null
+          product_id: string
+          qty?: number | null
+          store_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          batch_info?: Json | null
+          id?: string
+          min_qty?: number | null
+          product_id?: string
+          qty?: number | null
+          store_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_stock_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_stock_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          address: string | null
+          config: Json | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          name: string
+          tax_rate: number | null
+        }
+        Insert: {
+          address?: string | null
+          config?: Json | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          name: string
+          tax_rate?: number | null
+        }
+        Update: {
+          address?: string | null
+          config?: Json | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          name?: string
+          tax_rate?: number | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "manager" | "cashier" | "driver"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +575,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "cashier", "driver"],
+    },
   },
 } as const
