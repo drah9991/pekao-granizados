@@ -8,114 +8,116 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Pekao Granizados - Vibrant Ice Cream Shop Theme */
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* Pekao Granizados - Vibrant Fresh Theme */
+    --background: 195 30% 97%;
+    --foreground: 220 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 220 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 220 25% 15%;
 
-    /* Blue Ice - Primary (like blue raspberry) */
-    --primary: 200 95% 50%;
+    /* Fresh Blue - Primary (cool ice blue) */
+    --primary: 195 100% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 200 100% 65%;
+    --primary-glow: 195 100% 65%;
 
-    /* Strawberry Pink - Secondary */
-    --secondary: 330 85% 60%;
+    /* Mango Orange - Secondary */
+    --secondary: 25 95% 53%;
     --secondary-foreground: 0 0% 100%;
 
-    /* Lime Green - Accent */
-    --accent: 120 70% 55%;
-    --accent-foreground: 222 47% 11%;
+    /* Mint Green - Accent */
+    --accent: 160 70% 50%;
+    --accent-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 195 25% 94%;
+    --muted-foreground: 220 15% 55%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 200 95% 50%;
+    --border: 195 20% 88%;
+    --input: 195 20% 88%;
+    --ring: 195 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(200, 95%, 50%), hsl(200, 100%, 65%));
-    --gradient-secondary: linear-gradient(135deg, hsl(330, 85%, 60%), hsl(340, 90%, 70%));
-    --gradient-hero: linear-gradient(135deg, hsl(200, 95%, 50%) 0%, hsl(330, 85%, 60%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(210, 40%, 98%) 100%);
+    /* Vibrant Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(195, 100%, 50%), hsl(195, 100%, 65%));
+    --gradient-secondary: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(35, 95%, 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(160, 70%, 50%), hsl(170, 70%, 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(195, 100%, 50%) 0%, hsl(25, 95%, 53%) 50%, hsl(160, 70%, 50%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(195, 30%, 97%) 100%);
 
-    /* Shadows */
-    --shadow-glow: 0 0 40px hsl(200 95% 50% / 0.3);
-    --shadow-card: 0 10px 30px -10px hsl(200 95% 50% / 0.2);
-    --shadow-elevated: 0 20px 50px -15px hsl(222 47% 11% / 0.15);
+    /* Soft Shadows */
+    --shadow-glow: 0 0 30px hsl(195 100% 50% / 0.25);
+    --shadow-card: 0 4px 20px -4px hsl(195 100% 50% / 0.15);
+    --shadow-elevated: 0 10px 40px -10px hsl(220 25% 15% / 0.1);
 
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     /* Sidebar */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 200 95% 50%;
+    --sidebar-background: 220 30% 12%;
+    --sidebar-foreground: 195 30% 97%;
+    --sidebar-primary: 195 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 200 95% 50%;
+    --sidebar-accent: 220 25% 20%;
+    --sidebar-accent-foreground: 195 30% 97%;
+    --sidebar-border: 220 25% 20%;
+    --sidebar-ring: 195 100% 50%;
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 220 30% 12%;
+    --foreground: 195 30% 97%;
 
-    --card: 217 33% 15%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 25% 18%;
+    --card-foreground: 195 30% 97%;
 
-    --popover: 217 33% 15%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 25% 18%;
+    --popover-foreground: 195 30% 97%;
 
-    --primary: 200 95% 50%;
+    --primary: 195 100% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 200 100% 65%;
+    --primary-glow: 195 100% 65%;
 
-    --secondary: 330 85% 60%;
+    --secondary: 25 95% 53%;
     --secondary-foreground: 0 0% 100%;
 
-    --accent: 120 70% 55%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 160 70% 50%;
+    --accent-foreground: 0 0% 100%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 25% 20%;
+    --muted-foreground: 195 15% 70%;
 
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 195 30% 97%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 200 95% 50%;
+    --border: 220 25% 20%;
+    --input: 220 25% 20%;
+    --ring: 195 100% 50%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(200, 95%, 50%), hsl(200, 100%, 65%));
-    --gradient-secondary: linear-gradient(135deg, hsl(330, 85%, 60%), hsl(340, 90%, 70%));
-    --gradient-hero: linear-gradient(135deg, hsl(200, 95%, 50%) 0%, hsl(330, 85%, 60%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(217, 33%, 15%) 0%, hsl(222, 47%, 11%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(195, 100%, 50%), hsl(195, 100%, 65%));
+    --gradient-secondary: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(35, 95%, 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(160, 70%, 50%), hsl(170, 70%, 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(195, 100%, 50%) 0%, hsl(25, 95%, 53%) 50%, hsl(160, 70%, 50%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(220, 25%, 18%) 0%, hsl(220, 30%, 12%) 100%);
 
-    --shadow-glow: 0 0 40px hsl(200 95% 50% / 0.4);
-    --shadow-card: 0 10px 30px -10px hsl(200 95% 50% / 0.3);
-    --shadow-elevated: 0 20px 50px -15px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 35px hsl(195 100% 50% / 0.35);
+    --shadow-card: 0 4px 25px -4px hsl(195 100% 50% / 0.2);
+    --shadow-elevated: 0 10px 45px -10px hsl(0 0% 0% / 0.5);
 
-    --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 200 95% 50%;
+    --sidebar-background: 220 30% 8%;
+    --sidebar-foreground: 195 30% 97%;
+    --sidebar-primary: 195 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 15%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 15%;
-    --sidebar-ring: 200 95% 50%;
+    --sidebar-accent: 220 25% 18%;
+    --sidebar-accent-foreground: 195 30% 97%;
+    --sidebar-border: 220 25% 18%;
+    --sidebar-ring: 195 100% 50%;
   }
 }
 
@@ -126,6 +128,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -141,6 +144,10 @@ All colors MUST be HSL.
 
   .gradient-secondary {
     background: var(--gradient-secondary);
+  }
+
+  .gradient-accent {
+    background: var(--gradient-accent);
   }
 
   .gradient-hero {

@@ -1,6 +1,6 @@
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, ShoppingBag, Users } from "lucide-react";
+import { TrendingUp, DollarSign, ShoppingBag, Users, ArrowUpRight } from "lucide-react";
 
 export default function Dashboard() {
   const stats = [
@@ -36,45 +36,74 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="p-8 space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">Resumen de tu negocio en tiempo real</p>
+      <div className="p-6 md:p-8 space-y-6 md:space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground text-sm md:text-base">Resumen de tu negocio en tiempo real</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => (
-            <Card key={stat.title} className="glass-card shadow-card transition-smooth hover:shadow-elevated">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {stats.map((stat, index) => (
+            <Card 
+              key={stat.title} 
+              className="relative overflow-hidden border-2 shadow-card transition-smooth hover:shadow-elevated hover:-translate-y-1 cursor-pointer group"
+            >
+              <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-smooth ${
+                index === 0 ? 'gradient-primary' : 
+                index === 1 ? 'gradient-secondary' : 
+                index === 2 ? 'gradient-accent' : 'gradient-primary'
+              }`} />
+              <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                <div className={`p-2.5 rounded-xl ${stat.color} bg-opacity-10 ${
+                  index === 0 ? 'bg-primary/10' : 
+                  index === 1 ? 'bg-secondary/10' : 
+                  index === 2 ? 'bg-accent/10' : 'bg-primary/10'
+                }`}>
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-1">{stat.value}</div>
-                <p className="text-xs text-accent font-medium">{stat.change} desde ayer</p>
+                <div className="text-3xl md:text-4xl font-bold mb-2">{stat.value}</div>
+                <div className="flex items-center gap-1">
+                  <ArrowUpRight className="w-4 h-4 text-accent" />
+                  <p className="text-xs md:text-sm text-accent font-semibold">{stat.change} desde ayer</p>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="glass-card shadow-card">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <Card className="border-2 shadow-card">
             <CardHeader>
-              <CardTitle>Ventas Recientes</CardTitle>
-              <CardDescription>Últimas transacciones del día</CardDescription>
+              <CardTitle className="text-xl md:text-2xl">Ventas Recientes</CardTitle>
+              <CardDescription className="text-sm">Últimas transacciones del día</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-                    <div>
-                      <p className="font-medium">Pedido #{1000 + i}</p>
-                      <p className="text-sm text-muted-foreground">Hace {i * 5} minutos</p>
+                  <div 
+                    key={i} 
+                    className="flex items-center justify-between p-3 md:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-smooth border border-border/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full gradient-primary flex items-center justify-center">
+                        <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm md:text-base">Pedido #{1000 + i}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Hace {i * 5} minutos</p>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-primary">${(15 + i * 8).toFixed(2)}</p>
+                      <p className="font-bold text-lg md:text-xl text-primary">${(15 + i * 8).toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground">2 items</p>
                     </div>
                   </div>
@@ -83,29 +112,36 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass-card shadow-card">
+          <Card className="border-2 shadow-card">
             <CardHeader>
-              <CardTitle>Productos Populares</CardTitle>
-              <CardDescription>Más vendidos esta semana</CardDescription>
+              <CardTitle className="text-xl md:text-2xl">Productos Populares</CardTitle>
+              <CardDescription className="text-sm">Más vendidos esta semana</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {[
-                  { name: "Granizado Fresa", sales: 145 },
-                  { name: "Granizado Limón", sales: 132 },
-                  { name: "Granizado Frambuesa", sales: 98 },
-                  { name: "Granizado Mango", sales: 87 },
+                  { name: "Granizado Fresa", sales: 145, emoji: "🍓" },
+                  { name: "Granizado Limón", sales: 132, emoji: "🍋" },
+                  { name: "Granizado Frambuesa", sales: 98, emoji: "🫐" },
+                  { name: "Granizado Mango", sales: 87, emoji: "🥭" },
                 ].map((product, i) => (
-                  <div key={i} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">{product.sales} unidades</p>
-                    </div>
-                    <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full gradient-primary rounded-full" 
-                        style={{ width: `${(product.sales / 145) * 100}%` }}
-                      />
+                  <div key={i} className="flex items-center gap-3 md:gap-4 py-2">
+                    <div className="text-2xl md:text-3xl">{product.emoji}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-semibold text-sm md:text-base">{product.name}</p>
+                        <p className="text-xs md:text-sm font-bold text-muted-foreground">{product.sales} unidades</p>
+                      </div>
+                      <div className="relative w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-smooth ${
+                            i === 0 ? 'gradient-primary' : 
+                            i === 1 ? 'gradient-secondary' : 
+                            i === 2 ? 'gradient-accent' : 'gradient-primary'
+                          }`}
+                          style={{ width: `${(product.sales / 145) * 100}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
