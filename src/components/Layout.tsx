@@ -7,6 +7,7 @@ import {
   Package, 
   ClipboardList, 
   FileText,
+  Settings,
   LogOut,
   IceCream
 } from "lucide-react";
@@ -22,6 +23,7 @@ const navigation = [
   { name: "Productos", href: "/products", icon: Package },
   { name: "Inventario", href: "/inventory", icon: ClipboardList },
   { name: "Facturas", href: "/invoices", icon: FileText },
+  { name: "Configuración", href: "/settings", icon: Settings },
 ];
 
 export default function Layout({ children }: LayoutProps) {
