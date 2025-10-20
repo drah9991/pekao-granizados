@@ -266,7 +266,7 @@ export default function POS() {
                             )}
                             {item.toppings && item.toppings.length > 0 && (
                               <p className="text-xs text-muted-foreground mt-1">
-                                + {item.toppings.map(t => t.name).join(", ")}
+                                + {item.toppings.filter(t => t).map(t => t.name).join(", ")}
                               </p>
                             )}
                             <p className="text-sm text-primary font-bold mt-1">
