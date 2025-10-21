@@ -32,20 +32,22 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col">
-        <div className="p-6 border-b border-sidebar-border">
+      <aside className="w-64 bg-gradient-to-b from-sidebar-background to-sidebar-background/95 border-r border-sidebar-border/50 flex flex-col shadow-elevated backdrop-blur-sm">
+        {/* Brand Header */}
+        <div className="p-6 border-b border-sidebar-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center shadow-glow">
-              <IceCream className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 rounded-2xl gradient-hero flex items-center justify-center shadow-glow transition-smooth hover:scale-105">
+              <IceCream className="w-7 h-7 text-white drop-shadow-lg" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-sidebar-foreground">Pekao</h1>
-              <p className="text-xs text-sidebar-foreground/60">Granizados</p>
+              <h1 className="text-xl font-bold text-sidebar-foreground tracking-tight">Pekao</h1>
+              <p className="text-xs text-sidebar-foreground/50 font-medium">Granizados</p>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        {/* Navigation */}
+        <nav className="flex-1 p-5 space-y-2 overflow-y-auto">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -53,30 +55,42 @@ export default function Layout({ children }: LayoutProps) {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-smooth text-sm font-medium",
+                  "group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-card"
-                    : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                    ? "bg-gradient-to-r from-primary/20 to-primary/10 text-sidebar-foreground shadow-card border border-primary/30"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:shadow-md hover:border hover:border-sidebar-border/50"
                 )}
               >
-                <item.icon className="w-5 h-5" />
-                {item.name}
+                {isActive && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
+                )}
+                <item.icon className={cn(
+                  "w-5 h-5 transition-all duration-300",
+                  isActive 
+                    ? "text-primary drop-shadow-lg scale-110" 
+                    : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
+                )} />
+                <span className="relative z-10">{item.name}</span>
+                {isActive && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow animate-pulse" />
+                )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-sidebar-border">
+        {/* Footer */}
+        <div className="p-5 border-t border-sidebar-border/30 bg-sidebar-background/50 backdrop-blur-sm">
           <Button 
             variant="ghost" 
-            className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-300 rounded-xl py-3 group"
             onClick={() => {
               // TODO: Implement logout
               window.location.href = "/auth";
             }}
           >
-            <LogOut className="w-5 h-5 mr-3" />
-            Cerrar Sesión
+            <LogOut className="w-5 h-5 mr-3 transition-transform duration-300 group-hover:scale-110 group-hover:text-destructive" />
+            <span>Cerrar Sesión</span>
           </Button>
         </div>
       </aside>
