@@ -76,9 +76,10 @@ export default function POS() {
     if (!selectedProduct) return;
 
     const size = sizes.find(s => s.id === selectedSize);
-    const toppings = availableToppings.filter(t => t && selectedToppings.includes(t.id));
+    // Filtrar toppings null ANTES de agregarlos al item
+    const validToppings = availableToppings.filter(t => t && t.id && t.name && t.price != null && selectedToppings.includes(t.id));
     const basePrice = selectedProduct.price * (size?.multiplier || 1);
-    const toppingsPrice = toppings.filter(t => t && t.price != null).reduce((sum, t) => sum + t.price, 0);
+    const toppingsPrice = validToppings.reduce((sum, t) => sum + t.price, 0);
     const finalPrice = basePrice + toppingsPrice;
 
     const customizationId = customized ? `${selectedProduct.id}-${Date.now()}` : selectedProduct.id;
@@ -89,7 +90,7 @@ export default function POS() {
       price: finalPrice,
       quantity: 1,
       size: size?.name,
-      toppings: toppings.length > 0 ? toppings : undefined,
+      toppings: validToppings.length > 0 ? validToppings : undefined,
       customizationId,
     };
 
