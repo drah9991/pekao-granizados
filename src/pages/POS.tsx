@@ -76,9 +76,9 @@ export default function POS() {
     if (!selectedProduct) return;
 
     const size = sizes.find(s => s.id === selectedSize);
-    const toppings = availableToppings.filter(t => selectedToppings.includes(t.id));
+    const toppings = availableToppings.filter(t => t && selectedToppings.includes(t.id));
     const basePrice = selectedProduct.price * (size?.multiplier || 1);
-    const toppingsPrice = toppings.reduce((sum, t) => sum + t.price, 0);
+    const toppingsPrice = toppings.filter(t => t && t.price != null).reduce((sum, t) => sum + t.price, 0);
     const finalPrice = basePrice + toppingsPrice;
 
     const customizationId = customized ? `${selectedProduct.id}-${Date.now()}` : selectedProduct.id;
@@ -266,7 +266,7 @@ export default function POS() {
                             )}
                             {item.toppings && item.toppings.length > 0 && (
                               <p className="text-xs text-muted-foreground mt-1">
-                                + {item.toppings.filter(t => t).map(t => t.name).join(", ")}
+                                + {item.toppings.filter(t => t && t.name).map(t => t.name).join(", ")}
                               </p>
                             )}
                             <p className="text-sm text-primary font-bold mt-1">
