@@ -189,8 +189,11 @@ export default function POS() {
 
       if (orderError) throw orderError;
 
-      // Crear items de la orden
-      const orderItems = cart.map(item => ({
+      // Limpiar cart ANTES de crear order items
+      const cleanedCart = cleanCart(cart);
+
+      // Crear items de la orden SOLO con items válidos
+      const orderItems = cleanedCart.map(item => ({
         order_id: orderData.id,
         name: item.name,
         price: item.price,
@@ -204,9 +207,6 @@ export default function POS() {
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
-
-      // Clean cart items before saving to lastOrder
-      const cleanedCart = cleanCart(cart);
 
       setLastOrder({
         ...orderData,
