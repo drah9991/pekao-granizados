@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +65,27 @@ export default function POS() {
   const [lastOrder, setLastOrder] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Cleanup function to remove null items from cart
+  const cleanCart = (cartItems: CartItem[]) => {
+    return cartItems.filter(item => {
+      // Ensure item has valid properties
+      if (!item || typeof item.price !== 'number' || typeof item.quantity !== 'number') {
+        console.warn('Removing invalid cart item:', item);
+        return false;
+      }
+      // Clean toppings array
+      if (item.toppings) {
+        item.toppings = item.toppings.filter(t => t && typeof t.price === 'number' && t.name);
+      }
+      return true;
+    });
+  };
+
+  // Clean cart on mount to remove any corrupted data
+  useEffect(() => {
+    setCart(prevCart => cleanCart(prevCart));
+  }, []);
+
   const openCustomization = (product: typeof products[0]) => {
     setSelectedProduct(product);
     setSelectedSize("medium");
@@ -100,20 +121,27 @@ export default function POS() {
   };
 
   const updateQuantity = (id: string, delta: number) => {
-    setCart(cart.map(item => {
+    const updatedCart = cart.map(item => {
       if (item.id === id) {
         const newQty = item.quantity + delta;
         return newQty > 0 ? { ...item, quantity: newQty } : item;
       }
       return item;
-    }).filter(item => item.quantity > 0));
+    }).filter(item => item.quantity > 0);
+    
+    setCart(cleanCart(updatedCart));
   };
 
   const removeItem = (id: string) => {
     setCart(cart.filter(item => item.id !== id));
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = cleanCart(cart).reduce((sum, item) => {
+    if (item && typeof item.price === 'number' && typeof item.quantity === 'number') {
+      return sum + (item.price * item.quantity);
+    }
+    return sum;
+  }, 0);
   const discountAmount = discountType === "percent" ? (subtotal * discount / 100) : discount;
   const total = Math.max(0, subtotal - discountAmount);
   const change = paymentMethod === "cash" ? Math.max(0, parseFloat(amountReceived) - total) : 0;
@@ -177,9 +205,12 @@ export default function POS() {
 
       if (itemsError) throw itemsError;
 
+      // Clean cart items before saving to lastOrder
+      const cleanedCart = cleanCart(cart);
+
       setLastOrder({
         ...orderData,
-        items: cart,
+        items: cleanedCart,
         change,
       });
 
@@ -250,8 +281,15 @@ export default function POS() {
                 <p className="text-muted-foreground text-sm md:text-base">Carrito vacío</p>
               </div>
             ) : (
-              cart.map((item) => {
-                const product = products.find(p => p.id === item.id);
+              cleanCart(cart).map((item) => {
+                const product = products.find(p => p.id.split('-')[0] === item.id.split('-')[0]);
+                
+                // Skip rendering if item is invalid
+                if (!item || typeof item.price !== 'number' || typeof item.quantity !== 'number') {
+                  console.warn('Skipping invalid cart item:', item);
+                  return null;
+                }
+                
                 return (
                   <Card key={item.id} className="border-2 shadow-card hover:shadow-elevated transition-smooth">
                     <CardContent className="p-3 md:p-4">
@@ -563,12 +601,15 @@ export default function POS() {
 
               <div className="space-y-2">
                 <p className="font-semibold text-sm text-muted-foreground">Detalle del Pedido:</p>
-                {lastOrder.items.map((item: CartItem, index: number) => (
-                  <div key={index} className="flex justify-between text-sm p-2 bg-muted/30 rounded">
-                    <span>{item.quantity}x {item.name}</span>
-                    <span className="font-bold">${(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
+                {lastOrder.items && Array.isArray(lastOrder.items) && lastOrder.items
+                  .filter((item: CartItem) => item && typeof item.price === 'number' && typeof item.quantity === 'number')
+                  .map((item: CartItem, index: number) => (
+                    <div key={index} className="flex justify-between text-sm p-2 bg-muted/30 rounded">
+                      <span>{item.quantity}x {item.name}</span>
+                      <span className="font-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))
+                }
               </div>
 
               <div className="text-center text-sm text-muted-foreground">
