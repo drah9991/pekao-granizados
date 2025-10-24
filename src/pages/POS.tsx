@@ -56,10 +56,27 @@ export default function POS() {
     setIsProcessing(true);
 
     try {
+      // Get current user and their store_id
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error("Usuario no autenticado.");
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile?.store_id) {
+        throw new Error("No se pudo obtener la información de la tienda del usuario.");
+      }
+
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .insert({
-          store_id: "00000000-0000-0000-0000-000000000001", // ID de tienda demo
+          store_id: profile.store_id, // Use the user's actual store_id
+          created_by: user.id, // Assign the current user as the creator
           subtotal: subtotal,
           tax: 0, // Assuming 0 tax for now, can be calculated later
           total: total,
