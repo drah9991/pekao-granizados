@@ -7,31 +7,84 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IceCream } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 
 export default function Auth() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signupName, setSignupName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Implement actual authentication with Lovable Cloud
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast.success("¡Bienvenido a Pekao Granizados!");
       navigate("/dashboard");
-    }, 1000);
+    } catch (error: any) {
+      console.error("Error logging in:", error);
+      toast.error("Error al iniciar sesión: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Implement actual signup with Lovable Cloud
-    setTimeout(() => {
-      toast.success("¡Cuenta creada exitosamente!");
-      navigate("/dashboard");
-    }, 1000);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: signupEmail,
+        password: signupPassword,
+        options: {
+          data: {
+            name: signupName,
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        // Optionally, create a profile entry for the new user
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            { id: data.user.id, name: signupName, email: signupEmail }
+          ]);
+        
+        if (profileError) {
+          console.error("Error creating user profile:", profileError);
+          // Decide if you want to throw this error or just log it.
+          // For now, we'll let the signup proceed even if profile creation fails.
+        }
+      }
+
+      toast.success("¡Cuenta creada exitosamente! Por favor, revisa tu correo para verificarla.");
+      // After signup, you might want to redirect to a verification page or dashboard
+      navigate("/dashboard"); 
+    } catch (error: any) {
+      console.error("Error signing up:", error);
+      toast.error("Error al crear cuenta: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -67,6 +120,8 @@ export default function Auth() {
                       placeholder="tu@email.com"
                       required
                       disabled={isLoading}
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -77,6 +132,8 @@ export default function Auth() {
                       placeholder="••••••••"
                       required
                       disabled={isLoading}
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
@@ -95,6 +152,8 @@ export default function Auth() {
                       placeholder="Juan Pérez"
                       required
                       disabled={isLoading}
+                      value={signupName}
+                      onChange={(e) => setSignupName(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -105,6 +164,8 @@ export default function Auth() {
                       placeholder="tu@email.com"
                       required
                       disabled={isLoading}
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -115,6 +176,8 @@ export default function Auth() {
                       placeholder="••••••••"
                       required
                       disabled={isLoading}
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
