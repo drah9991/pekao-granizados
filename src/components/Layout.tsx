@@ -12,6 +12,7 @@ import {
   IceCream
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/ThemeToggle"; // Import ThemeToggle
 
 interface LayoutProps {
   children: ReactNode;
@@ -81,6 +82,10 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Footer */}
         <div className="p-5 border-t border-sidebar-border/30 bg-sidebar-background/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-sidebar-foreground/60">Modo Oscuro</span>
+            <ThemeToggle /> {/* Add ThemeToggle here */}
+          </div>
           <Button 
             variant="ghost" 
             className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-300 rounded-xl py-3 group"
