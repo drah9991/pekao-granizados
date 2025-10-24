@@ -65,19 +65,30 @@ export default function POS() {
   const [lastOrder, setLastOrder] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Cleanup function to remove null items from cart
-  const cleanCart = (cartItems: CartItem[]) => {
+  // Cleanup function to remove null/invalid items from cart
+  const cleanCart = (cartItems: CartItem[]): CartItem[] => {
     return cartItems.filter(item => {
-      // Ensure item has valid properties
-      if (!item || typeof item.price !== 'number' || typeof item.quantity !== 'number') {
+      // Ensure item is an object, not null, and has price and quantity as valid numbers
+      if (
+        item === null ||
+        typeof item !== 'object' ||
+        typeof item.price !== 'number' ||
+        isNaN(item.price) ||
+        typeof item.quantity !== 'number' ||
+        isNaN(item.quantity) ||
+        item.quantity < 0
+      ) {
         console.warn('Removing invalid cart item:', item);
         return false;
       }
-      // Clean toppings array
-      if (item.toppings) {
-        item.toppings = item.toppings.filter(t => t && typeof t.price === 'number' && t.name);
-      }
       return true;
+    }).map(item => {
+      // Create a new object to avoid in-place modification of original item.toppings
+      const newItem = { ...item };
+      if (newItem.toppings) {
+        newItem.toppings = newItem.toppings.filter(t => t && typeof t.price === 'number' && t.name);
+      }
+      return newItem;
     });
   };
 
@@ -137,10 +148,8 @@ export default function POS() {
   };
 
   const subtotal = cleanCart(cart).reduce((sum, item) => {
-    if (item && typeof item.price === 'number' && typeof item.quantity === 'number') {
-      return sum + (item.price * item.quantity);
-    }
-    return sum;
+    // After cleanCart, item.price and item.quantity are guaranteed to be numbers
+    return sum + (item.price * item.quantity);
   }, 0);
   const discountAmount = discountType === "percent" ? (subtotal * discount / 100) : discount;
   const total = Math.max(0, subtotal - discountAmount);
