@@ -126,7 +126,7 @@ export default function POS() {
       customizationId,
     };
 
-    setCart([...cart, newItem]);
+    setCart(cleanCart([...cart, newItem])); // Apply cleanCart here
     setCustomizeDialog(false);
     toast.success("Producto agregado al carrito");
   };
@@ -144,7 +144,7 @@ export default function POS() {
   };
 
   const removeItem = (id: string) => {
-    setCart(cart.filter(item => item.id !== id));
+    setCart(cleanCart(cart.filter(item => item.id !== id))); // Apply cleanCart here
   };
 
   const subtotal = cleanCart(cart).reduce((sum, item) => {
