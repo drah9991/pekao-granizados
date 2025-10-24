@@ -26,6 +26,7 @@ interface Product {
   variants: any;
   recipe: any;
   created_at: string;
+  store_id: string; // Added store_id to Product interface
 }
 
 interface StockInfo {
@@ -39,6 +40,7 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterActive, setFilterActive] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [userStoreId, setUserStoreId] = useState<string | null>(null); // State to hold the user's store_id
   
   // Create/Edit Dialog
   const [productDialog, setProductDialog] = useState(false);
@@ -59,8 +61,35 @@ export default function Products() {
   const [productStock, setProductStock] = useState<StockInfo[]>([]);
 
   useEffect(() => {
+    fetchUserStoreId();
     fetchProducts();
   }, []);
+
+  const fetchUserStoreId = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuario no autenticado.");
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      if (profile?.store_id) {
+        setUserStoreId(profile.store_id);
+      } else {
+        toast.warning("No se encontró un ID de tienda para el usuario. No podrás crear productos.");
+      }
+    } catch (error: any) {
+      console.error("Error fetching user's store ID:", error);
+      toast.error("Error al obtener ID de tienda: " + error.message);
+    }
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -81,6 +110,10 @@ export default function Products() {
   };
 
   const openCreateDialog = () => {
+    if (!userStoreId) {
+      toast.error("No tienes una tienda asignada para crear productos. Contacta a un administrador.");
+      return;
+    }
     setEditingProduct(null);
     setFormData({
       name: "",
@@ -111,6 +144,10 @@ export default function Products() {
       toast.error("Nombre y precio son obligatorios");
       return;
     }
+    if (!userStoreId && !editingProduct) { // Only require storeId for new products
+      toast.error("No se pudo determinar la tienda para este producto.");
+      return;
+    }
 
     setIsProcessing(true);
     try {
@@ -121,6 +158,9 @@ export default function Products() {
         price: parseFloat(formData.price),
         cost: formData.cost ? parseFloat(formData.cost) : null,
         active: formData.active,
+        // store_id is only added for new products, or if it's an existing product and we need to ensure it's there.
+        // For updates, we assume store_id is already set and not changing.
+        ...(editingProduct ? {} : { store_id: userStoreId }), 
       };
 
       if (editingProduct) {
@@ -254,6 +294,7 @@ export default function Products() {
           <Button 
             className="gradient-primary shadow-glow w-full md:w-auto"
             onClick={openCreateDialog}
+            disabled={!userStoreId} // Disable if no store_id
           >
             <Plus className="mr-2 w-5 h-5" />
             Nuevo Producto
@@ -356,7 +397,7 @@ export default function Products() {
                   : "Comienza creando tu primer producto"}
               </p>
               {!searchQuery && filterActive === "all" && (
-                <Button onClick={openCreateDialog} className="gradient-primary">
+                <Button onClick={openCreateDialog} className="gradient-primary" disabled={!userStoreId}>
                   <Plus className="mr-2 w-4 h-4" />
                   Crear Primer Producto
                 </Button>
@@ -582,7 +623,7 @@ export default function Products() {
             </Button>
             <Button
               onClick={handleSaveProduct}
-              disabled={isProcessing || !formData.name || !formData.price}
+              disabled={isProcessing || !formData.name || !formData.price || (!editingProduct && !userStoreId)}
               className="gradient-primary"
             >
               {isProcessing ? "Guardando..." : editingProduct ? "Actualizar" : "Crear Producto"}
