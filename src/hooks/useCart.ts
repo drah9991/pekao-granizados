@@ -15,9 +15,11 @@ export const useCart = ({ products }: UseCartProps) => {
   // Cleanup function to remove null/invalid items from cart
   const cleanCart = (cartItems: CartItem[]): CartItem[] => {
     return cartItems.filter(item => {
+      // Ensure item is an object, not null/undefined, and has valid id, price, and quantity
       if (
-        item === null ||
+        !item || // Catches null or undefined items
         typeof item !== 'object' ||
+        typeof item.id !== 'string' || // Added check for item.id
         typeof item.price !== 'number' ||
         isNaN(item.price) ||
         typeof item.quantity !== 'number' ||
