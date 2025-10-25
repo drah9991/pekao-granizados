@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -211,126 +210,123 @@ export default function Users() {
   });
 
   return (
-    <Layout>
-      <div className="p-4 md:p-8 space-y-6 md:space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
-              Maestro de Usuarios
-            </h1>
-            <p className="text-muted-foreground">Gestiona los usuarios y sus roles en el sistema</p>
-          </div>
-          <Button
-            className="gradient-primary shadow-glow w-full md:w-auto"
-            onClick={openCreateDialog}
-          >
-            <Plus className="mr-2 w-5 h-5" />
-            Nuevo Usuario
-          </Button>
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
+            Maestro de Usuarios
+          </h1>
+          <p className="text-muted-foreground">Gestiona los usuarios y sus roles en el sistema</p>
         </div>
-
-        {/* Search */}
-        <Card className="glass-card shadow-card">
-          <CardContent className="pt-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Buscar por nombre, email, teléfono o rol..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Users List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-muted-foreground">Cargando usuarios...</p>
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <Card className="glass-card shadow-card">
-            <CardContent className="text-center py-12">
-              <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No hay usuarios</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery
-                  ? "No se encontraron usuarios con los filtros aplicados"
-                  : "Comienza creando tu primer usuario"}
-              </p>
-              {!searchQuery && (
-                <Button onClick={openCreateDialog} className="gradient-primary">
-                  <Plus className="mr-2 w-4 h-4" />
-                  Crear Primer Usuario
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {filteredUsers.map((user) => (
-              <Card key={user.id} className="glass-card shadow-card transition-smooth hover:shadow-elevated group">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                        <User className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-lg">{user.full_name}</h3>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-                    <Badge
-                      className={
-                        rolesConfig.find(r => r.role === user.role)?.color || "bg-gray-500"
-                      }
-                    >
-                      {rolesConfig.find(r => r.role === user.role)?.label || "Sin Rol"}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                    {user.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        <span>{user.phone}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      <span>{user.email}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-4 border-t border-border">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:text-accent"
-                      onClick={() => openEditDialog(user)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:text-destructive"
-                      onClick={() => handleDeleteUser(user)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        <Button
+          className="gradient-primary shadow-glow w-full md:w-auto"
+          onClick={openCreateDialog}
+        >
+          <Plus className="mr-2 w-5 h-5" />
+          Nuevo Usuario
+        </Button>
       </div>
 
+      {/* Search */}
+      <Card className="glass-card shadow-card">
+        <CardContent className="pt-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Buscar por nombre, email, teléfono o rol..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Users List */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground">Cargando usuarios...</p>
+        </div>
+      ) : filteredUsers.length === 0 ? (
+        <Card className="glass-card shadow-card">
+          <CardContent className="text-center py-12">
+            <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No hay usuarios</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchQuery
+                ? "No se encontraron usuarios con los filtros aplicados"
+                : "Comienza creando tu primer usuario"}
+            </p>
+            {!searchQuery && (
+              <Button onClick={openCreateDialog} className="gradient-primary">
+                <Plus className="mr-2 w-4 h-4" />
+                Crear Primer Usuario
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {filteredUsers.map((user) => (
+            <Card key={user.id} className="glass-card shadow-card transition-smooth hover:shadow-elevated group">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <User className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">{user.full_name}</h3>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  <Badge
+                    className={
+                      rolesConfig.find(r => r.role === user.role)?.color || "bg-gray-500"
+                    }
+                  >
+                    {rolesConfig.find(r => r.role === user.role)?.label || "Sin Rol"}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                  {user.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      <span>{user.phone}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    <span>{user.email}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-border">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:text-accent"
+                    onClick={() => openEditDialog(user)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:text-destructive"
+                    onClick={() => handleDeleteUser(user)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
       {/* Create/Edit User Dialog */}
       <Dialog open={userDialogIsOpen} onOpenChange={setUserDialogIsOpen}>
         <DialogContent className="sm:max-w-md">
@@ -434,6 +430,6 @@ export default function Users() {
           </form>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </div>
   );
 }

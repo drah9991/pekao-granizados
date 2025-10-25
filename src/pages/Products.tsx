@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -305,227 +304,175 @@ export default function Products() {
   };
 
   return (
-    <Layout>
-      <div className="p-4 md:p-8 space-y-6 md:space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
-              Catálogo de Productos
-            </h1>
-            <p className="text-muted-foreground">Gestiona tu inventario de productos</p>
-          </div>
-          <Button 
-            className="gradient-primary shadow-glow w-full md:w-auto"
-            onClick={openCreateDialog}
-            disabled={!userStoreId} // Disable if no store_id
-          >
-            <Plus className="mr-2 w-5 h-5" />
-            Nuevo Producto
-          </Button>
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
+            Catálogo de Productos
+          </h1>
+          <p className="text-muted-foreground">Gestiona tu inventario de productos</p>
         </div>
+        <Button 
+          className="gradient-primary shadow-glow w-full md:w-auto"
+          onClick={openCreateDialog}
+          disabled={!userStoreId} // Disable if no store_id
+        >
+          <Plus className="mr-2 w-5 h-5" />
+          Nuevo Producto
+        </Button>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="glass-card shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Total Productos</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-                <Package className="w-8 h-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Activos</p>
-                  <p className="text-2xl font-bold text-accent">{stats.active}</p>
-                </div>
-                <TrendingUp className="w-8 h-8 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Inactivos</p>
-                  <p className="text-2xl font-bold text-muted-foreground">{stats.inactive}</p>
-                </div>
-                <Package className="w-8 h-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Precio Promedio</p>
-                  <p className="text-2xl font-bold text-primary">${stats.avgPrice.toFixed(2)}</p>
-                </div>
-                <DollarSign className="w-8 h-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search and Filters */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="glass-card shadow-card">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input 
-                  placeholder="Buscar por nombre, SKU o descripción..." 
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Productos</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
               </div>
-              
-              <Select value={filterActive} onValueChange={setFilterActive}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los productos</SelectItem>
-                  <SelectItem value="active">Solo activos</SelectItem>
-                  <SelectItem value="inactive">Solo inactivos</SelectItem>
-                </SelectContent>
-              </Select>
+              <Package className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
 
-        {/* Products Grid */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-muted-foreground">Cargando productos...</p>
+        <Card className="glass-card shadow-card">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Activos</p>
+                <p className="text-2xl font-bold text-accent">{stats.active}</p>
+              </div>
+              <TrendingUp className="w-8 h-8 text-accent" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card shadow-card">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Inactivos</p>
+                <p className="text-2xl font-bold text-muted-foreground">{stats.inactive}</p>
+              </div>
+              <Package className="w-8 h-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card shadow-card">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Precio Promedio</p>
+                <p className="text-2xl font-bold text-primary">${stats.avgPrice.toFixed(2)}</p>
+              </div>
+              <DollarSign className="w-8 h-8 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
+      <Card className="glass-card shadow-card">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input 
+                placeholder="Buscar por nombre, SKU o descripción..." 
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            <Select value={filterActive} onValueChange={setFilterActive}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los productos</SelectItem>
+                <SelectItem value="active">Solo activos</SelectItem>
+                <SelectItem value="inactive">Solo inactivos</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <Card className="glass-card shadow-card">
-            <CardContent className="text-center py-12">
-              <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No hay productos</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery || filterActive !== "all" 
-                  ? "No se encontraron productos con los filtros aplicados"
-                  : "Comienza creando tu primer producto"}
-              </p>
-              {!searchQuery && filterActive === "all" && (
-                <Button onClick={openCreateDialog} className="gradient-primary" disabled={!userStoreId}>
-                  <Plus className="mr-2 w-4 h-4" />
-                  Crear Primer Producto
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {filteredProducts.map((product) => (
-              <Card 
-                key={product.id} 
-                className={`glass-card shadow-card transition-smooth hover:shadow-elevated group ${
-                  !product.active ? 'opacity-60' : ''
-                }`}
-              >
-                <CardContent className="p-6">
-                  {/* Header with badges and actions */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex gap-2 flex-wrap">
-                      <Badge variant={product.active ? "default" : "secondary"}>
-                        {product.active ? "Activo" : "Inactivo"}
+        </CardContent>
+      </Card>
+
+      {/* Products Grid */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground">Cargando productos...</p>
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <Card className="glass-card shadow-card">
+          <CardContent className="text-center py-12">
+            <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No hay productos</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchQuery || filterActive !== "all" 
+                ? "No se encontraron productos con los filtros aplicados"
+                : "Comienza creando tu primer producto"}
+            </p>
+            {!searchQuery && filterActive === "all" && (
+              <Button onClick={openCreateDialog} className="gradient-primary" disabled={!userStoreId}>
+                <Plus className="mr-2 w-4 h-4" />
+                Crear Primer Producto
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          {filteredProducts.map((product) => (
+            <Card 
+              key={product.id} 
+              className={`glass-card shadow-card transition-smooth hover:shadow-elevated group ${
+                !product.active ? 'opacity-60' : ''
+              }`}
+            >
+              <CardContent className="p-6">
+                {/* Header with badges and actions */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant={product.active ? "default" : "secondary"}>
+                      {product.active ? "Activo" : "Inactivo"}
+                    </Badge>
+                    {product.sku && (
+                      <Badge variant="outline" className="text-xs">
+                        {product.sku}
                       </Badge>
-                      {product.sku && (
-                        <Badge variant="outline" className="text-xs">
-                          {product.sku}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-smooth">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 hover:text-primary"
-                        onClick={() => openDetailsDialog(product)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 hover:text-accent"
-                        onClick={() => openEditDialog(product)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 hover:text-destructive"
-                        onClick={() => handleDeleteProduct(product)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Product image placeholder */}
-                  <div className="w-full h-32 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg mb-4 flex items-center justify-center">
-                    {product.images && product.images.length > 0 ? (
-                      <img 
-                        src={product.images[0]} 
-                        alt={product.name}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    ) : (
-                      <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
                     )}
                   </div>
-
-                  {/* Product name */}
-                  <h3 className="font-bold text-lg mb-2 line-clamp-2">{product.name}</h3>
-                  
-                  {/* Description */}
-                  {product.description && (
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                      {product.description}
-                    </p>
-                  )}
-
-                  {/* Price and cost */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Precio</p>
-                      <span className="text-2xl font-bold text-primary">
-                        ${product.price.toFixed(2)}
-                      </span>
-                    </div>
-                    {product.cost && (
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Costo</p>
-                        <span className="text-lg font-semibold text-muted-foreground">
-                          ${product.cost.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Footer with toggle */}
-                  <div className="flex items-center justify-between pt-3 border-t border-border">
-                    <span className="text-sm text-muted-foreground">Estado</span>
-                    <Switch
-                      checked={product.active}
-                      onCheckedChange={() => toggleProductStatus(product)}
-                    />
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-smooth">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 hover:text-primary"
+                      onClick={() => openDetailsDialog(product)}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 hover:text-accent"
+                      onClick={() => openEditDialog(product)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 hover:text-destructive"
+                      onClick={() => handleDeleteProduct(product)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -783,6 +730,6 @@ export default function Products() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </div>
   );
 }
