@@ -31,7 +31,7 @@ const roles: RoleConfig[] = [
     color: "bg-primary"
   },
   {
-    role: "manager",
+    role: "manager", // This role is for app_role, not user_role
     label: "Gerente",
     description: "Gestión de productos, inventario y reportes",
     color: "bg-secondary"

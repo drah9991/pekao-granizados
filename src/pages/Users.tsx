@@ -13,23 +13,24 @@ import { toast } from "sonner";
 import { Tables, Enums } from "@/integrations/supabase/types";
 
 type Profile = Tables<'profiles'>;
-type AppRole = Enums<'app_role'>; // Using app_role for consistency with role_permissions
+type UserRoleEnum = Enums<'user_role'>; // Use user_role enum for profiles
 
 interface UserWithRole extends Profile {
-  role: AppRole | null;
+  role: UserRoleEnum | null; // Ensure role type matches profiles table
 }
 
 interface RoleConfig {
-  role: AppRole;
+  role: UserRoleEnum; // Use user_role enum
   label: string;
   color: string;
 }
 
 const rolesConfig: RoleConfig[] = [
   { role: "admin", label: "Administrador", color: "bg-primary" },
-  { role: "manager", label: "Gerente", color: "bg-secondary" },
+  { role: "store_manager", label: "Gerente de Tienda", color: "bg-secondary" }, // Changed from 'manager'
   { role: "cashier", label: "Cajero", color: "bg-accent" },
-  { role: "driver", label: "Repartidor", color: "bg-blue-500" }, // Example color
+  { role: "delivery_driver", label: "Repartidor", color: "bg-blue-500" }, // Changed from 'driver'
+  { role: "customer", label: "Cliente", color: "bg-gray-500" }, // Added customer role
 ];
 
 export default function Users() {
@@ -45,7 +46,7 @@ export default function Users() {
     email: "",
     password: "",
     phone: "",
-    role: "" as AppRole,
+    role: "cashier" as UserRoleEnum, // Default role, ensure type matches user_role
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -64,8 +65,10 @@ export default function Users() {
           email,
           phone,
           created_at,
+          updated_at,
+          store_id,
           role
-        `)
+        `) // Explicitly select all fields required by Profile and UserWithRole
         .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
@@ -128,7 +131,7 @@ export default function Users() {
             full_name: formData.full_name.trim(),
             email: formData.email.trim(),
             phone: formData.phone.trim() || null,
-            role: formData.role,
+            role: formData.role, // Now formData.role is of type UserRoleEnum
           })
           .eq("id", editingUser.id);
 
@@ -152,12 +155,12 @@ export default function Users() {
         if (!authData.user) throw new Error("No se pudo crear el usuario de autenticación.");
 
         // The handle_new_user function (from SQL script) will automatically create the profile
-        // with full_name, email, phone, and default role.
+        // with full_name, email, phone, and default role 'customer'.
         // We just need to update the role if it's not the default 'customer'.
-        if (formData.role !== 'customer') {
+        if (formData.role !== 'customer') { // Now valid comparison as formData.role is UserRoleEnum
           const { error: roleUpdateError } = await supabase
             .from("profiles")
-            .update({ role: formData.role })
+            .update({ role: formData.role }) // Now formData.role is of type UserRoleEnum
             .eq("id", authData.user.id);
           if (roleUpdateError) throw roleUpdateError;
         }
@@ -396,7 +399,7 @@ export default function Users() {
               <Label htmlFor="role">Rol *</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: AppRole) => setFormData({ ...formData, role: value })}
+                onValueChange={(value: UserRoleEnum) => setFormData({ ...formData, role: value })}
               >
                 <SelectTrigger className="w-full mt-2">
                   <SelectValue placeholder="Selecciona un rol" />

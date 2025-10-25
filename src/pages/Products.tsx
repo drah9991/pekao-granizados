@@ -13,21 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Edit, Trash2, Package, DollarSign, TrendingUp, Eye, Image as ImageIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Tables, Json } from "@/integrations/supabase/types"; // Import Json type
 
-interface Product {
-  id: string;
-  name: string;
-  sku: string | null;
-  description: string | null;
-  price: number;
-  cost: number | null;
-  active: boolean;
-  images: string[] | null;
-  variants: any;
-  recipe: any;
-  created_at: string;
-  store_id: string; // Added store_id to Product interface
-}
+type Product = Tables<'products'>; // Use Tables type for direct mapping
 
 interface StockInfo {
   store_name: string;
@@ -96,7 +84,20 @@ export default function Products() {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(`
+          id,
+          name,
+          sku,
+          description,
+          price,
+          cost,
+          active,
+          images,
+          variants,
+          recipe,
+          created_at,
+          store_id
+        `) // Explicitly select all fields required by Product interface
         .order("created_at", { ascending: false });
 
       if (error) throw error;
