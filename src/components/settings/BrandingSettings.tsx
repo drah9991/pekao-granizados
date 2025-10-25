@@ -3,58 +3,75 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Palette, Save, Image as ImageIcon } from "lucide-react";
+import { Upload, Palette, Save, Image as ImageIcon, Store as StoreIcon, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useBranding } from "@/context/BrandingContext"; // Import useBranding
+import { useBranding } from "@/context/BrandingContext";
 
 export default function BrandingSettings() {
-  const { refreshBranding } = useBranding(); // Get refreshBranding from context
+  const { refreshBranding } = useBranding();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [currentLogo, setCurrentLogo] = useState<string>("");
   const [primaryColor, setPrimaryColor] = useState("#0EA5E9");
   const [isLoading, setIsLoading] = useState(false);
-  const [storeId, setStoreId] = useState<string>("");
+  const [storeId, setStoreId] = useState<string | null>(null);
+  const [hasStore, setHasStore] = useState(false);
+  const [isCreatingStore, setIsCreatingStore] = useState(false);
+  const [newStoreName, setNewStoreName] = useState("");
 
   useEffect(() => {
     loadBrandingSettings();
   }, []);
 
   const loadBrandingSettings = async () => {
+    setIsLoading(true);
     try {
-      // Get user's store
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('store_id') // Select only store_id
+        .select('store_id')
         .eq('id', user.id)
         .single();
 
-      if (!profile?.store_id) return;
-      setStoreId(profile.store_id);
+      if (profileError) throw profileError;
 
-      // Get store config
-      const { data: store } = await supabase
-        .from('stores')
-        .select('config')
-        .eq('id', profile.store_id)
-        .single();
+      if (profile?.store_id) {
+        setStoreId(profile.store_id);
+        setHasStore(true);
 
-      if (store?.config) {
-        const config = store.config as any;
-        if (config.branding?.logo_url) {
-          setCurrentLogo(config.branding.logo_url);
-          setLogoPreview(config.branding.logo_url);
+        const { data: store, error: storeError } = await supabase
+          .from('stores')
+          .select('config')
+          .eq('id', profile.store_id)
+          .single();
+
+        if (storeError) throw storeError;
+
+        if (store?.config) {
+          const config = store.config as any;
+          if (config.branding?.logo_url) {
+            setCurrentLogo(config.branding.logo_url);
+            setLogoPreview(config.branding.logo_url);
+          }
+          if (config.branding?.primary_color) {
+            setPrimaryColor(config.branding.primary_color);
+          }
         }
-        if (config.branding?.primary_color) {
-          setPrimaryColor(config.branding.primary_color);
-        }
+      } else {
+        setHasStore(false);
+        setStoreId(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading branding:', error);
+      toast.error('Error al cargar la configuración de marca: ' + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,11 +88,15 @@ export default function BrandingSettings() {
   };
 
   const handleSave = async () => {
+    if (!storeId) {
+      toast.error("Primero debes crear o seleccionar una tienda.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       let logoUrl = currentLogo;
 
-      // Upload logo if changed
       if (logoFile) {
         const fileExt = logoFile.name.split('.').pop();
         const fileName = `${storeId}-logo-${Date.now()}.${fileExt}`;
@@ -93,12 +114,13 @@ export default function BrandingSettings() {
         logoUrl = publicUrl;
       }
 
-      // Update store config
-      const { data: store } = await supabase
+      const { data: store, error: fetchStoreError } = await supabase
         .from('stores')
         .select('config')
         .eq('id', storeId)
         .single();
+
+      if (fetchStoreError) throw fetchStoreError;
 
       const currentConfig = (store?.config as any) || {};
       
@@ -121,10 +143,9 @@ export default function BrandingSettings() {
       setCurrentLogo(logoUrl);
       toast.success('Configuración de marca actualizada');
       
-      // Apply color to CSS variables
       document.documentElement.style.setProperty('--primary', primaryColor);
       
-      refreshBranding(); // Trigger a refresh of the branding context
+      refreshBranding();
       
     } catch (error: any) {
       console.error('Error saving branding:', error);
@@ -133,6 +154,83 @@ export default function BrandingSettings() {
       setIsLoading(false);
     }
   };
+
+  const handleCreateStore = async () => {
+    if (!newStoreName.trim()) {
+      toast.error("El nombre de la tienda no puede estar vacío.");
+      return;
+    }
+    setIsCreatingStore(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuario no autenticado.");
+
+      // 1. Create the new store
+      const { data: newStore, error: storeError } = await supabase
+        .from('stores')
+        .insert({ name: newStoreName.trim() })
+        .select('id')
+        .single();
+
+      if (storeError) throw storeError;
+      if (!newStore) throw new Error("No se pudo crear la tienda.");
+
+      // 2. Link the store to the user's profile
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({ store_id: newStore.id })
+        .eq('id', user.id);
+
+      if (profileUpdateError) throw profileUpdateError;
+
+      toast.success(`Tienda "${newStoreName}" creada y asignada.`);
+      setNewStoreName("");
+      await loadBrandingSettings(); // Reload settings to reflect the new store_id
+      refreshBranding(); // Refresh branding context
+    } catch (error: any) {
+      console.error('Error creating store:', error);
+      toast.error('Error al crear la tienda: ' + error.message);
+    } finally {
+      setIsCreatingStore(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+        <p className="text-muted-foreground">Cargando configuración de marca...</p>
+      </div>
+    );
+  }
+
+  if (!hasStore) {
+    return (
+      <Card className="border-2 shadow-card p-6 text-center">
+        <StoreIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+        <CardTitle className="mb-2">No tienes una tienda asignada</CardTitle>
+        <CardDescription className="mb-6">
+          Para configurar el branding, primero debes crear una tienda para tu negocio.
+        </CardDescription>
+        <div className="max-w-sm mx-auto space-y-4">
+          <Input
+            placeholder="Nombre de tu nueva tienda"
+            value={newStoreName}
+            onChange={(e) => setNewStoreName(e.target.value)}
+            disabled={isCreatingStore}
+          />
+          <Button
+            onClick={handleCreateStore}
+            disabled={isCreatingStore || !newStoreName.trim()}
+            className="gradient-primary w-full"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {isCreatingStore ? "Creando tienda..." : "Crear Nueva Tienda"}
+          </Button>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
