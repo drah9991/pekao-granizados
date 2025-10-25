@@ -15,7 +15,7 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [signupFullName, setSignupFullName] = useState(""); // Changed from signupName to signupFullName
+  const [signupFullName, setSignupFullName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
 
@@ -53,7 +53,8 @@ export default function Auth() {
         password: signupPassword,
         options: {
           data: {
-            full_name: signupFullName, // Use full_name here
+            full_name: signupFullName, // Pass full_name in metadata
+            // phone: "optional_phone_number" // You can add phone here if collected during signup
           },
         },
       });
@@ -62,28 +63,11 @@ export default function Auth() {
         throw error;
       }
 
-      if (data.user) {
-        // Optionally, create a profile entry for the new user
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            { 
-              id: data.user.id, 
-              full_name: signupFullName, // Use full_name here
-              email: signupEmail,
-              role: "customer" as Enums<'user_role'> // Default role for new signups
-            }
-          ]);
-        
-        if (profileError) {
-          console.error("Error creating user profile:", profileError);
-          // Decide if you want to throw this error or just log it.
-          // For now, we'll let the signup proceed even if profile creation fails.
-        }
-      }
+      // The handle_new_user function (from SQL script) will automatically create the profile
+      // with full_name, email, phone (if in metadata), and default role 'customer'.
+      // No need to manually insert into profiles here unless you want to override the default role immediately.
 
       toast.success("¡Cuenta creada exitosamente! Por favor, revisa tu correo para verificarla.");
-      // After signup, you might want to redirect to a verification page or dashboard
       navigate("/dashboard"); 
     } catch (error: any) {
       console.error("Error signing up:", error);
@@ -151,7 +135,7 @@ export default function Auth() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="full_name">Nombre completo</Label> {/* Changed to full_name */}
+                    <Label htmlFor="full_name">Nombre completo</Label>
                     <Input
                       id="full_name"
                       type="text"

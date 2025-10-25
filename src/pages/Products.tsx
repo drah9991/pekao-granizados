@@ -75,7 +75,7 @@ export default function Products() {
 
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('store_id') // Select only store_id
         .eq('id', user.id)
         .single();
 

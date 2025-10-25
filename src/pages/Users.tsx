@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { Tables, Enums } from "@/integrations/supabase/types";
 
 type Profile = Tables<'profiles'>;
-type UserRole = Tables<'user_roles'>;
 type AppRole = Enums<'app_role'>; // Using app_role for consistency with role_permissions
 
 interface UserWithRole extends Profile {
@@ -42,7 +41,7 @@ export default function Users() {
   const [userDialogIsOpen, setUserDialogIsOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [formData, setFormData] = useState({
-    full_name: "", // Changed from name to full_name
+    full_name: "",
     email: "",
     password: "",
     phone: "",
@@ -65,7 +64,7 @@ export default function Users() {
           email,
           phone,
           created_at,
-          user_roles ( role )
+          role
         `)
         .order("created_at", { ascending: false });
 
@@ -73,7 +72,7 @@ export default function Users() {
 
       const usersWithRoles: UserWithRole[] = (profilesData || []).map(profile => ({
         ...profile,
-        role: profile.user_roles?.[0]?.role || null,
+        role: profile.role || null,
       }));
       
       setUsers(usersWithRoles);
@@ -122,35 +121,28 @@ export default function Users() {
     setIsProcessing(true);
     try {
       if (editingUser) {
-        // Update existing user
+        // Update existing user profile
         const { error: profileUpdateError } = await supabase
           .from("profiles")
           .update({
             full_name: formData.full_name.trim(),
             email: formData.email.trim(),
             phone: formData.phone.trim() || null,
+            role: formData.role,
           })
           .eq("id", editingUser.id);
 
         if (profileUpdateError) throw profileUpdateError;
 
-        // Update user role
-        const { error: roleUpdateError } = await supabase
-          .from("user_roles")
-          .update({ role: formData.role })
-          .eq("user_id", editingUser.id);
-        
-        if (roleUpdateError) throw roleUpdateError;
-
         toast.success("Usuario actualizado correctamente.");
       } else {
-        // Create new user
+        // Create new user in auth.users and profiles
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email.trim(),
           password: formData.password,
           options: {
             data: {
-              full_name: formData.full_name.trim(), // Use full_name here
+              full_name: formData.full_name.trim(),
               phone: formData.phone.trim() || null,
             },
           },
@@ -159,21 +151,16 @@ export default function Users() {
         if (authError) throw authError;
         if (!authData.user) throw new Error("No se pudo crear el usuario de autenticación.");
 
-        // Create profile entry
-        const { error: profileInsertError } = await supabase
-          .from("profiles")
-          .insert({
-            id: authData.user.id,
-            full_name: formData.full_name.trim(), // Use full_name here
-            email: formData.email.trim(),
-            phone: formData.phone.trim() || null,
-            role: formData.role, // Assign role directly to profile
-          });
-        
-        if (profileInsertError) throw profileInsertError;
-
-        // No need to insert into user_roles separately if role is in profiles
-        // If user_roles is still needed for other reasons, adjust logic here.
+        // The handle_new_user function (from SQL script) will automatically create the profile
+        // with full_name, email, phone, and default role.
+        // We just need to update the role if it's not the default 'customer'.
+        if (formData.role !== 'customer') {
+          const { error: roleUpdateError } = await supabase
+            .from("profiles")
+            .update({ role: formData.role })
+            .eq("id", authData.user.id);
+          if (roleUpdateError) throw roleUpdateError;
+        }
 
         toast.success("Usuario creado correctamente. Se ha enviado un correo de verificación.");
       }
@@ -193,24 +180,13 @@ export default function Users() {
 
     setIsProcessing(true);
     try {
-      // Delete user roles first (if user_roles table is still used)
-      const { error: roleDeleteError } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", user.id);
-      if (roleDeleteError) throw roleDeleteError;
-
-      // Delete profile
+      // Deleting the profile will cascade delete the auth.users entry if foreign key is set up with ON DELETE CASCADE
+      // If not, you would need an Edge Function to delete from auth.users
       const { error: profileDeleteError } = await supabase
         .from("profiles")
         .delete()
         .eq("id", user.id);
       if (profileDeleteError) throw profileDeleteError;
-
-      // Note: Deleting from auth.users table directly from client-side is generally not allowed by RLS.
-      // This would typically be handled by a Supabase Function (Edge Function) or a server-side process
-      // triggered by a database hook if full user deletion is required.
-      // For now, we'll remove their profile and roles, effectively deactivating them from the app.
 
       toast.success("Usuario eliminado correctamente.");
       fetchUsers();
@@ -301,7 +277,7 @@ export default function Users() {
                         <User className="w-5 h-5 text-muted-foreground" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg">{user.full_name}</h3> {/* Changed to full_name */}
+                        <h3 className="font-bold text-lg">{user.full_name}</h3>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
@@ -368,7 +344,7 @@ export default function Users() {
 
           <form onSubmit={(e) => { e.preventDefault(); handleSaveUser(); }} className="space-y-4 py-4">
             <div>
-              <Label htmlFor="full_name">Nombre Completo *</Label> {/* Changed to full_name */}
+              <Label htmlFor="full_name">Nombre Completo *</Label>
               <Input
                 id="full_name"
                 placeholder="Ej: Juan Pérez"

@@ -7,16 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Shield, Save, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Enums } from "@/integrations/supabase/types";
 
 interface Permission {
   id: string;
-  role: string;
+  role: Enums<'app_role'>; // Use app_role enum
   resource: string;
   action: string;
 }
 
 interface RoleConfig {
-  role: string;
+  role: Enums<'app_role'>; // Use app_role enum
   label: string;
   description: string;
   color: string;
@@ -80,13 +81,13 @@ export default function RolesSettings() {
     }
   };
 
-  const hasPermission = (role: string, resource: string, action: string) => {
+  const hasPermission = (role: Enums<'app_role'>, resource: string, action: string) => {
     return permissions.some(
       p => p.role === role && p.resource === resource && p.action === action
     );
   };
 
-  const togglePermission = async (role: string, resource: string, action: string) => {
+  const togglePermission = async (role: Enums<'app_role'>, resource: string, action: string) => {
     const exists = hasPermission(role, resource, action);
     
     try {
@@ -106,7 +107,7 @@ export default function RolesSettings() {
       } else {
         const { data, error } = await supabase
           .from('role_permissions')
-          .insert([{ role: role as any, resource, action }])
+          .insert([{ role, resource, action }])
           .select()
           .single();
         
