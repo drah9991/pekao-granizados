@@ -59,15 +59,15 @@ All colors MUST be HSL.
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    /* Sidebar */
-    --sidebar-background: 220 30% 12%;
-    --sidebar-foreground: 195 30% 97%;
-    --sidebar-primary: 195 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 25% 20%;
-    --sidebar-accent-foreground: 195 30% 97%;
-    --sidebar-border: 220 25% 20%;
-    --sidebar-ring: 195 100% 50%;
+    /* Sidebar - Light Mode */
+    --sidebar-background: var(--background); /* Use main background for light sidebar */
+    --sidebar-foreground: var(--foreground); /* Use main foreground for light sidebar text */
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--muted); /* Use muted for accent in light sidebar */
+    --sidebar-accent-foreground: var(--muted-foreground); /* Use muted-foreground for text on muted accent */
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
   }
 
   .dark {
@@ -110,6 +110,7 @@ All colors MUST be HSL.
     --shadow-card: 0 4px 25px -4px hsl(195 100% 50% / 0.2);
     --shadow-elevated: 0 10px 45px -10px hsl(0 0% 0% / 0.5);
 
+    /* Sidebar - Dark Mode */
     --sidebar-background: 220 30% 8%;
     --sidebar-foreground: 195 30% 97%;
     --sidebar-primary: 195 100% 50%;
