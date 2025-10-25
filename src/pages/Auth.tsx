@@ -105,11 +105,11 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center p-4 gradient-hero">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-xl mb-4 shadow-glow">
+          <div className="inline-flex items-center justify-center w-28 h-28 rounded-2xl bg-white/40 backdrop-blur-xl mb-4 shadow-glow">
             {isLoadingBranding ? (
               <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full" />
             ) : logoUrl ? (
-              <img src={logoUrl} alt="Business Logo" className="max-w-[80%] max-h-[80%] object-contain" />
+              <img src={logoUrl} alt="Business Logo" className="max-w-full max-h-full object-contain" />
             ) : (
               <IceCream className="w-12 h-12 text-white" />
             )}

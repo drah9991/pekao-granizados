@@ -70,11 +70,11 @@ export default function Layout({ children }: LayoutProps) {
       >
         <div className="p-6 border-b border-sidebar-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl gradient-hero flex items-center justify-center shadow-glow transition-smooth hover:scale-105">
+            <div className="w-14 h-14 rounded-2xl gradient-hero flex items-center justify-center shadow-glow transition-smooth hover:scale-105">
               {isLoadingBranding ? (
                 <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full" />
               ) : logoUrl ? (
-                <img src={logoUrl} alt="Business Logo" className="max-w-[80%] max-h-[80%] object-contain" />
+                <img src={logoUrl} alt="Business Logo" className="max-w-full max-h-full object-contain" />
               ) : (
                 <IceCream className="w-7 h-7 text-white drop-shadow-lg" />
               )}
