@@ -1,15 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { Palette, Shield, Building2, Receipt } from "lucide-react";
+import { Palette, Shield, Building2, Receipt, Database } from "lucide-react";
 import BrandingSettings from "@/components/settings/BrandingSettings";
 import RolesSettings from "@/components/settings/RolesSettings";
 import BusinessSettings from "@/components/settings/BusinessSettings";
 import ReceiptTemplateSettings from "@/components/settings/ReceiptTemplateSettings";
+import MasterDataSettings from "@/components/settings/MasterDataSettings"; // Import the new component
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState("branding");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const activeTab = searchParams.get("tab") || "branding";
+
+  const handleTabChange = (value: string) => {
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.set("tab", value);
+    // When changing main tabs, reset subtab if it exists
+    if (value !== "master-data") {
+      newSearchParams.delete("subtab");
+    } else {
+      // If switching to master-data, ensure a default subtab is set if none exists
+      if (!newSearchParams.get("subtab")) {
+        newSearchParams.set("subtab", "products");
+      }
+    }
+    navigate(`${location.pathname}?${newSearchParams.toString()}`);
+  };
 
   return (
     <Layout>
@@ -24,8 +45,8 @@ export default function Settings() {
         </div>
 
         <Card className="border-2 shadow-card">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto gap-2 p-2 bg-muted/30">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto gap-2 p-2 bg-muted/30">
               <TabsTrigger 
                 value="branding" 
                 className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
@@ -54,6 +75,13 @@ export default function Settings() {
                 <Receipt className="w-4 h-4" />
                 <span className="hidden sm:inline">Recibos</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="master-data" 
+                className="flex items-center gap-2 data-[state=active]:gradient-secondary data-[state=active]:text-white"
+              >
+                <Database className="w-4 h-4" />
+                <span className="hidden sm:inline">Maestros</span>
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="branding" className="p-6">
@@ -70,6 +98,10 @@ export default function Settings() {
 
             <TabsContent value="receipts" className="p-6">
               <ReceiptTemplateSettings />
+            </TabsContent>
+
+            <TabsContent value="master-data" className="p-6">
+              <MasterDataSettings />
             </TabsContent>
           </Tabs>
         </Card>

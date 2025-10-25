@@ -8,11 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import POS from "./pages/POS";
-import Products from "./pages/Products";
-import Inventory from "./pages/Inventory";
-import Invoices from "./pages/Invoices";
 import Settings from "./pages/Settings";
-import Users from "./pages/Users"; // Import the new Users page
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,11 +25,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pos" element={<POS />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/invoices" element={<Invoices />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/users" element={<Users />} /> {/* Add the new Users route */}
+            {/* Removed direct routes for /products, /inventory, /users as they are now nested under /settings */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

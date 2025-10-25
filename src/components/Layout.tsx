@@ -1,16 +1,14 @@
+Maestros.">
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
   ShoppingCart, 
-  Package, 
-  ClipboardList, 
-  FileText,
   Settings,
   LogOut,
   IceCream,
-  Users as UsersIcon // Renamed to avoid conflict with page component
+  Database // Added Database icon for Maestros
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -22,11 +20,7 @@ interface LayoutProps {
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "POS", href: "/pos", icon: ShoppingCart },
-  { name: "Productos", href: "/products", icon: Package },
-  { name: "Inventario", href: "/inventory", icon: ClipboardList },
-  { name: "Facturas", href: "/invoices", icon: FileText },
-  { name: "Usuarios", href: "/users", icon: UsersIcon }, // Add Users navigation item
-  { name: "Configuración", href: "/settings", icon: Settings },
+  { name: "Configuración", href: "/settings", icon: Settings }, // Keep Settings
 ];
 
 export default function Layout({ children }: LayoutProps) {
