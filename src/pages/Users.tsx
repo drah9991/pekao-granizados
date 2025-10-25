@@ -18,6 +18,11 @@ interface UserWithRole extends Profile {
   role: UserRoleEnum | null;
 }
 
+interface Store {
+  id: string;
+  name: string;
+}
+
 interface RoleConfig {
   role: UserRoleEnum;
   label: string;
@@ -34,6 +39,8 @@ const rolesConfig: RoleConfig[] = [
 
 export default function Users() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [currentUserStoreId, setCurrentUserStoreId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<UserRoleEnum | "all">("all");
   const [loading, setLoading] = useState(true);
@@ -47,12 +54,41 @@ export default function Users() {
     password: "",
     phone: "",
     role: "cashier" as UserRoleEnum,
+    store_id: null as string | null, // Added store_id to form data
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     fetchUsers();
+    fetchStores();
+    fetchCurrentUserStoreId();
   }, []);
+
+  const fetchStores = async () => {
+    const { data, error } = await supabase.from("stores").select("id, name").order("name");
+    if (error) {
+      console.error("Error fetching stores:", error);
+      toast.error("Error al cargar tiendas");
+    } else {
+      setStores(data || []);
+    }
+  };
+
+  const fetchCurrentUserStoreId = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('id', user.id)
+        .single();
+      if (error) {
+        console.error("Error fetching current user's store ID:", error);
+      } else {
+        setCurrentUserStoreId(profile?.store_id || null);
+      }
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -95,6 +131,7 @@ export default function Users() {
       password: "",
       phone: "",
       role: "cashier",
+      store_id: currentUserStoreId, // Default to current user's store
     });
     setUserDialogIsOpen(true);
   };
@@ -107,6 +144,7 @@ export default function Users() {
       password: "",
       phone: user.phone || "",
       role: user.role || "cashier",
+      store_id: user.store_id || null, // Set from user's store_id
     });
     setUserDialogIsOpen(true);
   };
@@ -132,6 +170,7 @@ export default function Users() {
             email: formData.email.trim(),
             phone: formData.phone.trim() || null,
             role: formData.role,
+            store_id: formData.store_id, // Include store_id in update
           })
           .eq("id", editingUser.id);
 
@@ -139,7 +178,7 @@ export default function Users() {
 
         toast.success("Usuario actualizado correctamente.");
       } else {
-        // Create new user in auth.users and profiles
+        // Create new user in auth.users
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email.trim(),
           password: formData.password,
@@ -154,13 +193,15 @@ export default function Users() {
         if (authError) throw authError;
         if (!authData.user) throw new Error("No se pudo crear el usuario de autenticación.");
 
-        if (formData.role !== 'customer') {
-          const { error: roleUpdateError } = await supabase
-            .from("profiles")
-            .update({ role: formData.role })
-            .eq("id", authData.user.id);
-          if (roleUpdateError) throw roleUpdateError;
-        }
+        // Update the profile created by the trigger with the selected role and store_id
+        const { error: profileUpdateError } = await supabase
+          .from("profiles")
+          .update({
+            role: formData.role,
+            store_id: formData.store_id,
+          })
+          .eq("id", authData.user.id);
+        if (profileUpdateError) throw profileUpdateError;
 
         toast.success("Usuario creado correctamente. Se ha enviado un correo de verificación.");
       }
@@ -180,6 +221,8 @@ export default function Users() {
 
     setIsProcessing(true);
     try {
+      // Note: Deleting from 'profiles' table will cascade delete the user from 'auth.users'
+      // if the foreign key constraint is set up with ON DELETE CASCADE.
       const { error: profileDeleteError } = await supabase
         .from("profiles")
         .delete()
@@ -317,6 +360,12 @@ export default function Users() {
                     <Mail className="w-4 h-4 text-muted-foreground/70" />
                     <span>{user.email}</span>
                   </div>
+                  {user.store_id && (
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-muted-foreground/70" />
+                      <span>Tienda: {stores.find(s => s.id === user.store_id)?.name || "Desconocida"}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4 border-t border-border">
@@ -411,6 +460,7 @@ export default function Users() {
               <Select
                 value={formData.role}
                 onValueChange={(value: UserRoleEnum) => setFormData({ ...formData, role: value })}
+                disabled={isProcessing}
               >
                 <SelectTrigger className="w-full mt-2">
                   <SelectValue placeholder="Selecciona un rol" />
@@ -419,6 +469,26 @@ export default function Users() {
                   {rolesConfig.map((role) => (
                     <SelectItem key={role.role} value={role.role}>
                       {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="store">Tienda</Label>
+              <Select
+                value={formData.store_id || ""}
+                onValueChange={(value) => setFormData({ ...formData, store_id: value })}
+                disabled={isProcessing}
+              >
+                <SelectTrigger className="w-full mt-2">
+                  <SelectValue placeholder="Selecciona una tienda" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin tienda asignada</SelectItem>
+                  {stores.map((store) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
