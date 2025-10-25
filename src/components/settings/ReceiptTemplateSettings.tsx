@@ -68,7 +68,7 @@ export default function ReceiptTemplateSettings() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('store_id, full_name') // Include full_name for consistency, though not used here
         .eq('id', user.id)
         .single();
 

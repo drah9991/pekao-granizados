@@ -14,7 +14,7 @@ import { Tables, Enums } from "@/integrations/supabase/types";
 
 type Profile = Tables<'profiles'>;
 type UserRole = Tables<'user_roles'>;
-type AppRole = Enums<'app_role'>;
+type AppRole = Enums<'app_role'>; // Using app_role for consistency with role_permissions
 
 interface UserWithRole extends Profile {
   role: AppRole | null;
@@ -42,7 +42,7 @@ export default function Users() {
   const [userDialogIsOpen, setUserDialogIsOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [formData, setFormData] = useState({
-    name: "",
+    full_name: "", // Changed from name to full_name
     email: "",
     password: "",
     phone: "",
@@ -61,7 +61,7 @@ export default function Users() {
         .from("profiles")
         .select(`
           id,
-          name,
+          full_name,
           email,
           phone,
           created_at,
@@ -88,7 +88,7 @@ export default function Users() {
   const openCreateDialog = () => {
     setEditingUser(null);
     setFormData({
-      name: "",
+      full_name: "",
       email: "",
       password: "",
       phone: "",
@@ -100,7 +100,7 @@ export default function Users() {
   const openEditDialog = (user: UserWithRole) => {
     setEditingUser(user);
     setFormData({
-      name: user.name || "",
+      full_name: user.full_name || "",
       email: user.email || "",
       password: "", // Password is not editable directly
       phone: user.phone || "",
@@ -110,8 +110,8 @@ export default function Users() {
   };
 
   const handleSaveUser = async () => {
-    if (!formData.name || !formData.email || !formData.role) {
-      toast.error("Nombre, email y rol son obligatorios.");
+    if (!formData.full_name || !formData.email || !formData.role) {
+      toast.error("Nombre completo, email y rol son obligatorios.");
       return;
     }
     if (!editingUser && !formData.password) {
@@ -126,7 +126,7 @@ export default function Users() {
         const { error: profileUpdateError } = await supabase
           .from("profiles")
           .update({
-            name: formData.name.trim(),
+            full_name: formData.full_name.trim(),
             email: formData.email.trim(),
             phone: formData.phone.trim() || null,
           })
@@ -150,7 +150,7 @@ export default function Users() {
           password: formData.password,
           options: {
             data: {
-              name: formData.name.trim(),
+              full_name: formData.full_name.trim(), // Use full_name here
               phone: formData.phone.trim() || null,
             },
           },
@@ -164,22 +164,16 @@ export default function Users() {
           .from("profiles")
           .insert({
             id: authData.user.id,
-            name: formData.name.trim(),
+            full_name: formData.full_name.trim(), // Use full_name here
             email: formData.email.trim(),
             phone: formData.phone.trim() || null,
+            role: formData.role, // Assign role directly to profile
           });
         
         if (profileInsertError) throw profileInsertError;
 
-        // Assign role
-        const { error: roleInsertError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: authData.user.id,
-            role: formData.role,
-          });
-        
-        if (roleInsertError) throw roleInsertError;
+        // No need to insert into user_roles separately if role is in profiles
+        // If user_roles is still needed for other reasons, adjust logic here.
 
         toast.success("Usuario creado correctamente. Se ha enviado un correo de verificación.");
       }
@@ -195,11 +189,11 @@ export default function Users() {
   };
 
   const handleDeleteUser = async (user: UserWithRole) => {
-    if (!confirm(`¿Estás seguro de eliminar al usuario "${user.name}"? Esta acción es irreversible.`)) return;
+    if (!confirm(`¿Estás seguro de eliminar al usuario "${user.full_name}"? Esta acción es irreversible.`)) return;
 
     setIsProcessing(true);
     try {
-      // Delete user roles first
+      // Delete user roles first (if user_roles table is still used)
       const { error: roleDeleteError } = await supabase
         .from("user_roles")
         .delete()
@@ -230,7 +224,7 @@ export default function Users() {
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = !searchQuery ||
-      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.role?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -307,7 +301,7 @@ export default function Users() {
                         <User className="w-5 h-5 text-muted-foreground" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg">{user.name}</h3>
+                        <h3 className="font-bold text-lg">{user.full_name}</h3> {/* Changed to full_name */}
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
@@ -374,12 +368,12 @@ export default function Users() {
 
           <form onSubmit={(e) => { e.preventDefault(); handleSaveUser(); }} className="space-y-4 py-4">
             <div>
-              <Label htmlFor="name">Nombre Completo *</Label>
+              <Label htmlFor="full_name">Nombre Completo *</Label> {/* Changed to full_name */}
               <Input
-                id="name"
+                id="full_name"
                 placeholder="Ej: Juan Pérez"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 className="mt-2"
                 required
               />
@@ -452,7 +446,7 @@ export default function Users() {
               </Button>
               <Button
                 type="submit"
-                disabled={isProcessing || !formData.name || !formData.email || !formData.role || (!editingUser && !formData.password)}
+                disabled={isProcessing || !formData.full_name || !formData.email || !formData.role || (!editingUser && !formData.password)}
                 className="gradient-primary"
               >
                 {isProcessing ? "Guardando..." : editingUser ? "Actualizar Usuario" : "Crear Usuario"}

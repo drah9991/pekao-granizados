@@ -8,13 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IceCream } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
+import { Enums } from "@/integrations/supabase/types";
 
 export default function Auth() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [signupName, setSignupName] = useState("");
+  const [signupFullName, setSignupFullName] = useState(""); // Changed from signupName to signupFullName
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
 
@@ -52,7 +53,7 @@ export default function Auth() {
         password: signupPassword,
         options: {
           data: {
-            name: signupName,
+            full_name: signupFullName, // Use full_name here
           },
         },
       });
@@ -66,7 +67,12 @@ export default function Auth() {
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
-            { id: data.user.id, name: signupName, email: signupEmail }
+            { 
+              id: data.user.id, 
+              full_name: signupFullName, // Use full_name here
+              email: signupEmail,
+              role: "customer" as Enums<'user_role'> // Default role for new signups
+            }
           ]);
         
         if (profileError) {
@@ -145,15 +151,15 @@ export default function Auth() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nombre completo</Label>
+                    <Label htmlFor="full_name">Nombre completo</Label> {/* Changed to full_name */}
                     <Input
-                      id="name"
+                      id="full_name"
                       type="text"
                       placeholder="Juan Pérez"
                       required
                       disabled={isLoading}
-                      value={signupName}
-                      onChange={(e) => setSignupName(e.target.value)}
+                      value={signupFullName}
+                      onChange={(e) => setSignupFullName(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
