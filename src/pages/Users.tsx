@@ -477,10 +477,10 @@ export default function Users() {
             <div>
               <Label htmlFor="store">Tienda</Label>
               <Select
-                value={formData.store_id || "unassigned-store"} {/* Use a non-empty string for the value prop */}
+                value={formData.store_id || "unassigned-store"} 
                 onValueChange={(value) => setFormData({
                   ...formData,
-                  store_id: value === "unassigned-store" ? null : value // Map "unassigned-store" back to null
+                  store_id: value === "unassigned-store" ? null : value 
                 })}
                 disabled={isProcessing}
               >
@@ -488,7 +488,7 @@ export default function Users() {
                   <SelectValue placeholder="Selecciona una tienda" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unassigned-store">Sin tienda asignada</SelectItem> {/* Changed value to "unassigned-store" */}
+                  <SelectItem value="unassigned-store">Sin tienda asignada</SelectItem> 
                   {stores.map((store) => (
                     <SelectItem key={store.id} value={store.id}>
                       {store.name}
