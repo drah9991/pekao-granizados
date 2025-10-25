@@ -49,18 +49,30 @@ export default function Auth() {
 
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: signupEmail,
+        email: signupEmail.trim(), // Trim whitespace
         password: signupPassword,
         options: {
           data: {
-            full_name: signupFullName, // Pass full_name in metadata
+            full_name: signupFullName.trim(), // Trim whitespace
             // phone: "optional_phone_number" // You can add phone here if collected during signup
           },
         },
       });
 
       if (error) {
+        // Log the full error object for detailed debugging
+        console.error("Supabase signup error:", error);
         throw error;
+      }
+
+      if (!data.user) {
+        // This case might happen if email confirmation is required but not handled,
+        // or if there's an unexpected issue where user data isn't returned.
+        console.warn("Signup successful, but no user data returned. Email confirmation might be pending.");
+        toast.info("¡Cuenta creada! Por favor, revisa tu correo para verificarla y luego inicia sesión.");
+        // Optionally, redirect to a page explaining email verification
+        navigate("/auth"); 
+        return;
       }
 
       // The handle_new_user function (from SQL script) will automatically create the profile
