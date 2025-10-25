@@ -477,15 +477,18 @@ export default function Users() {
             <div>
               <Label htmlFor="store">Tienda</Label>
               <Select
-                value={formData.store_id || ""}
-                onValueChange={(value) => setFormData({ ...formData, store_id: value })}
+                value={formData.store_id || "unassigned-store"} {/* Use a non-empty string for the value prop */}
+                onValueChange={(value) => setFormData({
+                  ...formData,
+                  store_id: value === "unassigned-store" ? null : value // Map "unassigned-store" back to null
+                })}
                 disabled={isProcessing}
               >
                 <SelectTrigger className="w-full mt-2">
                   <SelectValue placeholder="Selecciona una tienda" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin tienda asignada</SelectItem>
+                  <SelectItem value="unassigned-store">Sin tienda asignada</SelectItem> {/* Changed value to "unassigned-store" */}
                   {stores.map((store) => (
                     <SelectItem key={store.id} value={store.id}>
                       {store.name}
