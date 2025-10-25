@@ -261,43 +261,55 @@ export type Database = {
       }
       products: {
         Row: {
-          active: boolean | null
-          cost: number | null
-          created_at: string | null
-          description: string | null
           id: string
-          images: string[] | null
+          store_id: string | null
           name: string
-          price: number
-          recipe: Json | null
           sku: string | null
+          description: string | null
+          price: number
+          cost: number | null
+          active: boolean | null
+          images: string[] | null
           variants: Json | null
+          recipe: Json | null
+          category: string | null
+          is_public: boolean | null
+          created_at: string | null
+          updated_at: string | null
         }
         Insert: {
-          active?: boolean | null
-          cost?: number | null
-          created_at?: string | null
-          description?: string | null
           id?: string
-          images?: string[] | null
+          store_id?: string | null
           name: string
-          price: number
-          recipe?: Json | null
           sku?: string | null
+          description?: string | null
+          price?: number
+          cost?: number | null
+          active?: boolean | null
+          images?: string[] | null
           variants?: Json | null
+          recipe?: Json | null
+          category?: string | null
+          is_public?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Update: {
-          active?: boolean | null
-          cost?: number | null
-          created_at?: string | null
-          description?: string | null
           id?: string
-          images?: string[] | null
+          store_id?: string | null
           name?: string
-          price?: number
-          recipe?: Json | null
           sku?: string | null
+          description?: string | null
+          price?: number
+          cost?: number | null
+          active?: boolean | null
+          images?: string[] | null
           variants?: Json | null
+          recipe?: Json | null
+          category?: string | null
+          is_public?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

@@ -40,6 +40,11 @@ export default function Products() {
     price: "",
     cost: "",
     active: true,
+    category: "",
+    is_public: true,
+    images: [] as string[], // Initialize as empty array
+    variants: null as Json | null,
+    recipe: null as Json | null,
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -95,7 +100,10 @@ export default function Products() {
           images,
           variants,
           recipe,
+          category,
+          is_public,
           created_at,
+          updated_at,
           store_id
         `) // Explicitly select all fields required by Product interface
         .order("created_at", { ascending: false });
@@ -123,6 +131,11 @@ export default function Products() {
       price: "",
       cost: "",
       active: true,
+      category: "",
+      is_public: true,
+      images: [],
+      variants: null,
+      recipe: null,
     });
     setProductDialog(true);
   };
@@ -135,7 +148,12 @@ export default function Products() {
       description: product.description || "",
       price: product.price.toString(),
       cost: product.cost?.toString() || "",
-      active: product.active,
+      active: product.active || false, // Ensure boolean
+      category: product.category || "",
+      is_public: product.is_public || false, // Ensure boolean
+      images: product.images || [],
+      variants: product.variants || null,
+      recipe: product.recipe || null,
     });
     setProductDialog(true);
   };
@@ -159,6 +177,11 @@ export default function Products() {
         price: parseFloat(formData.price),
         cost: formData.cost ? parseFloat(formData.cost) : null,
         active: formData.active,
+        category: formData.category.trim() || null,
+        is_public: formData.is_public,
+        images: formData.images.length > 0 ? formData.images : null,
+        variants: formData.variants,
+        recipe: formData.recipe,
         // store_id is only added for new products, or if it's an existing product and we need to ensure it's there.
         // For updates, we assume store_id is already set and not changing.
         ...(editingProduct ? {} : { store_id: userStoreId }), 
