@@ -474,13 +474,22 @@ export default function Products() {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                </div>
 
+                {/* Product main info */}
+                <h3 className="text-xl font-bold mb-1">{product.name}</h3>
+                <p className="text-2xl font-bold text-primary mb-2">${product.price.toFixed(2)}</p>
+                {product.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+                )}
+                {product.category && (
+                  <Badge variant="outline" className="mt-3 text-xs">{product.category}</Badge>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
       {/* Create/Edit Product Dialog */}
       <Dialog open={productDialog} onOpenChange={setProductDialog}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
