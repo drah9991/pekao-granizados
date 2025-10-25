@@ -330,18 +330,18 @@ export default function Users() {
           {filteredUsers.map((user) => (
             <Card key={user.id} className="glass-card shadow-card transition-smooth hover:shadow-elevated group">
               <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3"> {/* Adjusted flex for responsiveness */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                       <User className="w-5 h-5 text-muted-foreground" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{user.full_name}</h3>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <div className="flex-1 min-w-0"> {/* Added flex-1 min-w-0 to allow text truncation */}
+                      <h3 className="font-bold text-lg truncate">{user.full_name}</h3> {/* Added truncate */}
+                      <p className="text-sm text-muted-foreground truncate">{user.email}</p> {/* Added truncate */}
                     </div>
                   </div>
                   <Badge
-                    className={`text-xs px-3 py-1.5 rounded-full font-semibold ${
+                    className={`text-xs px-3 py-1.5 rounded-full font-semibold flex-shrink-0 ${ // Added flex-shrink-0
                       rolesConfig.find(r => r.role === user.role)?.color || "bg-gray-500"
                     }`}
                   >
@@ -352,18 +352,18 @@ export default function Users() {
                 <div className="space-y-2 text-sm text-muted-foreground mb-4">
                   {user.phone && (
                     <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-muted-foreground/70" />
-                      <span>{user.phone}</span>
+                      <Phone className="w-4 h-4 text-muted-foreground/70 flex-shrink-0" /> {/* Added flex-shrink-0 */}
+                      <span className="truncate min-w-0">{user.phone}</span> {/* Added truncate and min-w-0 */}
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground/70" />
-                    <span>{user.email}</span>
+                    <Mail className="w-4 h-4 text-muted-foreground/70 flex-shrink-0" /> {/* Added flex-shrink-0 */}
+                    <span className="truncate min-w-0">{user.email}</span> {/* Added truncate and min-w-0 */}
                   </div>
                   {user.store_id && (
                     <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-muted-foreground/70" />
-                      <span>Tienda: {stores.find(s => s.id === user.store_id)?.name || "Desconocida"}</span>
+                      <Shield className="w-4 h-4 text-muted-foreground/70 flex-shrink-0" /> {/* Added flex-shrink-0 */}
+                      <span className="truncate min-w-0">Tienda: {stores.find(s => s.id === user.store_id)?.name || "Desconocida"}</span> {/* Added truncate and min-w-0 */}
                     </div>
                   )}
                 </div>
