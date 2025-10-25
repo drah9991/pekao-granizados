@@ -5,16 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
 import { IceCream } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
-import { Enums } from "@/integrations/supabase/types";
+import { createClient } from '@supabase/supabase-js'; // Import createClient for temporary client
+import type { Database } from '@/integrations/supabase/types'; // Import Database type
 
 export default function Auth() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true); // State for "Recordarme" checkbox
   const [signupFullName, setSignupFullName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
@@ -24,7 +27,24 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      let clientToUse = supabase; // Default to global client (localStorage persistence)
+
+      if (!rememberMe) {
+        // If "Remember Me" is unchecked, create a temporary client using sessionStorage
+        clientToUse = createClient<Database>(
+          import.meta.env.VITE_SUPABASE_URL,
+          import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          {
+            auth: {
+              storage: sessionStorage, // Use sessionStorage for non-persistent login
+              persistSession: true, // Still persist, but only within the current session
+              autoRefreshToken: true,
+            }
+          }
+        );
+      }
+
+      const { error } = await clientToUse.auth.signInWithPassword({
         email: loginEmail,
         password: loginPassword,
       });
@@ -137,6 +157,17 @@ export default function Auth() {
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                     />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember-me"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(!!checked)}
+                      disabled={isLoading}
+                    />
+                    <Label htmlFor="remember-me" className="cursor-pointer text-sm">
+                      Recordarme
+                    </Label>
                   </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Ingresando..." : "Iniciar Sesión"}
