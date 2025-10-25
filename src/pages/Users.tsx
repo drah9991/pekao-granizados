@@ -12,29 +12,30 @@ import { toast } from "sonner";
 import { Tables, Enums } from "@/integrations/supabase/types";
 
 type Profile = Tables<'profiles'>;
-type UserRoleEnum = Enums<'user_role'>; // Use user_role enum for profiles
+type UserRoleEnum = Enums<'user_role'>;
 
 interface UserWithRole extends Profile {
-  role: UserRoleEnum | null; // Ensure role type matches profiles table
+  role: UserRoleEnum | null;
 }
 
 interface RoleConfig {
-  role: UserRoleEnum; // Use user_role enum
+  role: UserRoleEnum;
   label: string;
   color: string;
 }
 
 const rolesConfig: RoleConfig[] = [
   { role: "admin", label: "Administrador", color: "bg-primary" },
-  { role: "store_manager", label: "Gerente de Tienda", color: "bg-secondary" }, // Changed from 'manager'
+  { role: "store_manager", label: "Gerente de Tienda", color: "bg-secondary" },
   { role: "cashier", label: "Cajero", color: "bg-accent" },
-  { role: "delivery_driver", label: "Repartidor", color: "bg-blue-500" }, // Changed from 'driver'
-  { role: "customer", label: "Cliente", color: "bg-gray-500" }, // Added customer role
+  { role: "delivery_driver", label: "Repartidor", color: "bg-blue-500" },
+  { role: "customer", label: "Cliente", color: "bg-gray-500" },
 ];
 
 export default function Users() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<UserRoleEnum | "all">("all");
   const [loading, setLoading] = useState(true);
 
   // Dialog states
@@ -45,7 +46,7 @@ export default function Users() {
     email: "",
     password: "",
     phone: "",
-    role: "cashier" as UserRoleEnum, // Default role, ensure type matches user_role
+    role: "cashier" as UserRoleEnum,
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -67,7 +68,7 @@ export default function Users() {
           updated_at,
           store_id,
           role
-        `) // Explicitly select all fields required by Profile and UserWithRole
+        `)
         .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
@@ -93,7 +94,7 @@ export default function Users() {
       email: "",
       password: "",
       phone: "",
-      role: "cashier", // Default role
+      role: "cashier",
     });
     setUserDialogIsOpen(true);
   };
@@ -103,7 +104,7 @@ export default function Users() {
     setFormData({
       full_name: user.full_name || "",
       email: user.email || "",
-      password: "", // Password is not editable directly
+      password: "",
       phone: user.phone || "",
       role: user.role || "cashier",
     });
@@ -130,7 +131,7 @@ export default function Users() {
             full_name: formData.full_name.trim(),
             email: formData.email.trim(),
             phone: formData.phone.trim() || null,
-            role: formData.role, // Now formData.role is of type UserRoleEnum
+            role: formData.role,
           })
           .eq("id", editingUser.id);
 
@@ -153,13 +154,10 @@ export default function Users() {
         if (authError) throw authError;
         if (!authData.user) throw new Error("No se pudo crear el usuario de autenticación.");
 
-        // The handle_new_user function (from SQL script) will automatically create the profile
-        // with full_name, email, phone, and default role 'customer'.
-        // We just need to update the role if it's not the default 'customer'.
-        if (formData.role !== 'customer') { // Now valid comparison as formData.role is UserRoleEnum
+        if (formData.role !== 'customer') {
           const { error: roleUpdateError } = await supabase
             .from("profiles")
-            .update({ role: formData.role }) // Now formData.role is of type UserRoleEnum
+            .update({ role: formData.role })
             .eq("id", authData.user.id);
           if (roleUpdateError) throw roleUpdateError;
         }
@@ -182,8 +180,6 @@ export default function Users() {
 
     setIsProcessing(true);
     try {
-      // Deleting the profile will cascade delete the auth.users entry if foreign key is set up with ON DELETE CASCADE
-      // If not, you would need an Edge Function to delete from auth.users
       const { error: profileDeleteError } = await supabase
         .from("profiles")
         .delete()
@@ -206,7 +202,10 @@ export default function Users() {
       user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.role?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    
+    const matchesRole = selectedRoleFilter === "all" || user.role === selectedRoleFilter;
+
+    return matchesSearch && matchesRole;
   });
 
   return (
@@ -228,17 +227,33 @@ export default function Users() {
         </Button>
       </div>
 
-      {/* Search */}
+      {/* Search and Filters */}
       <Card className="glass-card shadow-card">
         <CardContent className="pt-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Buscar por nombre, email, teléfono o rol..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Buscar por nombre, email, teléfono o rol..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            <Select value={selectedRoleFilter} onValueChange={(value: UserRoleEnum | "all") => setSelectedRoleFilter(value)}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filtrar por rol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los Roles</SelectItem>
+                {rolesConfig.map((role) => (
+                  <SelectItem key={role.role} value={role.role}>
+                    {role.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -255,11 +270,11 @@ export default function Users() {
             <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No hay usuarios</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery
+              {searchQuery || selectedRoleFilter !== "all"
                 ? "No se encontraron usuarios con los filtros aplicados"
                 : "Comienza creando tu primer usuario"}
             </p>
-            {!searchQuery && (
+            {!searchQuery && selectedRoleFilter === "all" && (
               <Button onClick={openCreateDialog} className="gradient-primary">
                 <Plus className="mr-2 w-4 h-4" />
                 Crear Primer Usuario
@@ -283,9 +298,9 @@ export default function Users() {
                     </div>
                   </div>
                   <Badge
-                    className={
+                    className={`text-xs px-3 py-1.5 rounded-full font-semibold ${
                       rolesConfig.find(r => r.role === user.role)?.color || "bg-gray-500"
-                    }
+                    }`}
                   >
                     {rolesConfig.find(r => r.role === user.role)?.label || "Sin Rol"}
                   </Badge>
@@ -294,12 +309,12 @@ export default function Users() {
                 <div className="space-y-2 text-sm text-muted-foreground mb-4">
                   {user.phone && (
                     <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
+                      <Phone className="w-4 h-4 text-muted-foreground/70" />
                       <span>{user.phone}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
+                    <Mail className="w-4 h-4 text-muted-foreground/70" />
                     <span>{user.email}</span>
                   </div>
                 </div>
@@ -308,7 +323,7 @@ export default function Users() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 hover:text-accent"
+                    className="h-8 w-8 hover:text-accent hover:bg-accent/10"
                     onClick={() => openEditDialog(user)}
                   >
                     <Edit className="w-4 h-4" />
@@ -316,7 +331,7 @@ export default function Users() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 hover:text-destructive"
+                    className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
                     onClick={() => handleDeleteUser(user)}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -363,7 +378,7 @@ export default function Users() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="mt-2"
                 required
-                disabled={!!editingUser} // Email not editable for existing users
+                disabled={!!editingUser}
               />
             </div>
             {!editingUser && (
