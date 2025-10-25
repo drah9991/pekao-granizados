@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"; // Import table components
 import { Plus, Search, Edit, Trash2, User, Phone, Mail, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -252,7 +253,7 @@ export default function Users() {
   });
 
   return (
-    <div className="p-4 md:p-8 space-y-6 md:space-y-8">
+    <div className="space-y-6 md:space-y-8"> {/* Removed p-4 md:p-8 padding */}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -326,70 +327,67 @@ export default function Users() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {filteredUsers.map((user) => (
-            <Card key={user.id} className="glass-card shadow-card transition-smooth hover:shadow-elevated group">
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3"> {/* Adjusted flex for responsiveness */}
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <User className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0"> {/* Added flex-1 min-w-0 to allow text truncation */}
-                      <h3 className="font-bold text-lg truncate">{user.full_name}</h3> {/* Added truncate */}
-                      <p className="text-sm text-muted-foreground truncate">{user.email}</p> {/* Added truncate */}
-                    </div>
-                  </div>
-                  <Badge
-                    className={`text-xs px-3 py-1.5 rounded-full font-semibold flex-shrink-0 ${ // Added flex-shrink-0
-                      rolesConfig.find(r => r.role === user.role)?.color || "bg-gray-500"
-                    }`}
-                  >
-                    {rolesConfig.find(r => r.role === user.role)?.label || "Sin Rol"}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                  {user.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-muted-foreground/70 flex-shrink-0" /> {/* Added flex-shrink-0 */}
-                      <span className="truncate min-w-0">{user.phone}</span> {/* Added truncate and min-w-0 */}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground/70 flex-shrink-0" /> {/* Added flex-shrink-0 */}
-                    <span className="truncate min-w-0">{user.email}</span> {/* Added truncate and min-w-0 */}
-                  </div>
-                  {user.store_id && (
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-muted-foreground/70 flex-shrink-0" /> {/* Added flex-shrink-0 */}
-                      <span className="truncate min-w-0">Tienda: {stores.find(s => s.id === user.store_id)?.name || "Desconocida"}</span> {/* Added truncate and min-w-0 */}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4 border-t border-border">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 hover:text-accent hover:bg-accent/10"
-                    onClick={() => openEditDialog(user)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDeleteUser(user)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card className="glass-card shadow-card">
+          <CardHeader>
+            <CardTitle>Lista de Usuarios</CardTitle>
+            <CardDescription>Gestiona los detalles de cada usuario.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto"> {/* Added for horizontal scrolling on small screens */}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Teléfono</TableHead>
+                    <TableHead>Rol</TableHead>
+                    <TableHead>Tienda</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.full_name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.phone || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge
+                          className={`text-xs px-3 py-1.5 rounded-full font-semibold ${
+                            rolesConfig.find(r => r.role === user.role)?.color || "bg-gray-500"
+                          }`}
+                        >
+                          {rolesConfig.find(r => r.role === user.role)?.label || "Sin Rol"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{stores.find(s => s.id === user.store_id)?.name || "N/A"}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:text-accent hover:bg-accent/10"
+                            onClick={() => openEditDialog(user)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteUser(user)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
       {/* Create/Edit User Dialog */}
       <Dialog open={userDialogIsOpen} onOpenChange={setUserDialogIsOpen}>
