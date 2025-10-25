@@ -5,19 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
+import { Checkbox } from "@/components/ui/checkbox";
 import { IceCream } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
-import { createClient } from '@supabase/supabase-js'; // Import createClient for temporary client
-import type { Database } from '@/integrations/supabase/types'; // Import Database type
+import { supabase } from "@/integrations/supabase/client";
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
+import { useBranding } from "@/context/BrandingContext"; // Import useBranding
 
 export default function Auth() {
   const navigate = useNavigate();
+  const { logoUrl, isLoadingBranding } = useBranding(); // Use branding context
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true); // State for "Recordarme" checkbox
+  const [rememberMe, setRememberMe] = useState(true);
   const [signupFullName, setSignupFullName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
@@ -27,17 +29,16 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      let clientToUse = supabase; // Default to global client (localStorage persistence)
+      let clientToUse = supabase;
 
       if (!rememberMe) {
-        // If "Remember Me" is unchecked, create a temporary client using sessionStorage
         clientToUse = createClient<Database>(
           import.meta.env.VITE_SUPABASE_URL,
           import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           {
             auth: {
-              storage: sessionStorage, // Use sessionStorage for non-persistent login
-              persistSession: true, // Still persist, but only within the current session
+              storage: sessionStorage,
+              persistSession: true,
               autoRefreshToken: true,
             }
           }
@@ -69,35 +70,26 @@ export default function Auth() {
 
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: signupEmail.trim(), // Trim whitespace
+        email: signupEmail.trim(),
         password: signupPassword,
         options: {
           data: {
-            full_name: signupFullName.trim(), // Trim whitespace
-            // phone: "optional_phone_number" // You can add phone here if collected during signup
+            full_name: signupFullName.trim(),
           },
         },
       });
 
       if (error) {
-        // Log the full error object for detailed debugging
         console.error("Supabase signup error:", error);
         throw error;
       }
 
       if (!data.user) {
-        // This case might happen if email confirmation is required but not handled,
-        // or if there's an unexpected issue where user data isn't returned.
         console.warn("Signup successful, but no user data returned. Email confirmation might be pending.");
         toast.info("¡Cuenta creada! Por favor, revisa tu correo para verificarla y luego inicia sesión.");
-        // Optionally, redirect to a page explaining email verification
         navigate("/auth"); 
         return;
       }
-
-      // The handle_new_user function (from SQL script) will automatically create the profile
-      // with full_name, email, phone (if in metadata), and default role 'customer'.
-      // No need to manually insert into profiles here unless you want to override the default role immediately.
 
       toast.success("¡Cuenta creada exitosamente! Por favor, revisa tu correo para verificarla.");
       navigate("/dashboard"); 
@@ -114,7 +106,13 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-xl mb-4 shadow-glow">
-            <IceCream className="w-12 h-12 text-white" />
+            {isLoadingBranding ? (
+              <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full" />
+            ) : logoUrl ? (
+              <img src={logoUrl} alt="Business Logo" className="max-w-[80%] max-h-[80%] object-contain" />
+            ) : (
+              <IceCream className="w-12 h-12 text-white" />
+            )}
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Pekao Granizados</h1>
           <p className="text-white/80">Sistema de punto de venta</p>

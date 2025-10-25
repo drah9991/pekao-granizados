@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Upload, Palette, Save, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useBranding } from "@/context/BrandingContext"; // Import useBranding
 
 export default function BrandingSettings() {
+  const { refreshBranding } = useBranding(); // Get refreshBranding from context
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [currentLogo, setCurrentLogo] = useState<string>("");
@@ -121,6 +123,8 @@ export default function BrandingSettings() {
       
       // Apply color to CSS variables
       document.documentElement.style.setProperty('--primary', primaryColor);
+      
+      refreshBranding(); // Trigger a refresh of the branding context
       
     } catch (error: any) {
       console.error('Error saving branding:', error);
