@@ -220,22 +220,38 @@ export default function Users() {
   };
 
   const handleDeleteUser = async (user: UserWithRole) => {
+    const currentAuthUser = await supabase.auth.getUser();
+    const currentUserId = currentAuthUser.data.user?.id;
+
+    // Frontend validation for deletion permissions
+    if (!canManageUsers && user.id !== currentUserId) {
+      toast.error("No tienes permiso para eliminar este usuario.");
+      return;
+    }
+    if (user.id === currentUserId) {
+      toast.error("No puedes eliminar tu propia cuenta desde aquí.");
+      return;
+    }
+
     if (!confirm(`¿Estás seguro de eliminar al usuario "${user.full_name}"? Esta acción es irreversible.`)) return;
 
     setIsProcessing(true);
     try {
-      // Note: Deleting from 'profiles' table will cascade delete the user from 'auth.users'
-      // if the foreign key constraint is set up with ON DELETE CASCADE.
+      // Deleting from 'profiles' table will cascade delete the user from 'auth.users'
       const { error: profileDeleteError } = await supabase
         .from("profiles")
         .delete()
         .eq("id", user.id);
-      if (profileDeleteError) throw profileDeleteError;
+      
+      if (profileDeleteError) {
+        console.error("Error deleting profile:", profileDeleteError);
+        throw new Error(`Error al eliminar perfil: ${profileDeleteError.message}`);
+      }
 
       toast.success("Usuario eliminado correctamente.");
       fetchUsers();
     } catch (error: any) {
-      console.error("Error deleting user:", error);
+      console.error("Error deleting user (handleDeleteUser):", error);
       toast.error("Error al eliminar usuario: " + error.message);
     } finally {
       setIsProcessing(false);
@@ -302,18 +318,18 @@ export default function Users() {
               <SelectTrigger className="w-full md:w-48">
                 <SelectValue placeholder="Filtrar por rol" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los Roles</SelectItem>
-                {rolesConfig.map((role) => (
-                  <SelectItem key={role.role} value={role.role}>
-                    {role.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+                <SelectContent>
+                  <SelectItem value="all">Todos los Roles</SelectItem>
+                  {rolesConfig.map((role) => (
+                    <SelectItem key={role.role} value={role.role}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Users List */}
       {loading ? (
