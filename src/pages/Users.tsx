@@ -42,6 +42,7 @@ export default function Users() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [currentUserStoreId, setCurrentUserStoreId] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<UserRoleEnum | null>(null); // New state for current user's role
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<UserRoleEnum | "all">("all");
   const [loading, setLoading] = useState(true);
@@ -62,7 +63,7 @@ export default function Users() {
   useEffect(() => {
     fetchUsers();
     fetchStores();
-    fetchCurrentUserStoreId();
+    fetchCurrentUserStoreAndRole(); // Combined fetch for store_id and role
   }, []);
 
   const fetchStores = async () => {
@@ -75,18 +76,19 @@ export default function Users() {
     }
   };
 
-  const fetchCurrentUserStoreId = async () => {
+  const fetchCurrentUserStoreAndRole = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('store_id')
+        .select('store_id, role')
         .eq('id', user.id)
         .single();
       if (error) {
-        console.error("Error fetching current user's store ID:", error);
+        console.error("Error fetching current user's profile:", error);
       } else {
         setCurrentUserStoreId(profile?.store_id || null);
+        setCurrentUserRole(profile?.role || null);
       }
     }
   };
@@ -240,7 +242,12 @@ export default function Users() {
     }
   };
 
+  const canManageUsers = currentUserRole === "admin" || currentUserRole === "store_manager";
+
   const filteredUsers = users.filter(user => {
+    // If the current user cannot manage users, they should only see their own profile.
+    // The RLS already handles this at the DB level, so 'users' state will only contain their profile.
+    // We still apply client-side filters for admins/managers.
     const matchesSearch = !searchQuery ||
       user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -253,7 +260,7 @@ export default function Users() {
   });
 
   return (
-    <div className="space-y-6 md:space-y-8"> {/* Removed p-4 md:p-8 padding */}
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -265,6 +272,7 @@ export default function Users() {
         <Button
           className="gradient-primary shadow-glow w-full md:w-auto"
           onClick={openCreateDialog}
+          disabled={!canManageUsers} // Disable if not admin/manager
         >
           <Plus className="mr-2 w-5 h-5" />
           Nuevo Usuario
@@ -282,10 +290,15 @@ export default function Users() {
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={!canManageUsers} // Disable if not admin/manager
               />
             </div>
             
-            <Select value={selectedRoleFilter} onValueChange={(value: UserRoleEnum | "all") => setSelectedRoleFilter(value)}>
+            <Select
+              value={selectedRoleFilter}
+              onValueChange={(value: UserRoleEnum | "all") => setSelectedRoleFilter(value)}
+              disabled={!canManageUsers} // Disable if not admin/manager
+            >
               <SelectTrigger className="w-full md:w-48">
                 <SelectValue placeholder="Filtrar por rol" />
               </SelectTrigger>
@@ -319,7 +332,7 @@ export default function Users() {
                 : "Comienza creando tu primer usuario"}
             </p>
             {!searchQuery && selectedRoleFilter === "all" && (
-              <Button onClick={openCreateDialog} className="gradient-primary">
+              <Button onClick={openCreateDialog} className="gradient-primary" disabled={!canManageUsers}>
                 <Plus className="mr-2 w-4 h-4" />
                 Crear Primer Usuario
               </Button>
@@ -368,6 +381,8 @@ export default function Users() {
                             size="icon"
                             className="h-8 w-8 hover:text-accent hover:bg-accent/10"
                             onClick={() => openEditDialog(user)}
+                            // User can edit their own profile, or if they are admin/manager
+                            disabled={!canManageUsers && user.id !== (supabase.auth.currentUser?.id || '')} 
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -376,6 +391,8 @@ export default function Users() {
                             size="icon"
                             className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
                             onClick={() => handleDeleteUser(user)}
+                            // Only admin/manager can delete, and they cannot delete themselves
+                            disabled={!canManageUsers || user.id === (supabase.auth.currentUser?.id || '')} 
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -458,7 +475,7 @@ export default function Users() {
               <Select
                 value={formData.role}
                 onValueChange={(value: UserRoleEnum) => setFormData({ ...formData, role: value })}
-                disabled={isProcessing}
+                disabled={isProcessing || (!canManageUsers && editingUser?.id !== (supabase.auth.currentUser?.id || ''))} // Only admin/manager can change role, or user can change their own if allowed by other policies
               >
                 <SelectTrigger className="w-full mt-2">
                   <SelectValue placeholder="Selecciona un rol" />
@@ -480,7 +497,7 @@ export default function Users() {
                   ...formData,
                   store_id: value === "unassigned-store" ? null : value 
                 })}
-                disabled={isProcessing}
+                disabled={isProcessing || (!canManageUsers && editingUser?.id !== (supabase.auth.currentUser?.id || ''))} // Only admin/manager can change store, or user can change their own if allowed by other policies
               >
                 <SelectTrigger className="w-full mt-2">
                   <SelectValue placeholder="Selecciona una tienda" />
