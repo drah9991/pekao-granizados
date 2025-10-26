@@ -89,6 +89,7 @@ export default function Users() {
       } else {
         setCurrentUserStoreId(profile?.store_id || null);
         setCurrentUserRole(profile?.role || null);
+        console.log("Rol del usuario actual:", profile?.role); // <-- Added console.log here
       }
     }
   };
@@ -318,18 +319,18 @@ export default function Users() {
               <SelectTrigger className="w-full md:w-48">
                 <SelectValue placeholder="Filtrar por rol" />
               </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los Roles</SelectItem>
-                  {rolesConfig.map((role) => (
-                    <SelectItem key={role.role} value={role.role}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+              <SelectContent>
+                <SelectItem value="all">Todos los Roles</SelectItem>
+                {rolesConfig.map((role) => (
+                  <SelectItem key={role.role} value={role.role}>
+                    {role.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Users List */}
       {loading ? (
