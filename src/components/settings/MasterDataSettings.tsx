@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, ClipboardList, Users as UsersIcon } from "lucide-react";
+import { Package, ClipboardList, Users as UsersIcon, Store as StoreIcon } from "lucide-react"; // Import StoreIcon
 import Products from "@/pages/Products";
 import Inventory from "@/pages/Inventory";
 import Users from "@/pages/Users";
+import Stores from "@/pages/Stores"; // Import the new Stores component
 
 export default function MasterDataSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,12 +25,12 @@ export default function MasterDataSettings() {
       <div>
         <h2 className="text-2xl font-bold mb-2">Maestros del Sistema</h2>
         <p className="text-muted-foreground">
-          Gestiona los datos principales de tu negocio: productos, inventario y usuarios.
+          Gestiona los datos principales de tu negocio: productos, inventario, usuarios y tiendas.
         </p>
       </div>
 
       <Tabs value={activeSubTab} onValueChange={handleSubTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto gap-2 p-2 bg-muted/30">
+        <TabsList className="grid w-full grid-cols-4 h-auto gap-2 p-2 bg-muted/30"> {/* Updated grid-cols to 4 */}
           <TabsTrigger
             value="products"
             className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
@@ -51,6 +52,13 @@ export default function MasterDataSettings() {
             <UsersIcon className="w-4 h-4" />
             <span className="hidden sm:inline">Usuarios</span>
           </TabsTrigger>
+          <TabsTrigger
+            value="stores" {/* New tab for Stores */}
+            className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
+          >
+            <StoreIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Tiendas</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="products" className="p-0">
@@ -63,6 +71,10 @@ export default function MasterDataSettings() {
 
         <TabsContent value="users" className="p-0">
           <Users />
+        </TabsContent>
+
+        <TabsContent value="stores" className="p-0"> {/* New TabsContent for Stores */}
+          <Stores />
         </TabsContent>
       </Tabs>
     </div>
