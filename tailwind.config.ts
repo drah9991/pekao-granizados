@@ -24,7 +24,7 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "var(--brand-primary-color)", // Usar la nueva variable CSS para el color primario
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {

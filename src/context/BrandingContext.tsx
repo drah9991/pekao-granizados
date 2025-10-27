@@ -25,7 +25,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         // If no user, use default branding and stop loading
         setLogoUrl(null);
         setPrimaryColor("#0EA5E9");
-        document.documentElement.style.setProperty('--primary', "#0EA5E9");
+        document.documentElement.style.setProperty('--brand-primary-color', "#0EA5E9");
         setIsLoadingBranding(false);
         return;
       }
@@ -40,7 +40,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         // If no store_id, use default branding
         setLogoUrl(null);
         setPrimaryColor("#0EA5E9");
-        document.documentElement.style.setProperty('--primary', "#0EA5E9");
+        document.documentElement.style.setProperty('--brand-primary-color', "#0EA5E9");
         setIsLoadingBranding(false);
         return;
       }
@@ -59,23 +59,23 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         if (brandingConfig) {
           setLogoUrl(brandingConfig.logo_url || null);
           setPrimaryColor(brandingConfig.primary_color || "#0EA5E9");
-          document.documentElement.style.setProperty('--primary', brandingConfig.primary_color || "#0EA5E9");
+          document.documentElement.style.setProperty('--brand-primary-color', brandingConfig.primary_color || "#0EA5E9");
         } else {
           setLogoUrl(null);
           setPrimaryColor("#0EA5E9");
-          document.documentElement.style.setProperty('--primary', "#0EA5E9");
+          document.documentElement.style.setProperty('--brand-primary-color', "#0EA5E9");
         }
       } else {
         setLogoUrl(null);
         setPrimaryColor("#0EA5E9");
-        document.documentElement.style.setProperty('--primary', "#0EA5E9");
+        document.documentElement.style.setProperty('--brand-primary-color', "#0EA5E9");
       }
     } catch (error: any) {
       console.error('Error loading branding settings:', error);
       toast.error('Error al cargar la configuración de marca: ' + error.message);
       setLogoUrl(null);
       setPrimaryColor("#0EA5E9");
-      document.documentElement.style.setProperty('--primary', "#0EA5E9");
+      document.documentElement.style.setProperty('--brand-primary-color', "#0EA5E9");
     } finally {
       setIsLoadingBranding(false);
     }

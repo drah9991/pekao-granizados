@@ -18,10 +18,9 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 15%;
 
-    /* Fresh Blue - Primary (cool ice blue) */
-    --primary: 195 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 195 100% 65%;
+    /* Dynamic Primary Color (Hex value set by BrandingContext) */
+    --brand-primary-color: #0EA5E9; /* Default hex primary color */
+    --primary-foreground: 0 0% 100%; /* Static HSL for primary foreground */
 
     /* Mango Orange - Secondary */
     --secondary: 25 95% 53%;
@@ -44,10 +43,10 @@ All colors MUST be HSL.
     --radius: 1rem;
 
     /* Vibrant Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(195, 100%, 50%), hsl(195, 100%, 65%));
+    --gradient-primary: linear-gradient(135deg, var(--brand-primary-color), color-mix(in srgb, var(--brand-primary-color) 80%, white));
     --gradient-secondary: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(35, 95%, 60%));
     --gradient-accent: linear-gradient(135deg, hsl(160, 70%, 50%), hsl(170, 70%, 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(195, 100%, 50%) 0%, hsl(25, 95%, 53%) 50%, hsl(160, 70%, 50%) 100%);
+    --gradient-hero: linear-gradient(135deg, var(--brand-primary-color) 0%, hsl(25, 95%, 53%) 50%, hsl(160, 70%, 50%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(195, 30%, 97%) 100%);
 
     /* Soft Shadows */
@@ -62,7 +61,7 @@ All colors MUST be HSL.
     /* Sidebar - Light Mode */
     --sidebar-background: var(--background); /* Use main background for light sidebar */
     --sidebar-foreground: var(--foreground); /* Use main foreground for light sidebar text */
-    --sidebar-primary: var(--primary);
+    --sidebar-primary: var(--brand-primary-color); /* Use dynamic primary */
     --sidebar-primary-foreground: var(--primary-foreground);
     --sidebar-accent: var(--muted); /* Use muted for accent in light sidebar */
     --sidebar-accent-foreground: var(--muted-foreground); /* Use muted-foreground for text on muted accent */
@@ -80,9 +79,9 @@ All colors MUST be HSL.
     --popover: 220 25% 18%;
     --popover-foreground: 195 30% 97%;
 
-    --primary: 195 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 195 100% 65%;
+    /* Dynamic Primary Color (Hex value set by BrandingContext) */
+    --brand-primary-color: #0EA5E9; /* Default hex primary color for dark mode */
+    --primary-foreground: 0 0% 100%; /* Static HSL for primary foreground */
 
     --secondary: 25 95% 53%;
     --secondary-foreground: 0 0% 100%;
@@ -100,10 +99,10 @@ All colors MUST be HSL.
     --input: 220 25% 20%;
     --ring: 195 100% 50%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(195, 100%, 50%), hsl(195, 100%, 65%));
+    --gradient-primary: linear-gradient(135deg, var(--brand-primary-color), color-mix(in srgb, var(--brand-primary-color) 80%, black));
     --gradient-secondary: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(35, 95%, 60%));
     --gradient-accent: linear-gradient(135deg, hsl(160, 70%, 50%), hsl(170, 70%, 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(195, 100%, 50%) 0%, hsl(25, 95%, 53%) 50%, hsl(160, 70%, 50%) 100%);
+    --gradient-hero: linear-gradient(135deg, var(--brand-primary-color) 0%, hsl(25, 95%, 53%) 50%, hsl(160, 70%, 50%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(220, 25%, 18%) 0%, hsl(220, 30%, 12%) 100%);
 
     --shadow-glow: 0 0 35px hsl(195 100% 50% / 0.35);
@@ -113,7 +112,7 @@ All colors MUST be HSL.
     /* Sidebar - Dark Mode */
     --sidebar-background: 220 30% 8%;
     --sidebar-foreground: 195 30% 97%;
-    --sidebar-primary: 195 100% 50%;
+    --sidebar-primary: var(--brand-primary-color); /* Use dynamic primary */
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 25% 18%;
     --sidebar-accent-foreground: 195 30% 97%;

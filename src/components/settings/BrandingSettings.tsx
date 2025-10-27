@@ -143,7 +143,7 @@ export default function BrandingSettings() {
       setCurrentLogo(logoUrl);
       toast.success('Configuración de marca actualizada');
       
-      document.documentElement.style.setProperty('--primary', primaryColor);
+      document.documentElement.style.setProperty('--brand-primary-color', primaryColor);
       
       refreshBranding();
       
