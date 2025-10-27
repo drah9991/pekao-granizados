@@ -89,7 +89,6 @@ export default function Users() {
       } else {
         setCurrentUserStoreId(profile?.store_id || null);
         setCurrentUserRole(profile?.role || null);
-        console.log("Rol del usuario actual:", profile?.role); // <-- Added console.log here
       }
     }
   };
@@ -221,15 +220,12 @@ export default function Users() {
   };
 
   const handleDeleteUser = async (user: UserWithRole) => {
-    const currentAuthUser = await supabase.auth.getUser();
-    const currentUserId = currentAuthUser.data.user?.id;
-
     // Frontend validation for deletion permissions
-    if (!canManageUsers && user.id !== currentUserId) {
-      toast.error("No tienes permiso para eliminar este usuario.");
+    if (!canManageUsers) {
+      toast.error("No tienes permiso para eliminar usuarios.");
       return;
     }
-    if (user.id === currentUserId) {
+    if (user.id === (await supabase.auth.getUser()).data.user?.id) { // Check against current user ID
       toast.error("No puedes eliminar tu propia cuenta desde aquí.");
       return;
     }
@@ -238,21 +234,25 @@ export default function Users() {
 
     setIsProcessing(true);
     try {
-      // Deleting from 'profiles' table will cascade delete the user from 'auth.users'
-      const { error: profileDeleteError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", user.id);
-      
-      if (profileDeleteError) {
-        console.error("Error deleting profile:", profileDeleteError);
-        throw new Error(`Error al eliminar perfil: ${profileDeleteError.message}`);
+      // Llama a la función Edge para eliminar al usuario
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: user.id },
+      });
+
+      if (error) {
+        console.error("Error invoking delete-user function:", error);
+        throw new Error(error.message);
+      }
+
+      // La función Edge devuelve un objeto JSON con 'error' o 'message'
+      if (data && data.error) {
+        throw new Error(data.error);
       }
 
       toast.success("Usuario eliminado correctamente.");
-      fetchUsers();
+      fetchUsers(); // Vuelve a cargar los usuarios para actualizar la lista
     } catch (error: any) {
-      console.error("Error deleting user (handleDeleteUser):", error);
+      console.error("Error deleting user:", error);
       toast.error("Error al eliminar usuario: " + error.message);
     } finally {
       setIsProcessing(false);
