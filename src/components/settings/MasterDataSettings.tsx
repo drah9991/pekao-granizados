@@ -52,8 +52,9 @@ export default function MasterDataSettings() {
             <UsersIcon className="w-4 h-4" />
             <span className="hidden sm:inline">Usuarios</span>
           </TabsTrigger>
+          {/* New tab for Stores */}
           <TabsTrigger
-            value="stores" {/* New tab for Stores */}
+            value="stores"
             className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
           >
             <StoreIcon className="w-4 h-4" />
