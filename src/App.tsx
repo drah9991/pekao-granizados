@@ -20,8 +20,8 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <BrandingProvider> {/* Wrap the entire app with BrandingProvider */}
+        <BrandingProvider> {/* Mover BrandingProvider para que envuelva a BrowserRouter */}
+          <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -32,8 +32,8 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrandingProvider>
-        </BrowserRouter>
+          </BrowserRouter>
+        </BrandingProvider>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
