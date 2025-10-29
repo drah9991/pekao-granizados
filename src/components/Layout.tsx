@@ -52,8 +52,8 @@ const navigation: NavItem[] = [
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const isMobile = useIsMobile();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isMobile = useIsMobile(); // true if < 768px
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile); // Default to open on desktop, closed on mobile
   const { logoUrl, isLoadingBranding } = useBranding();
   const [openCollapsible, setOpenCollapsible] = useState<string | null>(null); // Estado para el elemento desplegable abierto
 
@@ -93,19 +93,20 @@ export default function Layout({ children }: LayoutProps) {
     return item.children.some(child => isLinkActive(child.href));
   };
 
+  // Efecto para gestionar el estado abierto/cerrado del sidebar basado en el tamaño de la pantalla
   useEffect(() => {
-    if (isMobile) {
-      setIsSidebarOpen(false);
-    }
+    setIsSidebarOpen(!isMobile);
+  }, [isMobile]);
 
-    // Abrir automáticamente el desplegable si alguna de sus rutas hijas está activa
+  // Efecto para gestionar el estado abierto/cerrado de los menús desplegables basado en la ruta activa
+  useEffect(() => {
     const activeParent = navigation.find(item => item.type === "collapsible" && isCollapsibleOpenByDefault(item));
     if (activeParent) {
       setOpenCollapsible(activeParent.name);
     } else {
       setOpenCollapsible(null);
     }
-  }, [location.pathname, location.search, isMobile]);
+  }, [location.pathname, location.search]); // Solo depende de los cambios de ubicación
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -122,21 +123,19 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="flex h-screen bg-background">
-      {isMobile && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="fixed top-4 left-4 z-[60] lg:hidden bg-card/80 backdrop-blur-sm border border-border/50 shadow-md"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        >
-          {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </Button>
-      )}
+      {/* Botón para abrir/cerrar el sidebar, ahora visible en todas las pantallas */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-4 left-4 z-[60] bg-card/80 backdrop-blur-sm border border-border/50 shadow-md"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      >
+        {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </Button>
 
       <aside
         className={cn(
           "w-64 bg-gradient-to-b from-sidebar-background to-sidebar-background/95 border-r border-sidebar-border/50 flex flex-col shadow-elevated backdrop-blur-sm",
-          "lg:relative lg:translate-x-0",
           "fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
@@ -274,14 +273,19 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
+      {/* Overlay para dispositivos móviles cuando el sidebar está abierto */}
       {isMobile && isSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      <main className="flex-1 overflow-auto">
+      <main className={cn(
+        "flex-1 overflow-auto transition-all duration-300 ease-in-out",
+        // En pantallas no móviles (escritorio/tablet), si el sidebar está abierto, añade padding
+        !isMobile && isSidebarOpen && "pl-64"
+      )}>
         {children}
       </main>
     </div>
