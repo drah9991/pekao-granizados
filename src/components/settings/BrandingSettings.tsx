@@ -37,11 +37,11 @@ export default function BrandingSettings() {
         .from('profiles')
         .select('store_id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // Cambiado a maybeSingle()
 
       if (profileError) throw profileError;
 
-      if (profile?.store_id) {
+      if (profile?.store_id) { // Verificar si profile y store_id existen
         setStoreId(profile.store_id);
         setHasStore(true);
 
@@ -49,11 +49,11 @@ export default function BrandingSettings() {
           .from('stores')
           .select('config')
           .eq('id', profile.store_id)
-          .single();
+          .maybeSingle(); // Cambiado a maybeSingle()
 
         if (storeError) throw storeError;
 
-        if (store?.config) {
+        if (store?.config) { // Verificar si store y config existen
           const config = store.config as any;
           if (config.branding?.logo_url) {
             setCurrentLogo(config.branding.logo_url);
@@ -118,11 +118,11 @@ export default function BrandingSettings() {
         .from('stores')
         .select('config')
         .eq('id', storeId)
-        .single();
+        .maybeSingle(); // Cambiado a maybeSingle()
 
       if (fetchStoreError) throw fetchStoreError;
 
-      const currentConfig = (store?.config as any) || {};
+      const currentConfig = (store?.config as any) || {}; // Manejar store siendo null
       
       const { error: updateError } = await supabase
         .from('stores')

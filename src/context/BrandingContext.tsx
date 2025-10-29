@@ -34,10 +34,15 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('store_id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // Cambiado a maybeSingle()
 
-      if (profileError || !profile?.store_id) {
-        // If no store_id, use default branding
+      if (profileError) {
+        // Si hay un error real de la base de datos (no solo 'no rows found'), lo lanzamos
+        throw profileError;
+      }
+      
+      if (!profile?.store_id) {
+        // Si no hay perfil o no hay store_id, usar branding por defecto
         setLogoUrl(null);
         setPrimaryColor("#0EA5E9");
         document.documentElement.style.setProperty('--brand-primary-color', "#0EA5E9");
@@ -49,11 +54,14 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         .from('stores')
         .select('config')
         .eq('id', profile.store_id)
-        .single();
+        .maybeSingle(); // Cambiado a maybeSingle()
 
-      if (storeError) throw storeError;
+      if (storeError) {
+        // Si hay un error real de la base de datos, lo lanzamos
+        throw storeError;
+      }
 
-      if (store?.config) {
+      if (store?.config) { // Verificar si store y config existen
         const config = store.config as any;
         const brandingConfig = config.branding;
         if (brandingConfig) {
