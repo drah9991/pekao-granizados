@@ -8,7 +8,9 @@ import {
   LogOut,
   IceCream,
   Menu,
-  X
+  X,
+  ChevronDown, // Importar ChevronDown para el icono desplegable
+  Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Palette, Shield, Building2, Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -20,23 +22,90 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "POS", href: "/pos", icon: ShoppingCart },
-  { name: "Configuración", href: "/settings", icon: Settings },
+// Definir una interfaz para los elementos de navegación
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+  type: "link" | "collapsible";
+  children?: NavItem[];
+}
+
+// Nueva estructura de navegación con el elemento 'Maestros' como desplegable
+const navigation: NavItem[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, type: "link" },
+  { name: "POS", href: "/pos", icon: ShoppingCart, type: "link" },
+  { name: "Configuración", href: "/settings?tab=branding", icon: Settings, type: "link" },
+  {
+    name: "Maestros",
+    href: "/settings?tab=master-data&subtab=products", // Enlace por defecto para Maestros
+    icon: Database,
+    type: "collapsible",
+    children: [
+      { name: "Productos", href: "/settings?tab=master-data&subtab=products", icon: Package, type: "link" },
+      { name: "Inventario", href: "/settings?tab=master-data&subtab=inventory", icon: ClipboardList, type: "link" },
+      { name: "Usuarios", href: "/settings?tab=master-data&subtab=users", icon: UsersIcon, type: "link" },
+      { name: "Tiendas", href: "/settings?tab=master-data&subtab=stores", icon: StoreIcon, type: "link" },
+    ],
+  },
 ];
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { logoUrl, isLoadingBranding } = useBranding(); // Use branding context
+  const { logoUrl, isLoadingBranding } = useBranding();
+  const [openCollapsible, setOpenCollapsible] = useState<string | null>(null); // Estado para el elemento desplegable abierto
+
+  // Helper para verificar si un enlace está activo, considerando los parámetros de consulta
+  const isLinkActive = (href: string) => {
+    const currentPath = location.pathname;
+    const currentSearch = location.search;
+
+    const targetUrl = new URL(href, window.location.origin);
+    const targetPath = targetUrl.pathname;
+    const targetSearch = targetUrl.search;
+
+    if (currentPath !== targetPath) {
+      return false;
+    }
+
+    // Si el destino no tiene parámetros de búsqueda, es activo si la ruta coincide
+    if (!targetSearch) {
+      return true;
+    }
+
+    // Si el destino tiene parámetros de búsqueda, verificar si los parámetros actuales contienen todos los del destino
+    const currentSearchParams = new URLSearchParams(currentSearch);
+    const targetSearchParams = new URLSearchParams(targetSearch);
+
+    for (const [key, value] of targetSearchParams.entries()) {
+      if (currentSearchParams.get(key) !== value) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Helper para verificar si un elemento desplegable debe estar abierto por defecto (es decir, si alguno de sus hijos está activo)
+  const isCollapsibleOpenByDefault = (item: NavItem) => {
+    if (!item.children) return false;
+    return item.children.some(child => isLinkActive(child.href));
+  };
 
   useEffect(() => {
     if (isMobile) {
       setIsSidebarOpen(false);
     }
-  }, [location.pathname, isMobile]);
+
+    // Abrir automáticamente el desplegable si alguna de sus rutas hijas está activa
+    const activeParent = navigation.find(item => item.type === "collapsible" && isCollapsibleOpenByDefault(item));
+    if (activeParent) {
+      setOpenCollapsible(activeParent.name);
+    } else {
+      setOpenCollapsible(null);
+    }
+  }, [location.pathname, location.search, isMobile]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -45,6 +114,10 @@ export default function Layout({ children }: LayoutProps) {
     } else {
       window.location.href = "/auth";
     }
+  };
+
+  const handleCollapsibleToggle = (itemName: string) => {
+    setOpenCollapsible(prev => (prev === itemName ? null : itemName));
   };
 
   return (
@@ -88,34 +161,100 @@ export default function Layout({ children }: LayoutProps) {
 
         <nav className="flex-1 p-5 space-y-2 overflow-y-auto">
           {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  "group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
-                  isActive
-                    ? "bg-gradient-to-r from-primary/20 to-primary/10 text-sidebar-foreground shadow-card border border-primary/30"
-                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:shadow-md hover:border hover:border-sidebar-border/50"
-                )}
-                onClick={() => isMobile && setIsSidebarOpen(false)}
-              >
-                {isActive && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
-                )}
-                <item.icon className={cn(
-                  "w-5 h-5 transition-all duration-300",
-                  isActive 
-                    ? "text-primary drop-shadow-lg scale-110" 
-                    : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
-                )} />
-                <span className="relative z-10">{item.name}</span>
-                {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow animate-pulse" />
-                )}
-              </Link>
-            );
+            const isActive = isLinkActive(item.href);
+            const isOpen = openCollapsible === item.name;
+
+            if (item.type === "link") {
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
+                    isActive
+                      ? "bg-gradient-to-r from-primary/20 to-primary/10 text-sidebar-foreground shadow-card border border-primary/30"
+                      : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:shadow-md hover:border hover:border-sidebar-border/50"
+                  )}
+                  onClick={() => isMobile && setIsSidebarOpen(false)}
+                >
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
+                  )}
+                  <item.icon className={cn(
+                    "w-5 h-5 transition-all duration-300",
+                    isActive
+                      ? "text-primary drop-shadow-lg scale-110"
+                      : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
+                  )} />
+                  <span className="relative z-10">{item.name}</span>
+                  {isActive && (
+                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow animate-pulse" />
+                  )}
+                </Link>
+              );
+            } else if (item.type === "collapsible" && item.children) {
+              const parentIsActive = isActive || isCollapsibleOpenByDefault(item);
+              return (
+                <div key={item.name}>
+                  <button
+                    type="button"
+                    onClick={() => handleCollapsibleToggle(item.name)}
+                    className={cn(
+                      "group flex items-center w-full gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
+                      parentIsActive
+                        ? "bg-gradient-to-r from-primary/20 to-primary/10 text-sidebar-foreground shadow-card border border-primary/30"
+                        : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:shadow-md hover:border hover:border-sidebar-border/50"
+                    )}
+                  >
+                    {parentIsActive && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
+                    )}
+                    <item.icon className={cn(
+                      "w-5 h-5 transition-all duration-300",
+                      parentIsActive
+                        ? "text-primary drop-shadow-lg scale-110"
+                        : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
+                    )} />
+                    <span className="relative z-10">{item.name}</span>
+                    <ChevronDown className={cn(
+                      "ml-auto w-4 h-4 transition-transform duration-300",
+                      isOpen ? "rotate-180" : "rotate-0",
+                      parentIsActive ? "text-primary" : "text-sidebar-foreground/60 group-hover:text-primary"
+                    )} />
+                  </button>
+                  {isOpen && (
+                    <div className="ml-6 mt-2 space-y-1">
+                      {item.children.map(child => {
+                        const childIsActive = isLinkActive(child.href);
+                        return (
+                          <Link
+                            key={child.name}
+                            to={child.href}
+                            className={cn(
+                              "group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 text-sm relative overflow-hidden",
+                              childIsActive
+                                ? "bg-primary/10 text-primary font-semibold"
+                                : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
+                            )}
+                            onClick={() => isMobile && setIsSidebarOpen(false)}
+                          >
+                            {childIsActive && (
+                              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
+                            )}
+                            <child.icon className={cn(
+                              "w-4 h-4 transition-all duration-300",
+                              childIsActive ? "text-primary" : "text-sidebar-foreground/60 group-hover:text-primary"
+                            )} />
+                            <span className="relative z-10">{child.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            return null;
           })}
         </nav>
 
@@ -124,8 +263,8 @@ export default function Layout({ children }: LayoutProps) {
             <span className="text-sm font-medium text-sidebar-foreground/60">Modo Oscuro</span>
             <ThemeToggle />
           </div>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-300 rounded-xl py-3 group"
             onClick={handleLogout}
           >
