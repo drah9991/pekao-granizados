@@ -193,10 +193,21 @@ export default function Users() {
           },
         });
 
-        if (authError) throw authError;
-        if (!authData.user) throw new Error("No se pudo crear el usuario de autenticación.");
+        if (authError) {
+          if (authError.message.includes("User already registered")) {
+            toast.error("Ya existe una cuenta con este email. Por favor, edita el usuario existente o usa un email diferente.");
+          } else {
+            throw authError; // Re-throw other errors
+          }
+          return; // Stop processing if there's an error
+        }
+        
+        if (!authData.user) {
+          throw new Error("No se pudo crear el usuario de autenticación.");
+        }
 
-        // Update the profile created by the trigger with the selected role and store_id
+        // The handle_new_user trigger should have created a profile.
+        // Now, update that profile with the specific role and store_id from the form.
         const { error: profileUpdateError } = await supabase
           .from("profiles")
           .update({
