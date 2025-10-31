@@ -25,7 +25,7 @@ export default function POS() {
     discountAmount,
     total,
     resetCart,
-  } = useCart({ products: staticProducts });
+  } = useCart(); // Removed unused 'products' prop
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [customizeDialogIsOpen, setCustomizeDialogIsOpen] = useState(false);
@@ -52,7 +52,8 @@ export default function POS() {
     setPaymentDialogIsOpen(true);
   };
 
-  const handleConfirmPayment = async (method: "cash" | "card", amountReceived: number) => {
+  // Extracted function for processing the sale
+  const processSale = async (method: "cash" | "card", amountReceived: number) => {
     setIsProcessing(true);
 
     try {
@@ -161,7 +162,7 @@ export default function POS() {
         isOpen={paymentDialogIsOpen}
         onClose={() => setPaymentDialogIsOpen(false)}
         total={total}
-        onConfirmPayment={handleConfirmPayment}
+        onConfirmPayment={processSale} {/* Use the extracted function */}
         isProcessing={isProcessing}
       />
 

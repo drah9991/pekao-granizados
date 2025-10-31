@@ -164,6 +164,43 @@ export default function Products() {
     setProductDialog(true);
   };
 
+  // Helper function to prepare product data from form
+  const prepareProductData = (): TablesInsert<'products'> => ({
+    name: formData.name.trim(),
+    sku: formData.sku.trim() || null,
+    description: formData.description.trim() || null,
+    price: parseFloat(formData.price),
+    cost: formData.cost ? parseFloat(formData.cost) : null,
+    active: formData.active,
+    category: formData.category.trim() || null,
+    is_public: formData.is_public,
+    images: formData.images.length > 0 ? formData.images : null,
+    variants: formData.variants,
+    recipe: formData.recipe,
+    // store_id is only added for new products, or if it's an existing product and we need to ensure it's there.
+    // For updates, we assume store_id is already set and not changing.
+    ...(editingProduct ? {} : { store_id: userStoreId! }), 
+  });
+
+  // Helper function to create a new product
+  const createProduct = async (productData: TablesInsert<'products'>) => {
+    const { error } = await supabase
+      .from("products")
+      .insert([productData]);
+    if (error) throw error;
+    toast.success("Producto creado correctamente");
+  };
+
+  // Helper function to update an existing product
+  const updateProduct = async (productId: string, productData: TablesInsert<'products'>) => {
+    const { error } = await supabase
+      .from("products")
+      .update(productData)
+      .eq("id", productId);
+    if (error) throw error;
+    toast.success("Producto actualizado correctamente");
+  };
+
   const handleSaveProduct = async () => {
     if (!formData.name || !formData.price) {
       toast.error("Nombre y precio son obligatorios");
@@ -176,40 +213,12 @@ export default function Products() {
 
     setIsProcessing(true);
     try {
-      const productData = {
-        name: formData.name.trim(),
-        sku: formData.sku.trim() || null,
-        description: formData.description.trim() || null,
-        price: parseFloat(formData.price),
-        cost: formData.cost ? parseFloat(formData.cost) : null,
-        active: formData.active,
-        category: formData.category.trim() || null,
-        is_public: formData.is_public,
-        images: formData.images.length > 0 ? formData.images : null,
-        variants: formData.variants,
-        recipe: formData.recipe,
-        // store_id is only added for new products, or if it's an existing product and we need to ensure it's there.
-        // For updates, we assume store_id is already set and not changing.
-        ...(editingProduct ? {} : { store_id: userStoreId }), 
-      };
+      const productData = prepareProductData();
 
       if (editingProduct) {
-        // Update existing product
-        const { error } = await supabase
-          .from("products")
-          .update(productData)
-          .eq("id", editingProduct.id);
-
-        if (error) throw error;
-        toast.success("Producto actualizado correctamente");
+        await updateProduct(editingProduct.id, productData);
       } else {
-        // Create new product
-        const { error } = await supabase
-          .from("products")
-          .insert([productData as TablesInsert<'products'>]); // Explicitly cast to the insert type
-
-        if (error) throw error;
-        toast.success("Producto creado correctamente");
+        await createProduct(productData);
       }
 
       setProductDialog(false);
@@ -502,7 +511,7 @@ export default function Products() {
                 <p className="text-2xl font-bold text-primary">{formatCurrency(stats.avgPrice)}</p>
               </div>
               <DollarSign className="w-8 h-8 text-primary" />
-            </div>
+            </CardContent>
           </CardContent>
         </Card>
       </div>
