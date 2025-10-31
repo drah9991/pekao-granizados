@@ -539,6 +539,7 @@ export type Database = {
           currency: string | null
           id: string
           name: string
+          opening_hours: string | null
           tax_rate: number | null
         }
         Insert: {
@@ -548,6 +549,7 @@ export type Database = {
           currency?: string | null
           id?: string
           name: string
+          opening_hours?: string | null
           tax_rate?: number | null
         }
         Update: {
@@ -557,6 +559,7 @@ export type Database = {
           currency?: string | null
           id?: string
           name?: string
+          opening_hours?: string | null
           tax_rate?: number | null
         }
         Relationships: []

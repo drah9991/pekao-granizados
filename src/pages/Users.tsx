@@ -43,6 +43,7 @@ export default function Users() {
   const [stores, setStores] = useState<Store[]>([]);
   const [currentUserStoreId, setCurrentUserStoreId] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<UserRoleEnum | null>(null); // New state for current user's role
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null); // State to hold the current user's ID
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<UserRoleEnum | "all">("all");
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,7 @@ export default function Users() {
   const fetchCurrentUserStoreAndRole = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      setCurrentUserId(user.id); // Set current user ID
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('store_id, role')
@@ -236,7 +238,7 @@ export default function Users() {
       toast.error("No tienes permiso para eliminar usuarios.");
       return;
     }
-    if (user.id === (await supabase.auth.getUser()).data.user?.id) { // Check against current user ID
+    if (user.id === currentUserId) { // Check against current user ID
       toast.error("No puedes eliminar tu propia cuenta desde aquí.");
       return;
     }
@@ -410,7 +412,7 @@ export default function Users() {
                             className="h-8 w-8 hover:text-accent hover:bg-accent/10"
                             onClick={() => openEditDialog(user)}
                             // User can edit their own profile, or if they are admin/manager
-                            disabled={!canManageUsers && user.id !== (supabase.auth.currentUser?.id || '')} 
+                            disabled={!canManageUsers && user.id !== (currentUserId || '')} 
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -420,7 +422,7 @@ export default function Users() {
                             className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
                             onClick={() => handleDeleteUser(user)}
                             // Only admin/manager can delete, and they cannot delete themselves
-                            disabled={!canManageUsers || user.id === (supabase.auth.currentUser?.id || '')} 
+                            disabled={!canManageUsers || user.id === (currentUserId || '')} 
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -503,7 +505,7 @@ export default function Users() {
               <Select
                 value={formData.role}
                 onValueChange={(value: UserRoleEnum) => setFormData({ ...formData, role: value })}
-                disabled={isProcessing || (!canManageUsers && editingUser?.id !== (supabase.auth.currentUser?.id || ''))} // Only admin/manager can change role, or user can change their own if allowed by other policies
+                disabled={isProcessing || (!canManageUsers && editingUser?.id !== (currentUserId || ''))} // Only admin/manager can change role, or user can change their own if allowed by other policies
               >
                 <SelectTrigger className="w-full mt-2">
                   <SelectValue placeholder="Selecciona un rol" />
@@ -525,7 +527,7 @@ export default function Users() {
                   ...formData,
                   store_id: value === "unassigned-store" ? null : value 
                 })}
-                disabled={isProcessing || (!canManageUsers && editingUser?.id !== (supabase.auth.currentUser?.id || ''))} // Only admin/manager can change store, or user can change their own if allowed by other policies
+                disabled={isProcessing || (!canManageUsers && editingUser?.id !== (currentUserId || ''))} // Only admin/manager can change store, or user can change their own if allowed by other policies
               >
                 <SelectTrigger className="w-full mt-2">
                   <SelectValue placeholder="Selecciona una tienda" />

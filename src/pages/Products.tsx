@@ -206,7 +206,7 @@ export default function Products() {
         // Create new product
         const { error } = await supabase
           .from("products")
-          .insert([productData]);
+          .insert([productData as TablesInsert<'products'>]); // Explicitly cast to the insert type
 
         if (error) throw error;
         toast.success("Producto creado correctamente");
@@ -338,7 +338,7 @@ export default function Products() {
         }
 
         // Prepare data for Supabase
-        const productToSave: Partial<Product> = {
+        const productToSave: TablesInsert<'products'> = { // Cast to TablesInsert
           name: item.name,
           sku: item.sku || null,
           description: item.description || null,
@@ -466,8 +466,9 @@ export default function Products() {
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <Package className="w-8 h-8 text-primary" />
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="glass-card shadow-card">
           <CardContent className="p-4">
