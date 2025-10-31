@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Minus, Plus, Trash2, Percent, Tag, Receipt } from "lucide-react";
 import { products as staticProducts } from "@/lib/pos-data";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 interface CartSummaryProps {
   cart: CartItem[];
@@ -69,7 +70,7 @@ export default function CartSummary({
                           </p>
                         )}
                         <p className="text-sm text-primary font-bold mt-1">
-                          ${item.price.toFixed(2)} c/u
+                          {formatCurrency(item.price)} c/u
                         </p>
                       </div>
                     </div>
@@ -103,7 +104,7 @@ export default function CartSummary({
                       </Button>
                     </div>
                     <p className="font-bold text-lg md:text-xl">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      {formatCurrency(item.price * item.quantity)}
                     </p>
                   </div>
                 </CardContent>
@@ -150,7 +151,7 @@ export default function CartSummary({
             </div>
             {discount > 0 && (
               <p className="text-xs text-accent font-medium mt-2">
-                Descuento: -${discountAmount.toFixed(2)}
+                Descuento: -{formatCurrency(discountAmount)}
               </p>
             )}
           </CardContent>
@@ -162,18 +163,18 @@ export default function CartSummary({
             <div className="space-y-1">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{formatCurrency(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-sm text-accent font-medium">
                   <span>Descuento</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>-{formatCurrency(discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between items-center pt-2 border-t border-border">
                 <span className="text-lg md:text-xl font-semibold">Total</span>
                 <span className="text-3xl md:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  ${total.toFixed(2)}
+                  {formatCurrency(total)}
                 </span>
               </div>
             </div>

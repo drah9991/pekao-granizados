@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Package, TrendingDown, TrendingUp, AlertTriangle, Search, Filter, Plus, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 interface StockItem {
   id: string;
@@ -373,9 +374,9 @@ export default function Inventory() {
                         )}
                       </div>
                       <div className="flex gap-4 text-sm text-muted-foreground">
-                        <span>Precio: ${item.product.price.toFixed(2)}</span>
+                        <span>Precio: {formatCurrency(item.product.price)}</span>
                         {item.product.cost && (
-                          <span>Costo: ${item.product.cost.toFixed(2)}</span>
+                          <span>Costo: {formatCurrency(item.product.cost)}</span>
                         )}
                         <span>Actualizado: {new Date(item.updated_at).toLocaleDateString()}</span>
                       </div>

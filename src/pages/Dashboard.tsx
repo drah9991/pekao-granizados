@@ -1,33 +1,34 @@
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, DollarSign, ShoppingBag, Users, ArrowUpRight } from "lucide-react";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 export default function Dashboard() {
   const stats = [
     {
       title: "Ventas Hoy",
-      value: "$2,450",
+      value: formatCurrency(2450), // Using formatter
       change: "+12.5%",
       icon: DollarSign,
       color: "text-primary",
     },
     {
       title: "Pedidos",
-      value: "145",
+      value: "145", // Not a currency value
       change: "+8.2%",
       icon: ShoppingBag,
       color: "text-secondary",
     },
     {
       title: "Productos",
-      value: "32",
+      value: "32", // Not a currency value
       change: "+2",
       icon: TrendingUp,
       color: "text-accent",
     },
     {
       title: "Clientes",
-      value: "1,234",
+      value: "1,234", // Not a currency value
       change: "+23",
       icon: Users,
       color: "text-primary",
@@ -103,7 +104,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-lg md:text-xl text-primary">${(15 + i * 8).toFixed(2)}</p>
+                      <p className="font-bold text-lg md:text-xl text-primary">{formatCurrency(15 + i * 8)}</p>
                       <p className="text-xs text-muted-foreground">2 items</p>
                     </div>
                   </div>

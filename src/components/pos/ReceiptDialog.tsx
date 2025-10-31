@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CartItem } from "@/lib/pos-types";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 interface ReceiptDialogProps {
   isOpen: boolean;
@@ -27,13 +28,13 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
             <div className="text-center p-6 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground mb-1">Total Pagado</p>
               <p className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                ${lastOrder.total.toFixed(2)}
+                {formatCurrency(lastOrder.total)}
               </p>
               {lastOrder.change > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-sm text-muted-foreground">Cambio Devuelto</p>
                   <p className="text-2xl font-bold text-accent">
-                    ${lastOrder.change.toFixed(2)}
+                    {formatCurrency(lastOrder.change)}
                   </p>
                 </div>
               )}
@@ -46,7 +47,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                 .map((item: CartItem, index: number) => (
                   <div key={index} className="flex justify-between text-sm p-2 bg-muted/30 rounded">
                     <span>{item.quantity}x {item.name}</span>
-                    <span className="font-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-bold">{formatCurrency(item.price * item.quantity)}</span>
                   </div>
                 ))
               }

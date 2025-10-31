@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Download, Eye, Search } from "lucide-react";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 const invoices = [
   {
@@ -75,7 +76,7 @@ export default function Invoices() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary mb-1">$170.50</div>
+              <div className="text-3xl font-bold text-primary mb-1">{formatCurrency(170.50)}</div>
               <p className="text-xs text-muted-foreground">12 facturas emitidas</p>
             </CardContent>
           </Card>
@@ -87,7 +88,7 @@ export default function Invoices() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold mb-1">$5,234</div>
+              <div className="text-3xl font-bold mb-1">{formatCurrency(5234)}</div>
               <p className="text-xs text-accent font-medium">+12.5% vs mes anterior</p>
             </CardContent>
           </Card>
@@ -100,7 +101,7 @@ export default function Invoices() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-secondary mb-1">1</div>
-              <p className="text-xs text-muted-foreground">$67.80 por cobrar</p>
+              <p className="text-xs text-muted-foreground">{formatCurrency(67.80)} por cobrar</p>
             </CardContent>
           </Card>
         </div>
@@ -145,7 +146,7 @@ export default function Invoices() {
                   <div className="flex items-center gap-4">
                     <div className="text-right mr-4">
                       <p className="text-2xl font-bold text-primary">
-                        ${invoice.amount.toFixed(2)}
+                        {formatCurrency(invoice.amount)}
                       </p>
                     </div>
 

@@ -10,6 +10,7 @@ import { Plus, Search, Edit, Trash2, Wine, Coffee } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, Enums } from "@/integrations/supabase/types";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 type Sachet = Tables<'sachets'>;
 type SachetType = Enums<'sachet_type'>;
@@ -270,7 +271,7 @@ export default function SachetsSettings() {
                             {sachetTypeOptions.find(opt => opt.value === sachet.type)?.label}
                           </div>
                         </TableCell>
-                        <TableCell>${sachet.price.toFixed(2)}</TableCell>
+                        <TableCell>{formatCurrency(sachet.price)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button

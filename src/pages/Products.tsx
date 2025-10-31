@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, Json } from "@/integrations/supabase/types"; // Import Json type
 import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils"; // Import CSV utilities
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 type Product = Tables<'products'>; // Use Tables type for direct mapping
 
@@ -465,9 +466,8 @@ export default function Products() {
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <Package className="w-8 h-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         <Card className="glass-card shadow-card">
           <CardContent className="p-4">
@@ -498,7 +498,7 @@ export default function Products() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Precio Promedio</p>
-                <p className="text-2xl font-bold text-primary">${stats.avgPrice.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(stats.avgPrice)}</p>
               </div>
               <DollarSign className="w-8 h-8 text-primary" />
             </div>
@@ -610,7 +610,7 @@ export default function Products() {
 
                 {/* Product main info */}
                 <h3 className="text-xl font-bold mb-1">{product.name}</h3>
-                <p className="text-2xl font-bold text-primary mb-2">${product.price.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary mb-2">{formatCurrency(product.price)}</p>
                 {product.description && (
                   <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
                 )}
@@ -716,7 +716,7 @@ export default function Products() {
               <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
                 <p className="text-sm text-muted-foreground mb-1">Margen de Ganancia</p>
                 <p className="text-2xl font-bold text-accent">
-                  ${(parseFloat(formData.price) - parseFloat(formData.cost)).toFixed(2)}
+                  {formatCurrency(parseFloat(formData.price) - parseFloat(formData.cost))}
                   <span className="text-sm ml-2">
                     ({(((parseFloat(formData.price) - parseFloat(formData.cost)) / parseFloat(formData.price)) * 100).toFixed(1)}%)
                   </span>
@@ -786,7 +786,7 @@ export default function Products() {
                     <div>
                       <Label className="text-muted-foreground">Precio de Venta</Label>
                       <p className="text-2xl font-bold text-primary">
-                        ${viewingProduct.price.toFixed(2)}
+                        {formatCurrency(viewingProduct.price)}
                       </p>
                     </div>
 
@@ -794,7 +794,7 @@ export default function Products() {
                       <div>
                         <Label className="text-muted-foreground">Costo</Label>
                         <p className="text-2xl font-bold text-muted-foreground">
-                          ${viewingProduct.cost.toFixed(2)}
+                          {formatCurrency(viewingProduct.cost)}
                         </p>
                       </div>
                     )}
@@ -804,7 +804,7 @@ export default function Products() {
                     <div className="p-4 bg-accent/10 rounded-lg">
                       <Label className="text-muted-foreground">Margen de Ganancia</Label>
                       <p className="text-2xl font-bold text-accent">
-                        ${(viewingProduct.price - viewingProduct.cost).toFixed(2)}
+                        {formatCurrency(viewingProduct.price - viewingProduct.cost)}
                         <span className="text-sm ml-2">
                           ({(((viewingProduct.price - viewingProduct.cost) / viewingProduct.price) * 100).toFixed(1)}%)
                         </span>

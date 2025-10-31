@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { products as staticProducts } from "@/lib/pos-data";
 import { useState } from "react";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 interface ProductGridProps {
   onProductSelect: (product: Product) => void;
@@ -47,7 +48,7 @@ export default function ProductGrid({ onProductSelect }: ProductGridProps) {
               </div>
               <div className="w-full">
                 <p className="font-bold text-left text-sm md:text-base mb-1">{product.name}</p>
-                <p className="font-bold text-left text-xl md:text-2xl">${product.price.toFixed(2)}</p>
+                <p className="font-bold text-left text-xl md:text-2xl">{formatCurrency(product.price)}</p>
               </div>
             </div>
           </button>

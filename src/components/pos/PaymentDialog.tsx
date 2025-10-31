@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { CreditCard, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export default function PaymentDialog({
         <DialogHeader>
           <DialogTitle className="text-2xl">Procesar Pago</DialogTitle>
           <DialogDescription>
-            Total a pagar: ${total.toFixed(2)}
+            Total a pagar: {formatCurrency(total)}
           </DialogDescription>
         </DialogHeader>
 
@@ -93,13 +94,13 @@ export default function PaymentDialog({
                 <div className="mt-4 p-4 bg-accent/10 border-2 border-accent rounded-lg">
                   <p className="text-sm text-muted-foreground">Cambio a devolver</p>
                   <p className="text-3xl font-bold text-accent">
-                    ${change.toFixed(2)}
+                    {formatCurrency(change)}
                   </p>
                 </div>
               )}
               {parseFloat(amountReceived) > 0 && parseFloat(amountReceived) < total && (
                 <p className="text-sm text-destructive mt-2">
-                  Falta: ${(total - parseFloat(amountReceived)).toFixed(2)}
+                  Falta: {formatCurrency(total - parseFloat(amountReceived))}
                 </p>
               )}
             </div>

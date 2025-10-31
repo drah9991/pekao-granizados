@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Product, Topping } from "@/lib/pos-types";
 import { sizes, availableToppings } from "@/lib/pos-data";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 interface ProductCustomizationDialogProps {
   isOpen: boolean;
@@ -63,7 +64,7 @@ export default function ProductCustomizationDialog({
                     {size.name}
                   </Label>
                   <span className="text-sm font-bold text-primary">
-                    ${(product.price * size.multiplier).toFixed(2)}
+                    {formatCurrency(product.price * size.multiplier)}
                   </span>
                 </div>
               ))}
@@ -90,7 +91,7 @@ export default function ProductCustomizationDialog({
                   <Label htmlFor={topping.id} className="flex-1 cursor-pointer font-medium">
                     {topping.name}
                   </Label>
-                  <span className="text-sm font-bold text-primary">+${topping.price.toFixed(2)}</span>
+                  <span className="text-sm font-bold text-primary">+{formatCurrency(topping.price)}</span>
                 </div>
               ))}
             </div>

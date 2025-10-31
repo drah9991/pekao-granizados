@@ -9,6 +9,7 @@ import { Plus, Search, Edit, Trash2, Cherry, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
+import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
 type Topping = Tables<'toppings'>;
 
@@ -249,7 +250,7 @@ export default function ToppingsSettings() {
                   {filteredToppings.map((topping) => (
                     <TableRow key={topping.id}>
                       <TableCell className="font-medium">{topping.name}</TableCell>
-                      <TableCell>${topping.price?.toFixed(2) || "0.00"}</TableCell>
+                      <TableCell>{formatCurrency(topping.price || 0)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
