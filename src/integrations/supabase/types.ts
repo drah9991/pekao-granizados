@@ -413,6 +413,79 @@ export type Database = {
         }
         Relationships: []
       }
+      sachets: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          price: number
+          store_id: string
+          type: Database["public"]["Enums"]["sachet_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          price?: number
+          store_id: string
+          type: Database["public"]["Enums"]["sachet_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          price?: number
+          store_id?: string
+          type?: Database["public"]["Enums"]["sachet_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sachets_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sizes: {
+        Row: {
+          created_at: string | null
+          id: string
+          multiplier: number
+          name: string
+          store_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          multiplier?: number
+          name: string
+          store_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          multiplier?: number
+          name?: string
+          store_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sizes_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_stock: {
         Row: {
           batch_info: Json | null
@@ -488,6 +561,41 @@ export type Database = {
         }
         Relationships: []
       }
+      toppings: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          price: number | null
+          store_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          price?: number | null
+          store_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          price?: number | null
+          store_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "toppings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -529,6 +637,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "cashier" | "driver"
+      sachet_type: "alcohol" | "non_alcohol"
       user_role: "admin" | "store_manager" | "cashier" | "delivery_driver" | "customer"
     }
     CompositeTypes: {
@@ -658,6 +767,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "cashier", "driver"],
+      sachet_type: ["alcohol", "non_alcohol"],
       user_role: ["admin", "store_manager", "cashier", "delivery_driver", "customer"],
     },
   },

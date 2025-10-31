@@ -9,14 +9,14 @@ import {
   IceCream,
   Menu,
   X,
-  ChevronDown, // Importar ChevronDown para el icono desplegable
-  Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Palette, Shield, Building2, Receipt
+  ChevronDown,
+  Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, Cherry, Wine // Import new icons
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import { useBranding } from "@/context/BrandingContext"; // Import useBranding
+import { useBranding } from "@/context/BrandingContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -46,6 +46,9 @@ const navigation: NavItem[] = [
       { name: "Inventario", href: "/settings?tab=master-data&subtab=inventory", icon: ClipboardList, type: "link" },
       { name: "Usuarios", href: "/settings?tab=master-data&subtab=users", icon: UsersIcon, type: "link" },
       { name: "Tiendas", href: "/settings?tab=master-data&subtab=stores", icon: StoreIcon, type: "link" },
+      { name: "Tamaños", href: "/settings?tab=master-data&subtab=sizes", icon: Ruler, type: "link" }, // New sub-item
+      { name: "Toppings", href: "/settings?tab=master-data&subtab=toppings", icon: Cherry, type: "link" }, // New sub-item
+      { name: "Sachets", href: "/settings?tab=master-data&subtab=sachets", icon: Wine, type: "link" }, // New sub-item
     ],
   },
 ];
