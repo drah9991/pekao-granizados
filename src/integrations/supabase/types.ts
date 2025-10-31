@@ -193,7 +193,7 @@ export type Database = {
           customer_id: string | null
           id: string
           payment: Json | null
-          status: string | null
+          status: Database["public"]["Enums"]["order_status"] | null
           store_id: string
           subtotal: number
           tax: number | null
@@ -207,7 +207,7 @@ export type Database = {
           customer_id?: string | null
           id?: string
           payment?: Json | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
           store_id: string
           subtotal: number
           tax?: number | null
@@ -221,7 +221,7 @@ export type Database = {
           customer_id?: string | null
           id?: string
           payment?: Json | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
           store_id?: string
           subtotal?: number
           tax?: number | null
@@ -642,6 +642,7 @@ export type Database = {
       app_role: "admin" | "manager" | "cashier" | "driver"
       sachet_type: "alcohol" | "non_alcohol"
       user_role: "admin" | "store_manager" | "cashier" | "delivery_driver" | "customer"
+      order_status: "pending" | "completed" | "cancelled" | "processing" | "delivered"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -772,6 +773,7 @@ export const Constants = {
       app_role: ["admin", "manager", "cashier", "driver"],
       sachet_type: ["alcohol", "non_alcohol"],
       user_role: ["admin", "store_manager", "cashier", "delivery_driver", "customer"],
+      order_status: ["pending", "completed", "cancelled", "processing", "delivered"],
     },
   },
 } as const

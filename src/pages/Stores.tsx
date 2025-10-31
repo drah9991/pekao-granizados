@@ -17,7 +17,7 @@ type UserRoleEnum = Enums<'user_role'>;
 export default function Stores() {
   const [stores, setStores] = useState<Store[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = true;
+  const [loading, setLoading] = useState(true); // Corrected: useState(true)
   const [currentUserRole, setCurrentUserRole] = useState<UserRoleEnum | null>(null);
 
   // Dialog states

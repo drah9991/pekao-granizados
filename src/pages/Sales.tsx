@@ -13,11 +13,11 @@ import { Tables, Enums } from "@/integrations/supabase/types";
 import { formatCurrency } from "@/lib/formatters";
 
 type Order = Tables<'orders'>;
-type OrderStatus = Enums<'order_status'>; // Assuming 'order_status' enum exists in Supabase types
+type OrderStatus = Enums<'order_status'>;
 
 interface OrderWithDetails extends Order {
-  profiles?: { full_name: string | null } | null; // For created_by
-  customers?: { name: string | null } | null; // For customer_id
+  profiles: { full_name: string | null } | null; // For created_by
+  customers: { name: string | null } | null; // For customer_id
 }
 
 const orderStatusOptions: { value: OrderStatus | "all"; label: string; color: string }[] = [
@@ -92,7 +92,8 @@ export default function Sales() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setOrders(data || []);
+      // Ensure data matches OrderWithDetails structure
+      setOrders(data as OrderWithDetails[] || []);
     } catch (error: any) {
       console.error("Error fetching orders:", error);
       toast.error("Error al cargar ventas: " + error.message);

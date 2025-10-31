@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Edit, Trash2, Package, DollarSign, TrendingUp, Eye, Image as ImageIcon, X, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Tables, Json } from "@/integrations/supabase/types"; // Import Json type
+import { Tables, TablesInsert, Json } from "@/integrations/supabase/types"; // Import TablesInsert
 import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils"; // Import CSV utilities
 import { formatCurrency } from "@/lib/formatters"; // Import the formatter
 
