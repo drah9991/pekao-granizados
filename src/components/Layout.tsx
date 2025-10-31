@@ -10,7 +10,7 @@ import {
   Menu,
   X,
   ChevronDown,
-  Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, Cherry, Wine // Import new icons
+  Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, Cherry, Wine, ReceiptText // Import new icon for Sales
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -35,6 +35,7 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, type: "link" },
   { name: "POS", href: "/pos", icon: ShoppingCart, type: "link" },
+  { name: "Ventas", href: "/sales", icon: ReceiptText, type: "link" }, // New Sales link
   { name: "Configuración", href: "/settings?tab=branding", icon: Settings, type: "link" },
   {
     name: "Maestros",

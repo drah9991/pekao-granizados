@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import POS from "./pages/POS";
 import Settings from "./pages/Settings";
+import Sales from "./pages/Sales"; // Import the new Sales page
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/pos" element={<POS />} />
+              <Route path="/sales" element={<Sales />} /> {/* New route for Sales */}
               <Route path="/settings" element={<Settings />} />
               {/* Removed direct routes for /products, /inventory, /users as they are now nested under /settings */}
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
