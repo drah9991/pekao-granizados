@@ -9,10 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Edit, Trash2, Package, DollarSign, TrendingUp, Eye, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Package, DollarSign, TrendingUp, Eye, Image as ImageIcon, X, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, Json } from "@/integrations/supabase/types"; // Import Json type
+import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils"; // Import CSV utilities
 
 type Product = Tables<'products'>; // Use Tables type for direct mapping
 
@@ -51,6 +52,11 @@ export default function Products() {
   const [detailsDialog, setDetailsDialog] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [productStock, setProductStock] = useState<StockInfo[]>([]);
+
+  // Import Dialog
+  const [importDialogIsOpen, setImportDialogIsOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     fetchUserStoreId();
@@ -281,6 +287,112 @@ export default function Products() {
     }
   };
 
+  const handleExportProducts = () => {
+    if (products.length === 0) {
+      toast.info("No hay productos para exportar.");
+      return;
+    }
+    const csv = exportToCsv(products);
+    downloadFile("productos.csv", csv, "text/csv");
+    toast.success("Productos exportados correctamente.");
+  };
+
+  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImportFile(file);
+    }
+  };
+
+  const handleImportProducts = async () => {
+    if (!importFile) {
+      toast.error("Por favor, selecciona un archivo CSV para importar.");
+      return;
+    }
+    if (!userStoreId) {
+      toast.error("No tienes una tienda asignada para importar productos.");
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const fileContent = await importFile.text();
+      const importedData = importFromCsv<Product>(fileContent);
+
+      if (importedData.length === 0) {
+        toast.error("El archivo CSV está vacío o no contiene datos válidos.");
+        return;
+      }
+
+      let importedCount = 0;
+      let updatedCount = 0;
+      let errorCount = 0;
+
+      for (const item of importedData) {
+        // Basic validation: ensure name and price exist
+        if (!item.name || typeof item.price !== 'number' || item.price < 0) {
+          toast.error(`Fila inválida (nombre o precio faltante/inválido): ${JSON.stringify(item)}`);
+          errorCount++;
+          continue;
+        }
+
+        // Prepare data for Supabase
+        const productToSave: Partial<Product> = {
+          name: item.name,
+          sku: item.sku || null,
+          description: item.description || null,
+          price: item.price,
+          cost: item.cost || null,
+          active: item.active ?? true,
+          category: item.category || null,
+          is_public: item.is_public ?? true,
+          images: item.images || null,
+          variants: item.variants || null,
+          recipe: item.recipe || null,
+          store_id: userStoreId, // Assign to current user's store
+        };
+
+        // Check if product already exists by SKU or name (simple check, can be improved)
+        const existingProduct = products.find(p => p.sku === item.sku && item.sku !== null) || products.find(p => p.name === item.name);
+
+        if (existingProduct) {
+          // Update existing product
+          const { error } = await supabase
+            .from("products")
+            .update(productToSave)
+            .eq("id", existingProduct.id);
+          if (error) {
+            console.error("Error updating product:", error);
+            errorCount++;
+          } else {
+            updatedCount++;
+          }
+        } else {
+          // Insert new product
+          const { error } = await supabase
+            .from("products")
+            .insert([productToSave]);
+          if (error) {
+            console.error("Error inserting product:", error);
+            errorCount++;
+          } else {
+            importedCount++;
+          }
+        }
+      }
+
+      toast.success(`Importación completada: ${importedCount} creados, ${updatedCount} actualizados, ${errorCount} errores.`);
+      setImportDialogIsOpen(false);
+      setImportFile(null);
+      fetchProducts(); // Refresh the list
+    } catch (error: any) {
+      console.error("Error importing products:", error);
+      toast.error("Error al importar productos: " + error.message);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = !searchQuery || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -313,14 +425,34 @@ export default function Products() {
           </h1>
           <p className="text-muted-foreground">Gestiona tu inventario de productos</p>
         </div>
-        <Button 
-          className="gradient-primary shadow-glow w-full md:w-auto"
-          onClick={openCreateDialog}
-          disabled={!userStoreId} // Disable if no store_id
-        >
-          <Plus className="mr-2 w-5 h-5" />
-          Nuevo Producto
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            className="shadow-card w-full md:w-auto"
+            onClick={handleExportProducts}
+            disabled={loading || products.length === 0}
+          >
+            <Download className="mr-2 w-5 h-5" />
+            Exportar CSV
+          </Button>
+          <Button 
+            variant="outline"
+            className="shadow-card w-full md:w-auto"
+            onClick={() => setImportDialogIsOpen(true)}
+            disabled={!userStoreId}
+          >
+            <Upload className="mr-2 w-5 h-5" />
+            Importar CSV
+          </Button>
+          <Button 
+            className="gradient-primary shadow-glow w-full md:w-auto"
+            onClick={openCreateDialog}
+            disabled={!userStoreId} // Disable if no store_id
+          >
+            <Plus className="mr-2 w-5 h-5" />
+            Nuevo Producto
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -736,6 +868,56 @@ export default function Products() {
 
           <DialogFooter>
             <Button onClick={() => setDetailsDialog(false)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Products Dialog */}
+      <Dialog open={importDialogIsOpen} onOpenChange={setImportDialogIsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Importar Productos (CSV)</DialogTitle>
+            <DialogDescription>
+              Sube un archivo CSV para importar o actualizar productos.
+              Asegúrate de que las columnas coincidan con los campos del producto (id, name, sku, price, etc.).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="import-file">Archivo CSV</Label>
+              <Input
+                id="import-file"
+                type="file"
+                accept=".csv"
+                onChange={handleImportFileChange}
+                className="mt-2"
+                disabled={isImporting}
+              />
+              {importFile && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Archivo seleccionado: {importFile.name}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setImportDialogIsOpen(false)}
+              disabled={isImporting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleImportProducts}
+              disabled={isImporting || !importFile}
+              className="gradient-primary"
+            >
+              {isImporting ? "Importando..." : "Confirmar Importación"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
