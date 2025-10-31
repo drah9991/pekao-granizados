@@ -16,7 +16,7 @@ type Order = Tables<'orders'>;
 type OrderStatus = Enums<'order_status'>;
 
 interface OrderWithDetails extends Order {
-  profiles: { full_name: string | null } | null; // For created_by
+  creator_profile: { full_name: string | null } | null; // Alias for created_by profile
   customers: { name: string | null } | null; // For customer_id
 }
 
@@ -79,7 +79,7 @@ export default function Sales() {
         .from("orders")
         .select(`
           *,
-          profiles(full_name),
+          creator_profile:profiles!orders_created_by_fkey(full_name),
           customers(name)
         `)
         .eq('store_id', currentUserStoreId!)
@@ -92,7 +92,6 @@ export default function Sales() {
       const { data, error } = await query;
 
       if (error) throw error;
-      // Ensure data matches OrderWithDetails structure
       setOrders(data as OrderWithDetails[] || []);
     } catch (error: any) {
       console.error("Error fetching orders:", error);
@@ -110,7 +109,7 @@ export default function Sales() {
   const filteredOrders = orders.filter(order => {
     const matchesSearch = !searchQuery ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.profiles?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.creator_profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customers?.name?.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesSearch;
@@ -245,7 +244,7 @@ export default function Sales() {
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">{order.id.slice(0, 8)}</TableCell>
                           <TableCell>{new Date(order.created_at).toLocaleString('es-CO')}</TableCell>
-                          <TableCell>{order.profiles?.full_name || 'N/A'}</TableCell>
+                          <TableCell>{order.creator_profile?.full_name || 'N/A'}</TableCell>
                           <TableCell>{order.customers?.name || 'Cliente General'}</TableCell>
                           <TableCell className="font-bold">{formatCurrency(order.total)}</TableCell>
                           <TableCell>
