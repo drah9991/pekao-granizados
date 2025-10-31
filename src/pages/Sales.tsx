@@ -17,7 +17,7 @@ type OrderStatus = Enums<'order_status'>;
 
 interface OrderWithDetails extends Order {
   creator_profile: { full_name: string | null } | null; // Alias for created_by profile
-  customers: { name: string | null } | null; // For customer_id
+  customer_details: { name: string | null } | null; // Updated alias for customer_id relationship
 }
 
 const orderStatusOptions: { value: OrderStatus | "all"; label: string; color: string }[] = [
@@ -80,8 +80,8 @@ export default function Sales() {
         .select(`
           *,
           creator_profile:profiles!orders_created_by_fkey(full_name),
-          customers(name)
-        `)
+          customer_details:customers!orders_customer_id_fkey(name)
+        `) // Updated to use explicit foreign key name and alias
         .eq('store_id', currentUserStoreId!)
         .order("created_at", { ascending: false });
 
@@ -110,7 +110,7 @@ export default function Sales() {
     const matchesSearch = !searchQuery ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.creator_profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customers?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      order.customer_details?.name?.toLowerCase().includes(searchQuery.toLowerCase()); // Updated to customer_details
     
     return matchesSearch;
   });
@@ -245,7 +245,7 @@ export default function Sales() {
                           <TableCell className="font-medium">{order.id.slice(0, 8)}</TableCell>
                           <TableCell>{new Date(order.created_at).toLocaleString('es-CO')}</TableCell>
                           <TableCell>{order.creator_profile?.full_name || 'N/A'}</TableCell>
-                          <TableCell>{order.customers?.name || 'Cliente General'}</TableCell>
+                          <TableCell>{order.customer_details?.name || 'Cliente General'}</TableCell>
                           <TableCell className="font-bold">{formatCurrency(order.total)}</TableCell>
                           <TableCell>
                             <Badge className={`text-xs px-3 py-1.5 rounded-full font-semibold ${statusConfig?.color || "bg-gray-500"}`}>
