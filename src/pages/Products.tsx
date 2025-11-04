@@ -511,7 +511,7 @@ export default function Products() {
                 <p className="text-2xl font-bold text-primary">{formatCurrency(stats.avgPrice)}</p>
               </div>
               <DollarSign className="w-8 h-8 text-primary" />
-            </CardContent>
+            </div>
           </CardContent>
         </Card>
       </div>
