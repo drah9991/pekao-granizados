@@ -80,8 +80,8 @@ export default function Sales() {
         .select(`
           *,
           creator_profile:profiles!orders_created_by_fkey(full_name),
-          customer_details:customers!orders_customer_id_fkey(name)
-        `) // Updated to use explicit foreign key name and alias
+          customer_details:customers(name)
+        `) // Simplified customer relationship
         .eq('store_id', currentUserStoreId!)
         .order("created_at", { ascending: false });
 
