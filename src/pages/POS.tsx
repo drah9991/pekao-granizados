@@ -162,7 +162,7 @@ export default function POS() {
         isOpen={paymentDialogIsOpen}
         onClose={() => setPaymentDialogIsOpen(false)}
         total={total}
-        onConfirmPayment={processSale} {/* Use the extracted function */}
+        onConfirmPayment={processSale} 
         isProcessing={isProcessing}
       />
 
