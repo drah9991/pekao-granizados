@@ -1,20 +1,19 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Edit, Trash2, Package, DollarSign, TrendingUp, Eye, Image as ImageIcon, X, Upload, Download, IceCream, Cherry, Wine, Candy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, TablesInsert, Json, Enums } from "@/integrations/supabase/types";
 import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils";
 import { formatCurrency } from "@/lib/formatters";
+
+// Import new modular components
+import ProductStats from "@/components/products/ProductStats";
+import ProductFiltersAndSearch from "@/components/products/ProductFiltersAndSearch";
+import ProductGridDisplay from "@/components/products/ProductGridDisplay";
+import ProductFormDialog from "@/components/products/ProductFormDialog";
+import ProductDetailsDialog from "@/components/products/ProductDetailsDialog";
+import ProductImportExportButtons from "@/components/products/ProductImportExportButtons";
+
+import { IceCream, Cherry, Wine, Candy } from "lucide-react"; // Icons for product types
 
 type Product = Tables<'products'>;
 type ProductType = Enums<'product_type'>;
@@ -36,12 +35,12 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterActive, setFilterActive] = useState<string>("all");
-  const [filterType, setFilterType] = useState<ProductType | "all">("all"); // New filter for product type
+  const [filterType, setFilterType] = useState<ProductType | "all">("all");
   const [loading, setLoading] = useState(true);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
   
-  // Create/Edit Dialog
-  const [productDialog, setProductDialog] = useState(false);
+  // Create/Edit Dialog states
+  const [productDialogIsOpen, setProductDialogIsOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -55,24 +54,29 @@ export default function Products() {
     images: [] as string[],
     variants: null as Json | null,
     recipe: null as Json | null,
-    type: "granizado" as ProductType, // Default type
+    type: "granizado" as ProductType,
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // View Details Dialog
-  const [detailsDialog, setDetailsDialog] = useState(false);
+  // View Details Dialog states
+  const [detailsDialogIsOpen, setDetailsDialogIsOpen] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [productStock, setProductStock] = useState<StockInfo[]>([]);
 
-  // Import Dialog
+  // Import Dialog states
   const [importDialogIsOpen, setImportDialogIsOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     fetchUserStoreId();
-    fetchProducts();
   }, []);
+
+  useEffect(() => {
+    if (userStoreId) {
+      fetchProducts();
+    }
+  }, [userStoreId]);
 
   const fetchUserStoreId = async () => {
     try {
@@ -153,9 +157,9 @@ export default function Products() {
       images: [],
       variants: null,
       recipe: null,
-      type: "granizado", // Default type for new product
+      type: "granizado",
     });
-    setProductDialog(true);
+    setProductDialogIsOpen(true);
   };
 
   const openEditDialog = (product: Product) => {
@@ -172,9 +176,9 @@ export default function Products() {
       images: product.images || [],
       variants: product.variants || null,
       recipe: product.recipe || null,
-      type: product.type || "granizado", // Set existing type
+      type: product.type || "granizado",
     });
-    setProductDialog(true);
+    setProductDialogIsOpen(true);
   };
 
   const prepareProductData = (): TablesInsert<'products'> => ({
@@ -189,7 +193,7 @@ export default function Products() {
     images: formData.images.length > 0 ? formData.images : null,
     variants: formData.variants,
     recipe: formData.recipe,
-    type: formData.type, // Include the new type field
+    type: formData.type,
     ...(editingProduct ? {} : { store_id: userStoreId! }), 
   });
 
@@ -253,7 +257,7 @@ export default function Products() {
         await createProduct(productData);
       }
 
-      setProductDialog(false);
+      setProductDialogIsOpen(false);
       fetchProducts();
     } catch (error: any) {
       console.error("Error saving product:", error);
@@ -281,25 +285,9 @@ export default function Products() {
     }
   };
 
-  const toggleProductStatus = async (product: Product) => {
-    try {
-      const { error } = await supabase
-        .from("products")
-        .update({ active: !product.active })
-        .eq("id", product.id);
-
-      if (error) throw error;
-      toast.success(`Producto ${!product.active ? "activado" : "desactivado"}`);
-      fetchProducts();
-    } catch (error: any) {
-      console.error("Error toggling product status:", error);
-      toast.error("Error al cambiar estado del producto");
-    }
-  };
-
   const openDetailsDialog = async (product: Product) => {
     setViewingProduct(product);
-    setDetailsDialog(true);
+    setDetailsDialogIsOpen(true);
 
     try {
       const { data, error } = await supabase
@@ -388,7 +376,7 @@ export default function Products() {
           images: item.images || null,
           variants: item.variants || null,
           recipe: item.recipe || null,
-          type: item.type || "granizado", // Ensure type is set, default to granizado
+          type: item.type || "granizado",
           store_id: userStoreId,
         };
 
@@ -480,603 +468,68 @@ export default function Products() {
           </h1>
           <p className="text-muted-foreground">Gestiona tu inventario de productos</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            className="shadow-card w-full md:w-auto"
-            onClick={handleExportProducts}
-            disabled={loading || products.length === 0}
-          >
-            <Download className="mr-2 w-5 h-5" />
-            Exportar CSV
-          </Button>
-          <Button 
-            variant="outline"
-            className="shadow-card w-full md:w-auto"
-            onClick={() => setImportDialogIsOpen(true)}
-            disabled={!userStoreId}
-          >
-            <Upload className="mr-2 w-5 h-5" />
-            Importar CSV
-          </Button>
-          <Button 
-            className="gradient-primary shadow-glow w-full md:w-auto"
-            onClick={openCreateDialog}
-            disabled={!userStoreId}
-          >
-            <Plus className="mr-2 w-5 h-5" />
-            Nuevo Producto
-          </Button>
-        </div>
+        <ProductImportExportButtons
+          onExport={handleExportProducts}
+          onImport={handleImportProducts}
+          onImportFileChange={handleImportFileChange}
+          importFile={importFile}
+          isImporting={isImporting}
+          importDialogIsOpen={importDialogIsOpen}
+          setImportDialogIsOpen={setImportDialogIsOpen}
+          userStoreId={userStoreId}
+          loading={loading}
+          products={products}
+          openCreateDialog={openCreateDialog}
+        />
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="glass-card shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Productos</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-              <Package className="w-8 h-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Activos</p>
-                <p className="text-2xl font-bold text-accent">{stats.active}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-accent" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Inactivos</p>
-                <p className="text-2xl font-bold text-muted-foreground">{stats.inactive}</p>
-              </div>
-              <Package className="w-8 h-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Precio Promedio</p>
-                <p className="text-2xl font-bold text-primary">{formatCurrency(stats.avgPrice)}</p>
-              </div>
-              <DollarSign className="w-8 h-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ProductStats {...stats} />
 
       {/* Search and Filters */}
-      <Card className="glass-card shadow-card">
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input 
-                placeholder="Buscar por nombre, SKU o descripción..." 
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <Select value={filterType} onValueChange={(value: ProductType | "all") => setFilterType(value)}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filtrar por tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los tipos</SelectItem>
-                {productTypeOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex items-center gap-2">
-                      <option.icon className="w-4 h-4" />
-                      {option.label}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterActive} onValueChange={setFilterActive}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los productos</SelectItem>
-                <SelectItem value="active">Solo activos</SelectItem>
-                <SelectItem value="inactive">Solo inactivos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <ProductFiltersAndSearch
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        filterType={filterType}
+        setFilterType={setFilterType}
+        filterActive={filterActive}
+        setFilterActive={setFilterActive}
+        productTypeOptions={productTypeOptions}
+      />
 
       {/* Products Grid */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">Cargando productos...</p>
-        </div>
-      ) : filteredProducts.length === 0 ? (
-        <Card className="glass-card shadow-card">
-          <CardContent className="text-center py-12">
-            <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No hay productos</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || filterActive !== "all" || filterType !== "all"
-                ? "No se encontraron productos con los filtros aplicados"
-                : "Comienza creando tu primer producto"}
-            </p>
-            {!searchQuery && filterActive === "all" && filterType === "all" && (
-              <Button onClick={openCreateDialog} className="gradient-primary" disabled={!userStoreId}>
-                <Plus className="mr-2 w-4 h-4" />
-                Crear Primer Producto
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {filteredProducts.map((product) => {
-            const ProductIcon = productTypeOptions.find(opt => opt.value === product.type)?.icon || Package;
-            return (
-            <Card 
-              key={product.id} 
-              className={`glass-card shadow-card transition-smooth hover:shadow-elevated group ${
-                !product.active ? 'opacity-60' : ''
-              }`}
-            >
-              <CardContent className="p-6">
-                {/* Header with badges and actions */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex gap-2 flex-wrap">
-                    <Badge variant={product.active ? "default" : "secondary"}>
-                      {product.active ? "Activo" : "Inactivo"}
-                    </Badge>
-                    {product.sku && (
-                      <Badge variant="outline" className="text-xs">
-                        {product.sku}
-                      </Badge>
-                    )}
-                    <Badge variant="outline" className="text-xs flex items-center gap-1">
-                      <ProductIcon className="w-3 h-3" />
-                      {productTypeOptions.find(opt => opt.value === product.type)?.label}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-smooth">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 hover:text-primary"
-                      onClick={() => openDetailsDialog(product)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 hover:text-accent"
-                      onClick={() => openEditDialog(product)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 hover:text-destructive"
-                      onClick={() => handleDeleteProduct(product)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Product main info */}
-                <h3 className="text-xl font-bold mb-1">{product.name}</h3>
-                <p className="text-2xl font-bold text-primary mb-2">{formatCurrency(product.price)}</p>
-                {product.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
-                )}
-                {product.category && (
-                  <Badge variant="outline" className="mt-3 text-xs">{product.category}</Badge>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+      <ProductGridDisplay
+        products={filteredProducts}
+        loading={loading}
+        searchQuery={searchQuery}
+        filterActive={filterActive}
+        filterType={filterType}
+        openCreateDialog={openCreateDialog}
+        openEditDialog={openEditDialog}
+        openDetailsDialog={openDetailsDialog}
+        handleDeleteProduct={handleDeleteProduct}
+        userStoreId={userStoreId}
+      />
+      
       {/* Create/Edit Product Dialog */}
-      <Dialog open={productDialog} onOpenChange={setProductDialog}>
-        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingProduct ? "Editar Producto" : "Nuevo Producto"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingProduct 
-                ? "Actualiza la información del producto" 
-                : "Completa los datos del nuevo producto"}
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={(e) => { e.preventDefault(); handleSaveProduct(); }} className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <Label htmlFor="name">Nombre del Producto *</Label>
-                <Input
-                  id="name"
-                  placeholder="Ej: Granizado Fresa"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-2"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="type">Tipo de Producto *</Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value: ProductType) => setFormData({ ...formData, type: value })}
-                  disabled={isProcessing}
-                >
-                  <SelectTrigger className="w-full mt-2">
-                    <SelectValue placeholder="Selecciona un tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productTypeOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
-                          <option.icon className="w-4 h-4" />
-                          {option.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="category">Categoría</Label>
-                <Input
-                  id="category"
-                  placeholder="Ej: Clásicos, Premium, Frutas"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="mt-2"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="sku">SKU (Código)</Label>
-                <Input
-                  id="sku"
-                  placeholder="Ej: GRAN-FRES-001"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  className="mt-2"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="price">Precio de Venta *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="mt-2"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="cost">Costo del Producto</Label>
-                <Input
-                  id="cost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={formData.cost}
-                  onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                  className="mt-2"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                />
-                <Label htmlFor="active" className="cursor-pointer">
-                  Producto activo
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_public"
-                  checked={formData.is_public}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_public: checked })}
-                />
-                <Label htmlFor="is_public" className="cursor-pointer">
-                  Visible al público (e-commerce)
-                </Label>
-              </div>
-
-              <div className="col-span-2">
-                <Label htmlFor="description">Descripción</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe el producto, ingredientes, características especiales..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="mt-2"
-                  rows={4}
-                />
-              </div>
-            </div>
-
-            {formData.price && formData.cost && (
-              <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
-                <p className="text-sm text-muted-foreground mb-1">Margen de Ganancia</p>
-                <p className="text-2xl font-bold text-accent">
-                  {formatCurrency(parseFloat(formData.price) - parseFloat(formData.cost))}
-                  <span className="text-sm ml-2">
-                    ({(((parseFloat(formData.price) - parseFloat(formData.cost)) / parseFloat(formData.price)) * 100).toFixed(1)}%)
-                  </span>
-                </p>
-              </div>
-            )}
-
-            {/* TODO: Add image upload, variants, recipe management */}
-          </form>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setProductDialog(false)}
-              disabled={isProcessing}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isProcessing || !formData.name || !formData.price || (!editingProduct && !userStoreId)}
-              className="gradient-primary"
-            >
-              {isProcessing ? "Guardando..." : editingProduct ? "Actualizar" : "Crear Producto"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ProductFormDialog
+        isOpen={productDialogIsOpen}
+        onClose={() => setProductDialogIsOpen(false)}
+        editingProduct={editingProduct}
+        formData={formData}
+        setFormData={setFormData}
+        onSave={handleSaveProduct}
+        isProcessing={isProcessing}
+        productTypeOptions={productTypeOptions}
+      />
 
       {/* Product Details Dialog */}
-      <Dialog open={detailsDialog} onOpenChange={setDetailsDialog}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Detalles del Producto
-            </DialogTitle>
-          </DialogHeader>
-
-          {viewingProduct && (
-            <Tabs defaultValue="info" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="info">Información</TabsTrigger>
-                <TabsTrigger value="stock">Stock por Tienda</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="info" className="space-y-4">
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-muted-foreground">Nombre</Label>
-                    <p className="text-lg font-semibold">{viewingProduct.name}</p>
-                  </div>
-
-                  <div>
-                    <Label className="text-muted-foreground">Tipo</Label>
-                    <div className="mt-2">
-                      <Badge variant="outline" className="text-xs flex items-center gap-1">
-                        {productTypeOptions.find(opt => opt.value === viewingProduct.type)?.icon && (
-                          <productTypeOptions.find(opt => opt.value === viewingProduct.type)?.icon className="w-3 h-3" />
-                        )}
-                        {productTypeOptions.find(opt => opt.value === viewingProduct.type)?.label || viewingProduct.type}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {viewingProduct.category && (
-                    <div>
-                      <Label className="text-muted-foreground">Categoría</Label>
-                      <p className="font-mono">{viewingProduct.category}</p>
-                    </div>
-                  )}
-
-                  {viewingProduct.sku && (
-                    <div>
-                      <Label className="text-muted-foreground">SKU</Label>
-                      <p className="font-mono">{viewingProduct.sku}</p>
-                    </div>
-                  )}
-
-                  {viewingProduct.description && (
-                    <div>
-                      <Label className="text-muted-foreground">Descripción</Label>
-                      <p className="text-sm">{viewingProduct.description}</p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-muted-foreground">Precio de Venta</Label>
-                      <p className="text-2xl font-bold text-primary">
-                        {formatCurrency(viewingProduct.price)}
-                      </p>
-                    </div>
-
-                    {viewingProduct.cost && (
-                      <div>
-                        <Label className="text-muted-foreground">Costo</Label>
-                        <p className="text-2xl font-bold text-muted-foreground">
-                          {formatCurrency(viewingProduct.cost)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {viewingProduct.cost && (
-                    <div className="p-4 bg-accent/10 rounded-lg">
-                      <Label className="text-muted-foreground">Margen de Ganancia</Label>
-                      <p className="text-2xl font-bold text-accent">
-                        {formatCurrency(viewingProduct.price - viewingProduct.cost)}
-                        <span className="text-sm ml-2">
-                          ({(((viewingProduct.price - viewingProduct.cost) / viewingProduct.price) * 100).toFixed(1)}%)
-                        </span>
-                      </p>
-                    </div>
-                  )}
-
-                  <div>
-                    <Label className="text-muted-foreground">Estado</Label>
-                    <div className="mt-2">
-                      <Badge variant={viewingProduct.active ? "default" : "secondary"}>
-                        {viewingProduct.active ? "Activo" : "Inactivo"}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-muted-foreground">Visibilidad</Label>
-                    <div className="mt-2">
-                      <Badge variant={viewingProduct.is_public ? "default" : "secondary"}>
-                        {viewingProduct.is_public ? "Público" : "Privado"}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-muted-foreground">Fecha de Creación</Label>
-                    <p className="text-sm">{new Date(viewingProduct.created_at).toLocaleString('es')}</p>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="stock" className="space-y-4">
-                {productStock.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">
-                      No hay información de stock disponible
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {productStock.map((stock, index) => (
-                      <Card key={index} className="glass-card">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-semibold">{stock.store_name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                Mínimo: {stock.min_qty} unidades
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className={`text-2xl font-bold ${
-                                stock.qty < stock.min_qty ? 'text-destructive' : 'text-accent'
-                              }`}>
-                                {stock.qty}
-                              </p>
-                              <p className="text-xs text-muted-foreground">unidades</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          )}
-
-          <DialogFooter>
-            <Button onClick={() => setDetailsDialog(false)}>Cerrar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Import Products Dialog */}
-      <Dialog open={importDialogIsOpen} onOpenChange={setImportDialogIsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Importar Productos (CSV)</DialogTitle>
-            <DialogDescription>
-              Sube un archivo CSV para importar o actualizar productos.
-              Asegúrate de que las columnas coincidan con los campos del producto (id, name, sku, price, type, etc.).
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="import-file">Archivo CSV</Label>
-              <Input
-                id="import-file"
-                type="file"
-                accept=".csv"
-                onChange={handleImportFileChange}
-                className="mt-2"
-                disabled={isImporting}
-              />
-              {importFile && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Archivo seleccionado: {importFile.name}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setImportDialogIsOpen(false)}
-              disabled={isImporting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleImportProducts}
-              disabled={isImporting || !importFile}
-              className="gradient-primary"
-            >
-              {isImporting ? "Importando..." : "Confirmar Importación"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ProductDetailsDialog
+        isOpen={detailsDialogIsOpen}
+        onClose={() => setDetailsDialogIsOpen(false)}
+        viewingProduct={viewingProduct}
+        productStock={productStock}
+      />
     </div>
   );
 }
