@@ -278,7 +278,7 @@ export default function SkuAcronymsSettings() {
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                 className="mt-2"
                 required
-                disabled={!!editingAcronym} {/* Type should not be editable after creation */}
+                /* Type should not be editable after creation */ disabled={!!editingAcronym}
               />
             </div>
             <div>
