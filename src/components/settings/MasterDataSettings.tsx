@@ -69,7 +69,8 @@ export default function MasterDataSettings() {
             <span className="hidden sm:inline">Tamaños</span>
           </TabsTrigger>
           <TabsTrigger
-            value="sku-acronyms" {/* New tab for SKU Acronyms */}
+            value="sku-acronyms"
+            /* New tab for SKU Acronyms */
             className="flex items-center gap-2 data-[state=active]:gradient-accent data-[state=active]:text-white"
           >
             <Tag className="w-4 h-4" />
@@ -97,7 +98,8 @@ export default function MasterDataSettings() {
           <SizesSettings />
         </TabsContent>
 
-        <TabsContent value="sku-acronyms" className="p-0"> {/* New content for SKU Acronyms */}
+        <TabsContent value="sku-acronyms" className="p-0">
+          {/* New content for SKU Acronyms */}
           <SkuAcronymsSettings />
         </TabsContent>
       </Tabs>
