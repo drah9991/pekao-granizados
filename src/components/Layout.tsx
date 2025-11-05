@@ -10,30 +10,28 @@ import {
   Menu,
   X,
   ChevronDown,
-  Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, Cherry, Wine, ReceiptText // Import new icon for Sales
+  Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText // Removed Cherry, Wine icons
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useBranding } from "@/context/BrandingContext";
-import { useAuth } from "@/hooks/useAuth"; // Import useAuth
+import { useAuth } from "@/hooks/useAuth";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
-// Definir una interfaz para los elementos de navegación
 interface NavItem {
   name: string;
   href: string;
   icon: React.ElementType;
   type: "link" | "collapsible";
   children?: NavItem[];
-  roles?: string[]; // Add roles property
+  roles?: string[];
 }
 
-// Nueva estructura de navegación con el elemento 'Maestros' como desplegable
 const navigation: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, type: "link", roles: ["admin", "store_manager", "cashier", "delivery_driver", "customer"] },
   { name: "POS", href: "/pos", icon: ShoppingCart, type: "link", roles: ["admin", "store_manager", "cashier"] },
@@ -41,18 +39,17 @@ const navigation: NavItem[] = [
   { name: "Configuración", href: "/settings?tab=branding", icon: Settings, type: "link", roles: ["admin", "store_manager"] },
   {
     name: "Maestros",
-    href: "/settings?tab=master-data&subtab=products", // Enlace por defecto para Maestros
+    href: "/settings?tab=master-data&subtab=products",
     icon: Database,
     type: "collapsible",
-    roles: ["admin", "store_manager"], // Roles for the collapsible parent
+    roles: ["admin", "store_manager"],
     children: [
       { name: "Productos", href: "/settings?tab=master-data&subtab=products", icon: Package, type: "link", roles: ["admin", "store_manager"] },
       { name: "Inventario", href: "/settings?tab=master-data&subtab=inventory", icon: ClipboardList, type: "link", roles: ["admin", "store_manager"] },
       { name: "Usuarios", href: "/settings?tab=master-data&subtab=users", icon: UsersIcon, type: "link", roles: ["admin", "store_manager"] },
       { name: "Tiendas", href: "/settings?tab=master-data&subtab=stores", icon: StoreIcon, type: "link", roles: ["admin", "store_manager"] },
       { name: "Tamaños", href: "/settings?tab=master-data&subtab=sizes", icon: Ruler, type: "link", roles: ["admin", "store_manager"] },
-      { name: "Toppings", href: "/settings?tab=master-data&subtab=toppings", icon: Cherry, type: "link", roles: ["admin", "store_manager"] },
-      { name: "Sachets", href: "/settings?tab=master-data&subtab=sachets", icon: Wine, type: "link", roles: ["admin", "store_manager"] },
+      // Toppings and Sachets are now managed within Products, so removed from here
     ],
   },
 ];
@@ -62,10 +59,9 @@ export default function Layout({ children }: LayoutProps) {
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
   const { logoUrl, isLoadingBranding } = useBranding();
-  const { userRole, isLoading: isLoadingAuth } = useAuth(); // Use useAuth hook
+  const { userRole, isLoading: isLoadingAuth } = useAuth();
   const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
 
-  // Helper para verificar si un enlace está activo, considerando los parámetros de consulta
   const isLinkActive = (href: string) => {
     const currentPath = location.pathname;
     const currentSearch = location.search;
@@ -78,12 +74,10 @@ export default function Layout({ children }: LayoutProps) {
       return false;
     }
 
-    // Si el destino no tiene parámetros de búsqueda, es activo si la ruta coincide
     if (!targetSearch) {
       return true;
     }
 
-    // Si el destino tiene parámetros de búsqueda, verificar si los parámetros actuales contienen todos los del destino
     const currentSearchParams = new URLSearchParams(currentSearch);
     const targetSearchParams = new URLSearchParams(targetSearch);
 
@@ -95,18 +89,15 @@ export default function Layout({ children }: LayoutProps) {
     return true;
   };
 
-  // Helper para verificar si un elemento desplegable debe estar abierto por defecto (es decir, si alguno de sus hijos está activo)
   const isCollapsibleOpenByDefault = (item: NavItem) => {
     if (!item.children) return false;
     return item.children.some(child => isLinkActive(child.href));
   };
 
-  // Efecto para gestionar el estado abierto/cerrado del sidebar basado en el tamaño de la pantalla
   useEffect(() => {
     setIsSidebarOpen(!isMobile);
   }, [isMobile]);
 
-  // Efecto para gestionar el estado abierto/cerrado de los menús desplegables basado en la ruta activa
   useEffect(() => {
     const activeParent = navigation.find(item => item.type === "collapsible" && isCollapsibleOpenByDefault(item));
     if (activeParent) {
@@ -129,10 +120,9 @@ export default function Layout({ children }: LayoutProps) {
     setOpenCollapsible(prev => (prev === itemName ? null : itemName));
   };
 
-  // Filter navigation items based on user role
   const filteredNavigation = navigation.filter(item => {
-    if (isLoadingAuth || !userRole) return false; // Don't show navigation until auth is loaded
-    if (!item.roles) return true; // If no roles specified, visible to all authenticated users
+    if (isLoadingAuth || !userRole) return false;
+    if (!item.roles) return true;
     return item.roles.includes(userRole);
   }).map(item => {
     if (item.type === "collapsible" && item.children) {
@@ -149,7 +139,6 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Botón para abrir/cerrar el sidebar, ahora visible en todas las pantallas */}
       <Button
         variant="ghost"
         size="icon"
@@ -299,7 +288,6 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
-      {/* Overlay para dispositivos móviles cuando el sidebar está abierto */}
       {isMobile && isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50"
@@ -309,7 +297,6 @@ export default function Layout({ children }: LayoutProps) {
 
       <main className={cn(
         "flex-1 overflow-auto transition-all duration-300 ease-in-out",
-        // En pantallas no móviles (escritorio/tablet), si el sidebar está abierto, añade padding
         !isMobile && isSidebarOpen && "pl-64"
       )}>
         {children}

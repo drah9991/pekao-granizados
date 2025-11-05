@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { CartItem, Topping, Product, Size } from "@/lib/pos-types";
-import { availableToppings, sizes } from "@/lib/pos-data";
+import { CartItem, Product, Size } from "@/lib/pos-types"; // Topping interface removed
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
 // Utility function to ensure cart items are valid and clean them up
 const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
   return cartItems.filter(item => {
-    // Ensure item is an object, not null/undefined, and has valid id, price, and quantity
     if (
       !item || 
       typeof item !== 'object' ||
@@ -30,16 +30,76 @@ const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
   });
 };
 
-// The 'products' prop was unused in this hook, so it's removed for cleaner code.
 export const useCart = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
+  const [availableSizes, setAvailableSizes] = useState<Tables<'sizes'>[]>([]);
+  const [availableToppings, setAvailableToppings] = useState<Product[]>([]);
+  const [userStoreId, setUserStoreId] = useState<string | null>(null);
 
   useEffect(() => {
     // Clean cart on initial load to ensure data consistency
     setCart(prevCart => cleanCartItems(prevCart));
+    fetchUserStoreIdAndData();
   }, []);
+
+  const fetchUserStoreIdAndData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuario no autenticado.");
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      if (profile?.store_id) {
+        setUserStoreId(profile.store_id);
+        fetchDynamicData(profile.store_id);
+      } else {
+        toast.warning("No se encontró un ID de tienda para el usuario. Algunas funcionalidades podrían no estar disponibles.");
+      }
+    } catch (error: any) {
+      console.error("Error fetching user's store ID:", error);
+      toast.error("Error al obtener ID de tienda: " + error.message);
+    }
+  };
+
+  const fetchDynamicData = async (storeId: string) => {
+    try {
+      // Fetch sizes
+      const { data: sizesData, error: sizesError } = await supabase
+        .from('sizes')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('multiplier', { ascending: true });
+
+      if (sizesError) throw sizesError;
+      setAvailableSizes(sizesData || []);
+
+      // Fetch toppings (products of type 'topping')
+      const { data: toppingsData, error: toppingsError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('type', 'topping')
+        .eq('active', true)
+        .order('name', { ascending: true });
+
+      if (toppingsError) throw toppingsError;
+      setAvailableToppings(toppingsData as Product[] || []);
+
+    } catch (error: any) {
+      console.error("Error fetching dynamic data:", error);
+      toast.error("Error al cargar datos dinámicos: " + error.message);
+    }
+  };
 
   const addToCart = (
     product: Product,
@@ -47,14 +107,13 @@ export const useCart = () => {
     selectedToppingIds: string[],
     customized: boolean = false
   ) => {
-    const size = sizes.find(s => s.id === selectedSizeId);
+    const size = availableSizes.find(s => s.id === selectedSizeId);
     const validToppings = availableToppings.filter(t => selectedToppingIds.includes(t.id));
     
     const basePrice = product.price * (size?.multiplier || 1);
     const toppingsPrice = validToppings.reduce((sum, t) => sum + t.price, 0);
     const finalPrice = basePrice + toppingsPrice;
 
-    // Use a unique ID for customized items to allow multiple customizations of the same product
     const customizationId = customized ? `${product.id}-${Date.now()}` : product.id;
     
     const newItem: CartItem = {
@@ -64,7 +123,7 @@ export const useCart = () => {
       quantity: 1,
       size: size?.name,
       toppings: validToppings.length > 0 ? validToppings : undefined,
-      customizationId, // Keep track of the customization ID
+      customizationId,
     };
 
     setCart(prevCart => cleanCartItems([...prevCart, newItem]));
@@ -78,7 +137,7 @@ export const useCart = () => {
         return newQty > 0 ? { ...item, quantity: newQty } : item;
       }
       return item;
-    }).filter(item => item.quantity > 0); // Remove items with quantity 0 or less
+    }).filter(item => item.quantity > 0);
     
     setCart(cleanCartItems(updatedCart));
   };
@@ -106,7 +165,7 @@ export const useCart = () => {
   };
 
   return {
-    cart: cleanCartItems(cart), // Always return a clean cart
+    cart: cleanCartItems(cart),
     setCart,
     addToCart,
     updateQuantity,

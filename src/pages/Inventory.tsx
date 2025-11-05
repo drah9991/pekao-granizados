@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Package, TrendingDown, TrendingUp, AlertTriangle, Search, Filter, Plus, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/formatters"; // Import the formatter
+import { formatCurrency } from "@/lib/formatters";
+import { Enums } from "@/integrations/supabase/types";
 
 interface StockItem {
   id: string;
@@ -25,6 +26,7 @@ interface StockItem {
     price: number;
     cost: number | null;
     active: boolean;
+    type: Enums<'product_type'>; // Include product type
   };
   store: {
     name: string;
@@ -36,12 +38,21 @@ interface Store {
   name: string;
 }
 
+const productTypeOptions: { value: Enums<'product_type'> | "all"; label: string }[] = [
+  { value: "all", label: "Todos los tipos" },
+  { value: "granizado", label: "Granizados" },
+  { value: "topping", label: "Toppings" },
+  { value: "sachet", label: "Sachets" },
+  { value: "sweet", label: "Dulces" },
+];
+
 export default function Inventory() {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLowStock, setFilterLowStock] = useState(false);
+  const [filterProductType, setFilterProductType] = useState<Enums<'product_type'> | "all">("all"); // New filter
   const [loading, setLoading] = useState(true);
   
   // Adjust stock dialog
@@ -89,7 +100,8 @@ export default function Inventory() {
             sku,
             price,
             cost,
-            active
+            active,
+            type
           ),
           stores:store_id (
             name
@@ -181,8 +193,9 @@ export default function Inventory() {
       item.product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.store.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesLowStock = !filterLowStock || item.qty < item.min_qty;
+    const matchesProductType = filterProductType === "all" || item.product.type === filterProductType;
     
-    return matchesStore && matchesSearch && matchesLowStock;
+    return matchesStore && matchesSearch && matchesLowStock && matchesProductType;
   });
 
   const lowStockItems = stockItems.filter(item => item.qty < item.min_qty);
@@ -319,6 +332,19 @@ export default function Inventory() {
               </SelectContent>
             </Select>
 
+            <Select value={filterProductType} onValueChange={(value: Enums<'product_type'> | "all") => setFilterProductType(value)}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Todos los tipos" />
+              </SelectTrigger>
+              <SelectContent>
+                {productTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Button
               variant={filterLowStock ? "default" : "outline"}
               onClick={() => setFilterLowStock(!filterLowStock)}
@@ -368,10 +394,9 @@ export default function Inventory() {
                         <h3 className="font-semibold text-base">{item.product.name}</h3>
                         <Badge variant="outline" className="text-xs">{item.store.name}</Badge>
                         {item.product.sku && (
-                          <Badge variant="secondary" className="text-xs">
-                            SKU: {item.product.sku}
-                          </Badge>
+                          <Badge variant="secondary" className="text-xs">SKU: {item.product.sku}</Badge>
                         )}
+                        <Badge variant="outline" className="text-xs">Tipo: {item.product.type}</Badge>
                       </div>
                       <div className="flex gap-4 text-sm text-muted-foreground">
                         <span>Precio: {formatCurrency(item.product.price)}</span>

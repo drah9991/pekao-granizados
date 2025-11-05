@@ -9,14 +9,15 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Edit, Trash2, Package, DollarSign, TrendingUp, Eye, Image as ImageIcon, X, Upload, Download } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Package, DollarSign, TrendingUp, Eye, Image as ImageIcon, X, Upload, Download, IceCream, Cherry, Wine, Candy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Tables, TablesInsert, Json } from "@/integrations/supabase/types"; // Import TablesInsert
-import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils"; // Import CSV utilities
-import { formatCurrency } from "@/lib/formatters"; // Import the formatter
+import { Tables, TablesInsert, Json, Enums } from "@/integrations/supabase/types";
+import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils";
+import { formatCurrency } from "@/lib/formatters";
 
-type Product = Tables<'products'>; // Use Tables type for direct mapping
+type Product = Tables<'products'>;
+type ProductType = Enums<'product_type'>;
 
 interface StockInfo {
   store_name: string;
@@ -24,12 +25,20 @@ interface StockInfo {
   min_qty: number;
 }
 
+const productTypeOptions: { value: ProductType; label: string; icon: React.ElementType }[] = [
+  { value: "granizado", label: "Granizado", icon: IceCream },
+  { value: "topping", label: "Topping", icon: Cherry },
+  { value: "sachet", label: "Sachet", icon: Wine },
+  { value: "sweet", label: "Dulce", icon: Candy },
+];
+
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterActive, setFilterActive] = useState<string>("all");
+  const [filterType, setFilterType] = useState<ProductType | "all">("all"); // New filter for product type
   const [loading, setLoading] = useState(true);
-  const [userStoreId, setUserStoreId] = useState<string | null>(null); // State to hold the user's store_id
+  const [userStoreId, setUserStoreId] = useState<string | null>(null);
   
   // Create/Edit Dialog
   const [productDialog, setProductDialog] = useState(false);
@@ -43,9 +52,10 @@ export default function Products() {
     active: true,
     category: "",
     is_public: true,
-    images: [] as string[], // Initialize as empty array
+    images: [] as string[],
     variants: null as Json | null,
     recipe: null as Json | null,
+    type: "granizado" as ProductType, // Default type
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -74,7 +84,7 @@ export default function Products() {
 
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('store_id') // Select only store_id
+        .select('store_id')
         .eq('id', user.id)
         .single();
 
@@ -110,8 +120,9 @@ export default function Products() {
           is_public,
           created_at,
           updated_at,
-          store_id
-        `) // Explicitly select all fields required by Product interface
+          store_id,
+          type
+        `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -142,6 +153,7 @@ export default function Products() {
       images: [],
       variants: null,
       recipe: null,
+      type: "granizado", // Default type for new product
     });
     setProductDialog(true);
   };
@@ -154,17 +166,17 @@ export default function Products() {
       description: product.description || "",
       price: product.price.toString(),
       cost: product.cost?.toString() || "",
-      active: product.active || false, // Ensure boolean
+      active: product.active || false,
       category: product.category || "",
-      is_public: product.is_public || false, // Ensure boolean
+      is_public: product.is_public || false,
       images: product.images || [],
       variants: product.variants || null,
       recipe: product.recipe || null,
+      type: product.type || "granizado", // Set existing type
     });
     setProductDialog(true);
   };
 
-  // Helper function to prepare product data from form
   const prepareProductData = (): TablesInsert<'products'> => ({
     name: formData.name.trim(),
     sku: formData.sku.trim() || null,
@@ -177,37 +189,33 @@ export default function Products() {
     images: formData.images.length > 0 ? formData.images : null,
     variants: formData.variants,
     recipe: formData.recipe,
-    // store_id is only added for new products, or if it's an existing product and we need to ensure it's there.
-    // For updates, we assume store_id is already set and not changing.
+    type: formData.type, // Include the new type field
     ...(editingProduct ? {} : { store_id: userStoreId! }), 
   });
 
-  // Helper function to create a new product
   const createProduct = async (productData: TablesInsert<'products'>) => {
     const { data: newProductData, error } = await supabase
       .from("products")
       .insert([productData])
-      .select('id') // Select the ID of the newly created product
+      .select('id')
       .single();
 
     if (error) throw error;
 
-    // Now create the initial stock entry for the new product
     if (newProductData?.id && userStoreId) {
       const { error: stockError } = await supabase
         .from("store_stock")
         .insert({
           product_id: newProductData.id,
           store_id: userStoreId,
-          qty: 0, // Initial quantity
-          min_qty: 0, // Initial minimum quantity
+          qty: 0,
+          min_qty: 0,
         });
       if (stockError) throw stockError;
     }
     toast.success("Producto creado correctamente");
   };
 
-  // Helper function to update an existing product
   const updateProduct = async (productId: string, productData: TablesInsert<'products'>) => {
     const { error } = await supabase
       .from("products")
@@ -222,7 +230,15 @@ export default function Products() {
       toast.error("Nombre y precio son obligatorios");
       return;
     }
-    if (!userStoreId && !editingProduct) { // Only require storeId for new products
+    if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) < 0) {
+      toast.error("El precio debe ser un número positivo.");
+      return;
+    }
+    if (formData.cost && (isNaN(parseFloat(formData.cost)) || parseFloat(formData.cost) < 0)) {
+      toast.error("El costo debe ser un número positivo.");
+      return;
+    }
+    if (!userStoreId && !editingProduct) {
       toast.error("No se pudo determinar la tienda para este producto.");
       return;
     }
@@ -251,8 +267,6 @@ export default function Products() {
     if (!confirm(`¿Estás seguro de eliminar "${product.name}"?`)) return;
 
     try {
-      // Deleting a product should ideally also delete its stock entries due to foreign key cascade.
-      // If not, we would need to explicitly delete from store_stock first.
       const { error } = await supabase
         .from("products")
         .delete()
@@ -287,7 +301,6 @@ export default function Products() {
     setViewingProduct(product);
     setDetailsDialog(true);
 
-    // Fetch stock info
     try {
       const { data, error } = await supabase
         .from("store_stock")
@@ -357,15 +370,13 @@ export default function Products() {
       let errorCount = 0;
 
       for (const item of importedData) {
-        // Basic validation: ensure name and price exist
         if (!item.name || typeof item.price !== 'number' || item.price < 0) {
           toast.error(`Fila inválida (nombre o precio faltante/inválido): ${JSON.stringify(item)}`);
           errorCount++;
           continue;
         }
 
-        // Prepare data for Supabase
-        const productToSave: TablesInsert<'products'> = { // Cast to TablesInsert
+        const productToSave: TablesInsert<'products'> = {
           name: item.name,
           sku: item.sku || null,
           description: item.description || null,
@@ -377,14 +388,13 @@ export default function Products() {
           images: item.images || null,
           variants: item.variants || null,
           recipe: item.recipe || null,
-          store_id: userStoreId, // Assign to current user's store
+          type: item.type || "granizado", // Ensure type is set, default to granizado
+          store_id: userStoreId,
         };
 
-        // Check if product already exists by SKU or name (simple check, can be improved)
         const existingProduct = products.find(p => p.sku === item.sku && item.sku !== null) || products.find(p => p.name === item.name);
 
         if (existingProduct) {
-          // Update existing product
           const { error } = await supabase
             .from("products")
             .update(productToSave)
@@ -396,7 +406,6 @@ export default function Products() {
             updatedCount++;
           }
         } else {
-          // Insert new product
           const { data: newProductData, error } = await supabase
             .from("products")
             .insert([productToSave])
@@ -407,7 +416,6 @@ export default function Products() {
             console.error("Error inserting product:", error);
             errorCount++;
           } else if (newProductData?.id) {
-            // Create initial stock entry for the newly imported product
             const { error: stockError } = await supabase
               .from("store_stock")
               .insert({
@@ -429,7 +437,7 @@ export default function Products() {
       toast.success(`Importación completada: ${importedCount} creados, ${updatedCount} actualizados, ${errorCount} errores.`);
       setImportDialogIsOpen(false);
       setImportFile(null);
-      fetchProducts(); // Refresh the list
+      fetchProducts();
     } catch (error: any) {
       console.error("Error importing products:", error);
       toast.error("Error al importar productos: " + error.message);
@@ -448,7 +456,9 @@ export default function Products() {
       (filterActive === "active" && product.active) ||
       (filterActive === "inactive" && !product.active);
 
-    return matchesSearch && matchesFilter;
+    const matchesType = filterType === "all" || product.type === filterType;
+
+    return matchesSearch && matchesFilter && matchesType;
   });
 
   const stats = {
@@ -492,7 +502,7 @@ export default function Products() {
           <Button 
             className="gradient-primary shadow-glow w-full md:w-auto"
             onClick={openCreateDialog}
-            disabled={!userStoreId} // Disable if no store_id
+            disabled={!userStoreId}
           >
             <Plus className="mr-2 w-5 h-5" />
             Nuevo Producto
@@ -565,6 +575,23 @@ export default function Products() {
               />
             </div>
             
+            <Select value={filterType} onValueChange={(value: ProductType | "all") => setFilterType(value)}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filtrar por tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los tipos</SelectItem>
+                {productTypeOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div className="flex items-center gap-2">
+                      <option.icon className="w-4 h-4" />
+                      {option.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={filterActive} onValueChange={setFilterActive}>
               <SelectTrigger className="w-full md:w-48">
                 <SelectValue />
@@ -591,11 +618,11 @@ export default function Products() {
             <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No hay productos</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery || filterActive !== "all" 
+              {searchQuery || filterActive !== "all" || filterType !== "all"
                 ? "No se encontraron productos con los filtros aplicados"
                 : "Comienza creando tu primer producto"}
             </p>
-            {!searchQuery && filterActive === "all" && (
+            {!searchQuery && filterActive === "all" && filterType === "all" && (
               <Button onClick={openCreateDialog} className="gradient-primary" disabled={!userStoreId}>
                 <Plus className="mr-2 w-4 h-4" />
                 Crear Primer Producto
@@ -605,7 +632,9 @@ export default function Products() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {filteredProducts.map((product) => (
+          {filteredProducts.map((product) => {
+            const ProductIcon = productTypeOptions.find(opt => opt.value === product.type)?.icon || Package;
+            return (
             <Card 
               key={product.id} 
               className={`glass-card shadow-card transition-smooth hover:shadow-elevated group ${
@@ -624,6 +653,10 @@ export default function Products() {
                         {product.sku}
                       </Badge>
                     )}
+                    <Badge variant="outline" className="text-xs flex items-center gap-1">
+                      <ProductIcon className="w-3 h-3" />
+                      {productTypeOptions.find(opt => opt.value === product.type)?.label}
+                    </Badge>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-smooth">
                     <Button 
@@ -664,7 +697,7 @@ export default function Products() {
                 )}
               </CardContent>
             </Card>
-          ))}
+          )}
         </div>
       )}
       {/* Create/Edit Product Dialog */}
@@ -681,7 +714,7 @@ export default function Products() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleSaveProduct(); }} className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Label htmlFor="name">Nombre del Producto *</Label>
@@ -690,6 +723,41 @@ export default function Products() {
                   placeholder="Ej: Granizado Fresa"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="mt-2"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="type">Tipo de Producto *</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value: ProductType) => setFormData({ ...formData, type: value })}
+                  disabled={isProcessing}
+                >
+                  <SelectTrigger className="w-full mt-2">
+                    <SelectValue placeholder="Selecciona un tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productTypeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center gap-2">
+                          <option.icon className="w-4 h-4" />
+                          {option.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="category">Categoría</Label>
+                <Input
+                  id="category"
+                  placeholder="Ej: Clásicos, Premium, Frutas"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="mt-2"
                 />
               </div>
@@ -716,6 +784,7 @@ export default function Products() {
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   className="mt-2"
+                  required
                 />
               </div>
 
@@ -744,6 +813,17 @@ export default function Products() {
                 </Label>
               </div>
 
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_public"
+                  checked={formData.is_public}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_public: checked })}
+                />
+                <Label htmlFor="is_public" className="cursor-pointer">
+                  Visible al público (e-commerce)
+                </Label>
+              </div>
+
               <div className="col-span-2">
                 <Label htmlFor="description">Descripción</Label>
                 <Textarea
@@ -768,10 +848,13 @@ export default function Products() {
                 </p>
               </div>
             )}
-          </div>
+
+            {/* TODO: Add image upload, variants, recipe management */}
+          </form>
 
           <DialogFooter>
             <Button
+              type="button"
               variant="outline"
               onClick={() => setProductDialog(false)}
               disabled={isProcessing}
@@ -779,7 +862,7 @@ export default function Products() {
               Cancelar
             </Button>
             <Button
-              onClick={handleSaveProduct}
+              type="submit"
               disabled={isProcessing || !formData.name || !formData.price || (!editingProduct && !userStoreId)}
               className="gradient-primary"
             >
@@ -812,6 +895,25 @@ export default function Products() {
                     <Label className="text-muted-foreground">Nombre</Label>
                     <p className="text-lg font-semibold">{viewingProduct.name}</p>
                   </div>
+
+                  <div>
+                    <Label className="text-muted-foreground">Tipo</Label>
+                    <div className="mt-2">
+                      <Badge variant="outline" className="text-xs flex items-center gap-1">
+                        {productTypeOptions.find(opt => opt.value === viewingProduct.type)?.icon && (
+                          <productTypeOptions.find(opt => opt.value === viewingProduct.type)?.icon className="w-3 h-3" />
+                        )}
+                        {productTypeOptions.find(opt => opt.value === viewingProduct.type)?.label || viewingProduct.type}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {viewingProduct.category && (
+                    <div>
+                      <Label className="text-muted-foreground">Categoría</Label>
+                      <p className="font-mono">{viewingProduct.category}</p>
+                    </div>
+                  )}
 
                   {viewingProduct.sku && (
                     <div>
@@ -862,6 +964,15 @@ export default function Products() {
                     <div className="mt-2">
                       <Badge variant={viewingProduct.active ? "default" : "secondary"}>
                         {viewingProduct.active ? "Activo" : "Inactivo"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-muted-foreground">Visibilidad</Label>
+                    <div className="mt-2">
+                      <Badge variant={viewingProduct.is_public ? "default" : "secondary"}>
+                        {viewingProduct.is_public ? "Público" : "Privado"}
                       </Badge>
                     </div>
                   </div>
@@ -924,7 +1035,7 @@ export default function Products() {
             <DialogTitle>Importar Productos (CSV)</DialogTitle>
             <DialogDescription>
               Sube un archivo CSV para importar o actualizar productos.
-              Asegúrate de que las columnas coincidan con los campos del producto (id, name, sku, price, etc.).
+              Asegúrate de que las columnas coincidan con los campos del producto (id, name, sku, price, type, etc.).
             </DialogDescription>
           </DialogHeader>
 

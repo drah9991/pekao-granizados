@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Ruler, Cherry, Wine } from "lucide-react"; // Import new icons
+import { Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Ruler, Database } from "lucide-react"; // Removed Cherry, Wine icons
 import Products from "@/pages/Products";
 import Inventory from "@/pages/Inventory";
 import Users from "@/pages/Users";
 import Stores from "@/pages/Stores";
-import SizesSettings from "@/components/settings/SizesSettings"; // Import new component
-import ToppingsSettings from "@/components/settings/ToppingsSettings"; // Import new component
-import SachetsSettings from "@/components/settings/SachetsSettings"; // Import new component
+import SizesSettings from "@/components/settings/SizesSettings"; // Sizes still separate
 
 export default function MasterDataSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,12 +26,12 @@ export default function MasterDataSettings() {
       <div>
         <h2 className="text-2xl font-bold mb-2">Maestros del Sistema</h2>
         <p className="text-muted-foreground">
-          Gestiona los datos principales de tu negocio: productos, inventario, usuarios, tiendas, tamaños, toppings y sachets.
+          Gestiona los datos principales de tu negocio: productos (incluyendo toppings, sachets y dulces), inventario, usuarios, tiendas y tamaños.
         </p>
       </div>
 
       <Tabs value={activeSubTab} onValueChange={handleSubTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 h-auto gap-2 p-2 bg-muted/30"> {/* Updated grid-cols */}
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-2 p-2 bg-muted/30"> {/* Updated grid-cols */}
           <TabsTrigger
             value="products"
             className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
@@ -62,27 +60,12 @@ export default function MasterDataSettings() {
             <StoreIcon className="w-4 h-4" />
             <span className="hidden sm:inline">Tiendas</span>
           </TabsTrigger>
-          {/* New tabs for Sizes, Toppings, Sachets */}
           <TabsTrigger
             value="sizes"
             className="flex items-center gap-2 data-[state=active]:gradient-secondary data-[state=active]:text-white"
           >
             <Ruler className="w-4 h-4" />
             <span className="hidden sm:inline">Tamaños</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="toppings"
-            className="flex items-center gap-2 data-[state=active]:gradient-accent data-[state=active]:text-white"
-          >
-            <Cherry className="w-4 h-4" />
-            <span className="hidden sm:inline">Toppings</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="sachets"
-            className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
-          >
-            <Wine className="w-4 h-4" />
-            <span className="hidden sm:inline">Sachets</span>
           </TabsTrigger>
         </TabsList>
 
@@ -104,14 +87,6 @@ export default function MasterDataSettings() {
 
         <TabsContent value="sizes" className="p-0">
           <SizesSettings />
-        </TabsContent>
-
-        <TabsContent value="toppings" className="p-0">
-          <ToppingsSettings />
-        </TabsContent>
-
-        <TabsContent value="sachets" className="p-0">
-          <SachetsSettings />
         </TabsContent>
       </Tabs>
     </div>

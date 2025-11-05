@@ -5,8 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Minus, Plus, Trash2, Percent, Tag, Receipt } from "lucide-react";
-import { products as staticProducts } from "@/lib/pos-data";
-import { formatCurrency } from "@/lib/formatters"; // Import the formatter
+import { formatCurrency } from "@/lib/formatters";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Tables } from "@/integrations/supabase/types";
 
 interface CartSummaryProps {
   cart: CartItem[];
@@ -35,6 +38,61 @@ export default function CartSummary({
   total,
   onCheckout,
 }: CartSummaryProps) {
+  const [allProducts, setAllProducts] = useState<Tables<'products'>[]>([]);
+  const [userStoreId, setUserStoreId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchUserStoreId();
+  }, []);
+
+  useEffect(() => {
+    if (userStoreId) {
+      fetchAllProducts();
+    }
+  }, [userStoreId]);
+
+  const fetchUserStoreId = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuario no autenticado.");
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      if (profile?.store_id) {
+        setUserStoreId(profile.store_id);
+      } else {
+        toast.warning("No se encontró un ID de tienda para el usuario. No podrás ver productos.");
+      }
+    } catch (error: any) {
+      console.error("Error fetching user's store ID:", error);
+      toast.error("Error al obtener ID de tienda: " + error.message);
+    }
+  };
+
+  const fetchAllProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq('store_id', userStoreId!)
+        .eq('active', true);
+
+      if (error) throw error;
+      setAllProducts(data || []);
+    } catch (error: any) {
+      console.error("Error fetching all products:", error);
+      toast.error("Error al cargar productos: " + error.message);
+    }
+  };
+
   return (
     <div className="w-full lg:w-96 bg-card border-t lg:border-t-0 lg:border-l-2 border-border p-4 md:p-6 flex flex-col max-h-[40vh] lg:max-h-full">
       <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 bg-gradient-primary bg-clip-text text-transparent">
@@ -49,14 +107,14 @@ export default function CartSummary({
           </div>
         ) : (
           cart.map((item) => {
-            const product = staticProducts.find(p => p.id.split('-')[0] === item.id.split('-')[0]);
+            const product = allProducts.find(p => p.id === item.id.split('-')[0]); // Find base product
             
             return (
               <Card key={item.id} className="border-2 shadow-card hover:shadow-elevated transition-smooth">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-start gap-2 flex-1">
-                      <div className="text-2xl">{product?.emoji}</div>
+                      <div className="text-2xl">{product?.emoji || '🥤'}</div>
                       <div className="flex-1">
                         <p className="font-semibold text-sm md:text-base">{item.name}</p>
                         {item.size && (

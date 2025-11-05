@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import CartSummary from "@/components/pos/CartSummary";
 import PaymentDialog from "@/components/pos/PaymentDialog";
 import ReceiptDialog from "@/components/pos/ReceiptDialog";
 import { Product, CartItem } from "@/lib/pos-types";
-import { products as staticProducts } from "@/lib/pos-data";
+import { Tables } from "@/integrations/supabase/types";
 
 export default function POS() {
   const {
@@ -25,7 +25,7 @@ export default function POS() {
     discountAmount,
     total,
     resetCart,
-  } = useCart(); // Removed unused 'products' prop
+  } = useCart();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [customizeDialogIsOpen, setCustomizeDialogIsOpen] = useState(false);
@@ -40,7 +40,7 @@ export default function POS() {
   };
 
   const handleAddToCartFromDialog = (product: Product, sizeId: string, toppingIds: string[]) => {
-    addToCart(product, sizeId, toppingIds, true); // Pass true for customized
+    addToCart(product, sizeId, toppingIds, true);
     setCustomizeDialogIsOpen(false);
   };
 
@@ -52,12 +52,10 @@ export default function POS() {
     setPaymentDialogIsOpen(true);
   };
 
-  // Extracted function for processing the sale
   const processSale = async (method: "cash" | "card", amountReceived: number) => {
     setIsProcessing(true);
 
     try {
-      // Get current user and their store_id
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         throw new Error("Usuario no autenticado.");
@@ -76,10 +74,10 @@ export default function POS() {
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .insert({
-          store_id: profile.store_id, // Use the user's actual store_id
-          created_by: user.id, // Assign the current user as the creator
+          store_id: profile.store_id,
+          created_by: user.id,
           subtotal: subtotal,
-          tax: 0, // Assuming 0 tax for now, can be calculated later
+          tax: 0,
           total: total,
           status: "completed",
           payment: {
@@ -99,7 +97,7 @@ export default function POS() {
         price: item.price,
         qty: item.quantity,
         subtotal: item.price * item.quantity,
-        tax: 0, // Assuming 0 tax for now
+        tax: 0,
       }));
 
       const { error: itemsError } = await supabase
@@ -117,7 +115,7 @@ export default function POS() {
       toast.success("¡Venta procesada exitosamente!");
       setPaymentDialogIsOpen(false);
       setReceiptDialogIsOpen(true);
-      resetCart(); // Clear cart and reset discount
+      resetCart();
     } catch (error: any) {
       console.error("Error processing sale:", error);
       toast.error("Error al procesar la venta: " + error.message);

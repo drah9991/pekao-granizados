@@ -276,6 +276,7 @@ export type Database = {
           is_public: boolean | null
           created_at: string | null
           updated_at: string | null
+          type: Database["public"]["Enums"]["product_type"] // Added new type column
         }
         Insert: {
           id?: string
@@ -293,6 +294,7 @@ export type Database = {
           is_public?: boolean | null
           created_at?: string | null
           updated_at?: string | null
+          type?: Database["public"]["Enums"]["product_type"] // Added new type column
         }
         Update: {
           id?: string
@@ -310,6 +312,7 @@ export type Database = {
           is_public?: boolean | null
           created_at?: string | null
           updated_at?: string | null
+          type?: Database["public"]["Enums"]["product_type"] // Added new type column
         }
         Relationships: []
       }
@@ -412,44 +415,6 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []
-      }
-      sachets: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-          price: number
-          store_id: string
-          type: Database["public"]["Enums"]["sachet_type"]
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-          price?: number
-          store_id: string
-          type: Database["public"]["Enums"]["sachet_type"]
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-          price?: number
-          store_id?: string
-          type?: Database["public"]["Enums"]["sachet_type"]
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sachets_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "stores"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       sizes: {
         Row: {
@@ -564,41 +529,6 @@ export type Database = {
         }
         Relationships: []
       }
-      toppings: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-          price: number | null
-          store_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-          price?: number | null
-          store_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-          price?: number | null
-          store_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "toppings_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "stores"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           id: string
@@ -655,7 +585,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "manager" | "cashier" | "driver"
       order_status: "pending" | "completed" | "cancelled" | "processing" | "delivered"
-      sachet_type: "alcohol" | "non_alcohol"
+      product_type: "granizado" | "topping" | "sachet" | "sweet"
       user_role: "admin" | "store_manager" | "cashier" | "delivery_driver" | "customer"
     }
     CompositeTypes: {
@@ -741,7 +671,7 @@ export type Enums<
     ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  ? Database[PublicTableNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
     : never
