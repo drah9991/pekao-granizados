@@ -17,6 +17,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useBranding } from "@/context/BrandingContext";
+import { useAuth } from "@/hooks/useAuth"; // Import useAuth
 
 interface LayoutProps {
   children: ReactNode;
@@ -29,37 +30,40 @@ interface NavItem {
   icon: React.ElementType;
   type: "link" | "collapsible";
   children?: NavItem[];
+  roles?: string[]; // Add roles property
 }
 
 // Nueva estructura de navegación con el elemento 'Maestros' como desplegable
 const navigation: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, type: "link" },
-  { name: "POS", href: "/pos", icon: ShoppingCart, type: "link" },
-  { name: "Ventas", href: "/sales", icon: ReceiptText, type: "link" }, // New Sales link
-  { name: "Configuración", href: "/settings?tab=branding", icon: Settings, type: "link" },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, type: "link", roles: ["admin", "store_manager", "cashier", "delivery_driver", "customer"] },
+  { name: "POS", href: "/pos", icon: ShoppingCart, type: "link", roles: ["admin", "store_manager", "cashier"] },
+  { name: "Ventas", href: "/sales", icon: ReceiptText, type: "link", roles: ["admin", "store_manager", "cashier"] },
+  { name: "Configuración", href: "/settings?tab=branding", icon: Settings, type: "link", roles: ["admin", "store_manager"] },
   {
     name: "Maestros",
     href: "/settings?tab=master-data&subtab=products", // Enlace por defecto para Maestros
     icon: Database,
     type: "collapsible",
+    roles: ["admin", "store_manager"], // Roles for the collapsible parent
     children: [
-      { name: "Productos", href: "/settings?tab=master-data&subtab=products", icon: Package, type: "link" },
-      { name: "Inventario", href: "/settings?tab=master-data&subtab=inventory", icon: ClipboardList, type: "link" },
-      { name: "Usuarios", href: "/settings?tab=master-data&subtab=users", icon: UsersIcon, type: "link" },
-      { name: "Tiendas", href: "/settings?tab=master-data&subtab=stores", icon: StoreIcon, type: "link" },
-      { name: "Tamaños", href: "/settings?tab=master-data&subtab=sizes", icon: Ruler, type: "link" }, // New sub-item
-      { name: "Toppings", href: "/settings?tab=master-data&subtab=toppings", icon: Cherry, type: "link" }, // New sub-item
-      { name: "Sachets", href: "/settings?tab=master-data&subtab=sachets", icon: Wine, type: "link" }, // New sub-item
+      { name: "Productos", href: "/settings?tab=master-data&subtab=products", icon: Package, type: "link", roles: ["admin", "store_manager"] },
+      { name: "Inventario", href: "/settings?tab=master-data&subtab=inventory", icon: ClipboardList, type: "link", roles: ["admin", "store_manager"] },
+      { name: "Usuarios", href: "/settings?tab=master-data&subtab=users", icon: UsersIcon, type: "link", roles: ["admin", "store_manager"] },
+      { name: "Tiendas", href: "/settings?tab=master-data&subtab=stores", icon: StoreIcon, type: "link", roles: ["admin", "store_manager"] },
+      { name: "Tamaños", href: "/settings?tab=master-data&subtab=sizes", icon: Ruler, type: "link", roles: ["admin", "store_manager"] },
+      { name: "Toppings", href: "/settings?tab=master-data&subtab=toppings", icon: Cherry, type: "link", roles: ["admin", "store_manager"] },
+      { name: "Sachets", href: "/settings?tab=master-data&subtab=sachets", icon: Wine, type: "link", roles: ["admin", "store_manager"] },
     ],
   },
 ];
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const isMobile = useIsMobile(); // true if < 768px
-  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile); // Default to open on desktop, closed on mobile
+  const isMobile = useIsMobile();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
   const { logoUrl, isLoadingBranding } = useBranding();
-  const [openCollapsible, setOpenCollapsible] = useState<string | null>(null); // Estado para el elemento desplegable abierto
+  const { userRole, isLoading: isLoadingAuth } = useAuth(); // Use useAuth hook
+  const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
 
   // Helper para verificar si un enlace está activo, considerando los parámetros de consulta
   const isLinkActive = (href: string) => {
@@ -110,7 +114,7 @@ export default function Layout({ children }: LayoutProps) {
     } else {
       setOpenCollapsible(null);
     }
-  }, [location.pathname, location.search]); // Solo depende de los cambios de ubicación
+  }, [location.pathname, location.search]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -124,6 +128,24 @@ export default function Layout({ children }: LayoutProps) {
   const handleCollapsibleToggle = (itemName: string) => {
     setOpenCollapsible(prev => (prev === itemName ? null : itemName));
   };
+
+  // Filter navigation items based on user role
+  const filteredNavigation = navigation.filter(item => {
+    if (isLoadingAuth || !userRole) return false; // Don't show navigation until auth is loaded
+    if (!item.roles) return true; // If no roles specified, visible to all authenticated users
+    return item.roles.includes(userRole);
+  }).map(item => {
+    if (item.type === "collapsible" && item.children) {
+      return {
+        ...item,
+        children: item.children.filter(child => {
+          if (!child.roles) return true;
+          return child.roles.includes(userRole!);
+        })
+      };
+    }
+    return item;
+  });
 
   return (
     <div className="flex h-screen bg-background">
@@ -163,7 +185,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         <nav className="flex-1 p-5 space-y-2 overflow-y-auto">
-          {navigation.map((item) => {
+          {filteredNavigation.map((item) => {
             const isActive = isLinkActive(item.href);
             const isOpen = openCollapsible === item.name;
 

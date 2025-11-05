@@ -4,13 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { BrandingProvider } from "@/context/BrandingContext"; // Import BrandingProvider
+import { BrandingProvider } from "@/context/BrandingContext";
+import ProtectedRoute from "@/components/ProtectedRoute"; // Import ProtectedRoute
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import POS from "./pages/POS";
 import Settings from "./pages/Settings";
-import Sales from "./pages/Sales"; // Import the new Sales page
+import Sales from "./pages/Sales";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,17 +22,47 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrandingProvider> {/* Mover BrandingProvider para que envuelva a BrowserRouter */}
+        <BrandingProvider>
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/pos" element={<POS />} />
-              <Route path="/sales" element={<Sales />} /> {/* New route for Sales */}
-              <Route path="/settings" element={<Settings />} />
-              {/* Removed direct routes for /products, /inventory, /users as they are now nested under /settings */}
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              
+              {/* Protected Routes */}
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/pos" 
+                element={
+                  <ProtectedRoute requiredRole={["admin", "store_manager", "cashier"]}>
+                    <POS />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/sales" 
+                element={
+                  <ProtectedRoute requiredRole={["admin", "store_manager", "cashier"]}>
+                    <Sales />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute requiredRole={["admin", "store_manager"]}>
+                    <Settings />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

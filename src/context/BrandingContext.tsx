@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth'; // Import useAuth
 
 interface BrandingContextType {
   logoUrl: string | null;
@@ -12,6 +13,7 @@ interface BrandingContextType {
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
 
 export const BrandingProvider = ({ children }: { children: ReactNode }) => {
+  const { user, isLoading: isLoadingAuth } = useAuth(); // Use useAuth hook
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState<string>("#0EA5E9"); // Default primary color
   const [isLoadingBranding, setIsLoadingBranding] = useState(true);
@@ -20,7 +22,11 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
   const fetchBrandingSettings = async () => {
     setIsLoadingBranding(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      if (isLoadingAuth) {
+        // Wait for auth to load
+        return;
+      }
+
       if (!user) {
         // If no user, use default branding and stop loading
         setLogoUrl(null);
@@ -30,19 +36,18 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      // User is authenticated, proceed to fetch store and branding
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('store_id')
         .eq('id', user.id)
-        .maybeSingle(); // Cambiado a maybeSingle()
+        .maybeSingle();
 
       if (profileError) {
-        // Si hay un error real de la base de datos (no solo 'no rows found'), lo lanzamos
         throw profileError;
       }
       
       if (!profile?.store_id) {
-        // Si no hay perfil o no hay store_id, usar branding por defecto
         setLogoUrl(null);
         setPrimaryColor("#0EA5E9");
         document.documentElement.style.setProperty('--brand-primary-color', "#0EA5E9");
@@ -54,14 +59,13 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         .from('stores')
         .select('config')
         .eq('id', profile.store_id)
-        .maybeSingle(); // Cambiado a maybeSingle()
+        .maybeSingle();
 
       if (storeError) {
-        // Si hay un error real de la base de datos, lo lanzamos
         throw storeError;
       }
 
-      if (store?.config) { // Verificar si store y config existen
+      if (store?.config) {
         const config = store.config as any;
         const brandingConfig = config.branding;
         if (brandingConfig) {
@@ -90,8 +94,10 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    fetchBrandingSettings();
-  }, [refreshKey]); // Re-fetch when refreshKey changes
+    if (!isLoadingAuth) { // Only fetch branding once auth state is known
+      fetchBrandingSettings();
+    }
+  }, [refreshKey, user, isLoadingAuth]); // Re-fetch when refreshKey, user, or auth loading state changes
 
   const refreshBranding = () => {
     setRefreshKey(prev => prev + 1);
