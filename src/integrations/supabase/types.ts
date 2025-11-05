@@ -416,6 +416,33 @@ export type Database = {
         }
         Relationships: []
       }
+      sku_acronyms: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       sizes: {
         Row: {
           created_at: string | null
@@ -668,7 +695,7 @@ export type Enums<
     | keyof PublicSchema["Enums"]
     | { schema: keyof Database },
   EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
   ? Database[PublicTableNameOrOptions["schema"]]["Enums"][EnumName]

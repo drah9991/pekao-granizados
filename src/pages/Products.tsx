@@ -17,6 +17,7 @@ import { IceCream, Cherry, Wine, Candy } from "lucide-react"; // Icons for produ
 
 type Product = Tables<'products'>;
 type ProductType = Enums<'product_type'>;
+type SkuAcronym = Tables<'sku_acronyms'>; // Import SkuAcronym type
 
 interface StockInfo {
   store_name: string;
@@ -33,6 +34,7 @@ const productTypeOptions: { value: ProductType; label: string; icon: React.Eleme
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [skuAcronyms, setSkuAcronyms] = useState<SkuAcronym[]>([]); // New state for SKU acronyms
   const [searchQuery, setSearchQuery] = useState("");
   const [filterActive, setFilterActive] = useState<string>("all");
   const [filterType, setFilterType] = useState<ProductType | "all">("all");
@@ -70,13 +72,9 @@ export default function Products() {
 
   useEffect(() => {
     fetchUserStoreId();
+    fetchProducts();
+    fetchSkuAcronyms(); // Fetch SKU acronyms on load
   }, []);
-
-  useEffect(() => {
-    if (userStoreId) {
-      fetchProducts();
-    }
-  }, [userStoreId]);
 
   const fetchUserStoreId = async () => {
     try {
@@ -136,6 +134,21 @@ export default function Products() {
       toast.error("Error al cargar productos");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSkuAcronyms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("sku_acronyms")
+        .select("*")
+        .order("type", { ascending: true });
+
+      if (error) throw error;
+      setSkuAcronyms(data || []);
+    } catch (error: any) {
+      console.error("Error fetching SKU acronyms:", error);
+      toast.error("Error al cargar acrónimos SKU: " + error.message);
     }
   };
 
@@ -521,6 +534,7 @@ export default function Products() {
         onSave={handleSaveProduct}
         isProcessing={isProcessing}
         productTypeOptions={productTypeOptions}
+        skuAcronyms={skuAcronyms} // Pass SKU acronyms here
       />
 
       {/* Product Details Dialog */}

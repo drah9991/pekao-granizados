@@ -7,10 +7,11 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/formatters";
 import { Tables, Json, Enums } from "@/integrations/supabase/types";
-import React from "react";
+import React, "react";
 
 type Product = Tables<'products'>;
 type ProductType = Enums<'product_type'>;
+type SkuAcronym = Tables<'sku_acronyms'>;
 
 interface ProductFormDialogProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ interface ProductFormDialogProps {
   onSave: () => void;
   isProcessing: boolean;
   productTypeOptions: { value: ProductType; label: string; icon: React.ElementType }[];
+  skuAcronyms: SkuAcronym[]; // New prop for SKU acronyms
 }
 
 export default function ProductFormDialog({
@@ -58,7 +60,18 @@ export default function ProductFormDialog({
   onSave,
   isProcessing,
   productTypeOptions,
+  skuAcronyms, // Destructure new prop
 }: ProductFormDialogProps) {
+
+  const generateSkuSuggestion = () => {
+    const typeAcronym = skuAcronyms.find(a => a.type === formData.type)?.code || '';
+    const namePart = formData.name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+    if (typeAcronym && namePart) {
+      return `${typeAcronym}-${namePart}`;
+    }
+    return '';
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
@@ -121,15 +134,27 @@ export default function ProductFormDialog({
               />
             </div>
 
-            <div>
+            <div className="col-span-2"> {/* Changed to col-span-2 for better layout with SKU suggestion */}
               <Label htmlFor="sku">SKU (Código)</Label>
-              <Input
-                id="sku"
-                placeholder="Ej: GRAN-FRES-001"
-                value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="mt-2"
-              />
+              <div className="flex gap-2 mt-2">
+                <Input
+                  id="sku"
+                  placeholder={generateSkuSuggestion() || "Ej: GRAN-FRES-001"}
+                  value={formData.sku}
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  className="flex-1 font-mono"
+                />
+                {!formData.sku && generateSkuSuggestion() && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setFormData({ ...formData, sku: generateSkuSuggestion() })}
+                    className="whitespace-nowrap"
+                  >
+                    Sugerir SKU
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div>
