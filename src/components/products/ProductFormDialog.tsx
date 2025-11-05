@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/formatters";
 import { Tables, Json, Enums } from "@/integrations/supabase/types";
-import React, "react";
+import React from "react"; // Corrected import statement
 
 type Product = Tables<'products'>;
 type ProductType = Enums<'product_type'>;
