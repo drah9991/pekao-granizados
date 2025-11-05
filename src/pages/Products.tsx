@@ -184,10 +184,26 @@ export default function Products() {
 
   // Helper function to create a new product
   const createProduct = async (productData: TablesInsert<'products'>) => {
-    const { error } = await supabase
+    const { data: newProductData, error } = await supabase
       .from("products")
-      .insert([productData]);
+      .insert([productData])
+      .select('id') // Select the ID of the newly created product
+      .single();
+
     if (error) throw error;
+
+    // Now create the initial stock entry for the new product
+    if (newProductData?.id && userStoreId) {
+      const { error: stockError } = await supabase
+        .from("store_stock")
+        .insert({
+          product_id: newProductData.id,
+          store_id: userStoreId,
+          qty: 0, // Initial quantity
+          min_qty: 0, // Initial minimum quantity
+        });
+      if (stockError) throw stockError;
+    }
     toast.success("Producto creado correctamente");
   };
 
@@ -235,6 +251,8 @@ export default function Products() {
     if (!confirm(`¿Estás seguro de eliminar "${product.name}"?`)) return;
 
     try {
+      // Deleting a product should ideally also delete its stock entries due to foreign key cascade.
+      // If not, we would need to explicitly delete from store_stock first.
       const { error } = await supabase
         .from("products")
         .delete()
@@ -379,14 +397,31 @@ export default function Products() {
           }
         } else {
           // Insert new product
-          const { error } = await supabase
+          const { data: newProductData, error } = await supabase
             .from("products")
-            .insert([productToSave]);
+            .insert([productToSave])
+            .select('id')
+            .single();
+
           if (error) {
             console.error("Error inserting product:", error);
             errorCount++;
-          } else {
-            importedCount++;
+          } else if (newProductData?.id) {
+            // Create initial stock entry for the newly imported product
+            const { error: stockError } = await supabase
+              .from("store_stock")
+              .insert({
+                product_id: newProductData.id,
+                store_id: userStoreId,
+                qty: 0,
+                min_qty: 0,
+              });
+            if (stockError) {
+              console.error("Error creating stock for imported product:", stockError);
+              errorCount++;
+            } else {
+              importedCount++;
+            }
           }
         }
       }
