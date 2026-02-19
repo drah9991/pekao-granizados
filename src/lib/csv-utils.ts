@@ -1,4 +1,4 @@
-import { parse } from 'csv-parse/browser/esm/sync';
+// Browser-native CSV parser (no Node.js dependencies)
 import { stringify } from 'csv-stringify/sync';
 
 /**
@@ -42,28 +42,76 @@ export function importFromCsv<T extends Record<string, any>>(csvString: string):
     return [];
   }
 
-  const records = parse(csvString, {
-    columns: true,
-    skip_empty_lines: true,
-    cast: (value, context) => {
-      // Intentar parsear a número si es posible
-      if (!isNaN(Number(value)) && value.trim() !== '') {
-        return Number(value);
+  const lines = parseCsvLines(csvString);
+  if (lines.length < 2) return [];
+
+  const headers = lines[0];
+  const records: T[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i];
+    if (values.length === 0 || (values.length === 1 && values[0] === '')) continue;
+    const row: Record<string, any> = {};
+    headers.forEach((header, idx) => {
+      const value = idx < values.length ? values[idx] : '';
+      row[header] = castValue(value);
+    });
+    records.push(row as T);
+  }
+
+  return records;
+}
+
+function castValue(value: string): any {
+  if (value === '') return value;
+  if (!isNaN(Number(value)) && value.trim() !== '') return Number(value);
+  if (value.toLowerCase() === 'true') return true;
+  if (value.toLowerCase() === 'false') return false;
+  try { return JSON.parse(value); } catch { return value; }
+}
+
+/**
+ * Parsea líneas CSV respetando comillas.
+ */
+function parseCsvLines(csv: string): string[][] {
+  const result: string[][] = [];
+  let current = '';
+  let inQuotes = false;
+  let row: string[] = [];
+
+  for (let i = 0; i < csv.length; i++) {
+    const ch = csv[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < csv.length && csv[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += ch;
       }
-      // Intentar parsear a booleano
-      if (value.toLowerCase() === 'true') return true;
-      if (value.toLowerCase() === 'false') return false;
-      // Intentar parsear JSON (para arrays o objetos guardados como string)
-      try {
-        const parsed = JSON.parse(value);
-        return parsed;
-      } catch (e) {
-        // Si no es JSON válido, devolver el valor original
-        return value;
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        row.push(current);
+        current = '';
+      } else if (ch === '\n' || (ch === '\r' && csv[i + 1] === '\n')) {
+        row.push(current);
+        current = '';
+        result.push(row);
+        row = [];
+        if (ch === '\r') i++;
+      } else {
+        current += ch;
       }
     }
-  });
-  return records as T[];
+  }
+  row.push(current);
+  if (row.some(v => v !== '')) result.push(row);
+  return result;
 }
 
 /**
