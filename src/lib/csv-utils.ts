@@ -1,5 +1,4 @@
-// Browser-native CSV parser (no Node.js dependencies)
-import { stringify } from 'csv-stringify/sync';
+// Browser-native CSV utilities (no Node.js dependencies)
 
 /**
  * Convierte un array de objetos a una cadena CSV.
@@ -29,7 +28,20 @@ export function exportToCsv<T extends Record<string, any>>(data: T[], columns?: 
     return newRow;
   });
 
-  return stringify(records, { header: true, columns: header });
+  // Build CSV string natively
+  const escapeCsvValue = (val: any): string => {
+    const str = val === null || val === undefined ? '' : String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+
+  const lines = [header.map(escapeCsvValue).join(',')];
+  for (const row of records) {
+    lines.push(header.map(col => escapeCsvValue(row[col])).join(','));
+  }
+  return lines.join('\n');
 }
 
 /**
