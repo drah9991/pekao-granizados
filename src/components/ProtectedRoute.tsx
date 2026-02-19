@@ -4,11 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { Enums } from '@/integrations/supabase/types';
 import { Loader2 } from 'lucide-react';
 
-type UserRole = Enums<'user_role'>;
+type AppRole = Enums<'app_role'>;
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: UserRole | UserRole[];
+  requiredRole?: AppRole | AppRole[];
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
@@ -29,7 +29,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   if (requiredRole && userRole) {
     const rolesArray = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
     if (!rolesArray.includes(userRole)) {
-      // Optionally, redirect to an unauthorized page or dashboard
       return <Navigate to="/dashboard" replace />;
     }
   }

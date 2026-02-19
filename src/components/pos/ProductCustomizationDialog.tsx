@@ -130,7 +130,7 @@ export default function ProductCustomizationDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
-            {product.emoji || '🥤'} Personalizar {product.name}
+            🥤 Personalizar {product.name}
           </DialogTitle>
           <DialogDescription>
             Selecciona el tamaño y agrega toppings a tu granizado

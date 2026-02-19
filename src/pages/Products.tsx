@@ -107,24 +107,7 @@ export default function Products() {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select(`
-          id,
-          name,
-          sku,
-          description,
-          price,
-          cost,
-          active,
-          images,
-          variants,
-          recipe,
-          category,
-          is_public,
-          created_at,
-          updated_at,
-          store_id,
-          type
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
