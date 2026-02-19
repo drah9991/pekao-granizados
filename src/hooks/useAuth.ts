@@ -22,93 +22,97 @@ export const useAuth = () => {
     storeId: null,
   });
 
-  const fetchRoleForUser = async (userId: string): Promise<AppRole | null> => {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (error) {
-      console.error("Error fetching user role:", error);
-      return null;
-    }
-    return data?.role || null;
-  };
-
   useEffect(() => {
-    const fetchUserAndProfile = async () => {
-      setAuthState(prev => ({ ...prev, isLoading: true }));
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    let isMounted = true;
 
-      if (sessionError) {
-        console.error("Error fetching session:", sessionError);
-        setAuthState({ user: null, session: null, isLoading: false, userRole: null, storeId: null });
+    const fetchProfileAndRole = async (userId: string) => {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profileError || !profile) {
+        console.error("Error fetching user profile:", profileError);
+        if (isMounted) {
+          setAuthState(prev => ({ ...prev, user: null, userRole: null, storeId: null }));
+        }
         return;
       }
 
-      if (session?.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-        if (profileError) {
-          console.error("Error fetching user profile:", profileError);
+      if (roleError) {
+        console.error("Error fetching user role:", roleError);
+      }
+
+      if (isMounted) {
+        setAuthState(prev => ({
+          ...prev,
+          user: profile,
+          userRole: roleData?.role || null,
+          storeId: profile.store_id,
+        }));
+      }
+    };
+
+    // 1. Register listener BEFORE getSession()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!isMounted) return;
+
+        if (event === 'SIGNED_OUT') {
           setAuthState({ user: null, session: null, isLoading: false, userRole: null, storeId: null });
           return;
         }
 
-        const role = await fetchRoleForUser(session.user.id);
+        // Update session synchronously
+        setAuthState(prev => ({ ...prev, session }));
 
-        setAuthState({
-          user: profile,
-          session,
-          isLoading: false,
-          userRole: role,
-          storeId: profile.store_id,
-        });
-      } else {
-        setAuthState({ user: null, session: null, isLoading: false, userRole: null, storeId: null });
-      }
-    };
-
-    fetchUserAndProfile();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-          if (session?.user) {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-
-            if (profileError) {
-              console.error("Error fetching user profile on auth state change:", profileError);
-              setAuthState({ user: null, session: null, isLoading: false, userRole: null, storeId: null });
-              return;
-            }
-
-            const role = await fetchRoleForUser(session.user.id);
-
-            setAuthState({
-              user: profile,
-              session,
-              isLoading: false,
-              userRole: role,
-              storeId: profile.store_id,
-            });
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setAuthState({ user: null, session: null, isLoading: false, userRole: null, storeId: null });
+        // Defer async work to avoid deadlock
+        if (session?.user) {
+          setTimeout(() => {
+            if (isMounted) fetchProfileAndRole(session.user.id);
+          }, 0);
         }
       }
     );
 
+    // 2. Initial load (controls isLoading)
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error || !session?.user) {
+          if (isMounted) {
+            setAuthState({ user: null, session: null, isLoading: false, userRole: null, storeId: null });
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setAuthState(prev => ({ ...prev, session }));
+        }
+
+        await fetchProfileAndRole(session.user.id);
+      } catch (err) {
+        console.error("Error during initial auth load:", err);
+      } finally {
+        if (isMounted) {
+          setAuthState(prev => ({ ...prev, isLoading: false }));
+        }
+      }
+    };
+
+    initializeAuth();
+
     return () => {
-      authListener.subscription.unsubscribe();
+      isMounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
