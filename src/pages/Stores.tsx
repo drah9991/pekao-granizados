@@ -6,19 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2, Store as StoreIcon, MapPin, Clock, DollarSign, Settings as SettingsIcon } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Store as StoreIcon, MapPin, DollarSign, Settings as SettingsIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, Enums } from "@/integrations/supabase/types";
 
 type Store = Tables<'stores'>;
-type UserRoleEnum = Enums<'user_role'>;
+type AppRole = Enums<'app_role'>;
 
 export default function Stores() {
   const [stores, setStores] = useState<Store[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true); // Corrected: useState(true)
-  const [currentUserRole, setCurrentUserRole] = useState<UserRoleEnum | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentUserRole, setCurrentUserRole] = useState<AppRole | null>(null);
 
   // Dialog states
   const [storeDialogIsOpen, setStoreDialogIsOpen] = useState(false);
@@ -26,10 +26,9 @@ export default function Stores() {
   const [formData, setFormData] = useState({
     name: "",
     address: "",
-    opening_hours: "",
     currency: "COP",
     tax_rate: "0",
-    config: {} as any, // Initialize config as an empty object
+    config: {} as any,
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -41,15 +40,15 @@ export default function Stores() {
   const fetchCurrentUserRole = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: profile, error } = await supabase
-        .from('profiles')
+      const { data, error } = await supabase
+        .from('user_roles')
         .select('role')
-        .eq('id', user.id)
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
       if (error) {
-        console.error("Error fetching current user's profile:", error);
+        console.error("Error fetching current user's role:", error);
       } else {
-        setCurrentUserRole(profile?.role || null);
+        setCurrentUserRole(data?.role || null);
       }
     }
   };
@@ -77,7 +76,6 @@ export default function Stores() {
     setFormData({
       name: "",
       address: "",
-      opening_hours: "",
       currency: "COP",
       tax_rate: "0",
       config: {},
@@ -90,7 +88,6 @@ export default function Stores() {
     setFormData({
       name: store.name,
       address: store.address || "",
-      opening_hours: store.opening_hours || "",
       currency: store.currency || "COP",
       tax_rate: store.tax_rate?.toString() || "0",
       config: store.config || {},
@@ -109,14 +106,12 @@ export default function Stores() {
       const storeData = {
         name: formData.name.trim(),
         address: formData.address.trim() || null,
-        opening_hours: formData.opening_hours.trim() || null,
         currency: formData.currency.trim(),
         tax_rate: parseFloat(formData.tax_rate),
         config: formData.config,
       };
 
       if (editingStore) {
-        // Update existing store
         const { error } = await supabase
           .from("stores")
           .update(storeData)
@@ -125,7 +120,6 @@ export default function Stores() {
         if (error) throw error;
         toast.success("Tienda actualizada correctamente.");
       } else {
-        // Create new store
         const { error } = await supabase
           .from("stores")
           .insert([storeData]);
@@ -169,12 +163,12 @@ export default function Stores() {
     }
   };
 
-  const canManageStores = currentUserRole === "admin" || currentUserRole === "store_manager";
+  const canManageStores = currentUserRole === "admin" || currentUserRole === "manager";
 
   const filteredStores = stores.filter(store =>
     store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     store.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    store.currency.toLowerCase().includes(searchQuery.toLowerCase())
+    (store.currency || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -212,7 +206,7 @@ export default function Stores() {
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Tiendas Activas</p>
-              <p className="text-2xl font-bold text-accent">{stores.length}</p> {/* Assuming all are active for now */}
+              <p className="text-2xl font-bold text-accent">{stores.length}</p>
             </div>
             <SettingsIcon className="w-8 h-8 text-accent" />
           </CardContent>
@@ -280,7 +274,6 @@ export default function Stores() {
                   <TableRow>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Dirección</TableHead>
-                    <TableHead>Horario</TableHead>
                     <TableHead>Moneda</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
@@ -290,7 +283,6 @@ export default function Stores() {
                     <TableRow key={store.id}>
                       <TableCell className="font-medium">{store.name}</TableCell>
                       <TableCell>{store.address || 'N/A'}</TableCell>
-                      <TableCell>{store.opening_hours || 'N/A'}</TableCell>
                       <TableCell>{store.currency}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -358,16 +350,6 @@ export default function Stores() {
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="mt-2"
                 rows={3}
-              />
-            </div>
-            <div>
-              <Label htmlFor="opening_hours">Horario de Apertura</Label>
-              <Input
-                id="opening_hours"
-                placeholder="Ej: L-S 9:00 AM - 8:00 PM"
-                value={formData.opening_hours}
-                onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })}
-                className="mt-2"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

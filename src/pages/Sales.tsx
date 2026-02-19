@@ -9,15 +9,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Filter, Eye, Receipt, DollarSign, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Tables, Enums } from "@/integrations/supabase/types";
+import { Tables } from "@/integrations/supabase/types";
 import { formatCurrency } from "@/lib/formatters";
 
 type Order = Tables<'orders'>;
-type OrderStatus = Enums<'order_status'>;
+
+type OrderStatus = "pending" | "completed" | "cancelled" | "processing" | "delivered";
 
 interface OrderWithDetails extends Order {
-  creator_profile: { full_name: string | null } | null; // Alias for created_by profile
-  customer_details: { name: string | null } | null; // Updated alias for customer_id relationship
+  creator_profile: { name: string | null } | null;
+  customer_details: { name: string | null } | null;
 }
 
 const orderStatusOptions: { value: OrderStatus | "all"; label: string; color: string }[] = [
@@ -44,7 +45,7 @@ export default function Sales() {
     if (currentUserStoreId) {
       fetchOrders();
     }
-  }, [currentUserStoreId, selectedStatusFilter]); // Re-fetch when store or filter changes
+  }, [currentUserStoreId, selectedStatusFilter]);
 
   const fetchCurrentUserStoreId = async () => {
     try {
@@ -79,9 +80,9 @@ export default function Sales() {
         .from("orders")
         .select(`
           *,
-          creator_profile:profiles!orders_created_by_fkey(full_name),
+          creator_profile:profiles!orders_created_by_fkey(name),
           customer_details:customers!orders_customer_id_fkey(name)
-        `) // Explicitly using the foreign key name
+        `)
         .eq('store_id', currentUserStoreId!)
         .order("created_at", { ascending: false });
 
@@ -92,7 +93,7 @@ export default function Sales() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setOrders(data as OrderWithDetails[] || []);
+      setOrders((data as unknown as OrderWithDetails[]) || []);
     } catch (error: any) {
       console.error("Error fetching orders:", error);
       toast.error("Error al cargar ventas: " + error.message);
@@ -103,20 +104,19 @@ export default function Sales() {
 
   const handleViewDetails = (order: OrderWithDetails) => {
     toast.info(`Ver detalles del pedido #${order.id.slice(0, 8)}`);
-    // Implement navigation to a detailed order page or open a dialog here
   };
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = !searchQuery ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.creator_profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer_details?.name?.toLowerCase().includes(searchQuery.toLowerCase()); // Updated to customer_details
+      order.creator_profile?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customer_details?.name?.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesSearch;
   });
 
   const totalSalesToday = orders
-    .filter(order => new Date(order.created_at).toDateString() === new Date().toDateString() && order.status === 'completed')
+    .filter(order => new Date(order.created_at!).toDateString() === new Date().toDateString() && order.status === 'completed')
     .reduce((sum, order) => sum + order.total, 0);
 
   const completedOrdersCount = orders.filter(order => order.status === 'completed').length;
@@ -243,8 +243,8 @@ export default function Sales() {
                       return (
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">{order.id.slice(0, 8)}</TableCell>
-                          <TableCell>{new Date(order.created_at).toLocaleString('es-CO')}</TableCell>
-                          <TableCell>{order.creator_profile?.full_name || 'N/A'}</TableCell>
+                          <TableCell>{new Date(order.created_at!).toLocaleString('es-CO')}</TableCell>
+                          <TableCell>{order.creator_profile?.name || 'N/A'}</TableCell>
                           <TableCell>{order.customer_details?.name || 'Cliente General'}</TableCell>
                           <TableCell className="font-bold">{formatCurrency(order.total)}</TableCell>
                           <TableCell>

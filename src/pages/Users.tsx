@@ -6,17 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"; // Import table components
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Edit, Trash2, User, Phone, Mail, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, Enums } from "@/integrations/supabase/types";
 
 type Profile = Tables<'profiles'>;
-type UserRoleEnum = Enums<'user_role'>;
+type AppRole = Enums<'app_role'>;
 
 interface UserWithRole extends Profile {
-  role: UserRoleEnum | null;
+  role: AppRole | null;
 }
 
 interface Store {
@@ -25,46 +25,45 @@ interface Store {
 }
 
 interface RoleConfig {
-  role: UserRoleEnum;
+  role: AppRole;
   label: string;
   color: string;
 }
 
 const rolesConfig: RoleConfig[] = [
   { role: "admin", label: "Administrador", color: "bg-primary" },
-  { role: "store_manager", label: "Gerente de Tienda", color: "bg-secondary" },
+  { role: "manager", label: "Gerente de Tienda", color: "bg-secondary" },
   { role: "cashier", label: "Cajero", color: "bg-accent" },
-  { role: "delivery_driver", label: "Repartidor", color: "bg-blue-500" },
-  { role: "customer", label: "Cliente", color: "bg-gray-500" },
+  { role: "driver", label: "Repartidor", color: "bg-blue-500" },
 ];
 
 export default function Users() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [currentUserStoreId, setCurrentUserStoreId] = useState<string | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState<UserRoleEnum | null>(null); // New state for current user's role
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null); // State to hold the current user's ID
+  const [currentUserRole, setCurrentUserRole] = useState<AppRole | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRoleFilter, setSelectedRoleFilter] = useState<UserRoleEnum | "all">("all");
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<AppRole | "all">("all");
   const [loading, setLoading] = useState(true);
 
   // Dialog states
   const [userDialogIsOpen, setUserDialogIsOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [formData, setFormData] = useState({
-    full_name: "",
+    name: "",
     email: "",
     password: "",
     phone: "",
-    role: "cashier" as UserRoleEnum,
-    store_id: null as string | null, // Added store_id to form data
+    role: "cashier" as AppRole,
+    store_id: null as string | null,
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     fetchUsers();
     fetchStores();
-    fetchCurrentUserStoreAndRole(); // Combined fetch for store_id and role
+    fetchCurrentUserStoreAndRole();
   }, []);
 
   const fetchStores = async () => {
@@ -80,43 +79,49 @@ export default function Users() {
   const fetchCurrentUserStoreAndRole = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      setCurrentUserId(user.id); // Set current user ID
-      const { data: profile, error } = await supabase
+      setCurrentUserId(user.id);
+      const { data: profile } = await supabase
         .from('profiles')
-        .select('store_id, role')
+        .select('store_id')
         .eq('id', user.id)
         .single();
-      if (error) {
-        console.error("Error fetching current user's profile:", error);
-      } else {
-        setCurrentUserStoreId(profile?.store_id || null);
-        setCurrentUserRole(profile?.role || null);
-      }
+      
+      setCurrentUserStoreId(profile?.store_id || null);
+
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      setCurrentUserRole(roleData?.role || null);
     }
   };
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      // Fetch profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select(`
-          id,
-          full_name,
-          email,
-          phone,
-          created_at,
-          updated_at,
-          store_id,
-          role
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
 
+      // Fetch all user_roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+
+      if (rolesError) throw rolesError;
+
+      const rolesMap = new Map<string, AppRole>();
+      (rolesData || []).forEach(r => rolesMap.set(r.user_id, r.role));
+
       const usersWithRoles: UserWithRole[] = (profilesData || []).map(profile => ({
         ...profile,
-        role: profile.role || null,
+        role: rolesMap.get(profile.id) || null,
       }));
       
       setUsers(usersWithRoles);
@@ -131,12 +136,12 @@ export default function Users() {
   const openCreateDialog = () => {
     setEditingUser(null);
     setFormData({
-      full_name: "",
+      name: "",
       email: "",
       password: "",
       phone: "",
       role: "cashier",
-      store_id: currentUserStoreId, // Default to current user's store
+      store_id: currentUserStoreId,
     });
     setUserDialogIsOpen(true);
   };
@@ -144,52 +149,60 @@ export default function Users() {
   const openEditDialog = (user: UserWithRole) => {
     setEditingUser(user);
     setFormData({
-      full_name: user.full_name || "",
-      email: user.email || "",
+      name: user.name || "",
+      email: "",
       password: "",
       phone: user.phone || "",
       role: user.role || "cashier",
-      store_id: user.store_id || null, // Set from user's store_id
+      store_id: user.store_id || null,
     });
     setUserDialogIsOpen(true);
   };
 
   const handleSaveUser = async () => {
-    if (!formData.full_name || !formData.email || !formData.role) {
-      toast.error("Nombre completo, email y rol son obligatorios.");
+    if (!formData.name || !formData.role) {
+      toast.error("Nombre y rol son obligatorios.");
       return;
     }
-    if (!editingUser && !formData.password) {
-      toast.error("La contraseña es obligatoria para nuevos usuarios.");
+    if (!editingUser && (!formData.email || !formData.password)) {
+      toast.error("Email y contraseña son obligatorios para nuevos usuarios.");
       return;
     }
 
     setIsProcessing(true);
     try {
       if (editingUser) {
-        // Update existing user profile
+        // Update profile
         const { error: profileUpdateError } = await supabase
           .from("profiles")
           .update({
-            full_name: formData.full_name.trim(),
-            email: formData.email.trim(),
+            name: formData.name.trim(),
             phone: formData.phone.trim() || null,
-            role: formData.role,
-            store_id: formData.store_id, // Include store_id in update
+            store_id: formData.store_id,
           })
           .eq("id", editingUser.id);
 
         if (profileUpdateError) throw profileUpdateError;
 
+        // Update role - upsert into user_roles
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .upsert({
+            user_id: editingUser.id,
+            role: formData.role,
+          }, { onConflict: 'user_id' });
+
+        if (roleError) throw roleError;
+
         toast.success("Usuario actualizado correctamente.");
       } else {
-        // Create new user in auth.users
+        // Create new user
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email.trim(),
           password: formData.password,
           options: {
             data: {
-              full_name: formData.full_name.trim(),
+              name: formData.name.trim(),
               phone: formData.phone.trim() || null,
             },
           },
@@ -197,27 +210,29 @@ export default function Users() {
 
         if (authError) {
           if (authError.message.includes("User already registered")) {
-            toast.error("Ya existe una cuenta con este email. Por favor, edita el usuario existente o usa un email diferente.");
+            toast.error("Ya existe una cuenta con este email.");
           } else {
-            throw authError; // Re-throw other errors
+            throw authError;
           }
-          return; // Stop processing if there's an error
+          return;
         }
         
         if (!authData.user) {
           throw new Error("No se pudo crear el usuario de autenticación.");
         }
 
-        // The handle_new_user trigger should have created a profile.
-        // Now, update that profile with the specific role and store_id from the form.
+        // Update profile with store_id
         const { error: profileUpdateError } = await supabase
           .from("profiles")
-          .update({
-            role: formData.role,
-            store_id: formData.store_id,
-          })
+          .update({ store_id: formData.store_id })
           .eq("id", authData.user.id);
         if (profileUpdateError) throw profileUpdateError;
+
+        // Assign role
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: authData.user.id, role: formData.role });
+        if (roleError) throw roleError;
 
         toast.success("Usuario creado correctamente. Se ha enviado un correo de verificación.");
       }
@@ -233,37 +248,28 @@ export default function Users() {
   };
 
   const handleDeleteUser = async (user: UserWithRole) => {
-    // Frontend validation for deletion permissions
     if (!canManageUsers) {
       toast.error("No tienes permiso para eliminar usuarios.");
       return;
     }
-    if (user.id === currentUserId) { // Check against current user ID
+    if (user.id === currentUserId) {
       toast.error("No puedes eliminar tu propia cuenta desde aquí.");
       return;
     }
 
-    if (!confirm(`¿Estás seguro de eliminar al usuario "${user.full_name}"? Esta acción es irreversible.`)) return;
+    if (!confirm(`¿Estás seguro de eliminar al usuario "${user.name}"? Esta acción es irreversible.`)) return;
 
     setIsProcessing(true);
     try {
-      // Llama a la función Edge para eliminar al usuario
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { userId: user.id },
       });
 
-      if (error) {
-        console.error("Error invoking delete-user function:", error);
-        throw new Error(error.message);
-      }
-
-      // La función Edge devuelve un objeto JSON con 'error' o 'message'
-      if (data && data.error) {
-        throw new Error(data.error);
-      }
+      if (error) throw new Error(error.message);
+      if (data && data.error) throw new Error(data.error);
 
       toast.success("Usuario eliminado correctamente.");
-      fetchUsers(); // Vuelve a cargar los usuarios para actualizar la lista
+      fetchUsers();
     } catch (error: any) {
       console.error("Error deleting user:", error);
       toast.error("Error al eliminar usuario: " + error.message);
@@ -272,15 +278,11 @@ export default function Users() {
     }
   };
 
-  const canManageUsers = currentUserRole === "admin" || currentUserRole === "store_manager";
+  const canManageUsers = currentUserRole === "admin" || currentUserRole === "manager";
 
   const filteredUsers = users.filter(user => {
-    // If the current user cannot manage users, they should only see their own profile.
-    // The RLS already handles this at the DB level, so 'users' state will only contain their profile.
-    // We still apply client-side filters for admins/managers.
     const matchesSearch = !searchQuery ||
-      user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.role?.toLowerCase().includes(searchQuery.toLowerCase());
     
@@ -302,7 +304,7 @@ export default function Users() {
         <Button
           className="gradient-primary shadow-glow w-full md:w-auto"
           onClick={openCreateDialog}
-          disabled={!canManageUsers} // Disable if not admin/manager
+          disabled={!canManageUsers}
         >
           <Plus className="mr-2 w-5 h-5" />
           Nuevo Usuario
@@ -316,18 +318,18 @@ export default function Users() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                placeholder="Buscar por nombre, email, teléfono o rol..."
+                placeholder="Buscar por nombre, teléfono o rol..."
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                disabled={!canManageUsers} // Disable if not admin/manager
+                disabled={!canManageUsers}
               />
             </div>
             
             <Select
               value={selectedRoleFilter}
-              onValueChange={(value: UserRoleEnum | "all") => setSelectedRoleFilter(value)}
-              disabled={!canManageUsers} // Disable if not admin/manager
+              onValueChange={(value: AppRole | "all") => setSelectedRoleFilter(value)}
+              disabled={!canManageUsers}
             >
               <SelectTrigger className="w-full md:w-48">
                 <SelectValue placeholder="Filtrar por rol" />
@@ -376,12 +378,11 @@ export default function Users() {
             <CardDescription>Gestiona los detalles de cada usuario.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto"> {/* Added for horizontal scrolling on small screens */}
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nombre</TableHead>
-                    <TableHead>Email</TableHead>
                     <TableHead>Teléfono</TableHead>
                     <TableHead>Rol</TableHead>
                     <TableHead>Tienda</TableHead>
@@ -391,8 +392,7 @@ export default function Users() {
                 <TableBody>
                   {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.full_name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
+                      <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.phone || 'N/A'}</TableCell>
                       <TableCell>
                         <Badge
@@ -411,7 +411,6 @@ export default function Users() {
                             size="icon"
                             className="h-8 w-8 hover:text-accent hover:bg-accent/10"
                             onClick={() => openEditDialog(user)}
-                            // User can edit their own profile, or if they are admin/manager
                             disabled={!canManageUsers && user.id !== (currentUserId || '')} 
                           >
                             <Edit className="w-4 h-4" />
@@ -421,7 +420,6 @@ export default function Users() {
                             size="icon"
                             className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
                             onClick={() => handleDeleteUser(user)}
-                            // Only admin/manager can delete, and they cannot delete themselves
                             disabled={!canManageUsers || user.id === (currentUserId || '')} 
                           >
                             <Trash2 className="w-4 h-4" />
@@ -436,6 +434,7 @@ export default function Users() {
           </CardContent>
         </Card>
       )}
+
       {/* Create/Edit User Dialog */}
       <Dialog open={userDialogIsOpen} onOpenChange={setUserDialogIsOpen}>
         <DialogContent className="sm:max-w-md">
@@ -452,49 +451,50 @@ export default function Users() {
 
           <form onSubmit={(e) => { e.preventDefault(); handleSaveUser(); }} className="space-y-4 py-4">
             <div>
-              <Label htmlFor="full_name">Nombre Completo *</Label>
+              <Label htmlFor="name">Nombre Completo *</Label>
               <Input
-                id="full_name"
+                id="name"
                 placeholder="Ej: Juan Pérez"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="mt-2"
                 required
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="ejemplo@dominio.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="mt-2"
-                required
-                disabled={!!editingUser}
               />
             </div>
             {!editingUser && (
-              <div>
-                <Label htmlFor="password">Contraseña *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="mt-2"
-                  required
-                />
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Ej: juan@pekao.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="mt-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">Contraseña *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Mínimo 6 caracteres"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="mt-2"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </>
             )}
             <div>
               <Label htmlFor="phone">Teléfono</Label>
               <Input
                 id="phone"
-                type="tel"
-                placeholder="+57 300 123 4567"
+                placeholder="Ej: +57 300 123 4567"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="mt-2"
@@ -504,11 +504,10 @@ export default function Users() {
               <Label htmlFor="role">Rol *</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: UserRoleEnum) => setFormData({ ...formData, role: value })}
-                disabled={isProcessing || (!canManageUsers && editingUser?.id !== (currentUserId || ''))} // Only admin/manager can change role, or user can change their own if allowed by other policies
+                onValueChange={(value: AppRole) => setFormData({ ...formData, role: value })}
               >
-                <SelectTrigger className="w-full mt-2">
-                  <SelectValue placeholder="Selecciona un rol" />
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Seleccionar rol" />
                 </SelectTrigger>
                 <SelectContent>
                   {rolesConfig.map((role) => (
@@ -520,20 +519,15 @@ export default function Users() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="store">Tienda</Label>
+              <Label htmlFor="store_id">Tienda Asignada</Label>
               <Select
-                value={formData.store_id || "unassigned-store"} 
-                onValueChange={(value) => setFormData({
-                  ...formData,
-                  store_id: value === "unassigned-store" ? null : value 
-                })}
-                disabled={isProcessing || (!canManageUsers && editingUser?.id !== (currentUserId || ''))} // Only admin/manager can change store, or user can change their own if allowed by other policies
+                value={formData.store_id || ""}
+                onValueChange={(value) => setFormData({ ...formData, store_id: value || null })}
               >
-                <SelectTrigger className="w-full mt-2">
-                  <SelectValue placeholder="Selecciona una tienda" />
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Seleccionar tienda" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unassigned-store">Sin tienda asignada</SelectItem> 
                   {stores.map((store) => (
                     <SelectItem key={store.id} value={store.id}>
                       {store.name}
@@ -554,7 +548,7 @@ export default function Users() {
               </Button>
               <Button
                 type="submit"
-                disabled={isProcessing || !formData.full_name || !formData.email || !formData.role || (!editingUser && !formData.password)}
+                disabled={isProcessing || !formData.name || !formData.role}
                 className="gradient-primary"
               >
                 {isProcessing ? "Guardando..." : editingUser ? "Actualizar Usuario" : "Crear Usuario"}

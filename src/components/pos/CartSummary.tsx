@@ -114,7 +114,7 @@ export default function CartSummary({
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-start gap-2 flex-1">
-                      <div className="text-2xl">{product?.emoji || '🥤'}</div>
+                      <div className="text-2xl">🥤</div>
                       <div className="flex-1">
                         <p className="font-semibold text-sm md:text-base">{item.name}</p>
                         {item.size && (

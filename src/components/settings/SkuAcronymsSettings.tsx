@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, Tag, Code } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -13,6 +14,14 @@ import { useAuth } from "@/hooks/useAuth";
 
 type SkuAcronym = Tables<'sku_acronyms'>;
 type ProductType = Enums<'product_type'>;
+
+const productTypeOptions: { value: ProductType; label: string }[] = [
+  { value: "granizado", label: "Granizado" },
+  { value: "topping", label: "Topping" },
+  { value: "sachet", label: "Sachet" },
+  { value: "sweet", label: "Dulce" },
+  { value: "other", label: "Otro" },
+];
 
 export default function SkuAcronymsSettings() {
   const { userRole, isLoading: isLoadingAuth } = useAuth();
@@ -26,7 +35,6 @@ export default function SkuAcronymsSettings() {
   const [formData, setFormData] = useState({
     type: "" as ProductType | "",
     code: "",
-    description: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -54,11 +62,7 @@ export default function SkuAcronymsSettings() {
 
   const openCreateDialog = () => {
     setEditingAcronym(null);
-    setFormData({
-      type: "",
-      code: "",
-      description: "",
-    });
+    setFormData({ type: "", code: "" });
     setAcronymDialogIsOpen(true);
   };
 
@@ -67,7 +71,6 @@ export default function SkuAcronymsSettings() {
     setFormData({
       type: acronym.type as ProductType,
       code: acronym.code,
-      description: acronym.description || "",
     });
     setAcronymDialogIsOpen(true);
   };
@@ -81,13 +84,11 @@ export default function SkuAcronymsSettings() {
     setIsProcessing(true);
     try {
       const acronymData = {
-        type: formData.type,
+        type: formData.type as ProductType,
         code: formData.code.toUpperCase().trim(),
-        description: formData.description.trim() || null,
       };
 
       if (editingAcronym) {
-        // Update existing acronym
         const { error } = await supabase
           .from("sku_acronyms")
           .update(acronymData)
@@ -96,7 +97,6 @@ export default function SkuAcronymsSettings() {
         if (error) throw error;
         toast.success("Acrónimo SKU actualizado correctamente.");
       } else {
-        // Create new acronym
         const { error } = await supabase
           .from("sku_acronyms")
           .insert([acronymData]);
@@ -140,12 +140,11 @@ export default function SkuAcronymsSettings() {
     }
   };
 
-  const canManageSkuAcronyms = userRole === "admin" || userRole === "store_manager";
+  const canManageSkuAcronyms = userRole === "admin" || userRole === "manager";
 
   const filteredAcronyms = acronyms.filter(acronym =>
     acronym.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    acronym.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    acronym.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    acronym.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -213,16 +212,16 @@ export default function SkuAcronymsSettings() {
                   <TableRow>
                     <TableHead>Tipo de Producto</TableHead>
                     <TableHead>Código SKU</TableHead>
-                    <TableHead>Descripción</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAcronyms.map((acronym) => (
                     <TableRow key={acronym.id}>
-                      <TableCell className="font-medium">{acronym.type}</TableCell>
+                      <TableCell className="font-medium">
+                        {productTypeOptions.find(o => o.value === acronym.type)?.label || acronym.type}
+                      </TableCell>
                       <TableCell className="font-mono text-primary">{acronym.code}</TableCell>
-                      <TableCell>{acronym.description || 'N/A'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -271,15 +270,22 @@ export default function SkuAcronymsSettings() {
           <form onSubmit={(e) => { e.preventDefault(); handleSaveAcronym(); }} className="space-y-4 py-4">
             <div>
               <Label htmlFor="type">Tipo de Producto *</Label>
-              <Input
-                id="type"
-                placeholder="Ej: granizado, topping, sachet, sweet"
+              <Select
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="mt-2"
-                required
-                /* Type should not be editable after creation */ disabled={!!editingAcronym}
-              />
+                onValueChange={(value: ProductType) => setFormData({ ...formData, type: value })}
+                disabled={!!editingAcronym}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Seleccionar tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productTypeOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="code">Código SKU (3-4 letras) *</Label>
@@ -291,16 +297,6 @@ export default function SkuAcronymsSettings() {
                 className="mt-2"
                 maxLength={4}
                 required
-              />
-            </div>
-            <div>
-              <Label htmlFor="description">Descripción (opcional)</Label>
-              <Input
-                id="description"
-                placeholder="Ej: Acrónimo para Granizados"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="mt-2"
               />
             </div>
 

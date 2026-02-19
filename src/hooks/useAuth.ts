@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Enums, Tables } from '@/integrations/supabase/types';
 
-type UserRole = Enums<'user_role'>;
+type AppRole = Enums<'app_role'>;
 type Profile = Tables<'profiles'>;
 
 interface AuthState {
   user: Profile | null;
   session: any | null;
   isLoading: boolean;
-  userRole: UserRole | null;
+  userRole: AppRole | null;
   storeId: string | null;
 }
 
@@ -21,6 +21,19 @@ export const useAuth = () => {
     userRole: null,
     storeId: null,
   });
+
+  const fetchRoleForUser = async (userId: string): Promise<AppRole | null> => {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) {
+      console.error("Error fetching user role:", error);
+      return null;
+    }
+    return data?.role || null;
+  };
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -46,11 +59,13 @@ export const useAuth = () => {
           return;
         }
 
+        const role = await fetchRoleForUser(session.user.id);
+
         setAuthState({
           user: profile,
           session,
           isLoading: false,
-          userRole: profile.role,
+          userRole: role,
           storeId: profile.store_id,
         });
       } else {
@@ -76,11 +91,13 @@ export const useAuth = () => {
               return;
             }
 
+            const role = await fetchRoleForUser(session.user.id);
+
             setAuthState({
               user: profile,
               session,
               isLoading: false,
-              userRole: profile.role,
+              userRole: role,
               storeId: profile.store_id,
             });
           }

@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { BrandingProvider } from "@/context/BrandingContext";
-import ProtectedRoute from "@/components/ProtectedRoute"; // Import ProtectedRoute
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -40,7 +40,7 @@ const App = () => (
               <Route 
                 path="/pos" 
                 element={
-                  <ProtectedRoute requiredRole={["admin", "store_manager", "cashier"]}>
+                  <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <POS />
                   </ProtectedRoute>
                 } 
@@ -48,7 +48,7 @@ const App = () => (
               <Route 
                 path="/sales" 
                 element={
-                  <ProtectedRoute requiredRole={["admin", "store_manager", "cashier"]}>
+                  <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <Sales />
                   </ProtectedRoute>
                 } 
@@ -56,7 +56,7 @@ const App = () => (
               <Route 
                 path="/settings" 
                 element={
-                  <ProtectedRoute requiredRole={["admin", "store_manager"]}>
+                  <ProtectedRoute requiredRole={["admin", "manager"]}>
                     <Settings />
                   </ProtectedRoute>
                 } 

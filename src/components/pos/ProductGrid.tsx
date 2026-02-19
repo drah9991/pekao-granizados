@@ -108,13 +108,13 @@ export default function ProductGrid({ onProductSelect }: ProductGridProps) {
             onClick={() => onProductSelect(product)}
             className="group relative h-32 md:h-40 rounded-2xl border-2 border-border overflow-hidden transition-smooth hover:shadow-elevated hover:-translate-y-1 hover:border-primary"
           >
-            <div className={`absolute inset-0 bg-gradient-to-br ${product.color || 'from-gray-400 to-gray-600'} opacity-80`} />
+            <div className={`absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-600 opacity-80`} />
             <div className="relative h-full p-4 flex flex-col items-start justify-between text-white">
               <div className="w-full flex items-start justify-between">
                 <Badge variant="secondary" className="text-xs font-semibold bg-white/90 text-foreground hover:bg-white">
                   {product.category || 'General'}
                 </Badge>
-                <div className="text-3xl md:text-4xl">{product.emoji || '🥤'}</div>
+                <div className="text-3xl md:text-4xl">🥤</div>
               </div>
               <div className="w-full">
                 <p className="font-bold text-left text-sm md:text-base mb-1">{product.name}</p>

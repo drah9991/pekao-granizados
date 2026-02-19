@@ -1,4 +1,5 @@
 import { Enums } from "@/integrations/supabase/types";
+import type { Json } from "@/integrations/supabase/types";
 
 export interface CartItem {
   id: string;
@@ -6,7 +7,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   size?: string;
-  toppings?: Product[]; // Toppings are now products
+  toppings?: Product[];
   customizationId?: string;
 }
 
@@ -15,9 +16,7 @@ export interface Product {
   name: string;
   price: number;
   category: string | null;
-  emoji?: string; // Optional emoji for display
-  color?: string; // Optional color for display
-  type: Enums<'product_type'>; // New type field
+  type: Enums<'product_type'>;
   sku: string | null;
   description: string | null;
   active: boolean | null;
@@ -26,7 +25,6 @@ export interface Product {
   recipe: Json | null;
   is_public: boolean | null;
   created_at: string | null;
-  updated_at: string | null;
   store_id: string | null;
   cost: number | null;
 }
