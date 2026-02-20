@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Product } from "@/lib/pos-types"; // Topping interface removed
+import { Product } from "@/lib/pos-types";
 import { formatCurrency } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ProductCustomizationDialogProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ interface ProductCustomizationDialogProps {
 }
 
 type Size = Tables<'sizes'>;
-type ToppingProduct = Product; // Toppings are now products
+type ToppingProduct = Product;
 
 export default function ProductCustomizationDialog({
   isOpen,
@@ -40,7 +40,7 @@ export default function ProductCustomizationDialog({
   useEffect(() => {
     if (isOpen && userStoreId) {
       fetchCustomizationData();
-      setSelectedSize(null); // Reset to default when dialog opens
+      setSelectedSize(null);
       setSelectedToppings([]);
     }
   }, [isOpen, userStoreId]);
@@ -48,10 +48,7 @@ export default function ProductCustomizationDialog({
   const fetchUserStoreId = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Usuario no autenticado.");
-        return;
-      }
+      if (!user) return;
 
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -60,21 +57,15 @@ export default function ProductCustomizationDialog({
         .single();
 
       if (error) throw error;
-      if (profile?.store_id) {
-        setUserStoreId(profile.store_id);
-      } else {
-        toast.warning("No se encontró un ID de tienda para el usuario. No podrás personalizar productos.");
-      }
+      if (profile?.store_id) setUserStoreId(profile.store_id);
     } catch (error: any) {
       console.error("Error fetching user's store ID:", error);
-      toast.error("Error al obtener ID de tienda: " + error.message);
     }
   };
 
   const fetchCustomizationData = async () => {
     setLoadingData(true);
     try {
-      // Fetch sizes
       const { data: sizesData, error: sizesError } = await supabase
         .from('sizes')
         .select('*')
@@ -84,10 +75,9 @@ export default function ProductCustomizationDialog({
       if (sizesError) throw sizesError;
       setAvailableSizes(sizesData || []);
       if (sizesData && sizesData.length > 0) {
-        setSelectedSize(sizesData[0].id); // Set first size as default
+        setSelectedSize(sizesData[0].id);
       }
 
-      // Fetch toppings (products of type 'topping')
       const { data: toppingsData, error: toppingsError } = await supabase
         .from('products')
         .select('*')
@@ -98,10 +88,9 @@ export default function ProductCustomizationDialog({
 
       if (toppingsError) throw toppingsError;
       setAvailableToppings(toppingsData as ToppingProduct[] || []);
-
     } catch (error: any) {
       console.error("Error fetching customization data:", error);
-      toast.error("Error al cargar opciones de personalización: " + error.message);
+      toast.error("Error al cargar opciones: " + error.message);
     } finally {
       setLoadingData(false);
     }
@@ -114,6 +103,12 @@ export default function ProductCustomizationDialog({
     } else {
       toast.error("Por favor, selecciona un tamaño.");
     }
+  };
+
+  const toggleTopping = (id: string) => {
+    setSelectedToppings(prev =>
+      prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
+    );
   };
 
   if (!product) return null;
@@ -133,7 +128,7 @@ export default function ProductCustomizationDialog({
             🥤 Personalizar {product.name}
           </DialogTitle>
           <DialogDescription>
-            Selecciona el tamaño y agrega toppings a tu granizado
+            Selecciona el tamaño y agrega toppings
           </DialogDescription>
         </DialogHeader>
 
@@ -143,50 +138,63 @@ export default function ProductCustomizationDialog({
           </div>
         ) : (
           <div className="space-y-6 py-4">
-            {/* Tamaños */}
+            {/* Sizes as touch-friendly buttons */}
             {availableSizes.length > 0 && (
               <div>
                 <Label className="text-base font-semibold mb-3 block">Tamaño</Label>
-                <RadioGroup value={selectedSize || ''} onValueChange={setSelectedSize}>
+                <div className="grid grid-cols-2 gap-3">
                   {availableSizes.map((size) => (
-                    <div key={size.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-smooth">
-                      <RadioGroupItem value={size.id} id={size.id} />
-                      <Label htmlFor={size.id} className="flex-1 cursor-pointer font-medium">
-                        {size.name}
-                      </Label>
-                      <span className="text-sm font-bold text-primary">
+                    <button
+                      key={size.id}
+                      onClick={() => setSelectedSize(size.id)}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-150 min-h-[72px] active:scale-95",
+                        selectedSize === size.id
+                          ? "border-primary bg-primary/10 text-primary shadow-md"
+                          : "border-border hover:border-muted-foreground/50"
+                      )}
+                    >
+                      <span className="font-semibold text-sm">{size.name}</span>
+                      <span className="text-xs font-bold mt-1">
                         {formatCurrency(product.price * size.multiplier)}
                       </span>
-                    </div>
+                    </button>
                   ))}
-                </RadioGroup>
+                </div>
               </div>
             )}
 
-            {/* Toppings */}
+            {/* Toppings as large toggle buttons */}
             {availableToppings.length > 0 && (
               <div>
                 <Label className="text-base font-semibold mb-3 block">Toppings</Label>
                 <div className="space-y-2">
-                  {availableToppings.map((topping) => (
-                    <div key={topping.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-smooth">
-                      <Checkbox
-                        id={topping.id}
-                        checked={selectedToppings.includes(topping.id)}
-                        onCheckedChange={(checked) => {
-                          setSelectedToppings(
-                            checked
-                              ? [...selectedToppings, topping.id]
-                              : selectedToppings.filter((id) => id !== topping.id)
-                          );
-                        }}
-                      />
-                      <Label htmlFor={topping.id} className="flex-1 cursor-pointer font-medium">
-                        {topping.name}
-                      </Label>
-                      <span className="text-sm font-bold text-primary">+{formatCurrency(topping.price)}</span>
-                    </div>
-                  ))}
+                  {availableToppings.map((topping) => {
+                    const isSelected = selectedToppings.includes(topping.id);
+                    return (
+                      <button
+                        key={topping.id}
+                        onClick={() => toggleTopping(topping.id)}
+                        className={cn(
+                          "w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-150 min-h-[56px] active:scale-[0.98]",
+                          isSelected
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-muted-foreground/50"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors",
+                            isSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40"
+                          )}>
+                            {isSelected && <Check className="w-4 h-4" />}
+                          </div>
+                          <span className="font-medium text-sm">{topping.name}</span>
+                        </div>
+                        <span className="text-sm font-bold text-primary">+{formatCurrency(topping.price)}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -194,10 +202,10 @@ export default function ProductCustomizationDialog({
         )}
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} className="min-h-[48px]">
             Cancelar
           </Button>
-          <Button onClick={handleAddToCart} className="gradient-primary" disabled={!selectedSize}>
+          <Button onClick={handleAddToCart} className="gradient-primary min-h-[48px] text-base" disabled={!selectedSize}>
             Agregar {formatCurrency(finalPrice)}
           </Button>
         </DialogFooter>

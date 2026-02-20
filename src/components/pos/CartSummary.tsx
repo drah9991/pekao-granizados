@@ -68,12 +68,9 @@ export default function CartSummary({
       if (error) throw error;
       if (profile?.store_id) {
         setUserStoreId(profile.store_id);
-      } else {
-        toast.warning("No se encontró un ID de tienda para el usuario. No podrás ver productos.");
       }
     } catch (error: any) {
       console.error("Error fetching user's store ID:", error);
-      toast.error("Error al obtener ID de tienda: " + error.message);
     }
   };
 
@@ -89,123 +86,110 @@ export default function CartSummary({
       setAllProducts(data || []);
     } catch (error: any) {
       console.error("Error fetching all products:", error);
-      toast.error("Error al cargar productos: " + error.message);
     }
   };
 
   return (
     <div className="w-full lg:w-96 bg-card border-t lg:border-t-0 lg:border-l-2 border-border p-4 md:p-6 flex flex-col max-h-[40vh] lg:max-h-full">
-      <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 bg-gradient-primary bg-clip-text text-transparent">
+      <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent">
         Carrito
       </h2>
 
-      <div className="flex-1 overflow-auto mb-4 md:mb-6 space-y-3">
+      <div className="flex-1 overflow-auto mb-4 space-y-3">
         {cart.length === 0 ? (
           <div className="text-center py-8 md:py-12">
             <div className="text-5xl md:text-6xl mb-3">🛒</div>
             <p className="text-muted-foreground text-sm md:text-base">Carrito vacío</p>
           </div>
         ) : (
-          cart.map((item) => {
-            const product = allProducts.find(p => p.id === item.id.split('-')[0]); // Find base product
-            
-            return (
-              <Card key={item.id} className="border-2 shadow-card hover:shadow-elevated transition-smooth">
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-start gap-2 flex-1">
-                      <div className="text-2xl">🥤</div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-sm md:text-base">{item.name}</p>
-                        {item.size && (
-                          <Badge variant="outline" className="text-xs mt-1">
-                            {item.size}
-                          </Badge>
-                        )}
-                        {item.toppings && item.toppings.length > 0 && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            + {item.toppings.map(t => t.name).join(", ")}
-                          </p>
-                        )}
-                        <p className="text-sm text-primary font-bold mt-1">
-                          {formatCurrency(item.price)} c/u
-                        </p>
-                      </div>
-                    </div>
+          cart.map((item) => (
+            <Card key={item.id} className="border-2 shadow-card">
+              <CardContent className="p-3">
+                <div className="flex items-start justify-between mb-1">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{item.name}</p>
+                    {item.size && (
+                      <Badge variant="outline" className="text-[10px] mt-0.5">
+                        {item.size}
+                      </Badge>
+                    )}
+                    {item.toppings && item.toppings.length > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                        + {item.toppings.map(t => t.name).join(", ")}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeItem(item.id)}
+                    className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="icon"
-                      onClick={() => removeItem(item.id)}
-                      className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => updateQuantity(item.id, -1)}
+                      className="h-10 w-10 border-2 hover:border-primary hover:text-primary active:scale-95"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <span className="font-bold text-lg w-10 text-center">{item.quantity}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => updateQuantity(item.id, 1)}
+                      className="h-10 w-10 border-2 hover:border-primary hover:text-primary active:scale-95"
+                    >
+                      <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => updateQuantity(item.id, -1)}
-                        className="h-9 w-9 border-2 hover:border-primary hover:text-primary"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <span className="font-bold text-lg w-10 text-center">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => updateQuantity(item.id, 1)}
-                        className="h-9 w-9 border-2 hover:border-primary hover:text-primary"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <p className="font-bold text-lg md:text-xl">
-                      {formatCurrency(item.price * item.quantity)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
+                  <p className="font-bold text-lg">
+                    {formatCurrency(item.price * item.quantity)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))
         )}
       </div>
 
-      <div className="space-y-3 md:space-y-4">
-        {/* Descuento */}
+      <div className="space-y-3">
+        {/* Discount */}
         <Card className="border-2">
-          <CardContent className="p-3 md:p-4">
+          <CardContent className="p-3">
             <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
               <Tag className="w-4 h-4" />
               Descuento
             </Label>
             <div className="flex gap-2 mt-2">
-              <div className="flex-1 flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={discount || ""}
-                  onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                  className="border-2"
-                />
-                <Button
-                  variant={discountType === "percent" ? "default" : "outline"}
-                  size="icon"
-                  onClick={() => setDiscountType("percent")}
-                  className="h-10 w-10"
-                >
-                  <Percent className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={discountType === "fixed" ? "default" : "outline"}
-                  size="icon"
-                  onClick={() => setDiscountType("fixed")}
-                  className="h-10 w-10"
-                >
-                  $
-                </Button>
-              </div>
+              <Input
+                type="number"
+                placeholder="0"
+                value={discount || ""}
+                onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                className="border-2 flex-1"
+              />
+              <Button
+                variant={discountType === "percent" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setDiscountType("percent")}
+                className="h-10 w-10 min-w-[40px]"
+              >
+                <Percent className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={discountType === "fixed" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setDiscountType("fixed")}
+                className="h-10 w-10 min-w-[40px]"
+              >
+                $
+              </Button>
             </div>
             {discount > 0 && (
               <p className="text-xs text-accent font-medium mt-2">
@@ -217,7 +201,7 @@ export default function CartSummary({
 
         {/* Total */}
         <Card className="shadow-elevated border-2 border-primary/20">
-          <CardContent className="p-4 md:p-5 gradient-card">
+          <CardContent className="p-4 gradient-card">
             <div className="space-y-1">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotal</span>
@@ -230,8 +214,8 @@ export default function CartSummary({
                 </div>
               )}
               <div className="flex justify-between items-center pt-2 border-t border-border">
-                <span className="text-lg md:text-xl font-semibold">Total</span>
-                <span className="text-3xl md:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                <span className="text-lg font-semibold">Total</span>
+                <span className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                   {formatCurrency(total)}
                 </span>
               </div>
@@ -240,10 +224,10 @@ export default function CartSummary({
         </Card>
 
         <Button
-          className="w-full h-14 md:h-16 text-base md:text-lg font-semibold gradient-primary hover:shadow-glow transition-smooth"
+          className="w-full h-16 text-lg font-semibold gradient-primary hover:shadow-glow transition-all active:scale-[0.98]"
           onClick={onCheckout}
         >
-          <Receipt className="mr-2 w-5 h-5" />
+          <Receipt className="mr-2 w-6 h-6" />
           Procesar Pago
         </Button>
       </div>

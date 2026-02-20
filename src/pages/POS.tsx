@@ -9,6 +9,7 @@ import CartSummary from "@/components/pos/CartSummary";
 import PaymentDialog from "@/components/pos/PaymentDialog";
 import ReceiptDialog from "@/components/pos/ReceiptDialog";
 import { Product, CartItem } from "@/lib/pos-types";
+import { PaymentMethod } from "@/components/pos/PaymentDialog";
 import { Tables } from "@/integrations/supabase/types";
 
 export default function POS() {
@@ -52,7 +53,7 @@ export default function POS() {
     setPaymentDialogIsOpen(true);
   };
 
-  const processSale = async (method: "cash" | "card", amountReceived: number) => {
+  const processSale = async (method: PaymentMethod, amountReceived: number) => {
     setIsProcessing(true);
 
     try {
