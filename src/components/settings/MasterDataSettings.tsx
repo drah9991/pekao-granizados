@@ -3,11 +3,12 @@ import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Ruler, Database, Tag } from "lucide-react"; // Added Tag icon
 import Products from "@/pages/Products";
-import Inventory from "@/pages/Inventory";
+import { InventoryManagement } from "@/components/settings/InventoryManagement";
+import { RecipeManagement } from "@/components/settings/RecipeManagement";
 import Users from "@/pages/Users";
 import Stores from "@/pages/Stores";
 import SizesSettings from "@/components/settings/SizesSettings";
-import SkuAcronymsSettings from "@/components/settings/SkuAcronymsSettings"; // Import the new component
+import SkuAcronymsSettings from "@/components/settings/SkuAcronymsSettings";
 
 export default function MasterDataSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,7 +46,14 @@ export default function MasterDataSettings() {
             className="flex items-center gap-2 data-[state=active]:gradient-secondary data-[state=active]:text-white"
           >
             <ClipboardList className="w-4 h-4" />
-            <span className="hidden sm:inline">Inventario</span>
+            <span className="hidden sm:inline">Materia Prima</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="recipes"
+            className="flex items-center gap-2 data-[state=active]:gradient-accent data-[state=active]:text-white"
+          >
+            <ClipboardList className="w-4 h-4" />
+            <span className="hidden sm:inline">Recetas</span>
           </TabsTrigger>
           <TabsTrigger
             value="users"
@@ -83,7 +91,11 @@ export default function MasterDataSettings() {
         </TabsContent>
 
         <TabsContent value="inventory" className="p-0">
-          <Inventory />
+          <InventoryManagement />
+        </TabsContent>
+
+        <TabsContent value="recipes" className="p-0">
+          <RecipeManagement />
         </TabsContent>
 
         <TabsContent value="users" className="p-0">

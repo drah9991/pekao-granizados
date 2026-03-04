@@ -72,43 +72,49 @@ export default function POS() {
         throw new Error("No se pudo obtener la información de la tienda del usuario.");
       }
 
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          store_id: profile.store_id,
-          created_by: user.id,
-          subtotal: subtotal,
-          tax: 0,
-          total: total,
-          status: "completed",
-          payment: {
-            method: method,
-            amount_received: amountReceived,
-            change: method === "cash" ? Math.max(0, amountReceived - total) : 0,
-          },
-        })
-        .select()
-        .single();
+      // Prepare items for RPC (flattening product + toppings for stock deduction)
+      // Note: The new process_sale expects a single JSON payload.
+      const mappedItems = cart.flatMap(item => {
+        const toppingsPrice = item.toppings?.reduce((sum, t) => sum + t.price, 0) || 0;
+        const baseItemPrice = item.price - toppingsPrice;
 
-      if (orderError) throw orderError;
+        const mainItem = {
+          product_id: item.productId,
+          quantity: item.quantity,
+          price: baseItemPrice,
+          name: item.name,
+          size: item.size || null
+        };
 
-      const orderItems = cart.map(item => ({
-        order_id: orderData.id,
-        name: item.name,
-        price: item.price,
-        qty: item.quantity,
-        subtotal: item.price * item.quantity,
-        tax: 0,
-      }));
+        const toppings = (item.toppings || []).map(topping => ({
+          product_id: topping.id,
+          quantity: item.quantity,
+          price: topping.price,
+          name: `Topping: ${topping.name}`,
+          size: null
+        }));
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
+        return [mainItem, ...toppings];
+      });
 
-      if (itemsError) throw itemsError;
+      const salePayload = {
+        store_id: profile.store_id,
+        employee_id: user.id,
+        total: total,
+        payment: method,
+        items: mappedItems
+      };
+
+      const { data: orderData, error: rpcError } = await (supabase as any).rpc('process_sale', {
+        sale_data: salePayload
+      });
+
+      if (rpcError) throw rpcError;
 
       setLastOrder({
-        ...orderData,
+        id: orderData, // The RPC returns the order ID
+        total: total,
+        created_at: new Date().toISOString(),
         items: cart,
         change: method === "cash" ? Math.max(0, amountReceived - total) : 0,
       });
@@ -161,7 +167,7 @@ export default function POS() {
         isOpen={paymentDialogIsOpen}
         onClose={() => setPaymentDialogIsOpen(false)}
         total={total}
-        onConfirmPayment={processSale} 
+        onConfirmPayment={processSale}
         isProcessing={isProcessing}
       />
 

@@ -4,6 +4,7 @@ import type { Json } from "@/integrations/supabase/types";
 export interface CartItem {
   id: string;
   name: string;
+  productId: string;
   price: number;
   quantity: number;
   size?: string;

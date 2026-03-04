@@ -8,9 +8,9 @@ import { Tables } from "@/integrations/supabase/types";
 const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
   return cartItems.filter(item => {
     if (
-      !item || 
+      !item ||
       typeof item !== 'object' ||
-      typeof item.id !== 'string' || 
+      typeof item.id !== 'string' ||
       typeof item.price !== 'number' ||
       isNaN(item.price) ||
       typeof item.quantity !== 'number' ||
@@ -109,16 +109,17 @@ export const useCart = () => {
   ) => {
     const size = availableSizes.find(s => s.id === selectedSizeId);
     const validToppings = availableToppings.filter(t => selectedToppingIds.includes(t.id));
-    
+
     const basePrice = product.price * (size?.multiplier || 1);
     const toppingsPrice = validToppings.reduce((sum, t) => sum + t.price, 0);
     const finalPrice = basePrice + toppingsPrice;
 
     const customizationId = customized ? `${product.id}-${Date.now()}` : product.id;
-    
+
     const newItem: CartItem = {
       id: customizationId,
       name: product.name,
+      productId: product.id,
       price: finalPrice,
       quantity: 1,
       size: size?.name,
@@ -138,7 +139,7 @@ export const useCart = () => {
       }
       return item;
     }).filter(item => item.quantity > 0);
-    
+
     setCart(cleanCartItems(updatedCart));
   };
 

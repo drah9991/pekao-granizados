@@ -1,39 +1,156 @@
+import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, ShoppingBag, Users, ArrowUpRight } from "lucide-react";
-import { formatCurrency } from "@/lib/formatters"; // Import the formatter
+import { TrendingUp, DollarSign, ShoppingBag, Users, ArrowUpRight, Loader2 } from "lucide-react";
+import { formatCurrency } from "@/lib/formatters";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { startOfDay, endOfDay } from "date-fns";
 
 export default function Dashboard() {
+  const { storeId } = useAuth();
+
+  // 1. Fetch Today's Stats
+  const { data: todayStats, isLoading: isLoadingToday } = useQuery({
+    queryKey: ["dashboard-today", storeId],
+    queryFn: async () => {
+      if (!storeId) return null;
+      const today = new Date();
+      const start = startOfDay(today).toISOString();
+      const end = endOfDay(today).toISOString();
+
+      const { data, error } = await supabase
+        .from("orders")
+        .select("total")
+        .eq("store_id", storeId)
+        .gte("created_at", start)
+        .lte("created_at", end);
+
+      if (error) throw error;
+
+      const totalSales = data.reduce((sum, order) => sum + Number(order.total), 0);
+      const totalOrders = data.length;
+
+      return { totalSales, totalOrders };
+    },
+    enabled: !!storeId,
+  });
+
+  // 2. Fetch Global Stats
+  const { data: globalStats, isLoading: isLoadingGlobal } = useQuery({
+    queryKey: ["dashboard-global", storeId],
+    queryFn: async () => {
+      if (!storeId) return null;
+
+      const [productsRes, customersRes] = await Promise.all([
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("active", true),
+        supabase.from("customers").select("id", { count: "exact", head: true })
+      ]);
+
+      return {
+        products: productsRes.count || 0,
+        customers: customersRes.count || 0
+      };
+    },
+    enabled: !!storeId,
+  });
+
+  // 3. Fetch Recent Sales
+  const { data: recentSales, isLoading: isLoadingRecent } = useQuery({
+    queryKey: ["dashboard-recent-sales", storeId],
+    queryFn: async () => {
+      if (!storeId) return null;
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          id,
+          total,
+          created_at,
+          order_items (qty)
+        `)
+        .eq("store_id", storeId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!storeId,
+  });
+
+  // 4. Fetch Popular Products
+  const { data: popularProducts, isLoading: isLoadingPopular } = useQuery({
+    queryKey: ["dashboard-popular-products", storeId],
+    queryFn: async () => {
+      if (!storeId) return null;
+      
+      // Since we don't have a complex aggregation query easily via Postgrest for "top 5",
+      // we'll fetch recent order items and aggregate them in JS for simplicity in this MVP upgrade.
+      const { data, error } = await supabase
+        .from("order_items")
+        .select(`
+          name,
+          qty,
+          order:order_id (store_id)
+        `)
+        .eq("order.store_id", storeId)
+        .limit(50); // Take last 50 items to estimate popularity
+
+      if (error) throw error;
+
+      const aggregation: Record<string, number> = {};
+      data.forEach(item => {
+        aggregation[item.name] = (aggregation[item.name] || 0) + Number(item.qty);
+      });
+
+      return Object.entries(aggregation)
+        .map(([name, sales]) => ({ name, sales }))
+        .sort((a, b) => b.sales - a.sales)
+        .slice(0, 4);
+    },
+    enabled: !!storeId,
+  });
+
+  const isLoading = isLoadingToday || isLoadingGlobal || isLoadingRecent || isLoadingPopular;
+
   const stats = [
     {
       title: "Ventas Hoy",
-      value: formatCurrency(2450), // Using formatter
-      change: "+12.5%",
+      value: formatCurrency(todayStats?.totalSales || 0),
+      change: "+12.5%", // These could be calculated if we fetch yesterday's data too
       icon: DollarSign,
       color: "text-primary",
     },
     {
       title: "Pedidos",
-      value: "145", // Not a currency value
+      value: todayStats?.totalOrders.toString() || "0",
       change: "+8.2%",
       icon: ShoppingBag,
       color: "text-secondary",
     },
     {
       title: "Productos",
-      value: "32", // Not a currency value
+      value: globalStats?.products.toString() || "0",
       change: "+2",
       icon: TrendingUp,
       color: "text-accent",
     },
     {
       title: "Clientes",
-      value: "1,234", // Not a currency value
+      value: globalStats?.customers.toString() || "0",
       change: "+23",
       icon: Users,
       color: "text-primary",
     },
   ];
+
+  const getEmoji = (name: string) => {
+    if (name.toLowerCase().includes("fresa")) return "🍓";
+    if (name.toLowerCase().includes("limón")) return "🍋";
+    if (name.toLowerCase().includes("mango")) return "🥭";
+    if (name.toLowerCase().includes("frambuesa")) return "🫐";
+    return "🥤";
+  };
 
   return (
     <Layout>
@@ -45,6 +162,7 @@ export default function Dashboard() {
             </h1>
             <p className="text-muted-foreground text-sm md:text-base">Resumen de tu negocio en tiempo real</p>
           </div>
+          {isLoading && <Loader2 className="w-6 h-6 animate-spin text-primary" />}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -85,13 +203,16 @@ export default function Dashboard() {
           <Card className="border-2 shadow-card">
             <CardHeader>
               <CardTitle className="text-xl md:text-2xl">Ventas Recientes</CardTitle>
-              <CardDescription className="text-sm">Últimas transacciones del día</CardDescription>
+              <CardDescription className="text-sm">Últimas transacciones realizadas</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {[1, 2, 3, 4].map((i) => (
+                {recentSales?.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">No hay ventas registradas hoy.</p>
+                )}
+                {recentSales?.map((order, i) => (
                   <div 
-                    key={i} 
+                    key={order.id} 
                     className="flex items-center justify-between p-3 md:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-smooth border border-border/50"
                   >
                     <div className="flex items-center gap-3">
@@ -99,13 +220,17 @@ export default function Dashboard() {
                         <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-sm md:text-base">Pedido #{1000 + i}</p>
-                        <p className="text-xs md:text-sm text-muted-foreground">Hace {i * 5} minutos</p>
+                        <p className="font-semibold text-sm md:text-base">Pedido #{order.id.slice(0, 8)}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">
+                          {new Date(order.created_at || "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-lg md:text-xl text-primary">{formatCurrency(15 + i * 8)}</p>
-                      <p className="text-xs text-muted-foreground">2 items</p>
+                      <p className="font-bold text-lg md:text-xl text-primary">{formatCurrency(order.total)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {Array.isArray(order.order_items) ? order.order_items.reduce((acc: number, item: any) => acc + Number(item.qty), 0) : 0} items
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -116,18 +241,16 @@ export default function Dashboard() {
           <Card className="border-2 shadow-card">
             <CardHeader>
               <CardTitle className="text-xl md:text-2xl">Productos Populares</CardTitle>
-              <CardDescription className="text-sm">Más vendidos esta semana</CardDescription>
+              <CardDescription className="text-sm">Más vendidos recientemente</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[
-                  { name: "Granizado Fresa", sales: 145, emoji: "🍓" },
-                  { name: "Granizado Limón", sales: 132, emoji: "🍋" },
-                  { name: "Granizado Frambuesa", sales: 98, emoji: "🫐" },
-                  { name: "Granizado Mango", sales: 87, emoji: "🥭" },
-                ].map((product, i) => (
-                  <div key={i} className="flex items-center gap-3 md:gap-4 py-2">
-                    <div className="text-2xl md:text-3xl">{product.emoji}</div>
+                {popularProducts?.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">No hay datos de productos populares.</p>
+                )}
+                {popularProducts?.map((product, i) => (
+                  <div key={product.name} className="flex items-center gap-3 md:gap-4 py-2">
+                    <div className="text-2xl md:text-3xl">{getEmoji(product.name)}</div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <p className="font-semibold text-sm md:text-base">{product.name}</p>
@@ -140,7 +263,7 @@ export default function Dashboard() {
                             i === 1 ? 'gradient-secondary' : 
                             i === 2 ? 'gradient-accent' : 'gradient-primary'
                           }`}
-                          style={{ width: `${(product.sales / 145) * 100}%` }}
+                          style={{ width: `${Math.min(100, (product.sales / (popularProducts[0]?.sales || 1)) * 100)}%` }}
                         />
                       </div>
                     </div>
