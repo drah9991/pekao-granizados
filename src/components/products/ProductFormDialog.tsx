@@ -80,13 +80,13 @@ export default function ProductFormDialog({
             {editingProduct ? "Editar Producto" : "Nuevo Producto"}
           </DialogTitle>
           <DialogDescription>
-            {editingProduct 
-              ? "Actualiza la información del producto" 
+            {editingProduct
+              ? "Actualiza la información del producto"
               : "Completa los datos del nuevo producto"}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={(e) => { e.preventDefault(); onSave(); }} className="space-y-4 py-4">
+        <form id="product-form" onSubmit={(e) => { e.preventDefault(); onSave(); }} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <Label htmlFor="name">Nombre del Producto *</Label>
@@ -145,9 +145,9 @@ export default function ProductFormDialog({
                   className="flex-1 font-mono"
                 />
                 {!formData.sku && generateSkuSuggestion() && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => setFormData({ ...formData, sku: generateSkuSuggestion() })}
                     className="whitespace-nowrap"
                   >
@@ -247,6 +247,7 @@ export default function ProductFormDialog({
           </Button>
           <Button
             type="submit"
+            form="product-form"
             disabled={isProcessing || !formData.name || !formData.price}
             className="gradient-primary"
           >

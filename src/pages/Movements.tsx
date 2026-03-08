@@ -51,8 +51,7 @@ export default function Movements() {
           qty,
           reason,
           created_at,
-          product:products(name),
-          user:profiles!movements_user_id_fkey(name)
+          product:products(name)
         `)
                 .eq("store_id", storeId)
                 .order("created_at", { ascending: false })

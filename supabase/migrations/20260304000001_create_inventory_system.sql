@@ -32,7 +32,7 @@ USING (
 CREATE POLICY "Enable all access for admins and managers" 
 ON public.inventory_items FOR ALL 
 USING (
-    public.has_role('admin'::app_role, auth.uid()) OR public.has_role('manager'::app_role, auth.uid())
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role::text IN ('admin', 'manager'))
 );
 
 -- 2. Create `recipes` table to link products with inventory items
@@ -66,7 +66,7 @@ USING (
 CREATE POLICY "Enable all access for admins and managers" 
 ON public.recipes FOR ALL 
 USING (
-    public.has_role('admin'::app_role, auth.uid()) OR public.has_role('manager'::app_role, auth.uid())
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role::text IN ('admin', 'manager'))
 );
 
 -- Add trigger for updated_at in inventory_items

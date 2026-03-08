@@ -26,6 +26,7 @@ export default function Customers() {
         name: "",
         email: "",
         phone: "",
+        document_id: "",
     });
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -53,7 +54,7 @@ export default function Customers() {
 
     const openCreateDialog = () => {
         setEditingCustomer(null);
-        setFormData({ name: "", email: "", phone: "" });
+        setFormData({ name: "", email: "", phone: "", document_id: "" });
         setDialogOpen(true);
     };
 
@@ -63,6 +64,7 @@ export default function Customers() {
             name: customer.name || "",
             email: customer.email || "",
             phone: customer.phone || "",
+            document_id: customer.document_id || "",
         });
         setDialogOpen(true);
     };
@@ -79,6 +81,7 @@ export default function Customers() {
                 name: formData.name.trim(),
                 email: formData.email.trim() || null,
                 phone: formData.phone.trim() || null,
+                document_id: formData.document_id.trim() || null,
             };
 
             if (editingCustomer) {
@@ -138,7 +141,8 @@ export default function Customers() {
     const filteredCustomers = customers.filter(customer =>
         (customer.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         (customer.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (customer.phone || "").toLowerCase().includes(searchQuery.toLowerCase())
+        (customer.phone || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (customer.document_id || "").toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -229,6 +233,11 @@ export default function Customers() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="space-y-1 text-sm text-muted-foreground">
+                                                        {customer.document_id && (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-medium text-xs">CC:</span> {customer.document_id}
+                                                            </div>
+                                                        )}
                                                         {customer.phone && (
                                                             <div className="flex items-center gap-2">
                                                                 <Phone className="w-3 h-3" /> {customer.phone}
@@ -239,7 +248,7 @@ export default function Customers() {
                                                                 <Mail className="w-3 h-3" /> {customer.email}
                                                             </div>
                                                         )}
-                                                        {!customer.phone && !customer.email && "Sin contacto"}
+                                                        {!customer.phone && !customer.email && !customer.document_id && "Sin contacto"}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="font-bold text-accent">
@@ -299,6 +308,16 @@ export default function Customers() {
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     className="mt-2"
                                     required
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="document_id">Documento de Identidad (C.C.)</Label>
+                                <Input
+                                    id="document_id"
+                                    placeholder="Ej: 1000123456"
+                                    value={formData.document_id}
+                                    onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
+                                    className="mt-2"
                                 />
                             </div>
                             <div>

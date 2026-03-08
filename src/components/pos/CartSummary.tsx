@@ -1,4 +1,5 @@
 import { CartItem, Product } from "@/lib/pos-types";
+import CustomerSelection, { Customer } from "@/components/pos/CustomerSelection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,8 @@ interface CartSummaryProps {
   discountAmount: number;
   total: number;
   onCheckout: () => void;
+  selectedCustomer: Customer | null;
+  setSelectedCustomer: (customer: Customer | null) => void;
 }
 
 export default function CartSummary({
@@ -37,6 +40,8 @@ export default function CartSummary({
   discountAmount,
   total,
   onCheckout,
+  selectedCustomer,
+  setSelectedCustomer,
 }: CartSummaryProps) {
   const [allProducts, setAllProducts] = useState<Tables<'products'>[]>([]);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
@@ -94,6 +99,13 @@ export default function CartSummary({
       <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent">
         Carrito
       </h2>
+
+      <div className="mb-2">
+        <CustomerSelection
+          selectedCustomer={selectedCustomer}
+          onCustomerSelected={setSelectedCustomer}
+        />
+      </div>
 
       <div className="flex-1 overflow-auto mb-4 space-y-3">
         {cart.length === 0 ? (

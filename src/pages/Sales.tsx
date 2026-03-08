@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Search, Filter, Eye, Receipt, DollarSign, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,7 +19,19 @@ type OrderStatus = "pending" | "completed" | "cancelled" | "processing" | "deliv
 
 interface OrderWithDetails extends Order {
   creator_profile: { name: string | null } | null;
-  customer_details: { name: string | null } | null;
+  customer_details: {
+    name: string | null;
+    document_id?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  } | null;
+}
+
+interface OrderItem {
+  id: string;
+  name: string;
+  qty: number;
+  price: number;
 }
 
 const orderStatusOptions: { value: OrderStatus | "all"; label: string; color: string }[] = [
@@ -36,6 +49,12 @@ export default function Sales() {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<OrderStatus | "all">("all");
   const [loading, setLoading] = useState(true);
   const [currentUserStoreId, setCurrentUserStoreId] = useState<string | null>(null);
+
+  // Dialog State
+  const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [fetchingDetails, setFetchingDetails] = useState(false);
 
   useEffect(() => {
     fetchCurrentUserStoreId();
@@ -81,7 +100,7 @@ export default function Sales() {
         .select(`
           *,
           creator_profile:profiles!orders_created_by_fkey(name),
-          customer_details:customers!orders_customer_id_fkey(name)
+          customer_details:customers!orders_customer_id_fkey(name, document_id, email, phone)
         `)
         .eq('store_id', currentUserStoreId!)
         .order("created_at", { ascending: false });
@@ -102,8 +121,24 @@ export default function Sales() {
     }
   };
 
-  const handleViewDetails = (order: OrderWithDetails) => {
-    toast.info(`Ver detalles del pedido #${order.id.slice(0, 8)}`);
+  const handleViewDetails = async (order: OrderWithDetails) => {
+    setSelectedOrder(order);
+    setIsDetailsOpen(true);
+    setFetchingDetails(true);
+    try {
+      const { data, error } = await supabase
+        .from('order_items')
+        .select('id, name, qty, price')
+        .eq('order_id', order.id);
+
+      if (error) throw error;
+      setOrderItems(data || []);
+    } catch (error: any) {
+      console.error("Error fetching order items:", error);
+      toast.error("Error al cargar los detalles de la orden: " + error.message);
+    } finally {
+      setFetchingDetails(false);
+    }
   };
 
   const filteredOrders = orders.filter(order => {
@@ -111,7 +146,7 @@ export default function Sales() {
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.creator_profile?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer_details?.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesSearch;
   });
 
@@ -271,6 +306,77 @@ export default function Sales() {
             )}
           </CardContent>
         </Card>
+
+        {/* Order Details Dialog */}
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl">Detalle de Venta</DialogTitle>
+              <DialogDescription className="sr-only">Desglose exacto de la venta, cliente y métodos de pago.</DialogDescription>
+            </DialogHeader>
+            {selectedOrder && (
+              <div className="space-y-4 py-4">
+                <div className="flex justify-between items-center text-sm border-b pb-2">
+                  <span className="font-semibold text-muted-foreground">Pedido: <span className="text-foreground">#{selectedOrder.id.slice(0, 8)}</span></span>
+                  <span className="text-muted-foreground">{new Date(selectedOrder.created_at!).toLocaleString('es-CO')}</span>
+                </div>
+
+                <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 text-sm">
+                  <p className="font-semibold text-primary mb-1">Cliente:</p>
+                  <p className="font-medium text-base">{selectedOrder.customer_details?.name || 'Consumidor Final'}</p>
+                  {selectedOrder.customer_details && selectedOrder.customer_details.name && (
+                    <div className="grid grid-cols-2 gap-1 mt-1 text-xs text-muted-foreground w-full">
+                      {selectedOrder.customer_details.document_id && <span>CC: {selectedOrder.customer_details.document_id}</span>}
+                      {selectedOrder.customer_details.phone && <span>Tel: {selectedOrder.customer_details.phone}</span>}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <p className="font-semibold text-sm text-foreground border-b pb-1">Artículos Facturados:</p>
+                  {fetchingDetails ? (
+                    <div className="py-8 text-center"><div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto" /></div>
+                  ) : orderItems.length === 0 ? (
+                    <p className="text-center text-sm text-muted-foreground py-4">No se encontraron artículos para esta orden.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                      {orderItems.map((item) => (
+                        <div key={item.id} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0 relative">
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {item.name.startsWith('Topping:') ? (
+                                <span className="text-muted-foreground font-normal ml-4">+ {item.name.replace('Topping:', '').trim()}</span>
+                              ) : (
+                                <span>{item.qty}x {item.name}</span>
+                              )}
+                            </span>
+                          </div>
+                          <span className="font-bold shrink-0 ml-4">{formatCurrency(item.price * item.qty)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t pt-2 space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>{formatCurrency(selectedOrder.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-lg pt-1">
+                    <span>Total</span>
+                    <span className="text-primary">{formatCurrency(selectedOrder.total)}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground pt-4">
+                  <span>Atendido por: {selectedOrder.creator_profile?.name || 'N/A'}</span>
+                  <span>Pago: {selectedOrder.payment ? Object.values(selectedOrder.payment)[0] as string : 'Efectivo'}</span>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

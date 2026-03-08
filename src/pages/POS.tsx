@@ -26,6 +26,8 @@ export default function POS() {
     discountAmount,
     total,
     resetCart,
+    selectedCustomer,
+    setSelectedCustomer
   } = useCart();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -48,6 +50,10 @@ export default function POS() {
   const handleOpenPaymentDialog = () => {
     if (cart.length === 0) {
       toast.error("El carrito está vacío");
+      return;
+    }
+    if (!selectedCustomer) {
+      toast.error("Debe seleccionar un cliente antes de proceder al pago");
       return;
     }
     setPaymentDialogIsOpen(true);
@@ -83,7 +89,8 @@ export default function POS() {
           quantity: item.quantity,
           price: baseItemPrice,
           name: item.name,
-          size: item.size || null
+          size: item.size || null,
+          size_multiplier: item.sizeMultiplier || 1
         };
 
         const toppings = (item.toppings || []).map(topping => ({
@@ -91,7 +98,8 @@ export default function POS() {
           quantity: item.quantity,
           price: topping.price,
           name: `Topping: ${topping.name}`,
-          size: null
+          size: null,
+          size_multiplier: 1 // Toppings always deduct 1 unit of their own recipe regardless of cup size
         }));
 
         return [mainItem, ...toppings];
@@ -100,8 +108,9 @@ export default function POS() {
       const salePayload = {
         store_id: profile.store_id,
         employee_id: user.id,
+        customer_id: selectedCustomer?.id === 'generic' ? null : selectedCustomer?.id,
         total: total,
-        payment: method,
+        payment: { method },
         items: mappedItems
       };
 
@@ -117,6 +126,7 @@ export default function POS() {
         created_at: new Date().toISOString(),
         items: cart,
         change: method === "cash" ? Math.max(0, amountReceived - total) : 0,
+        customer: selectedCustomer,
       });
 
       toast.success("¡Venta procesada exitosamente!");
@@ -153,6 +163,8 @@ export default function POS() {
           discountAmount={discountAmount}
           total={total}
           onCheckout={handleOpenPaymentDialog}
+          selectedCustomer={selectedCustomer}
+          setSelectedCustomer={setSelectedCustomer}
         />
       </div>
 

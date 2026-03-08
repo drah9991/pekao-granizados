@@ -1,7 +1,8 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CartItem } from "@/lib/pos-types";
 import { formatCurrency } from "@/lib/formatters"; // Import the formatter
+import { Customer } from "@/components/pos/CustomerSelection";
 
 interface ReceiptDialogProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface ReceiptDialogProps {
     created_at: string;
     change: number;
     items: CartItem[];
+    customer?: Customer | null;
   } | null;
 }
 
@@ -21,6 +23,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">¡Venta Exitosa! 🎉</DialogTitle>
+          <DialogDescription className="sr-only">Comprobante de venta exitosa detallando los productos adquiridos.</DialogDescription>
         </DialogHeader>
 
         {lastOrder && (
@@ -40,14 +43,38 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
               )}
             </div>
 
-            <div className="space-y-2">
-              <p className="font-semibold text-sm text-muted-foreground">Detalle del Pedido:</p>
+            {/* Customer Info */}
+            {lastOrder.customer && lastOrder.customer.id !== 'generic' ? (
+              <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 text-sm">
+                <p className="font-semibold text-primary mb-1">Cliente:</p>
+                <p className="font-medium text-base">{lastOrder.customer.name}</p>
+                <div className="grid grid-cols-2 gap-1 mt-1 text-xs text-muted-foreground w-full">
+                  {lastOrder.customer.document_id && <span>CC: {lastOrder.customer.document_id}</span>}
+                  {lastOrder.customer.phone && <span>Tel: {lastOrder.customer.phone}</span>}
+                  {lastOrder.customer.email && <span className="col-span-2">Email: {lastOrder.customer.email}</span>}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-muted p-2 rounded-lg border border-border text-xs text-center text-muted-foreground">
+                Consumidor Final
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <p className="font-semibold text-sm text-foreground border-b pb-1">Detalle del Pedido:</p>
               {lastOrder.items && Array.isArray(lastOrder.items) && lastOrder.items
                 .filter((item: CartItem) => item && typeof item.price === 'number' && typeof item.quantity === 'number')
                 .map((item: CartItem, index: number) => (
-                  <div key={index} className="flex justify-between text-sm p-2 bg-muted/30 rounded">
-                    <span>{item.quantity}x {item.name}</span>
-                    <span className="font-bold">{formatCurrency(item.price * item.quantity)}</span>
+                  <div key={index} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{item.quantity}x {item.name} {item.size && <span className="text-muted-foreground font-normal">({item.size})</span>}</span>
+                      {item.toppings && item.toppings.length > 0 && (
+                        <span className="text-xs text-muted-foreground pl-4 mt-0.5 whitespace-pre-wrap">
+                          + {item.toppings.map(t => t.name).join(', ')}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-bold shrink-0 ml-4">{formatCurrency(item.price * item.quantity)}</span>
                   </div>
                 ))
               }

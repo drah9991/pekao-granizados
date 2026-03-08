@@ -3,6 +3,7 @@ import { CartItem, Product, Size } from "@/lib/pos-types"; // Topping interface 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { Customer } from "@/components/pos/CustomerSelection";
 
 // Utility function to ensure cart items are valid and clean them up
 const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
@@ -37,6 +38,7 @@ export const useCart = () => {
   const [availableSizes, setAvailableSizes] = useState<Tables<'sizes'>[]>([]);
   const [availableToppings, setAvailableToppings] = useState<Product[]>([]);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   useEffect(() => {
     // Clean cart on initial load to ensure data consistency
@@ -123,6 +125,7 @@ export const useCart = () => {
       price: finalPrice,
       quantity: 1,
       size: size?.name,
+      sizeMultiplier: size?.multiplier || 1, // Store the multiplier for backend processing
       toppings: validToppings.length > 0 ? validToppings : undefined,
       customizationId,
     };
@@ -163,6 +166,7 @@ export const useCart = () => {
     setCart([]);
     setDiscount(0);
     setDiscountType("percent");
+    setSelectedCustomer(null);
   };
 
   return {
@@ -179,5 +183,7 @@ export const useCart = () => {
     discountAmount,
     total,
     resetCart,
+    selectedCustomer,
+    setSelectedCustomer
   };
 };

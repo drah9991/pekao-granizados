@@ -24,6 +24,7 @@ export type Database = {
           name: string | null
           phone: string | null
           total_spent: number | null
+          document_id: string | null
         }
         Insert: {
           addresses?: Json | null
@@ -34,6 +35,7 @@ export type Database = {
           name?: string | null
           phone?: string | null
           total_spent?: number | null
+          document_id?: string | null
         }
         Update: {
           addresses?: Json | null
@@ -44,6 +46,7 @@ export type Database = {
           name?: string | null
           phone?: string | null
           total_spent?: number | null
+          document_id?: string | null
         }
         Relationships: []
       }
