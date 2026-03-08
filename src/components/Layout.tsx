@@ -1,16 +1,17 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  ShoppingCart, 
+import {
+  LayoutDashboard,
+  ShoppingCart,
   Settings,
   LogOut,
   IceCream,
   Menu,
   X,
   ChevronDown,
-  Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText // Removed Cherry, Wine icons
+  Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
+  Palette, Shield, Building2, Receipt, Tag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -33,23 +34,39 @@ interface NavItem {
 }
 
 const navigation: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, type: "link", roles: ["admin", "store_manager", "cashier", "delivery_driver", "customer"] },
-  { name: "POS", href: "/pos", icon: ShoppingCart, type: "link", roles: ["admin", "store_manager", "cashier"] },
-  { name: "Ventas", href: "/sales", icon: ReceiptText, type: "link", roles: ["admin", "store_manager", "cashier"] },
-  { name: "Configuración", href: "/settings?tab=branding", icon: Settings, type: "link", roles: ["admin", "store_manager"] },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, type: "link", roles: ["admin", "manager", "store_manager", "cashier", "driver", "customer"] },
+  { name: "POS", href: "/pos", icon: ShoppingCart, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+  { name: "Arqueo de Caja", href: "/cash-register", icon: Calculator, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+  { name: "Ventas", href: "/sales", icon: ReceiptText, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+  { name: "Facturas", href: "/invoices", icon: FileText, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+  {
+    name: "Configuración",
+    href: "/settings",
+    icon: Settings,
+    type: "collapsible",
+    roles: ["admin", "manager", "store_manager", "cashier"],
+    children: [
+      { name: "Branding Visual", href: "/settings?tab=branding", icon: Palette, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Roles de Sistema", href: "/settings?tab=roles", icon: Shield, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Perfil de Negocio", href: "/settings?tab=business", icon: Building2, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Plantillas Recibos", href: "/settings?tab=receipts", icon: Receipt, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Tamaños Estándar", href: "/settings?tab=sizes", icon: Ruler, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Acrónimos SKU", href: "/settings?tab=sku", icon: Tag, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+    ]
+  },
   {
     name: "Maestros",
-    href: "/settings?tab=master-data&subtab=products",
+    href: "/products",
     icon: Database,
     type: "collapsible",
-    roles: ["admin", "store_manager"],
+    roles: ["admin", "manager", "store_manager", "cashier"],
     children: [
-      { name: "Productos", href: "/settings?tab=master-data&subtab=products", icon: Package, type: "link", roles: ["admin", "store_manager"] },
-      { name: "Inventario", href: "/settings?tab=master-data&subtab=inventory", icon: ClipboardList, type: "link", roles: ["admin", "store_manager"] },
-      { name: "Usuarios", href: "/settings?tab=master-data&subtab=users", icon: UsersIcon, type: "link", roles: ["admin", "store_manager"] },
-      { name: "Tiendas", href: "/settings?tab=master-data&subtab=stores", icon: StoreIcon, type: "link", roles: ["admin", "store_manager"] },
-      { name: "Tamaños", href: "/settings?tab=master-data&subtab=sizes", icon: Ruler, type: "link", roles: ["admin", "store_manager"] },
-      // Toppings and Sachets are now managed within Products, so removed from here
+      { name: "Productos", href: "/products", icon: Package, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Inventario", href: "/inventory", icon: ClipboardList, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Recetas", href: "/recipes", icon: ClipboardList, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Usuarios", href: "/users", icon: UsersIcon, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Tiendas", href: "/stores", icon: StoreIcon, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Kardex", href: "/movements", icon: Activity, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
     ],
   },
 ];
@@ -168,7 +185,7 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             <div>
               <h1 className="text-xl font-bold text-sidebar-foreground tracking-tight">Pekao</h1>
-              <p className="text-xs text-sidebar-foreground/50 font-medium">Granizados</p>
+              <p className="text-xs text-sidebar-foreground/50 font-medium">Granizados ({userRole || 'sin rol'})</p>
             </div>
           </div>
         </div>

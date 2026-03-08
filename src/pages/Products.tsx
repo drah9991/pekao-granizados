@@ -12,6 +12,7 @@ import ProductGridDisplay from "@/components/products/ProductGridDisplay";
 import ProductFormDialog from "@/components/products/ProductFormDialog";
 import ProductDetailsDialog from "@/components/products/ProductDetailsDialog";
 import ProductImportExportButtons from "@/components/products/ProductImportExportButtons";
+import Layout from "@/components/Layout";
 
 import { IceCream, Cherry, Wine, Candy } from "lucide-react"; // Icons for product types
 
@@ -40,7 +41,7 @@ export default function Products() {
   const [filterType, setFilterType] = useState<ProductType | "all">("all");
   const [loading, setLoading] = useState(true);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
-  
+
   // Create/Edit Dialog states
   const [productDialogIsOpen, setProductDialogIsOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -190,7 +191,7 @@ export default function Products() {
     variants: formData.variants,
     recipe: formData.recipe,
     type: formData.type,
-    ...(editingProduct ? {} : { store_id: userStoreId! }), 
+    ...(editingProduct ? {} : { store_id: userStoreId! }),
   });
 
   const createProduct = async (productData: TablesInsert<'products'>) => {
@@ -431,12 +432,12 @@ export default function Products() {
   };
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesFilter = filterActive === "all" || 
+
+    const matchesFilter = filterActive === "all" ||
       (filterActive === "active" && product.active) ||
       (filterActive === "inactive" && !product.active);
 
@@ -449,84 +450,86 @@ export default function Products() {
     total: products.length,
     active: products.filter(p => p.active).length,
     inactive: products.filter(p => !p.active).length,
-    avgPrice: products.length > 0 
-      ? products.reduce((sum, p) => sum + p.price, 0) / products.length 
+    avgPrice: products.length > 0
+      ? products.reduce((sum, p) => sum + p.price, 0) / products.length
       : 0,
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-6 md:space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
-            Catálogo de Productos
-          </h1>
-          <p className="text-muted-foreground">Gestiona tu inventario de productos</p>
+    <Layout>
+      <div className="space-y-6 p-6 md:p-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
+              Catálogo de Productos
+            </h1>
+            <p className="text-muted-foreground">Gestiona tu inventario de productos</p>
+          </div>
+          <ProductImportExportButtons
+            onExport={handleExportProducts}
+            onImport={handleImportProducts}
+            onImportFileChange={handleImportFileChange}
+            importFile={importFile}
+            isImporting={isImporting}
+            importDialogIsOpen={importDialogIsOpen}
+            setImportDialogIsOpen={setImportDialogIsOpen}
+            userStoreId={userStoreId}
+            loading={loading}
+            products={products}
+            openCreateDialog={openCreateDialog}
+          />
         </div>
-        <ProductImportExportButtons
-          onExport={handleExportProducts}
-          onImport={handleImportProducts}
-          onImportFileChange={handleImportFileChange}
-          importFile={importFile}
-          isImporting={isImporting}
-          importDialogIsOpen={importDialogIsOpen}
-          setImportDialogIsOpen={setImportDialogIsOpen}
-          userStoreId={userStoreId}
+
+        {/* Stats Cards */}
+        <ProductStats {...stats} />
+
+        {/* Search and Filters */}
+        <ProductFiltersAndSearch
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          filterActive={filterActive}
+          setFilterActive={setFilterActive}
+          productTypeOptions={productTypeOptions}
+        />
+
+        {/* Products Grid */}
+        <ProductGridDisplay
+          products={filteredProducts}
           loading={loading}
-          products={products}
+          searchQuery={searchQuery}
+          filterActive={filterActive}
+          filterType={filterType}
           openCreateDialog={openCreateDialog}
+          openEditDialog={openEditDialog}
+          openDetailsDialog={openDetailsDialog}
+          handleDeleteProduct={handleDeleteProduct}
+          userStoreId={userStoreId}
+        />
+
+        {/* Create/Edit Product Dialog */}
+        <ProductFormDialog
+          isOpen={productDialogIsOpen}
+          onClose={() => setProductDialogIsOpen(false)}
+          editingProduct={editingProduct}
+          formData={formData}
+          setFormData={setFormData}
+          onSave={handleSaveProduct}
+          isProcessing={isProcessing}
+          productTypeOptions={productTypeOptions}
+          skuAcronyms={skuAcronyms} // Pass SKU acronyms here
+        />
+
+        {/* Product Details Dialog */}
+        <ProductDetailsDialog
+          isOpen={detailsDialogIsOpen}
+          onClose={() => setDetailsDialogIsOpen(false)}
+          viewingProduct={viewingProduct}
+          productStock={productStock}
         />
       </div>
-
-      {/* Stats Cards */}
-      <ProductStats {...stats} />
-
-      {/* Search and Filters */}
-      <ProductFiltersAndSearch
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        filterType={filterType}
-        setFilterType={setFilterType}
-        filterActive={filterActive}
-        setFilterActive={setFilterActive}
-        productTypeOptions={productTypeOptions}
-      />
-
-      {/* Products Grid */}
-      <ProductGridDisplay
-        products={filteredProducts}
-        loading={loading}
-        searchQuery={searchQuery}
-        filterActive={filterActive}
-        filterType={filterType}
-        openCreateDialog={openCreateDialog}
-        openEditDialog={openEditDialog}
-        openDetailsDialog={openDetailsDialog}
-        handleDeleteProduct={handleDeleteProduct}
-        userStoreId={userStoreId}
-      />
-      
-      {/* Create/Edit Product Dialog */}
-      <ProductFormDialog
-        isOpen={productDialogIsOpen}
-        onClose={() => setProductDialogIsOpen(false)}
-        editingProduct={editingProduct}
-        formData={formData}
-        setFormData={setFormData}
-        onSave={handleSaveProduct}
-        isProcessing={isProcessing}
-        productTypeOptions={productTypeOptions}
-        skuAcronyms={skuAcronyms} // Pass SKU acronyms here
-      />
-
-      {/* Product Details Dialog */}
-      <ProductDetailsDialog
-        isOpen={detailsDialogIsOpen}
-        onClose={() => setDetailsDialogIsOpen(false)}
-        viewingProduct={viewingProduct}
-        productStock={productStock}
-      />
-    </div>
+    </Layout>
   );
 }

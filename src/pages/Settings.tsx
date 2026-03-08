@@ -8,7 +8,9 @@ import BrandingSettings from "@/components/settings/BrandingSettings";
 import RolesSettings from "@/components/settings/RolesSettings";
 import BusinessSettings from "@/components/settings/BusinessSettings";
 import ReceiptTemplateSettings from "@/components/settings/ReceiptTemplateSettings";
-import MasterDataSettings from "@/components/settings/MasterDataSettings"; // Import the new component
+import SizesSettings from "@/components/settings/SizesSettings";
+import SkuAcronymsSettings from "@/components/settings/SkuAcronymsSettings";
+import { Ruler, Tag } from "lucide-react";
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,14 +22,15 @@ export default function Settings() {
   const handleTabChange = (value: string) => {
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.set("tab", value);
-    // When changing main tabs, reset subtab if it exists
-    if (value !== "master-data") {
-      newSearchParams.delete("subtab");
-    } else {
-      // If switching to master-data, ensure a default subtab is set if none exists
-      if (!newSearchParams.get("subtab")) {
-        newSearchParams.set("subtab", "products");
-      }
+    if (
+      value !== "branding" &&
+      value !== "roles" &&
+      value !== "business" &&
+      value !== "receipts" &&
+      value !== "sizes" &&
+      value !== "sku"
+    ) {
+      newSearchParams.delete("tab");
     }
     navigate(`${location.pathname}?${newSearchParams.toString()}`);
   };
@@ -47,40 +50,47 @@ export default function Settings() {
         <Card className="border-2 shadow-card">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto gap-2 p-2 bg-muted/30">
-              <TabsTrigger 
-                value="branding" 
+              <TabsTrigger
+                value="branding"
                 className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
               >
                 <Palette className="w-4 h-4" />
                 <span className="hidden sm:inline">Branding</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="roles" 
+              <TabsTrigger
+                value="roles"
                 className="flex items-center gap-2 data-[state=active]:gradient-secondary data-[state=active]:text-white"
               >
                 <Shield className="w-4 h-4" />
                 <span className="hidden sm:inline">Roles</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="business" 
+              <TabsTrigger
+                value="business"
                 className="flex items-center gap-2 data-[state=active]:gradient-accent data-[state=active]:text-white"
               >
                 <Building2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Negocio</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="receipts" 
+              <TabsTrigger
+                value="receipts"
                 className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
               >
                 <Receipt className="w-4 h-4" />
                 <span className="hidden sm:inline">Recibos</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="master-data" 
+              <TabsTrigger
+                value="sizes"
                 className="flex items-center gap-2 data-[state=active]:gradient-secondary data-[state=active]:text-white"
               >
-                <Database className="w-4 h-4" />
-                <span className="hidden sm:inline">Maestros</span>
+                <Ruler className="w-4 h-4" />
+                <span className="hidden sm:inline">Tamaños</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="sku"
+                className="flex items-center gap-2 data-[state=active]:gradient-accent data-[state=active]:text-white"
+              >
+                <Tag className="w-4 h-4" />
+                <span className="hidden sm:inline">Acrónimos SKU</span>
               </TabsTrigger>
             </TabsList>
 
@@ -100,8 +110,12 @@ export default function Settings() {
               <ReceiptTemplateSettings />
             </TabsContent>
 
-            <TabsContent value="master-data" className="p-6">
-              <MasterDataSettings />
+            <TabsContent value="sizes" className="p-6">
+              <SizesSettings />
+            </TabsContent>
+
+            <TabsContent value="sku" className="p-6">
+              <SkuAcronymsSettings />
             </TabsContent>
           </Tabs>
         </Card>

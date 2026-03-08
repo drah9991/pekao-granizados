@@ -353,11 +353,12 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, name, phone)
+  insert into public.profiles (id, name, phone, email)
   values (
     new.id,
     new.raw_user_meta_data->>'name',
-    new.raw_user_meta_data->>'phone'
+    new.raw_user_meta_data->>'phone',
+    new.email
   );
   return new;
 end;

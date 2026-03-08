@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, ChefHat } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import Layout from "@/components/Layout";
 
 export const RecipeManagement = () => {
     const { storeId } = useAuth();
@@ -126,122 +127,124 @@ export const RecipeManagement = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                <div>
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent flex items-center gap-2">
-                        <ChefHat className="h-6 w-6 text-purple-600" />
-                        Recetas de Productos
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                        Asigna qué y cuánta materia prima se descuenta al vender cada producto.
-                    </p>
-                </div>
-
-                <div className="max-w-md">
-                    <Label className="mb-2 block">Selecciona un Producto Base</Label>
-                    <Select value={selectedProduct || ""} onValueChange={setSelectedProduct}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Ej. Granizado de Maracuyá Base" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {products?.map(p => (
-                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            {selectedProduct && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-4 border-b flex justify-between items-center bg-gray-50/50">
-                        <h3 className="font-semibold text-gray-800">Fórmula de Descuento</h3>
-                        <Dialog open={isAddingIngredient} onOpenChange={setIsAddingIngredient}>
-                            <DialogTrigger asChild>
-                                <Button size="sm">
-                                    <Plus className="h-4 w-4 mr-1" /> Agregar Insumo
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-sm">
-                                <DialogHeader>
-                                    <DialogTitle>Añadir a la receta</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4 pt-4">
-                                    <div className="space-y-2">
-                                        <Label>Insumo / Materia Prima</Label>
-                                        <Select value={selectedInventoryItem} onValueChange={setSelectedInventoryItem}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione insumo" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {inventoryItems?.map(inv => (
-                                                    <SelectItem key={inv.id} value={inv.id}>
-                                                        {inv.name} ({inv.unit_of_measure})
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Cantidad a descontar</Label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={qtyRequired || ""}
-                                            onChange={(e) => setQtyRequired(Number(e.target.value))}
-                                            placeholder="Ej. 1.5, 250"
-                                        />
-                                        <p className="text-xs text-gray-500">
-                                            Unidades usadas por cada venta.
-                                        </p>
-                                    </div>
-                                    <Button onClick={handleAddIngredient} className="w-full" disabled={addIngredientMutation.isPending}>
-                                        Añadir a Fórmula
-                                    </Button>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+        <Layout>
+            <div className="p-6 md:p-8 space-y-6 md:space-y-8">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                    <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent flex items-center gap-2">
+                            <ChefHat className="h-6 w-6 text-purple-600" />
+                            Recetas de Productos
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Asigna qué y cuánta materia prima se descuenta al vender cada producto.
+                        </p>
                     </div>
 
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Ingrediente (Insumo)</TableHead>
-                                <TableHead>Cantidad Requerida</TableHead>
-                                <TableHead className="text-right">Remover</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loadingRecipes ? (
-                                <TableRow><TableCell colSpan={3} className="text-center py-4">Cargando receta...</TableCell></TableRow>
-                            ) : recipes?.length === 0 ? (
+                    <div className="max-w-md">
+                        <Label className="mb-2 block">Selecciona un Producto Base</Label>
+                        <Select value={selectedProduct || ""} onValueChange={setSelectedProduct}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Ej. Granizado de Maracuyá Base" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {products?.map(p => (
+                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                {selectedProduct && (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-4 border-b flex justify-between items-center bg-gray-50/50">
+                            <h3 className="font-semibold text-gray-800">Fórmula de Descuento</h3>
+                            <Dialog open={isAddingIngredient} onOpenChange={setIsAddingIngredient}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm">
+                                        <Plus className="h-4 w-4 mr-1" /> Agregar Insumo
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-sm">
+                                    <DialogHeader>
+                                        <DialogTitle>Añadir a la receta</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4 pt-4">
+                                        <div className="space-y-2">
+                                            <Label>Insumo / Materia Prima</Label>
+                                            <Select value={selectedInventoryItem} onValueChange={setSelectedInventoryItem}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione insumo" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {inventoryItems?.map(inv => (
+                                                        <SelectItem key={inv.id} value={inv.id}>
+                                                            {inv.name} ({inv.unit_of_measure})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Cantidad a descontar</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={qtyRequired || ""}
+                                                onChange={(e) => setQtyRequired(Number(e.target.value))}
+                                                placeholder="Ej. 1.5, 250"
+                                            />
+                                            <p className="text-xs text-gray-500">
+                                                Unidades usadas por cada venta.
+                                            </p>
+                                        </div>
+                                        <Button onClick={handleAddIngredient} className="w-full" disabled={addIngredientMutation.isPending}>
+                                            Añadir a Fórmula
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center py-8 text-gray-500">
-                                        Este producto no tiene receta (no descontará insumos).
-                                    </TableCell>
+                                    <TableHead>Ingrediente (Insumo)</TableHead>
+                                    <TableHead>Cantidad Requerida</TableHead>
+                                    <TableHead className="text-right">Remover</TableHead>
                                 </TableRow>
-                            ) : (
-                                recipes?.map((row: any) => (
-                                    <TableRow key={row.id}>
-                                        <TableCell className="font-medium text-gray-800">
-                                            {row.inventory_items?.name || "Desconocido"}
-                                        </TableCell>
-                                        <TableCell>
-                                            {row.quantity_required} {row.inventory_items?.unit_of_measure}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => removeIngredientMutation.mutate(row.id)}>
-                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                            </Button>
+                            </TableHeader>
+                            <TableBody>
+                                {loadingRecipes ? (
+                                    <TableRow><TableCell colSpan={3} className="text-center py-4">Cargando receta...</TableCell></TableRow>
+                                ) : recipes?.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="text-center py-8 text-gray-500">
+                                            Este producto no tiene receta (no descontará insumos).
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-            )}
-        </div>
+                                ) : (
+                                    recipes?.map((row: any) => (
+                                        <TableRow key={row.id}>
+                                            <TableCell className="font-medium text-gray-800">
+                                                {row.inventory_items?.name || "Desconocido"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {row.quantity_required} {row.inventory_items?.unit_of_measure}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="icon" onClick={() => removeIngredientMutation.mutate(row.id)}>
+                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </div>
+        </Layout>
     );
 };
