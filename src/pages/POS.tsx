@@ -59,7 +59,7 @@ export default function POS() {
     setPaymentDialogIsOpen(true);
   };
 
-  const processSale = async (method: PaymentMethod, amountReceived: number) => {
+  const processSale = async (method: PaymentMethod, amountReceived: number, tipAmount: number) => {
     setIsProcessing(true);
 
     try {
@@ -109,7 +109,9 @@ export default function POS() {
         store_id: profile.store_id,
         employee_id: user.id,
         customer_id: selectedCustomer?.id === 'generic' ? null : selectedCustomer?.id,
-        total: total,
+        subtotal: total,
+        tip_amount: tipAmount,
+        total: total + tipAmount,
         payment: { method },
         items: mappedItems
       };
@@ -122,10 +124,12 @@ export default function POS() {
 
       setLastOrder({
         id: orderData, // The RPC returns the order ID
-        total: total,
+        total: total + tipAmount,
+        subtotal: total,
+        tip_amount: tipAmount,
         created_at: new Date().toISOString(),
         items: cart,
-        change: method === "cash" ? Math.max(0, amountReceived - total) : 0,
+        change: method === "cash" ? Math.max(0, amountReceived - (total + tipAmount)) : 0,
         customer: selectedCustomer,
       });
 
@@ -178,7 +182,7 @@ export default function POS() {
       <PaymentDialog
         isOpen={paymentDialogIsOpen}
         onClose={() => setPaymentDialogIsOpen(false)}
-        total={total}
+        subtotal={total}
         onConfirmPayment={processSale}
         isProcessing={isProcessing}
       />

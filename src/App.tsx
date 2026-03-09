@@ -15,6 +15,7 @@ import Sales from "./pages/Sales";
 import Invoices from "./pages/Invoices";
 import Movements from "./pages/Movements";
 import Customers from "./pages/Customers";
+import Marketing from "./pages/Marketing";
 import CashRegister from "./pages/CashRegister";
 import Products from "./pages/Products";
 import { InventoryManagement } from "./components/settings/InventoryManagement";
@@ -83,6 +84,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <Customers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/marketing"
+                element={
+                  <ProtectedRoute requiredRole={["admin", "manager"]}>
+                    <Marketing />
                   </ProtectedRoute>
                 }
               />

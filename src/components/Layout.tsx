@@ -11,7 +11,7 @@ import {
   X,
   ChevronDown,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
-  Palette, Shield, Building2, Receipt, Tag
+  Palette, Shield, Building2, Receipt, Tag, Megaphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -39,6 +39,7 @@ const navigation: NavItem[] = [
   { name: "Arqueo de Caja", href: "/cash-register", icon: Calculator, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
   { name: "Ventas", href: "/sales", icon: ReceiptText, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
   { name: "Facturas", href: "/invoices", icon: FileText, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+  { name: "Marketing", href: "/marketing", icon: Megaphone, type: "link", roles: ["admin", "manager"] },
   {
     name: "Configuración",
     href: "/settings",

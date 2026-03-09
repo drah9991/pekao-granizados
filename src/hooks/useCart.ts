@@ -37,6 +37,7 @@ export const useCart = () => {
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
   const [availableSizes, setAvailableSizes] = useState<Tables<'sizes'>[]>([]);
   const [availableToppings, setAvailableToppings] = useState<Product[]>([]);
+  const [pricingRules, setPricingRules] = useState<Tables<'pricing_rules'>[]>([]);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
@@ -97,6 +98,16 @@ export const useCart = () => {
       if (toppingsError) throw toppingsError;
       setAvailableToppings(toppingsData as Product[] || []);
 
+      // Fetch active dynamic pricing rules
+      const { data: rulesData, error: rulesError } = await supabase
+        .from('pricing_rules')
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('active', true);
+
+      if (rulesError) throw rulesError;
+      setPricingRules(rulesData || []);
+
     } catch (error: any) {
       console.error("Error fetching dynamic data:", error);
       toast.error("Error al cargar datos dinámicos: " + error.message);
@@ -112,7 +123,60 @@ export const useCart = () => {
     const size = availableSizes.find(s => s.id === selectedSizeId);
     const validToppings = availableToppings.filter(t => selectedToppingIds.includes(t.id));
 
-    const basePrice = product.price * (size?.multiplier || 1);
+    let basePrice = product.price * (size?.multiplier || 1);
+    let originalPrice = basePrice;
+    let discountMessage = undefined;
+
+    // Apply Dynamic Pricing Rules
+    if (pricingRules.length > 0) {
+      const now = new Date();
+      const jsDay = now.getDay();
+      const currentDay = jsDay === 0 ? 7 : jsDay; // Convert to 1-7 (Mon-Sun)
+      const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:00`;
+
+      // Find all applicable rules for this product right now
+      const applicableRules = pricingRules.filter(rule => {
+        // Check day
+        if (rule.days_of_week && rule.days_of_week.length > 0 && !rule.days_of_week.includes(currentDay)) return false;
+        
+        // Check time
+        if (rule.type === 'time_based' && rule.start_time && rule.end_time) {
+          if (currentTime < rule.start_time || currentTime > rule.end_time) return false;
+        }
+
+        // Check target (all, category, product)
+        if (rule.target_type === 'category' && product.category !== rule.target_id) return false;
+        if (rule.target_type === 'product' && product.id !== rule.target_id) return false;
+
+        return true;
+      });
+
+      // If rules apply, we pick the one that gives the best discount to the customer
+      if (applicableRules.length > 0) {
+        let bestDiscountedPrice = basePrice;
+        let bestRule = null;
+
+        for (const rule of applicableRules) {
+          let discountedPrice = basePrice;
+          if (rule.discount_type === 'percentage') {
+            discountedPrice = basePrice * (1 - rule.discount_value / 100);
+          } else if (rule.discount_type === 'fixed') {
+            discountedPrice = Math.max(0, basePrice - rule.discount_value);
+          }
+
+          if (discountedPrice < bestDiscountedPrice) {
+            bestDiscountedPrice = discountedPrice;
+            bestRule = rule;
+          }
+        }
+
+        if (bestRule && bestDiscountedPrice < basePrice) {
+          basePrice = bestDiscountedPrice;
+          discountMessage = bestRule.name;
+        }
+      }
+    }
+
     const toppingsPrice = validToppings.reduce((sum, t) => sum + t.price, 0);
     const finalPrice = basePrice + toppingsPrice;
 
@@ -125,13 +189,19 @@ export const useCart = () => {
       price: finalPrice,
       quantity: 1,
       size: size?.name,
-      sizeMultiplier: size?.multiplier || 1, // Store the multiplier for backend processing
+      sizeMultiplier: size?.multiplier || 1, 
       toppings: validToppings.length > 0 ? validToppings : undefined,
       customizationId,
+      originalPrice: originalPrice !== basePrice ? originalPrice + toppingsPrice : undefined,
+      discountMessage,
     };
 
     setCart(prevCart => cleanCartItems([...prevCart, newItem]));
-    toast.success("Producto agregado al carrito");
+    if (discountMessage) {
+      toast.success(`Producto agregado con descuento: ${discountMessage}`);
+    } else {
+      toast.success("Producto agregado al carrito");
+    }
   };
 
   const updateQuantity = (id: string, delta: number) => {

@@ -11,6 +11,8 @@ export interface CartItem {
   sizeMultiplier?: number;
   toppings?: Product[];
   customizationId?: string;
+  originalPrice?: number;
+  discountMessage?: string;
 }
 
 export interface Product {

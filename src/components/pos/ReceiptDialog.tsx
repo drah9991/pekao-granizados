@@ -10,6 +10,8 @@ interface ReceiptDialogProps {
   lastOrder: {
     id: string;
     total: number;
+    subtotal?: number;
+    tip_amount?: number;
     created_at: string;
     change: number;
     items: CartItem[];
@@ -29,7 +31,19 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
         {lastOrder && (
           <div className="space-y-4 py-4">
             <div className="text-center p-6 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground mb-1">Total Pagado</p>
+              {lastOrder.tip_amount ? (
+                <div className="flex flex-col gap-1 mb-3 text-sm text-muted-foreground border-b border-border/50 pb-3">
+                  <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>{formatCurrency(lastOrder.subtotal || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-pink-500 font-medium pb-1">
+                    <span>Propina Voluntaria:</span>
+                    <span>{formatCurrency(lastOrder.tip_amount)}</span>
+                  </div>
+                </div>
+              ) : null}
+              <p className="text-sm text-foreground font-semibold mb-1">Total Pagado</p>
               <p className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 {formatCurrency(lastOrder.total)}
               </p>

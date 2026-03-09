@@ -27,6 +27,7 @@ export default function Customers() {
         email: "",
         phone: "",
         document_id: "",
+        consent_habeas_data: false,
     });
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -54,7 +55,7 @@ export default function Customers() {
 
     const openCreateDialog = () => {
         setEditingCustomer(null);
-        setFormData({ name: "", email: "", phone: "", document_id: "" });
+        setFormData({ name: "", email: "", phone: "", document_id: "", consent_habeas_data: false });
         setDialogOpen(true);
     };
 
@@ -65,13 +66,18 @@ export default function Customers() {
             email: customer.email || "",
             phone: customer.phone || "",
             document_id: customer.document_id || "",
+            consent_habeas_data: customer.consent_habeas_data || false,
         });
         setDialogOpen(true);
     };
 
     const handleSaveCustomer = async () => {
-        if (!formData.name) {
-            toast.error("El nombre del cliente es obligatorio.");
+        if (!formData.name || !formData.document_id) {
+            toast.error("El nombre y documento del cliente son obligatorios.");
+            return;
+        }
+        if (!formData.consent_habeas_data) {
+            toast.error("Debe autorizar el tratamiento de datos (Ley 1581) para continuar.");
             return;
         }
 
@@ -82,6 +88,7 @@ export default function Customers() {
                 email: formData.email.trim() || null,
                 phone: formData.phone.trim() || null,
                 document_id: formData.document_id.trim() || null,
+                consent_habeas_data: formData.consent_habeas_data,
             };
 
             if (editingCustomer) {
@@ -311,13 +318,14 @@ export default function Customers() {
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="document_id">Documento de Identidad (C.C.)</Label>
+                                <Label htmlFor="document_id">Documento de Identidad (NIT / C.C.) *</Label>
                                 <Input
                                     id="document_id"
                                     placeholder="Ej: 1000123456"
                                     value={formData.document_id}
                                     onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
                                     className="mt-2"
+                                    required
                                 />
                             </div>
                             <div>
@@ -342,6 +350,20 @@ export default function Customers() {
                                 />
                             </div>
 
+                            <div className="flex items-start space-x-3 pt-2">
+                                <input
+                                    type="checkbox"
+                                    id="consent"
+                                    className="mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                    checked={formData.consent_habeas_data}
+                                    onChange={(e) => setFormData({ ...formData, consent_habeas_data: e.target.checked })}
+                                    required
+                                />
+                                <Label htmlFor="consent" className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer">
+                                    Autorizo el tratamiento de mis datos personales conforme a la <strong>Ley 1581 de 2012 (Hábeas Data)</strong> para fines de facturación y contacto. *
+                                </Label>
+                            </div>
+
                             <DialogFooter className="gap-2 pt-4">
                                 <Button
                                     type="button"
@@ -353,7 +375,7 @@ export default function Customers() {
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={isProcessing || !formData.name}
+                                    disabled={isProcessing || !formData.name || !formData.document_id || !formData.consent_habeas_data}
                                     className="gradient-primary"
                                 >
                                     {isProcessing ? "Guardando..." : editingCustomer ? "Actualizar" : "Crear"}

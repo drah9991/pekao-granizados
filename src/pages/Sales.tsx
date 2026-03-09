@@ -360,11 +360,17 @@ export default function Sales() {
 
                 <div className="border-t pt-2 space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-muted-foreground">Subtotal Base</span>
                     <span>{formatCurrency(selectedOrder.subtotal)}</span>
                   </div>
+                  {selectedOrder.tip_amount !== null && selectedOrder.tip_amount !== undefined && (
+                    <div className="flex justify-between text-sm text-pink-500 font-medium">
+                      <span>Propina Voluntaria</span>
+                      <span>{formatCurrency(selectedOrder.tip_amount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-bold text-lg pt-1">
-                    <span>Total</span>
+                    <span>Total Pagado</span>
                     <span className="text-primary">{formatCurrency(selectedOrder.total)}</span>
                   </div>
                 </div>

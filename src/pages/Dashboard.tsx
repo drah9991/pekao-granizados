@@ -5,33 +5,58 @@ import { TrendingUp, DollarSign, ShoppingBag, Users, ArrowUpRight, Loader2 } fro
 import { formatCurrency } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { startOfDay, endOfDay } from "date-fns";
+import { useState } from "react";
+import { startOfDay, endOfDay, subDays, startOfWeek, startOfMonth, startOfYear } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Dashboard() {
   const { storeId } = useAuth();
+  const [period, setPeriod] = useState<"today" | "yesterday" | "week" | "7days" | "month" | "year" | "all">("today");
 
-  // 1. Fetch Today's Stats
-  const { data: todayStats, isLoading: isLoadingToday } = useQuery({
-    queryKey: ["dashboard-today", storeId],
+  const getDateRange = () => {
+    const today = new Date();
+    switch (period) {
+      case "today":
+        return { start: startOfDay(today).toISOString(), end: endOfDay(today).toISOString() };
+      case "yesterday":
+        const yesterday = subDays(today, 1);
+        return { start: startOfDay(yesterday).toISOString(), end: endOfDay(yesterday).toISOString() };
+      case "week":
+        return { start: startOfWeek(today, { weekStartsOn: 1 }).toISOString(), end: endOfDay(today).toISOString() };
+      case "7days":
+        return { start: startOfDay(subDays(today, 6)).toISOString(), end: endOfDay(today).toISOString() };
+      case "month":
+        return { start: startOfMonth(today).toISOString(), end: endOfDay(today).toISOString() };
+      case "year":
+        return { start: startOfYear(today).toISOString(), end: endOfDay(today).toISOString() };
+      case "all":
+      default:
+        // Set an arbitrary very old date for "all time"
+        return { start: new Date(2020, 0, 1).toISOString(), end: endOfDay(today).toISOString() };
+    }
+  };
+
+  // 1. Fetch Period Stats
+  const { data: periodStats, isLoading: isLoadingPeriod } = useQuery({
+    queryKey: ["dashboard-stats", storeId, period],
     queryFn: async () => {
       if (!storeId) return null;
-      const today = new Date();
-      const start = startOfDay(today).toISOString();
-      const end = endOfDay(today).toISOString();
+      const { start, end } = getDateRange();
 
       const { data, error } = await supabase
         .from("orders")
-        .select("total")
+        .select("total, subtotal, tip_amount")
         .eq("store_id", storeId)
         .gte("created_at", start)
         .lte("created_at", end);
 
       if (error) throw error;
 
-      const totalSales = data.reduce((sum, order) => sum + Number(order.total), 0);
+      const totalSales = data.reduce((sum, order) => sum + Number(order.subtotal || order.total), 0);
+      const totalTips = data.reduce((sum, order) => sum + Number(order.tip_amount || 0), 0);
       const totalOrders = data.length;
 
-      return { totalSales, totalOrders };
+      return { totalSales, totalTips, totalOrders };
     },
     enabled: !!storeId,
   });
@@ -57,9 +82,10 @@ export default function Dashboard() {
 
   // 3. Fetch Recent Sales
   const { data: recentSales, isLoading: isLoadingRecent } = useQuery({
-    queryKey: ["dashboard-recent-sales", storeId],
+    queryKey: ["dashboard-recent-sales", storeId, period],
     queryFn: async () => {
       if (!storeId) return null;
+      const { start, end } = getDateRange();
       const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -69,8 +95,10 @@ export default function Dashboard() {
           order_items (qty)
         `)
         .eq("store_id", storeId)
+        .gte("created_at", start)
+        .lte("created_at", end)
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(10);
 
       if (error) throw error;
       return data;
@@ -80,21 +108,22 @@ export default function Dashboard() {
 
   // 4. Fetch Popular Products
   const { data: popularProducts, isLoading: isLoadingPopular } = useQuery({
-    queryKey: ["dashboard-popular-products", storeId],
+    queryKey: ["dashboard-popular-products", storeId, period],
     queryFn: async () => {
       if (!storeId) return null;
+      const { start, end } = getDateRange();
       
-      // Since we don't have a complex aggregation query easily via Postgrest for "top 5",
-      // we'll fetch recent order items and aggregate them in JS for simplicity in this MVP upgrade.
       const { data, error } = await supabase
         .from("order_items")
         .select(`
           name,
           qty,
-          order:order_id (store_id)
+          order:order_id!inner(store_id, created_at)
         `)
         .eq("order.store_id", storeId)
-        .limit(50); // Take last 50 items to estimate popularity
+        .gte("order.created_at", start)
+        .lte("order.created_at", end)
+        .limit(200); // Expanded limit to get better aggregates for long periods
 
       if (error) throw error;
 
@@ -111,20 +140,39 @@ export default function Dashboard() {
     enabled: !!storeId,
   });
 
-  const isLoading = isLoadingToday || isLoadingGlobal || isLoadingRecent || isLoadingPopular;
+  const isLoading = isLoadingPeriod || isLoadingGlobal || isLoadingRecent || isLoadingPopular;
+
+  const periodLabels: Record<string, string> = {
+    today: "Hoy",
+    yesterday: "Ayer",
+    week: "Esta Semana",
+    "7days": "Últ. 7 Días",
+    month: "Este Mes",
+    year: "Este Año",
+    all: "Histórico Completo",
+  };
+
+  const periodChangeText = periodLabels[period];
 
   const stats = [
     {
-      title: "Ventas Hoy",
-      value: formatCurrency(todayStats?.totalSales || 0),
-      change: "+12.5%", // These could be calculated if we fetch yesterday's data too
+      title: "Ingresos (Sin propinas)",
+      value: formatCurrency(periodStats?.totalSales || 0),
+      change: periodChangeText,
       icon: DollarSign,
       color: "text-primary",
     },
     {
-      title: "Pedidos",
-      value: todayStats?.totalOrders.toString() || "0",
-      change: "+8.2%",
+      title: "Propinas Recibidas",
+      value: formatCurrency(periodStats?.totalTips || 0),
+      change: "Extra",
+      icon: DollarSign,
+      color: "text-pink-500",
+    },
+    {
+      title: "Órdenes",
+      value: periodStats?.totalOrders.toString() || "0",
+      change: periodChangeText,
       icon: ShoppingBag,
       color: "text-secondary",
     },
@@ -155,14 +203,32 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="p-6 md:p-8 space-y-6 md:space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
               Dashboard
             </h1>
-            <p className="text-muted-foreground text-sm md:text-base">Resumen de tu negocio en tiempo real</p>
+            <p className="text-muted-foreground text-sm md:text-base">Resumen de tu negocio según periodo</p>
           </div>
-          {isLoading && <Loader2 className="w-6 h-6 animate-spin text-primary" />}
+          
+          <div className="flex items-center gap-3">
+             <Select value={period} onValueChange={(val: any) => setPeriod(val)}>
+               <SelectTrigger className="w-[180px] bg-background">
+                 <SelectValue placeholder="Periodo a analizar" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="today">Hoy</SelectItem>
+                 <SelectItem value="yesterday">Ayer</SelectItem>
+                 <SelectItem value="week">Esta Semana (Lun-Dom)</SelectItem>
+                 <SelectItem value="7days">Últimos 7 días</SelectItem>
+                 <SelectItem value="month">Este Mes</SelectItem>
+                 <SelectItem value="year">Este Año</SelectItem>
+                 <SelectItem value="all">Histórico Completo</SelectItem>
+               </SelectContent>
+             </Select>
+
+            {isLoading && <Loader2 className="w-6 h-6 animate-spin text-primary" />}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -208,7 +274,7 @@ export default function Dashboard() {
             <CardContent>
               <div className="space-y-3">
                 {recentSales?.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">No hay ventas registradas hoy.</p>
+                  <p className="text-center text-muted-foreground py-8">No hay ventas registradas en este periodo.</p>
                 )}
                 {recentSales?.map((order, i) => (
                   <div 

@@ -25,6 +25,7 @@ export type Database = {
           phone: string | null
           total_spent: number | null
           document_id: string | null
+          consent_habeas_data: boolean | null
         }
         Insert: {
           addresses?: Json | null
@@ -36,6 +37,7 @@ export type Database = {
           phone?: string | null
           total_spent?: number | null
           document_id?: string | null
+          consent_habeas_data?: boolean | null
         }
         Update: {
           addresses?: Json | null
@@ -47,6 +49,7 @@ export type Database = {
           phone?: string | null
           total_spent?: number | null
           document_id?: string | null
+          consent_habeas_data?: boolean | null
         }
         Relationships: []
       }
@@ -247,6 +250,7 @@ export type Database = {
           store_id: string
           subtotal: number
           tax: number | null
+          tip_amount: number | null
           total: number
           updated_at: string | null
         }
@@ -261,6 +265,7 @@ export type Database = {
           store_id: string
           subtotal: number
           tax?: number | null
+          tip_amount?: number | null
           total: number
           updated_at?: string | null
         }
@@ -275,6 +280,7 @@ export type Database = {
           store_id?: string
           subtotal?: number
           tax?: number | null
+          tip_amount?: number | null
           total?: number
           updated_at?: string | null
         }
@@ -371,6 +377,68 @@ export type Database = {
           },
         ]
       }
+      pricing_rules: {
+        Row: {
+          id: string
+          store_id: string
+          name: string
+          description: string | null
+          type: string
+          start_time: string | null
+          end_time: string | null
+          days_of_week: number[] | null
+          target_type: string
+          target_id: string | null
+          discount_type: string
+          discount_value: number
+          active: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          store_id: string
+          name: string
+          description?: string | null
+          type: string
+          start_time?: string | null
+          end_time?: string | null
+          days_of_week?: number[] | null
+          target_type: string
+          target_id?: string | null
+          discount_type: string
+          discount_value: number
+          active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          store_id?: string
+          name?: string
+          description?: string | null
+          type?: string
+          start_time?: string | null
+          end_time?: string | null
+          days_of_week?: number[] | null
+          target_type?: string
+          target_id?: string | null
+          discount_type?: string
+          discount_value?: number
+          active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rules_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -379,6 +447,8 @@ export type Database = {
           phone: string | null
           store_id: string | null
           email: string | null
+          document_id: string | null
+          consent_habeas_data: boolean | null
         }
         Insert: {
           created_at?: string | null
@@ -387,6 +457,8 @@ export type Database = {
           phone?: string | null
           store_id?: string | null
           email?: string | null
+          document_id?: string | null
+          consent_habeas_data?: boolean | null
         }
         Update: {
           created_at?: string | null
@@ -395,6 +467,8 @@ export type Database = {
           phone?: string | null
           store_id?: string | null
           email?: string | null
+          document_id?: string | null
+          consent_habeas_data?: boolean | null
         }
         Relationships: [
           {
@@ -488,19 +562,51 @@ export type Database = {
           action: string
           id: string
           resource: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
         }
         Insert: {
           action: string
           id?: string
           resource: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
         }
         Update: {
           action?: string
           id?: string
           resource?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_role_permissions_name"
+            columns: ["role"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["name"]
+          }
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_system: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
         }
         Relationships: []
       }
@@ -649,20 +755,27 @@ export type Database = {
       user_roles: {
         Row: {
           id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Insert: {
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Update: {
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_user_roles_name"
+            columns: ["role"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["name"]
+          },
           {
             foreignKeyName: "user_roles_user_id_fkey"
             columns: ["user_id"]
@@ -679,8 +792,8 @@ export type Database = {
     Functions: {
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+          _role: string
         }
         Returns: boolean
       }

@@ -10,14 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Edit, Trash2, User, Phone, Mail, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Tables, Enums } from "@/integrations/supabase/types";
+import { Tables } from "@/integrations/supabase/types";
 import Layout from "@/components/Layout";
 
 type Profile = Tables<'profiles'>;
-type AppRole = Enums<'app_role'>;
 
 interface UserWithRole extends Profile {
-  role: AppRole | null;
+  role: string | null;
 }
 
 interface Store {
@@ -25,27 +24,22 @@ interface Store {
   name: string;
 }
 
-interface RoleConfig {
-  role: AppRole;
-  label: string;
-  color: string;
+interface RoleDb {
+  id: string;
+  name: string;
+  description: string | null;
+  is_system: boolean | null;
 }
-
-const rolesConfig: RoleConfig[] = [
-  { role: "admin", label: "Administrador", color: "bg-primary" },
-  { role: "manager", label: "Gerente de Tienda", color: "bg-secondary" },
-  { role: "cashier", label: "Cajero", color: "bg-accent" },
-  { role: "driver", label: "Repartidor", color: "bg-blue-500" },
-];
 
 export default function Users() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [dbRoles, setDbRoles] = useState<RoleDb[]>([]);
   const [currentUserStoreId, setCurrentUserStoreId] = useState<string | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState<AppRole | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRoleFilter, setSelectedRoleFilter] = useState<AppRole | "all">("all");
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
   // Dialog states
@@ -56,16 +50,28 @@ export default function Users() {
     email: "",
     password: "",
     phone: "",
-    role: "cashier" as AppRole,
+    role: "cashier",
     store_id: null as string | null,
+    document_id: "",
+    consent_habeas_data: false,
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
+    fetchDbRoles();
     fetchUsers();
     fetchStores();
     fetchCurrentUserStoreAndRole();
   }, []);
+
+  const fetchDbRoles = async () => {
+    const { data, error } = await supabase.from('roles').select('*').order('name');
+    if (!error && data) {
+      setDbRoles(data);
+    } else {
+      console.error('Error fetching roles:', error);
+    }
+  };
 
   const fetchStores = async () => {
     const { data, error } = await supabase.from("stores").select("id, name").order("name");
@@ -116,7 +122,7 @@ export default function Users() {
 
       if (rolesError) throw rolesError;
 
-      const rolesMap = new Map<string, AppRole>();
+      const rolesMap = new Map<string, string>();
       (rolesData || []).forEach(r => rolesMap.set(r.user_id, r.role));
 
       const usersWithRoles: UserWithRole[] = (profilesData || []).map(profile => ({
@@ -142,6 +148,8 @@ export default function Users() {
       phone: "",
       role: "cashier",
       store_id: currentUserStoreId,
+      document_id: "",
+      consent_habeas_data: false,
     });
     setUserDialogIsOpen(true);
   };
@@ -155,13 +163,19 @@ export default function Users() {
       phone: user.phone || "",
       role: user.role || "cashier",
       store_id: user.store_id || null,
+      document_id: user.document_id || "",
+      consent_habeas_data: user.consent_habeas_data || false,
     });
     setUserDialogIsOpen(true);
   };
 
   const handleSaveUser = async () => {
-    if (!formData.name || !formData.role) {
-      toast.error("Nombre y rol son obligatorios.");
+    if (!formData.name || !formData.role || !formData.document_id) {
+      toast.error("Nombre, documento y rol son obligatorios.");
+      return;
+    }
+    if (!formData.consent_habeas_data) {
+      toast.error("Debe autorizar el tratamiento de datos (Ley 1581) para continuar.");
       return;
     }
     if (!editingUser && (!formData.email || !formData.password)) {
@@ -180,6 +194,8 @@ export default function Users() {
             email: formData.email.trim() || null,
             phone: formData.phone.trim() || null,
             store_id: formData.store_id,
+            document_id: formData.document_id.trim() || null,
+            consent_habeas_data: formData.consent_habeas_data,
           })
           .eq("id", editingUser.id);
 
@@ -239,10 +255,14 @@ export default function Users() {
           throw new Error("No se pudo crear el usuario de autenticación.");
         }
 
-        // Update profile with store_id
+        // Update profile with store_id and document details
         const { error: profileUpdateError } = await supabase
           .from("profiles")
-          .update({ store_id: formData.store_id })
+          .update({ 
+            store_id: formData.store_id,
+            document_id: formData.document_id.trim() || null,
+            consent_habeas_data: formData.consent_habeas_data,
+          })
           .eq("id", authData.user.id);
         if (profileUpdateError) throw profileUpdateError;
 
@@ -275,7 +295,7 @@ export default function Users() {
       return;
     }
 
-    if (!confirm(`¿Estás seguro de eliminar al usuario "${user.name}"? Esta acción es irreversible.`)) return;
+    if (!window.confirm(`¿Estás seguro de eliminar al usuario "${user.name}"? Esta acción es irreversible.`)) return;
 
     setIsProcessing(true);
     try {
@@ -347,7 +367,7 @@ export default function Users() {
 
               <Select
                 value={selectedRoleFilter}
-                onValueChange={(value: AppRole | "all") => setSelectedRoleFilter(value)}
+                onValueChange={(value: string) => setSelectedRoleFilter(value)}
                 disabled={!canManageUsers}
               >
                 <SelectTrigger className="w-full md:w-48">
@@ -355,9 +375,9 @@ export default function Users() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los Roles</SelectItem>
-                  {rolesConfig.map((role) => (
-                    <SelectItem key={role.role} value={role.role}>
-                      {role.label}
+                  {dbRoles.map((role) => (
+                    <SelectItem key={role.name} value={role.name}>
+                      <span className="capitalize">{role.name.replace(/_/g, ' ')}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -417,10 +437,9 @@ export default function Users() {
                         <TableCell>{user.phone || 'N/A'}</TableCell>
                         <TableCell>
                           <Badge
-                            className={`text-xs px-3 py-1.5 rounded-full font-semibold ${rolesConfig.find(r => r.role === user.role)?.color || "bg-gray-500"
-                              }`}
+                            className={`text-xs px-3 py-1.5 rounded-full font-semibold ${user.role === 'admin' ? 'bg-primary' : 'bg-secondary'}`}
                           >
-                            {rolesConfig.find(r => r.role === user.role)?.label || "Sin Rol"}
+                            <span className="capitalize">{user.role ? user.role.replace(/_/g, ' ') : "Sin Rol"}</span>
                           </Badge>
                         </TableCell>
                         <TableCell>{stores.find(s => s.id === user.store_id)?.name || "N/A"}</TableCell>
@@ -481,6 +500,17 @@ export default function Users() {
                   required
                 />
               </div>
+              <div>
+                <Label htmlFor="document_id">Documento de Identidad (C.C.) *</Label>
+                <Input
+                  id="document_id"
+                  placeholder="Ej: 1000123456"
+                  value={formData.document_id}
+                  onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
+                  className="mt-2"
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -525,15 +555,15 @@ export default function Users() {
                 <Label htmlFor="role">Rol *</Label>
                 <Select
                   value={formData.role}
-                  onValueChange={(value: AppRole) => setFormData({ ...formData, role: value })}
+                  onValueChange={(value: string) => setFormData({ ...formData, role: value })}
                 >
                   <SelectTrigger className="mt-2">
                     <SelectValue placeholder="Seleccionar rol" />
                   </SelectTrigger>
                   <SelectContent>
-                    {rolesConfig.map((role) => (
-                      <SelectItem key={role.role} value={role.role}>
-                        {role.label}
+                    {dbRoles.map((role) => (
+                      <SelectItem key={role.name} value={role.name}>
+                        <span className="capitalize">{role.name.replace(/_/g, ' ')}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -558,6 +588,20 @@ export default function Users() {
                 </Select>
               </div>
 
+              <div className="flex items-start space-x-3 pt-2">
+                <input
+                  type="checkbox"
+                  id="consent_user"
+                  className="mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  checked={formData.consent_habeas_data}
+                  onChange={(e) => setFormData({ ...formData, consent_habeas_data: e.target.checked })}
+                  required
+                />
+                <Label htmlFor="consent_user" className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer">
+                  Autorizo el tratamiento de mis datos personales conforme a la <strong>Ley 1581 de 2012 (Hábeas Data)</strong>. *
+                </Label>
+              </div>
+
               <DialogFooter className="gap-2 pt-4">
                 <Button
                   type="button"
@@ -569,7 +613,7 @@ export default function Users() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isProcessing || !formData.name || !formData.role}
+                  disabled={isProcessing || !formData.name || !formData.role || !formData.document_id || !formData.consent_habeas_data}
                   className="gradient-primary"
                 >
                   {isProcessing ? "Guardando..." : editingUser ? "Actualizar Usuario" : "Crear Usuario"}
