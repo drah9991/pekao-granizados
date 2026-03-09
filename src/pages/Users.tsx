@@ -18,7 +18,6 @@ type AppRole = Enums<'app_role'>;
 
 interface UserWithRole extends Profile {
   role: AppRole | null;
-  email?: string | null;
 }
 
 interface Store {
@@ -105,7 +104,7 @@ export default function Users() {
     try {
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("*, email")
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
@@ -185,6 +184,21 @@ export default function Users() {
           .eq("id", editingUser.id);
 
         if (profileUpdateError) throw profileUpdateError;
+
+        // Update password if provided via Edge Function
+        if (formData.password) {
+          if (formData.password.length < 6) {
+            toast.error("La contraseña debe tener al menos 6 caracteres.");
+            setIsProcessing(false);
+            return;
+          }
+          const { data, error } = await supabase.functions.invoke('update-user', {
+            body: { userId: editingUser.id, password: formData.password },
+          });
+
+          if (error) throw new Error(error.message);
+          if (data && data.error) throw new Error(data.error);
+        }
 
         // Update role
         await supabase.from("user_roles").delete().eq("user_id", editingUser.id);
@@ -483,20 +497,20 @@ export default function Users() {
                 </div>
               </div>
 
-              {!editingUser && (
-                <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Mínimo 6 caracteres"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                    minLength={6}
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  {editingUser ? "Nueva Contraseña (Dejar en blanco para no cambiar)" : "Contraseña *"}
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder={editingUser ? "Opcional" : "Mínimo 6 caracteres"}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required={!editingUser}
+                  minLength={6}
+                />
+              </div>
               <div>
                 <Label htmlFor="phone">Teléfono</Label>
                 <Input

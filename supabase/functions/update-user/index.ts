@@ -37,21 +37,24 @@ serve(async (req) => {
       });
     }
 
-    // Verifica si el usuario autenticado tiene el rol de 'admin' o 'store_manager'
+    // Verifica si el usuario autenticado tiene el rol de 'admin' o 'manager'
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .single();
 
-    if (roleError || !roleData || !['admin', 'manager', 'store_manager'].includes(roleData.role as string)) {
+    // Allow testing locally if roles are stored differently, though auth should match delete-user
+    const allowedRoles = ['admin', 'manager', 'store_manager'];
+
+    if (roleError || !roleData || !allowedRoles.includes(roleData.role as string)) {
       return new Response(JSON.stringify({ error: 'Forbidden: User does not have sufficient permissions' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const { userId } = await req.json();
+    const { userId, email, password } = await req.json();
 
     if (!userId) {
       return new Response(JSON.stringify({ error: 'User ID is required' }), {
@@ -60,26 +63,32 @@ serve(async (req) => {
       });
     }
 
-    // Evita que un usuario se elimine a sí mismo a través de esta función
-    if (userId === user.id) {
-      return new Response(JSON.stringify({ error: 'Cannot delete your own account via this function' }), {
-        status: 403,
+    const updateParams: any = {};
+    if (email) updateParams.email = email;
+    if (password) updateParams.password = password;
+
+    if (Object.keys(updateParams).length === 0) {
+      return new Response(JSON.stringify({ error: 'No update parameters provided (email or password expected)' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Elimina al usuario de auth.users, lo que activará la eliminación en cascada en public.profiles
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    // Update the auth user
+    const { error: updateError, data } = await supabaseAdmin.auth.admin.updateUserById(
+      userId,
+      updateParams
+    );
 
-    if (deleteError) {
-      console.error('Error deleting user:', deleteError);
-      return new Response(JSON.stringify({ error: deleteError.message }), {
+    if (updateError) {
+      console.error('Error updating user:', updateError);
+      return new Response(JSON.stringify({ error: updateError.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(JSON.stringify({ message: 'User deleted successfully' }), {
+    return new Response(JSON.stringify({ message: 'User updated successfully', data }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
