@@ -181,4 +181,15 @@ All colors MUST be HSL.
   .glass-card {
     @apply bg-card/80 backdrop-blur-xl border border-border/50;
   }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(15deg); }
+    50% { transform: rotate(-15deg); }
+    75% { transform: rotate(10deg); }
+  }
+
+  .animate-wiggle {
+    animation: wiggle 0.5s ease-in-out;
+  }
 }

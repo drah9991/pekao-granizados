@@ -10,7 +10,8 @@ import BusinessSettings from "@/components/settings/BusinessSettings";
 import ReceiptTemplateSettings from "@/components/settings/ReceiptTemplateSettings";
 import SizesSettings from "@/components/settings/SizesSettings";
 import SkuAcronymsSettings from "@/components/settings/SkuAcronymsSettings";
-import { Ruler, Tag } from "lucide-react";
+import NotificationSettings from "@/components/settings/NotificationSettings";
+import { Ruler, Tag, Bell } from "lucide-react";
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,7 +29,8 @@ export default function Settings() {
       value !== "business" &&
       value !== "receipts" &&
       value !== "sizes" &&
-      value !== "sku"
+      value !== "sku" &&
+      value !== "notifications"
     ) {
       newSearchParams.delete("tab");
     }
@@ -47,9 +49,9 @@ export default function Settings() {
           </p>
         </div>
 
-        <Card className="border-2 shadow-card">
+        <Card className="border-2 shadow-card overflow-hidden">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto gap-2 p-2 bg-muted/30">
+            <TabsList className="flex flex-wrap h-auto gap-2 p-2 bg-muted/30 border-b">
               <TabsTrigger
                 value="branding"
                 className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
@@ -92,6 +94,13 @@ export default function Settings() {
                 <Tag className="w-4 h-4" />
                 <span className="hidden sm:inline">Acrónimos SKU</span>
               </TabsTrigger>
+              <TabsTrigger
+                value="notifications"
+                className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="hidden sm:inline">Notificaciones</span>
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="branding" className="p-6">
@@ -116,6 +125,10 @@ export default function Settings() {
 
             <TabsContent value="sku" className="p-6">
               <SkuAcronymsSettings />
+            </TabsContent>
+
+            <TabsContent value="notifications" className="p-6">
+              <NotificationSettings />
             </TabsContent>
           </Tabs>
         </Card>

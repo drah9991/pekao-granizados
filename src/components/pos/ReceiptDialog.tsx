@@ -16,6 +16,14 @@ interface ReceiptDialogProps {
     change: number;
     items: CartItem[];
     customer?: Customer | null;
+    paymentMethod?: string;
+    splitDetails?: { cash: number; transfer: number };
+    deliveryData?: {
+      type: 'pickup' | 'delivery';
+      fee: number;
+      address: string;
+      phone: string;
+    };
   } | null;
 }
 
@@ -44,9 +52,36 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                 </div>
               ) : null}
               <p className="text-sm text-foreground font-semibold mb-1">Total Pagado</p>
-              <p className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <p className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
                 {formatCurrency(lastOrder.total)}
               </p>
+              
+              <div className="flex flex-col gap-1 items-center justify-center">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Método de Pago</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold capitalize">
+                    {lastOrder.paymentMethod === 'cash' && '💵 Efectivo'}
+                    {lastOrder.paymentMethod === 'card' && '💳 Tarjeta'}
+                    {lastOrder.paymentMethod === 'transfer' && '📱 Transferencia'}
+                    {lastOrder.paymentMethod === 'qr' && '🤳 QR'}
+                    {lastOrder.paymentMethod === 'split' && '🌓 Mixto (Efe + Tra)'}
+                  </span>
+                </div>
+              </div>
+
+              {lastOrder.paymentMethod === 'split' && lastOrder.splitDetails && (
+                <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-white/50 p-2 rounded border border-border/30">
+                    <p className="text-muted-foreground mb-0.5">Efectivo</p>
+                    <p className="font-bold text-foreground">{formatCurrency(lastOrder.splitDetails.cash)}</p>
+                  </div>
+                  <div className="bg-white/50 p-2 rounded border border-border/30">
+                    <p className="text-muted-foreground mb-0.5">Transferencia</p>
+                    <p className="font-bold text-blue-600">{formatCurrency(lastOrder.splitDetails.transfer)}</p>
+                  </div>
+                </div>
+              )}
+
               {lastOrder.change > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-sm text-muted-foreground">Cambio Devuelto</p>
@@ -56,6 +91,22 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                 </div>
               )}
             </div>
+
+            {/* Delivery Info */}
+            {lastOrder.deliveryData?.type === 'delivery' && (
+              <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 text-sm space-y-1.5 animate-in fade-in slide-in-from-top-2">
+                <p className="font-bold text-blue-700 flex items-center gap-1.5 uppercase text-[10px] tracking-tight">
+                  🚀 Para Entrega a Domicilio
+                </p>
+                <p className="text-foreground leading-snug">{lastOrder.deliveryData.address}</p>
+                {lastOrder.deliveryData.phone && (
+                  <p className="text-xs text-muted-foreground">📞 Contacto: {lastOrder.deliveryData.phone}</p>
+                )}
+                {lastOrder.deliveryData.fee > 0 && (
+                  <p className="text-xs text-blue-600 font-medium">Servicio: {formatCurrency(lastOrder.deliveryData.fee)}</p>
+                )}
+              </div>
+            )}
 
             {/* Customer Info */}
             {lastOrder.customer && lastOrder.customer.id !== 'generic' ? (

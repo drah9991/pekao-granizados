@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Minus, Plus, Trash2, Percent, Tag, Receipt } from "lucide-react";
+import { 
+  Minus, Plus, Trash2, Percent, Tag, Receipt, 
+  User as UserIcon, UserX, Wallet, CreditCard, Smartphone,
+  RotateCcw
+} from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Tables } from "@/integrations/supabase/types";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface CartSummaryProps {
   cart: CartItem[];
@@ -24,6 +26,8 @@ interface CartSummaryProps {
   discountAmount: number;
   total: number;
   onCheckout: () => void;
+  onQuickPayment: (method: string) => void;
+  onClearCart: () => void;
   selectedCustomer: Customer | null;
   setSelectedCustomer: (customer: Customer | null) => void;
 }
@@ -40,207 +44,232 @@ export default function CartSummary({
   discountAmount,
   total,
   onCheckout,
+  onQuickPayment,
+  onClearCart,
   selectedCustomer,
   setSelectedCustomer,
 }: CartSummaryProps) {
-  const [allProducts, setAllProducts] = useState<Tables<'products'>[]>([]);
-  const [userStoreId, setUserStoreId] = useState<string | null>(null);
+  
+  const isAnonymous = selectedCustomer?.id === 'generic';
 
-  useEffect(() => {
-    fetchUserStoreId();
-  }, []);
-
-  useEffect(() => {
-    if (userStoreId) {
-      fetchAllProducts();
-    }
-  }, [userStoreId]);
-
-  const fetchUserStoreId = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Usuario no autenticado.");
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('store_id')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      if (profile?.store_id) {
-        setUserStoreId(profile.store_id);
-      }
-    } catch (error: any) {
-      console.error("Error fetching user's store ID:", error);
-    }
-  };
-
-  const fetchAllProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq('store_id', userStoreId!)
-        .eq('active', true);
-
-      if (error) throw error;
-      setAllProducts(data || []);
-    } catch (error: any) {
-      console.error("Error fetching all products:", error);
+  const toggleAnonymous = () => {
+    if (isAnonymous) {
+      setSelectedCustomer(null);
+    } else {
+      setSelectedCustomer({
+        id: 'generic',
+        name: 'Consumidor Final',
+        document_id: '222222222222',
+        phone: null,
+        email: null
+      });
     }
   };
 
   return (
-    <div className="w-full lg:w-96 bg-card border-t lg:border-t-0 lg:border-l-2 border-border p-4 md:p-6 flex flex-col max-h-[40vh] lg:max-h-full">
-      <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent">
-        Carrito
-      </h2>
-
-      <div className="mb-2">
-        <CustomerSelection
-          selectedCustomer={selectedCustomer}
-          onCustomerSelected={setSelectedCustomer}
-        />
+    <div className="w-full lg:w-[28rem] bg-slate-900 border-l border-white/10 p-4 md:p-6 flex flex-col h-full shadow-2xl relative z-10">
+      {/* Header Cart */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/20 rounded-xl text-primary">
+            <Receipt className="w-6 h-6" />
+          </div>
+          <h2 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            Pedido actual
+            <Badge className="bg-primary text-white border-none rounded-full h-6 w-6 p-0 flex items-center justify-center font-bold">
+              {cart.reduce((acc, item) => acc + item.quantity, 0)}
+            </Badge>
+          </h2>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onClearCart}
+          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors gap-2 font-bold uppercase text-[10px] tracking-widest"
+        >
+          Limpiar
+        </Button>
       </div>
 
-      <div className="flex-1 overflow-auto mb-4 space-y-3">
+      {/* Customer Area */}
+      <div className="mb-6 group">
+        <div className="flex gap-2 items-center mb-1">
+          <div className="flex-1">
+             <CustomerSelection
+                selectedCustomer={selectedCustomer}
+                onCustomerSelected={setSelectedCustomer}
+              />
+          </div>
+          <Button
+            type="button"
+            variant={isAnonymous ? "default" : "outline"}
+            onClick={toggleAnonymous}
+            className={cn(
+              "h-12 w-20 px-0 flex flex-col gap-0.5 rounded-xl border-2 transition-all",
+              isAnonymous ? "gradient-secondary border-secondary shadow-lg" : "bg-white/5 border-white/5 text-muted-foreground hover:text-white"
+            )}
+          >
+            {isAnonymous ? <UserIcon size={16} /> : <UserX size={16} />}
+            <span className="text-[9px] font-black uppercase tracking-tighter">Anón.</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Items List */}
+      <div className="flex-1 overflow-auto -mx-2 px-2 mb-6 scrollbar-hide no-scrollbar space-y-3">
         {cart.length === 0 ? (
-          <div className="text-center py-8 md:py-12">
-            <div className="text-5xl md:text-6xl mb-3">🛒</div>
-            <p className="text-muted-foreground text-sm md:text-base">Carrito vacío</p>
+          <div className="h-full flex flex-col items-center justify-center opacity-30 select-none">
+             <div className="p-8 bg-white/5 rounded-[2rem] border-2 border-dashed border-white/10 flex flex-col items-center text-center">
+                <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-4">
+                  <Receipt className="w-10 h-10 text-white" />
+                </div>
+                <p className="text-lg font-bold text-white mb-1">Carrito vacío</p>
+                <p className="text-xs text-muted-foreground max-w-[12rem]">Toca un producto del catálogo para agregarlo aquí</p>
+             </div>
           </div>
         ) : (
           cart.map((item) => (
-            <Card key={item.id} className="border-2 shadow-card">
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between mb-1">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{item.name}</p>
+            <div key={item.id} className="group relative bg-white/5 border border-white/5 rounded-2xl p-4 transition-all hover:bg-white/10 hover:shadow-lg">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0 pr-4">
+                  <p className="font-bold text-white text-base truncate mb-1">{item.name}</p>
+                  <div className="flex flex-wrap gap-1">
                     {item.size && (
-                      <Badge variant="outline" className="text-[10px] mt-0.5">
+                      <Badge variant="secondary" className="bg-primary/20 text-primary border-none text-[10px] uppercase font-black px-1.5 h-5">
                         {item.size}
                       </Badge>
                     )}
-                    {item.toppings && item.toppings.length > 0 && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                        + {item.toppings.map(t => t.name).join(", ")}
-                      </p>
-                    )}
+                    {item.toppings?.map(t => (
+                       <Badge key={t.id} variant="outline" className="text-[9px] border-white/10 text-muted-foreground h-5">
+                         {t.name}
+                       </Badge>
+                    ))}
                   </div>
+                </div>
+                <p className="font-black text-lg text-white">
+                  {formatCurrency(item.price * item.quantity)}
+                </p>
+              </div>
+              
+              <div className="flex items-center justify-between pt-1 border-t border-white/5 mt-1">
+                <div className="flex items-center bg-black/40 rounded-xl p-1 gap-1 border border-white/5 shadow-inner">
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeItem(item.id)}
-                    className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive shrink-0"
+                    onClick={() => updateQuantity(item.id, -1)}
+                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <span className="font-black text-sm w-8 text-center text-white">{item.quantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => updateQuantity(item.id, 1)}
+                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, -1)}
-                      className="h-10 w-10 border-2 hover:border-primary hover:text-primary active:scale-95"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    <span className="font-bold text-lg w-10 text-center">{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, 1)}
-                      className="h-10 w-10 border-2 hover:border-primary hover:text-primary active:scale-95"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <p className="font-bold text-lg">
-                    {formatCurrency(item.price * item.quantity)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeItem(item.id)}
+                  className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <Trash2 className="w-4.5 h-4.5" />
+                </Button>
+              </div>
+            </div>
           ))
         )}
       </div>
 
-      <div className="space-y-3">
-        {/* Discount */}
-        <Card className="border-2">
-          <CardContent className="p-3">
-            <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
-              <Tag className="w-4 h-4" />
-              Descuento
-            </Label>
-            <div className="flex gap-2 mt-2">
+      {/* Footer / Summary Area */}
+      <div className="space-y-4 pt-4 border-t border-white/10">
+        {/* Discount Row */}
+        <div className="flex items-center justify-between gap-4">
+           <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Descuento</Label>
+           <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
               <Input
                 type="number"
                 placeholder="0"
                 value={discount || ""}
                 onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                className="border-2 flex-1"
+                className="h-9 w-20 bg-transparent border-none text-right font-black focus-visible:ring-0 px-2"
               />
-              <Button
-                variant={discountType === "percent" ? "default" : "outline"}
-                size="icon"
-                onClick={() => setDiscountType("percent")}
-                className="h-10 w-10 min-w-[40px]"
-              >
-                <Percent className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={discountType === "fixed" ? "default" : "outline"}
-                size="icon"
-                onClick={() => setDiscountType("fixed")}
-                className="h-10 w-10 min-w-[40px]"
-              >
-                $
-              </Button>
-            </div>
-            {discount > 0 && (
-              <p className="text-xs text-accent font-medium mt-2">
-                Descuento: -{formatCurrency(discountAmount)}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Total */}
-        <Card className="shadow-elevated border-2 border-primary/20">
-          <CardContent className="p-4 gradient-card">
-            <div className="space-y-1">
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
+              <div className="flex gap-1 h-9">
+                <Button
+                  variant={discountType === "percent" ? "default" : "ghost"}
+                  size="icon"
+                  onClick={() => setDiscountType("percent")}
+                  className={cn("h-full w-9 rounded-lg transition-all", discountType === "percent" && "gradient-primary border-none text-white")}
+                >
+                  <Percent className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={discountType === "fixed" ? "default" : "ghost"}
+                  size="icon"
+                  onClick={() => setDiscountType("fixed")}
+                  className={cn("h-full w-9 rounded-lg transition-all", discountType === "fixed" && "gradient-primary border-none text-white shadow-lg")}
+                >
+                  <span className="font-bold text-sm">$</span>
+                </Button>
               </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-sm text-accent font-medium">
-                  <span>Descuento</span>
-                  <span>-{formatCurrency(discountAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center pt-2 border-t border-border">
-                <span className="text-lg font-semibold">Total</span>
-                <span className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  {formatCurrency(total)}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+           </div>
+        </div>
 
+        {/* Totals */}
+        <div className="space-y-1 py-4 px-2 bg-white/5 rounded-2xl border border-white/5 shadow-inner">
+          <div className="flex justify-between items-center px-2">
+            <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Subtotal</span>
+            <span className="text-sm font-bold text-slate-300">{formatCurrency(subtotal)}</span>
+          </div>
+          <div className="flex justify-between items-center py-2 px-2 border-t border-white/5 mt-1">
+            <span className="text-xl font-black text-white uppercase tracking-tighter">Total</span>
+            <span className="text-4xl font-black text-white drop-shadow-glow">
+              {formatCurrency(total)}
+            </span>
+          </div>
+        </div>
+
+        {/* Quick Payment Buttons */}
+        <div className="grid grid-cols-3 gap-2">
+           <Button 
+             variant="outline" 
+             onClick={() => onQuickPayment('cash')}
+             className="h-12 bg-white/5 border-white/10 rounded-xl flex flex-col gap-0.5 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all group"
+           >
+              <Wallet size={16} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-black uppercase">Efectivo</span>
+           </Button>
+           <Button 
+             variant="outline" 
+             onClick={() => onQuickPayment('card')}
+             className="h-12 bg-white/5 border-white/10 rounded-xl flex flex-col gap-0.5 hover:bg-blue-500/20 hover:border-blue-500/40 transition-all group"
+           >
+              <CreditCard size={16} className="text-blue-400 group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-black uppercase">Tarjeta</span>
+           </Button>
+           <Button 
+             variant="outline" 
+             onClick={() => onQuickPayment('transfer')}
+             className="h-12 bg-white/5 border-white/10 rounded-xl flex flex-col gap-0.5 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all group"
+           >
+              <Smartphone size={16} className="text-purple-400 group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-black uppercase">Nequi/Tra.</span>
+           </Button>
+        </div>
+
+        {/* Main Process Button */}
         <Button
-          className="w-full h-16 text-lg font-semibold gradient-primary hover:shadow-glow transition-all active:scale-[0.98]"
+          className="w-full h-20 text-xl font-black gradient-primary hover:shadow-glow-primary transition-all active:scale-[0.98] rounded-[2rem] gap-3 relative overflow-hidden"
           onClick={onCheckout}
         >
-          <Receipt className="mr-2 w-6 h-6" />
-          Procesar Pago
+          <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-10 transition-opacity" />
+          <Receipt className="w-8 h-8" />
+          <span className="uppercase tracking-widest">Procesar Pago</span>
+          <kbd className="absolute right-6 bottom-4 px-2 py-0.5 text-[10px] bg-black/40 border border-white/20 rounded-lg text-white/60 font-black">Enter</kbd>
         </Button>
       </div>
     </div>

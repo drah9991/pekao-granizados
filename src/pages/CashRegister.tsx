@@ -73,13 +73,23 @@ export default function CashRegister() {
                 totals.total += amount;
 
                 // Extract payment method from JSON
-                const method = order.payment && typeof order.payment === 'object' ? order.payment.method : 'cash';
+                const payment = order.payment && typeof order.payment === 'object' ? order.payment : { method: 'cash' };
+                const method = payment.method;
 
-                if (method === 'cash') totals.cash += amount;
-                else if (method === 'transfer') totals.transfer += amount;
-                else if (method === 'card') totals.card += amount;
-                else if (method === 'qr') totals.qr += amount;
-                else totals.cash += amount; // fallback
+                if (method === 'cash') {
+                    totals.cash += amount;
+                } else if (method === 'transfer') {
+                    totals.transfer += amount;
+                } else if (method === 'card') {
+                    totals.card += amount;
+                } else if (method === 'qr') {
+                    totals.qr += amount;
+                } else if (method === 'split' && payment.details) {
+                    totals.cash += (Number(payment.details.cash) || 0);
+                    totals.transfer += (Number(payment.details.transfer) || 0);
+                } else {
+                    totals.cash += amount; // fallback
+                }
             });
 
             setSummary(totals);
@@ -201,12 +211,14 @@ export default function CashRegister() {
                                     </TableHeader>
                                     <TableBody>
                                         {orders.map((order) => {
-                                            const method = order.payment && typeof order.payment === 'object' ? order.payment.method : 'cash';
+                                            const payment = order.payment && typeof order.payment === 'object' ? order.payment : { method: 'cash' };
+                                            const method = payment.method;
                                             let methodBadge = <Badge variant="default">Efectivo</Badge>;
 
                                             if (method === 'transfer') methodBadge = <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">Transferencia</Badge>;
                                             if (method === 'card') methodBadge = <Badge variant="secondary" className="bg-purple-500/10 text-purple-500 hover:bg-purple-500/20">Datáfono</Badge>;
                                             if (method === 'qr') methodBadge = <Badge variant="secondary" className="bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20">QR</Badge>;
+                                            if (method === 'split') methodBadge = <Badge variant="secondary" className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20">Mixto (Efe+Tra)</Badge>;
 
                                             return (
                                                 <TableRow key={order.id}>

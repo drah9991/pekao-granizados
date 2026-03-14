@@ -1,0 +1,136 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+export interface Notification {
+    id: string;
+    store_id: string;
+    title: string;
+    message: string;
+    type: 'inventory_low' | 'system_event' | 'order_event';
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+    is_read: boolean;
+    metadata: any;
+    created_at: string;
+}
+
+export const useNotifications = () => {
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [storeId, setStoreId] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchUserStore();
+    }, []);
+
+    useEffect(() => {
+        if (storeId) {
+            fetchNotifications();
+            subscribeToNotifications();
+        }
+    }, [storeId]);
+
+    const fetchUserStore = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('store_id')
+            .eq('id', user.id)
+            .single();
+
+        if (profile?.store_id) {
+            setStoreId(profile.store_id);
+        }
+    };
+
+    const fetchNotifications = async () => {
+        if (!storeId) return;
+
+        const { data, error } = await (supabase as any)
+            .from('notifications')
+            .select('*')
+            .eq('store_id', storeId)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        if (error) {
+            console.error("Error fetching notifications:", error);
+            return;
+        }
+
+        setNotifications(data as Notification[]);
+        setUnreadCount((data as Notification[]).filter(n => !n.is_read).length);
+        setLoading(false);
+    };
+
+    const subscribeToNotifications = () => {
+        const channel = supabase
+            .channel('notifications_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `store_id=eq.${storeId}`
+                },
+                (payload) => {
+                    const newNotif = payload.new as Notification;
+                    setNotifications(prev => [newNotif, ...prev.slice(0, 19)]);
+                    setUnreadCount(prev => prev + 1);
+                    
+                    // Show a toast for high priority notifications
+                    if (newNotif.priority === 'high' || newNotif.priority === 'urgent') {
+                        toast(newNotif.title, {
+                            description: newNotif.message,
+                            duration: 5000,
+                        });
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    };
+
+    const markAsRead = async (id: string) => {
+        const { error } = await (supabase as any)
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('id', id);
+
+        if (!error) {
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+    };
+
+    const markAllAsRead = async () => {
+        if (!storeId) return;
+
+        const { error } = await (supabase as any)
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('store_id', storeId)
+            .eq('is_read', false);
+
+        if (!error) {
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            setUnreadCount(0);
+        }
+    };
+
+    return {
+        notifications,
+        unreadCount,
+        loading,
+        markAsRead,
+        markAllAsRead,
+        refresh: fetchNotifications
+    };
+};

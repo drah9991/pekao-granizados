@@ -97,8 +97,9 @@ export default function ProductCustomizationDialog({
   };
 
   const handleAddToCart = () => {
-    if (product && selectedSize) {
-      onAddToCart(product, selectedSize, selectedToppings);
+    const isSachet = product?.type === 'sachet';
+    if (product && (selectedSize || isSachet)) {
+      onAddToCart(product, selectedSize || "", selectedToppings);
       onClose();
     } else {
       toast.error("Por favor, selecciona un tamaño.");
@@ -139,7 +140,7 @@ export default function ProductCustomizationDialog({
         ) : (
           <div className="space-y-6 py-4">
             {/* Sizes as touch-friendly buttons */}
-            {availableSizes.length > 0 && (
+            {availableSizes.length > 0 && product.type !== 'sachet' && (
               <div>
                 <Label className="text-base font-semibold mb-3 block">Tamaño</Label>
                 <div className="grid grid-cols-2 gap-3">
@@ -205,7 +206,7 @@ export default function ProductCustomizationDialog({
           <Button variant="outline" onClick={onClose} className="min-h-[48px]">
             Cancelar
           </Button>
-          <Button onClick={handleAddToCart} className="gradient-primary min-h-[48px] text-base" disabled={!selectedSize}>
+          <Button onClick={handleAddToCart} className="gradient-primary min-h-[48px] text-base" disabled={!selectedSize && product.type !== 'sachet'}>
             Agregar {formatCurrency(finalPrice)}
           </Button>
         </DialogFooter>

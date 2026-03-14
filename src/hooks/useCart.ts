@@ -120,7 +120,7 @@ export const useCart = () => {
     selectedToppingIds: string[],
     customized: boolean = false
   ) => {
-    const size = availableSizes.find(s => s.id === selectedSizeId);
+    const size = selectedSizeId ? availableSizes.find(s => s.id === selectedSizeId) : null;
     const validToppings = availableToppings.filter(t => selectedToppingIds.includes(t.id));
 
     let basePrice = product.price * (size?.multiplier || 1);

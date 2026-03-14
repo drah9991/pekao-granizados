@@ -11,7 +11,7 @@ import {
   X,
   ChevronDown,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
-  Palette, Shield, Building2, Receipt, Tag, Megaphone
+  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -19,6 +19,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useBranding } from "@/context/BrandingContext";
 import { useAuth } from "@/hooks/useAuth";
+import NotificationCenter from "@/components/pos/NotificationCenter";
 
 interface LayoutProps {
   children: ReactNode;
@@ -53,6 +54,7 @@ const navigation: NavItem[] = [
       { name: "Plantillas Recibos", href: "/settings?tab=receipts", icon: Receipt, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
       { name: "Tamaños Estándar", href: "/settings?tab=sizes", icon: Ruler, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
       { name: "Acrónimos SKU", href: "/settings?tab=sku", icon: Tag, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Alertas y Notificaciones", href: "/settings?tab=notifications", icon: Bell, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
     ]
   },
   {
@@ -63,6 +65,7 @@ const navigation: NavItem[] = [
     roles: ["admin", "manager", "store_manager", "cashier"],
     children: [
       { name: "Productos", href: "/products", icon: Package, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
+      { name: "Clientes", href: "/customers", icon: UsersIcon, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
       { name: "Inventario", href: "/inventory", icon: ClipboardList, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
       { name: "Recetas", href: "/recipes", icon: ClipboardList, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
       { name: "Usuarios", href: "/users", icon: UsersIcon, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
@@ -165,6 +168,24 @@ export default function Layout({ children }: LayoutProps) {
       >
         {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </Button>
+
+      {/* Top Right Actions Area */}
+      <div className="fixed top-4 right-4 z-[60] flex items-center gap-1.5 p-1.5 bg-card/60 backdrop-blur-md border border-border/40 rounded-2xl shadow-elevated animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex items-center gap-2.5 px-3 py-1.5 border-r border-border/30 mr-1 hidden sm:flex">
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-black uppercase tracking-widest text-primary/80 leading-none mb-1">
+              {isLoadingAuth ? 'Cargando...' : 'Sesión Activa'}
+            </span>
+            <span className="text-[11px] font-bold text-foreground/70 leading-none">
+              {userRole ? userRole.replace('_', ' ') : 'Invitado'}
+            </span>
+          </div>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-black text-xs shadow-inner">
+            {userRole?.charAt(0).toUpperCase() || '?'}
+          </div>
+        </div>
+        <NotificationCenter />
+      </div>
 
       <aside
         className={cn(

@@ -3,26 +3,40 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { CreditCard, DollarSign, Smartphone, QrCode, Heart, X, Edit2 } from "lucide-react";
+import { CreditCard, DollarSign, Smartphone, QrCode, Heart, X, Edit2, Truck, Home } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
-export type PaymentMethod = "cash" | "card" | "transfer" | "qr";
+export type PaymentMethod = "cash" | "card" | "transfer" | "qr" | "split";
 type TipOption = "pending" | "10_percent" | "none" | "custom";
 
 interface PaymentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   subtotal: number; // The cart total before tip
-  onConfirmPayment: (method: PaymentMethod, amountReceived: number, tipAmount: number) => void;
+  onConfirmPayment: (
+    method: PaymentMethod, 
+    amountReceived: number, 
+    tipAmount: number,
+    deliveryData?: {
+      type: 'pickup' | 'delivery';
+      fee: number;
+      address: string;
+      phone: string;
+    },
+    splitDetails?: { cash: number; transfer: number }
+  ) => void;
   isProcessing: boolean;
+  defaultMethod?: PaymentMethod;
 }
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
   { value: "cash", label: "Efectivo", icon: <DollarSign className="w-7 h-7" /> },
   { value: "card", label: "Tarjeta", icon: <CreditCard className="w-7 h-7" /> },
   { value: "transfer", label: "Transferencia", icon: <Smartphone className="w-7 h-7" /> },
+  { value: "split", label: "Mixto (Efe+Tra)", icon: <div className="flex"><DollarSign className="w-5 h-5" /><Smartphone className="w-5 h-5" /></div> },
   { value: "qr", label: "QR", icon: <QrCode className="w-7 h-7" /> },
 ];
 
@@ -32,11 +46,23 @@ export default function PaymentDialog({
   subtotal,
   onConfirmPayment,
   isProcessing,
+  defaultMethod = "cash",
 }: PaymentDialogProps) {
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(defaultMethod);
   const [amountReceived, setAmountReceived] = useState("");
   const [tipOption, setTipOption] = useState<TipOption>("pending");
   const [customTip, setCustomTip] = useState("");
+  
+  // Delivery State
+  const [orderType, setOrderType] = useState<'pickup' | 'delivery'>("pickup");
+  const [deliveryFee, setDeliveryFee] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryPhone, setDeliveryPhone] = useState("");
+  
+  // Split Payment State
+  const [splitCash, setSplitCash] = useState("");
+  const [splitTransfer, setSplitTransfer] = useState("");
+  const [hasTypedAmount, setHasTypedAmount] = useState(false);
 
   const suggestedTip = Math.round(subtotal * 0.10);
   const tipAmount = tipOption === "10_percent" 
@@ -45,23 +71,31 @@ export default function PaymentDialog({
       ? (parseFloat(customTip) || 0) 
       : 0;
   
-  const finalTotal = subtotal + tipAmount;
+  const currentDeliveryFee = orderType === "delivery" ? (parseFloat(deliveryFee) || 0) : 0;
+  const finalTotal = subtotal + tipAmount + currentDeliveryFee;
 
   useEffect(() => {
     if (isOpen) {
       setAmountReceived("");
-      setPaymentMethod("cash");
+      setPaymentMethod(defaultMethod);
       setTipOption("pending");
       setCustomTip("");
+      setOrderType("pickup");
+      setDeliveryFee("");
+      setDeliveryAddress("");
+      setDeliveryPhone("");
+      setSplitCash("");
+      setSplitTransfer("");
+      setHasTypedAmount(false);
     }
   }, [isOpen, subtotal]);
 
   // Update amount received automatically when total changes and we are on cash (and haven't typed yet)
   useEffect(() => {
-    if (isOpen && paymentMethod === "cash" && tipOption !== "pending" && amountReceived === "") {
-        setAmountReceived(finalTotal.toFixed(2));
+    if (isOpen && paymentMethod === "cash" && tipOption !== "pending" && !hasTypedAmount) {
+        setAmountReceived(finalTotal.toFixed(0));
     }
-  }, [isOpen, paymentMethod, tipOption, finalTotal]);
+  }, [isOpen, paymentMethod, tipOption, finalTotal, hasTypedAmount]);
 
 
   const change = paymentMethod === "cash" ? Math.max(0, parseFloat(amountReceived || "0") - finalTotal) : 0;
@@ -75,6 +109,15 @@ export default function PaymentDialog({
       toast.error("El monto recibido es insuficiente");
       return;
     }
+
+    if (paymentMethod === "split") {
+      const cash = parseFloat(splitCash || "0");
+      const transfer = parseFloat(splitTransfer || "0");
+      if (Math.abs((cash + transfer) - finalTotal) > 1) {
+        toast.error(`La suma de efectivo y transferencia (${formatCurrency(cash + transfer)}) debe ser igual al total (${formatCurrency(finalTotal)})`);
+        return;
+      }
+    }
     
     // As per Ley 1935, tip cannot exceed 10% strictly if suggested, but we allow an open field if custom
     // Usually, 10% is the max suggested, let's keep it flexible for custom but warn if it's too high
@@ -86,7 +129,17 @@ export default function PaymentDialog({
     onConfirmPayment(
         paymentMethod, 
         paymentMethod === "cash" ? parseFloat(amountReceived || "0") : finalTotal,
-        tipAmount
+        tipAmount,
+        {
+          type: orderType,
+          fee: currentDeliveryFee,
+          address: deliveryAddress,
+          phone: deliveryPhone
+        },
+        paymentMethod === "split" ? { 
+          cash: parseFloat(splitCash || "0"), 
+          transfer: parseFloat(splitTransfer || "0") 
+        } : undefined
     );
   };
 
@@ -101,6 +154,65 @@ export default function PaymentDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-2">
+          {/* Order Type Section */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold block">Tipo de Pedido</Label>
+            <Tabs 
+              defaultValue="pickup" 
+              value={orderType} 
+              onValueChange={(val) => setOrderType(val as 'pickup' | 'delivery')}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2 h-12">
+                <TabsTrigger value="pickup" className="gap-2">
+                  <Home className="w-4 h-4" /> Local / Recoger
+                </TabsTrigger>
+                <TabsTrigger value="delivery" className="gap-2">
+                  <Truck className="w-4 h-4" /> Domicilio
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {orderType === "delivery" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20 animate-in fade-in zoom-in-95 duration-200">
+                <div className="md:col-span-2">
+                  <Label htmlFor="deliveryAddress" className="text-xs font-bold uppercase text-primary">Dirección de Entrega *</Label>
+                  <Input 
+                    id="deliveryAddress" 
+                    placeholder="Ej: Calle 123 # 45-67, Apto 101" 
+                    className="mt-1"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="deliveryPhone" className="text-xs font-bold uppercase text-primary">Teléfono</Label>
+                  <Input 
+                    id="deliveryPhone" 
+                    placeholder="Ej: 3001234567" 
+                    className="mt-1"
+                    value={deliveryPhone}
+                    onChange={(e) => setDeliveryPhone(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="deliveryFee" className="text-xs font-bold uppercase text-primary">Costo Domicilio</Label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input 
+                      id="deliveryFee" 
+                      type="number" 
+                      placeholder="0" 
+                      className="pl-7"
+                      value={deliveryFee}
+                      onChange={(e) => setDeliveryFee(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Tip Section - Ley 1935 de 2018 */}
           <div className="p-4 bg-muted/30 rounded-lg border-2 border-border shadow-sm">
             <div className="flex items-center gap-2 mb-3">
@@ -158,6 +270,7 @@ export default function PaymentDialog({
             <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Subtotal: {formatCurrency(subtotal)}</p>
                 {tipAmount > 0 && <p className="text-sm text-pink-500 font-medium">Propina: {formatCurrency(tipAmount)}</p>}
+                {currentDeliveryFee > 0 && <p className="text-sm text-blue-500 font-medium">Domicilio: {formatCurrency(currentDeliveryFee)}</p>}
             </div>
             <div className="text-right">
                 <p className="text-sm font-semibold uppercase text-muted-foreground mr-1">Total a Pagar</p>
@@ -196,9 +309,11 @@ export default function PaymentDialog({
               <Input
                 id="amount"
                 type="number"
-                step="0.01"
                 value={amountReceived}
-                onChange={(e) => setAmountReceived(e.target.value)}
+                onChange={(e) => {
+                  setAmountReceived(e.target.value);
+                  setHasTypedAmount(true);
+                }}
                 className="text-2xl font-bold border-2 h-14"
                 placeholder="0.00"
               />
@@ -211,10 +326,94 @@ export default function PaymentDialog({
                 </div>
               )}
               {parseFloat(amountReceived || "0") > 0 && parseFloat(amountReceived || "0") < finalTotal && (
-                <p className="text-sm text-destructive mt-2">
-                  Falta: {formatCurrency(finalTotal - parseFloat(amountReceived || "0"))}
-                </p>
+                <div className="mt-3 p-3 bg-destructive/10 border border-destructive/30 rounded-lg animate-in fade-in slide-in-from-top-2">
+                  <p className="text-sm text-destructive font-bold">
+                    Falta: {formatCurrency(finalTotal - parseFloat(amountReceived || "0"))}
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="mt-2 h-7 text-[10px] uppercase font-bold text-primary hover:bg-primary/10 w-full"
+                    onClick={() => {
+                        setPaymentMethod("split");
+                        setSplitCash(amountReceived);
+                        setSplitTransfer((finalTotal - parseFloat(amountReceived || "0")).toString());
+                    }}
+                  >
+                    ¿Pagar el resto con transferencia?
+                  </Button>
+                </div>
               )}
+            </div>
+          )}
+          {/* Split Payment: Cash + Transfer */}
+          {paymentMethod === "split" && tipOption !== "pending" && (
+            <div className="animate-in fade-in slide-in-from-top-4 space-y-4 p-4 bg-muted/30 rounded-lg border-2 border-primary/20">
+              <div className="flex items-center gap-2 mb-2 text-primary">
+                <DollarSign className="w-5 h-5" />
+                <Label className="text-base font-bold">Pago Mixto (Efe + Tra)</Label>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="splitCash" className="text-xs font-bold uppercase">Efectivo</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input
+                      id="splitCash"
+                      type="number"
+                      value={splitCash}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSplitCash(val);
+                        // Auto-calculate the remaining for transfer if possible
+                        const numericVal = parseFloat(val || "0");
+                        if (numericVal <= finalTotal) {
+                          setSplitTransfer((finalTotal - numericVal).toString());
+                        }
+                      }}
+                      className="pl-7 font-bold h-12"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="splitTransfer" className="text-xs font-bold uppercase text-blue-600">Transferencia</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input
+                      id="splitTransfer"
+                      type="number"
+                      value={splitTransfer}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSplitTransfer(val);
+                        // Auto-calculate the remaining for cash if possible
+                        const numericVal = parseFloat(val || "0");
+                        if (numericVal <= finalTotal) {
+                          setSplitCash((finalTotal - numericVal).toString());
+                        }
+                      }}
+                      className="pl-7 font-bold h-12 border-blue-200 focus:border-blue-400"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Suma registrada:</span>
+                <span className={cn(
+                  "font-bold",
+                  Math.abs((parseFloat(splitCash || "0") + parseFloat(splitTransfer || "0")) - finalTotal) < 1 
+                    ? "text-green-600" 
+                    : "text-destructive"
+                )}>
+                  {formatCurrency(parseFloat(splitCash || "0") + parseFloat(splitTransfer || "0"))} 
+                  / {formatCurrency(finalTotal)}
+                </span>
+              </div>
             </div>
           )}
 
