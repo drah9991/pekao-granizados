@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => ({
   build: {
     chunkSizeWarningLimit: 1000,
   },
+  define: {
+    global: 'window',
+    'process.env': {},
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
