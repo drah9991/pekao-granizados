@@ -9,7 +9,12 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/formatters";
 import { useAuth } from "@/hooks/useAuth";
-import { startOfDay, endOfDay } from "date-fns";
+import { startOfDay, endOfDay, format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { es } from "date-fns/locale";
 
 interface CashSummary {
     cash: number;
@@ -37,20 +42,21 @@ export default function CashRegister() {
         qr: 0,
         total: 0,
     });
+    const [date, setDate] = useState<Date | undefined>(new Date());
     const { storeId } = useAuth();
 
     useEffect(() => {
         if (storeId) {
             fetchDailyArqueo();
         }
-    }, [storeId]);
+    }, [storeId, date]);
 
     const fetchDailyArqueo = async () => {
         setLoading(true);
         try {
-            const today = new Date();
-            const start = startOfDay(today).toISOString();
-            const end = endOfDay(today).toISOString();
+            const selectedDate = date || new Date();
+            const start = startOfDay(selectedDate).toISOString();
+            const end = endOfDay(selectedDate).toISOString();
 
             const { data, error } = await supabase
                 .from("orders")
@@ -102,7 +108,7 @@ export default function CashRegister() {
         }
     };
 
-    const currentDateTime = new Date().toLocaleDateString('es-CO', {
+    const currentDateTime = (date || new Date()).toLocaleDateString('es-CO', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
 
@@ -118,10 +124,36 @@ export default function CashRegister() {
                             {currentDateTime}
                         </p>
                     </div>
-                    <Button onClick={fetchDailyArqueo} variant="outline" className="shadow-sm" disabled={loading}>
-                        <RefreshCw className={"w-4 h-4 mr-2 " + (loading ? "animate-spin" : "")} />
-                        Actualizar Totales
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-[240px] justify-start text-left font-normal shadow-sm",
+                                        !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date ? format(date, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={setDate}
+                                    initialFocus
+                                    locale={es}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        
+                        <Button onClick={fetchDailyArqueo} variant="outline" className="shadow-sm" disabled={loading}>
+                            <RefreshCw className={"w-4 h-4 mr-2 " + (loading ? "animate-spin" : "")} />
+                            Actualizar
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Global Stats */}
@@ -182,8 +214,10 @@ export default function CashRegister() {
                 {/* Breakdown List */}
                 <Card className="glass-card shadow-card">
                     <CardHeader>
-                        <CardTitle>Desglose de Facturación Diaria</CardTitle>
-                        <CardDescription>{orders.length} órdenes registradas el día de hoy</CardDescription>
+                        <CardTitle>Desglose de Facturación</CardTitle>
+                        <CardDescription>
+                            {orders.length} órdenes registradas el {date ? format(date, "d 'de' MMMM", { locale: es }) : "día seleccionado"}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {loading ? (
@@ -194,8 +228,8 @@ export default function CashRegister() {
                         ) : orders.length === 0 ? (
                             <div className="text-center py-12">
                                 <Calculator className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-                                <h3 className="text-lg font-semibold mb-2">No hay ventas registradas hoy</h3>
-                                <p className="text-muted-foreground">Aún no se han completado órdenes en esta tienda durante este día.</p>
+                                <h3 className="text-lg font-semibold mb-2">No hay ventas registradas</h3>
+                                <p className="text-muted-foreground">Aún no se han completado órdenes en esta tienda durante el periodo seleccionado.</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
