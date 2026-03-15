@@ -170,21 +170,23 @@ export default function Layout({ children }: LayoutProps) {
       </Button>
 
       {/* Top Right Actions Area */}
-      <div className="fixed top-4 right-4 z-[60] flex items-center gap-1.5 p-1.5 bg-card/60 backdrop-blur-md border border-border/40 rounded-2xl shadow-elevated animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="flex items-center gap-2.5 px-3 py-1.5 border-r border-border/30 mr-1 hidden sm:flex">
+      <div className="fixed top-4 right-4 z-[60] flex items-center gap-2 p-2 bg-card/70 backdrop-blur-lg border border-border/40 rounded-2xl shadow-elevated animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex items-center gap-3 px-3 py-1.5 border-r border-border/30 mr-1 hidden sm:flex">
           <div className="flex flex-col items-end">
-            <span className="text-[9px] font-black uppercase tracking-widest text-primary/80 leading-none mb-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary/80 leading-none mb-1">
               {isLoadingAuth ? 'Cargando...' : 'Sesión Activa'}
             </span>
-            <span className="text-[11px] font-bold text-foreground/70 leading-none">
+            <span className="text-[12px] font-bold text-foreground/80 leading-none">
               {userRole ? userRole.replace('_', ' ') : 'Invitado'}
             </span>
           </div>
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-black text-xs shadow-inner">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-black text-sm shadow-inner transition-transform hover:scale-105">
             {userRole?.charAt(0).toUpperCase() || '?'}
           </div>
         </div>
-        <NotificationCenter />
+        <div className="flex items-center gap-1 pr-1">
+          <NotificationCenter />
+        </div>
       </div>
 
       <aside
@@ -335,7 +337,7 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-300 ease-in-out",
+        "flex-1 overflow-auto transition-all duration-300 ease-in-out pt-20",
         !isMobile && isSidebarOpen && "pl-64"
       )}>
         {children}
