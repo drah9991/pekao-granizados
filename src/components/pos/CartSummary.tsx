@@ -67,7 +67,7 @@ export default function CartSummary({
   };
 
   return (
-    <div className="w-full lg:w-[28rem] bg-slate-900 border-l border-white/10 p-4 md:p-6 flex flex-col h-full shadow-2xl relative z-10">
+    <div className="w-full lg:w-[28rem] bg-slate-900 border-t lg:border-t-0 lg:border-l border-white/10 p-4 md:p-6 flex flex-col h-full shadow-2xl relative z-10">
       {/* Header Cart */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">

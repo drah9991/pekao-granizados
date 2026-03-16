@@ -10,6 +10,10 @@ import PaymentDialog, { PaymentMethod } from "@/components/pos/PaymentDialog";
 import ReceiptDialog from "@/components/pos/ReceiptDialog";
 import { Product } from "@/lib/pos-types";
 import { usePOSShortcuts } from "@/hooks/usePOSShortcuts";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ShoppingBag, Receipt as ReceiptIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export default function POS() {
   const {
@@ -40,6 +44,10 @@ export default function POS() {
   // State for shortcuts
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Mobile View Mode
+  const isMobile = useIsMobile();
+  const [viewMode, setViewMode] = useState<"products" | "cart">("products");
 
   // Keyboard Shortcuts Listener
   usePOSShortcuts({
@@ -180,33 +188,77 @@ export default function POS() {
       setIsProcessing(false);
     }
   };
-
   return (
     <Layout>
-      <div className="h-full flex flex-col lg:flex-row bg-slate-950">
-        <ProductGrid 
-           onProductSelect={handleProductSelect} 
-           searchRef={searchInputRef}
-           activeCategoryIndex={activeCategoryIndex}
-        />
+      <div className="h-full flex flex-col lg:flex-row bg-slate-950 relative overflow-hidden">
+        {/* Mobile/Tablet Navigation Tabs - Visible below 1024px */}
+        <div className="flex lg:hidden border-b border-white/10 bg-slate-900 sticky top-0 z-20">
+          <button
+            onClick={() => setViewMode("products")}
+            className={cn(
+              "flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all",
+              viewMode === "products" 
+                ? "text-primary border-b-2 border-primary bg-primary/5" 
+                : "text-muted-foreground hover:text-white"
+            )}
+          >
+            <ShoppingBag size={18} />
+            Productos
+          </button>
+          <button
+            onClick={() => setViewMode("cart")}
+            className={cn(
+              "flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all relative",
+              viewMode === "cart" 
+                ? "text-primary border-b-2 border-primary bg-primary/5" 
+                : "text-muted-foreground hover:text-white"
+            )}
+          >
+            <ReceiptIcon size={18} />
+            Carrito
+            {cart.length > 0 && (
+              <span className="absolute top-3 right-1/4 w-5 h-5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center animate-pulse shadow-glow">
+                {cart.reduce((acc, item) => acc + item.quantity, 0)}
+              </span>
+            )}
+          </button>
+        </div>
 
-        <CartSummary
-          cart={cart}
-          updateQuantity={updateQuantity}
-          removeItem={removeItem}
-          subtotal={subtotal}
-          discount={discount}
-          setDiscount={setDiscount}
-          discountType={discountType}
-          setDiscountType={setDiscountType}
-          discountAmount={discountAmount}
-          total={total}
-          onCheckout={() => handleOpenPaymentDialog()}
-          onQuickPayment={(method) => handleOpenPaymentDialog(method as PaymentMethod)}
-          onClearCart={() => resetCart()}
-          selectedCustomer={selectedCustomer}
-          setSelectedCustomer={setSelectedCustomer}
-        />
+        {/* Product Grid - Visible always on lg+, or when viewMode is products on smaller screens */}
+        <div className={cn(
+          "flex-1 h-full overflow-hidden flex flex-col",
+          viewMode !== "products" && "hidden lg:flex"
+        )}>
+          <ProductGrid 
+            onProductSelect={handleProductSelect} 
+            searchRef={searchInputRef}
+            activeCategoryIndex={activeCategoryIndex}
+          />
+        </div>
+
+        {/* Cart Summary - Visible always on lg+, or when viewMode is cart on smaller screens */}
+        <div className={cn(
+          "h-full overflow-hidden flex flex-col",
+          viewMode !== "cart" && "hidden lg:flex"
+        )}>
+          <CartSummary
+            cart={cart}
+            updateQuantity={updateQuantity}
+            removeItem={removeItem}
+            subtotal={subtotal}
+            discount={discount}
+            setDiscount={setDiscount}
+            discountType={discountType}
+            setDiscountType={setDiscountType}
+            discountAmount={discountAmount}
+            total={total}
+            onCheckout={() => handleOpenPaymentDialog()}
+            onQuickPayment={(method) => handleOpenPaymentDialog(method as PaymentMethod)}
+            onClearCart={() => resetCart()}
+            selectedCustomer={selectedCustomer}
+            setSelectedCustomer={setSelectedCustomer}
+          />
+        </div>
       </div>
 
       <ProductCustomizationDialog

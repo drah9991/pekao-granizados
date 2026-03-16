@@ -149,7 +149,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
   }
 
   return (
-    <div className="flex-1 p-4 md:p-6 overflow-auto bg-slate-950/20">
+    <div className="flex-1 p-3 sm:p-4 lg:p-6 overflow-auto bg-slate-950/20">
       {/* Header with Search */}
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-lg group">
@@ -193,7 +193,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
       </div>
 
       {/* Product List */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
         {filteredProducts.map((product) => {
           const colorClass = CATEGORY_COLORS[product.type || "default"] || CATEGORY_COLORS.default;
           const emoji = CATEGORY_EMOJI[product.type || "other"] || "📦";
