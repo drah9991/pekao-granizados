@@ -62,7 +62,7 @@ export default function POS() {
   });
 
   const handleProductSelect = (product: Product) => {
-    if (product.type === 'sachet') {
+    if (product.type === 'sachet' || product.type === 'sweet') {
       addToCart(product, "", [], false);
       return;
     }
