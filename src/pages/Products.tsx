@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Tables, TablesInsert, Json, Enums } from "@/integrations/supabase/types";
 import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils";
 import { formatCurrency } from "@/lib/formatters";
+import { createNotification } from "@/hooks/useNotifications";
 
 // Import new modular components
 import ProductStats from "@/components/products/ProductStats";
@@ -214,6 +215,15 @@ export default function Products() {
         });
       if (stockError) throw stockError;
     }
+
+    await createNotification({
+      store_id: userStoreId,
+      title: "Nuevo Producto",
+      message: `El producto "${productData.name}" ha sido creado.`,
+      type: "system_event",
+      priority: "medium"
+    });
+
     toast.success("Producto creado correctamente");
   };
 
@@ -223,6 +233,17 @@ export default function Products() {
       .update(productData)
       .eq("id", productId);
     if (error) throw error;
+
+    if (userStoreId) {
+      await createNotification({
+        store_id: userStoreId,
+        title: "Producto Actualizado",
+        message: `El producto "${productData.name}" ha sido actualizado.`,
+        type: "system_event",
+        priority: "low"
+      });
+    }
+
     toast.success("Producto actualizado correctamente");
   };
 
@@ -274,6 +295,17 @@ export default function Products() {
         .eq("id", product.id);
 
       if (error) throw error;
+
+      if (product.store_id) {
+        await createNotification({
+          store_id: product.store_id,
+          title: "Producto Eliminado",
+          message: `El producto "${product.name}" ha sido eliminado.`,
+          type: "system_event",
+          priority: "high"
+        });
+      }
+
       toast.success("Producto eliminado correctamente");
       fetchProducts();
     } catch (error: any) {

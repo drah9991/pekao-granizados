@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, Enums } from "@/integrations/supabase/types";
 import Layout from "@/components/Layout";
+import { createNotification } from "@/hooks/useNotifications";
 
 type Store = Tables<'stores'>;
 type AppRole = Enums<'app_role'>;
@@ -20,6 +21,7 @@ export default function Stores() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [currentUserRole, setCurrentUserRole] = useState<AppRole | null>(null);
+  const [currentUserStoreId, setCurrentUserStoreId] = useState<string | null>(null);
 
   // Dialog states
   const [storeDialogIsOpen, setStoreDialogIsOpen] = useState(false);
@@ -35,21 +37,34 @@ export default function Stores() {
 
   useEffect(() => {
     fetchStores();
-    fetchCurrentUserRole();
+    fetchCurrentUserRoleAndStore();
   }, []);
 
-  const fetchCurrentUserRole = async () => {
+  const fetchCurrentUserRoleAndStore = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data, error } = await supabase
+      // Fetch role
+      const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .maybeSingle();
-      if (error) {
-        console.error("Error fetching current user's role:", error);
+      if (roleError) {
+        console.error("Error fetching current user's role:", roleError);
       } else {
-        setCurrentUserRole(data?.role || null);
+        setCurrentUserRole(roleData?.role || null);
+      }
+
+      // Fetch store_id
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('id', user.id)
+        .single();
+      if (profileError) {
+        console.error("Error fetching current user's store_id:", profileError);
+      } else {
+        setCurrentUserStoreId(profileData?.store_id || null);
       }
     }
   };
@@ -120,13 +135,35 @@ export default function Stores() {
 
         if (error) throw error;
         toast.success("Tienda actualizada correctamente.");
+
+        if (currentUserStoreId) {
+          await createNotification({
+            store_id: currentUserStoreId,
+            title: "Tienda Actualizada",
+            message: `La tienda "${formData.name}" ha sido actualizada.`,
+            type: "system_event",
+            priority: "low"
+          });
+        }
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("stores")
-          .insert([storeData]);
+          .insert([storeData])
+          .select('id')
+          .single();
 
         if (error) throw error;
         toast.success("Tienda creada correctamente.");
+
+        if (currentUserStoreId) {
+          await createNotification({
+            store_id: currentUserStoreId,
+            title: "Nueva Tienda",
+            message: `Se ha creado la tienda "${formData.name}".`,
+            type: "system_event",
+            priority: "medium"
+          });
+        }
       }
 
       setStoreDialogIsOpen(false);
@@ -155,6 +192,17 @@ export default function Stores() {
 
       if (error) throw error;
       toast.success("Tienda eliminada correctamente.");
+      
+      if (currentUserStoreId) {
+        await createNotification({
+          store_id: currentUserStoreId,
+          title: "Tienda Eliminada",
+          message: `La tienda "${store.name}" ha sido eliminada del sistema.`,
+          type: "system_event",
+          priority: "high"
+        });
+      }
+
       fetchStores();
     } catch (error: any) {
       console.error("Error deleting store:", error);

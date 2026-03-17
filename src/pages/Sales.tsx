@@ -65,7 +65,6 @@ export default function Sales() {
   const [editStatus, setEditStatus] = useState<OrderStatus>("pending");
   const [editCustomerId, setEditCustomerId] = useState<string | null>(null);
   const [editItems, setEditItems] = useState<OrderItem[]>([]);
-  const [editTipAmount, setEditTipAmount] = useState<number>(0);
   const [editOrderType, setEditOrderType] = useState<'pickup' | 'delivery'>("pickup");
   const [editDeliveryFee, setEditDeliveryFee] = useState<number>(0);
   const [editDeliveryAddress, setEditDeliveryAddress] = useState<string>("");
@@ -193,7 +192,6 @@ export default function Sales() {
     setSelectedOrder(order);
     setEditStatus((order.status as OrderStatus) || "pending");
     setEditCustomerId(order.customer_id);
-    setEditTipAmount(order.tip_amount || 0);
     setEditOrderType(order.order_type || "pickup");
     setEditDeliveryFee(order.delivery_fee || 0);
     setEditDeliveryAddress(order.delivery_address || "");
@@ -236,7 +234,7 @@ export default function Sales() {
     const deliveryFee = editOrderType === "delivery" ? editDeliveryFee : 0;
     return {
       subtotal,
-      total: subtotal + editTipAmount + deliveryFee
+      total: subtotal + deliveryFee
     };
   };
 
@@ -259,7 +257,7 @@ export default function Sales() {
       order_id: selectedOrder.id,
       customer_id: editCustomerId === 'generic' ? null : editCustomerId,
       status: editStatus,
-      tip_amount: editTipAmount,
+      tip_amount: 0,
       delivery_fee: editOrderType === "delivery" ? editDeliveryFee : 0,
       order_type: editOrderType,
       delivery_address: editOrderType === "delivery" ? editDeliveryAddress : null,
@@ -537,12 +535,6 @@ export default function Sales() {
                     <span className="text-muted-foreground">Subtotal Base</span>
                     <span>{formatCurrency(selectedOrder.subtotal)}</span>
                   </div>
-                  {selectedOrder.tip_amount !== null && selectedOrder.tip_amount !== undefined && (
-                    <div className="flex justify-between text-sm text-pink-500 font-medium">
-                      <span>Propina Voluntaria</span>
-                      <span>{formatCurrency(selectedOrder.tip_amount)}</span>
-                    </div>
-                  )}
                   {selectedOrder.order_type === 'delivery' && (
                     <div className="flex justify-between text-sm text-blue-500 font-medium">
                       <span>Servicio de Domicilio</span>
@@ -727,18 +719,6 @@ export default function Sales() {
               </div>
 
               <div className="bg-muted/30 p-4 rounded-lg space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">Propina Voluntaria:</label>
-                  <div className="relative w-32">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input 
-                      type="number" 
-                      className="h-8 pl-6 text-right font-bold"
-                      value={editTipAmount}
-                      onChange={(e) => setEditTipAmount(Number(e.target.value))}
-                    />
-                  </div>
-                </div>
                 <div className="pt-2 border-t mt-2">
                   <div className="flex justify-between items-center font-bold text-lg">
                     <span>Nuevo Total:</span>

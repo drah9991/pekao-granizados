@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
 import Layout from "@/components/Layout";
+import { createNotification } from "@/hooks/useNotifications";
 
 type Profile = Tables<'profiles'>;
 
@@ -229,6 +230,16 @@ export default function Users() {
         if (roleError) throw roleError;
 
         toast.success("Usuario actualizado correctamente.");
+
+        if (currentUserStoreId) {
+          await createNotification({
+            store_id: currentUserStoreId,
+            title: "Usuario Actualizado",
+            message: `El usuario "${formData.name}" ha sido actualizado.`,
+            type: "system_event",
+            priority: "low"
+          });
+        }
       } else {
         // Create new user
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -272,6 +283,16 @@ export default function Users() {
           .insert({ user_id: authData.user.id, role: formData.role });
         if (roleError) throw roleError;
 
+        if (currentUserStoreId) {
+          await createNotification({
+            store_id: currentUserStoreId,
+            title: "Nuevo Usuario",
+            message: `El usuario "${formData.name}" ha sido creado con el rol ${formData.role}.`,
+            type: "system_event",
+            priority: "medium"
+          });
+        }
+
         toast.success("Usuario creado correctamente. Se ha enviado un correo de verificación.");
       }
 
@@ -305,6 +326,16 @@ export default function Users() {
 
       if (error) throw new Error(error.message);
       if (data && data.error) throw new Error(data.error);
+
+      if (currentUserStoreId) {
+        await createNotification({
+          store_id: currentUserStoreId,
+          title: "Usuario Eliminado",
+          message: `El usuario "${user.name}" ha sido eliminado del sistema.`,
+          type: "system_event",
+          priority: "high"
+        });
+      }
 
       toast.success("Usuario eliminado correctamente.");
       fetchUsers();

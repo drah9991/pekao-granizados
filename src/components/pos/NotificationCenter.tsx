@@ -5,8 +5,10 @@ import {
   Info, 
   AlertCircle, 
   CheckCheck,
-  Circle
+  Circle,
+  Settings
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +26,7 @@ import { es } from "date-fns/locale";
 export default function NotificationCenter() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const getIcon = (type: Notification['type'], priority: Notification['priority']) => {
     switch (type) {
@@ -31,6 +34,8 @@ export default function NotificationCenter() {
         return <Package className="w-4 h-4 text-orange-500" />;
       case 'order_event':
         return <Info className="w-4 h-4 text-blue-500" />;
+      case 'system_event':
+        return <Settings className="w-4 h-4 text-purple-500" />;
       default:
         return priority === 'high' || priority === 'urgent' 
           ? <AlertCircle className="w-4 h-4 text-destructive" />
@@ -116,7 +121,14 @@ export default function NotificationCenter() {
         </div>
         <DropdownMenuSeparator />
         <div className="p-2">
-            <Button variant="ghost" className="w-full h-8 text-xs font-medium text-muted-foreground hover:text-primary" onClick={() => setOpen(false)}>
+            <Button 
+              variant="ghost" 
+              className="w-full h-8 text-xs font-medium text-muted-foreground hover:text-primary" 
+              onClick={() => {
+                setOpen(false);
+                navigate('/movements');
+              }}
+            >
                 Ver todas las actividades
             </Button>
         </div>

@@ -18,7 +18,6 @@ interface Invoice {
     status: string;
     total: number;
     subtotal: number;
-    tip_amount: number | null;
     created_at: string;
     customer_details: { name: string } | null;
   };
@@ -71,7 +70,6 @@ export default function Invoices() {
             status,
             total,
             subtotal,
-            tip_amount,
             created_at,
             store_id,
             customer_details:customers!orders_customer_id_fkey(name)
@@ -217,11 +215,6 @@ export default function Invoices() {
     printWindow.document.write('Subtotal: ' + formatCurrency(invoiceToPrint.order?.subtotal || invoiceToPrint.order?.total || 0));
     printWindow.document.write('</div>');
 
-    if (invoiceToPrint.order?.tip_amount) {
-        printWindow.document.write('<div class="total" style="font-size: 16px; font-weight: normal; margin-top: 5px; margin-bottom: 10px; color: #ec4899;">');
-        printWindow.document.write('Propina Voluntaria: ' + formatCurrency(invoiceToPrint.order.tip_amount));
-        printWindow.document.write('</div>');
-    }
 
     printWindow.document.write('<div class="total">');
     printWindow.document.write('Total Pagado: ' + totalAmount);
@@ -492,12 +485,6 @@ export default function Invoices() {
                     <p className="text-muted-foreground text-sm">Subtotal</p>
                     <p className="font-medium text-sm">{formatCurrency(selectedInvoice.order?.subtotal || selectedInvoice.order?.total || 0)}</p>
                   </div>
-                  {selectedInvoice.order?.tip_amount ? (
-                    <div className="flex justify-between items-center mb-2">
-                        <p className="text-pink-500 font-medium text-sm">Propina Voluntaria</p>
-                        <p className="text-pink-500 font-medium text-sm">{formatCurrency(selectedInvoice.order.tip_amount)}</p>
-                    </div>
-                  ) : null}
                   <div className="flex justify-between items-center mt-2 border-t pt-2">
                     <p className="font-bold text-lg">Total Pagado</p>
                     <p className="font-bold text-2xl text-primary">{formatCurrency(selectedInvoice.order?.total || 0)}</p>

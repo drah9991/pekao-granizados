@@ -91,7 +91,6 @@ export default function POS() {
   const processSale = async (
     method: PaymentMethod, 
     amountReceived: number, 
-    tipAmount: number,
     deliveryData?: {
       type: 'pickup' | 'delivery';
       fee: number;
@@ -144,12 +143,12 @@ export default function POS() {
         employee_id: user.id,
         customer_id: selectedCustomer?.id === 'generic' ? null : selectedCustomer?.id,
         subtotal: subtotal, // Original price sum
-        tip_amount: tipAmount,
+        tip_amount: 0,
         delivery_fee: deliveryData?.fee || 0,
         order_type: deliveryData?.type || 'pickup',
         delivery_address: deliveryData?.address || null,
         delivery_phone: deliveryData?.phone || null,
-        total: total + tipAmount + (deliveryData?.fee || 0), // Discounted total + extras
+        total: total + (deliveryData?.fee || 0), // Discounted total + extras
         payment: method === 'split' ? { 
           method: 'split',
           details: splitDetails
@@ -165,12 +164,12 @@ export default function POS() {
 
       setLastOrder({
         id: orderData,
-        total: total + tipAmount + (deliveryData?.fee || 0),
+        total: total + (deliveryData?.fee || 0),
         subtotal: total,
-        tip_amount: tipAmount,
+        tip_amount: 0,
         created_at: new Date().toISOString(),
         items: cart,
-        change: method === "cash" ? Math.max(0, amountReceived - (total + tipAmount + (deliveryData?.fee || 0))) : 0,
+        change: method === "cash" ? Math.max(0, amountReceived - (total + (deliveryData?.fee || 0))) : 0,
         customer: selectedCustomer,
         deliveryData,
         paymentMethod: method,

@@ -10,7 +10,6 @@ import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
 export type PaymentMethod = "cash" | "card" | "transfer" | "qr" | "split";
-type TipOption = "pending" | "10_percent" | "none" | "custom";
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -19,7 +18,6 @@ interface PaymentDialogProps {
   onConfirmPayment: (
     method: PaymentMethod, 
     amountReceived: number, 
-    tipAmount: number,
     deliveryData?: {
       type: 'pickup' | 'delivery';
       fee: number;
@@ -50,8 +48,6 @@ export default function PaymentDialog({
 }: PaymentDialogProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(defaultMethod);
   const [amountReceived, setAmountReceived] = useState("");
-  const [tipOption, setTipOption] = useState<TipOption>("pending");
-  const [customTip, setCustomTip] = useState("");
   
   // Delivery State
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>("pickup");
@@ -64,22 +60,13 @@ export default function PaymentDialog({
   const [splitTransfer, setSplitTransfer] = useState("");
   const [hasTypedAmount, setHasTypedAmount] = useState(false);
 
-  const suggestedTip = Math.round(subtotal * 0.10);
-  const tipAmount = tipOption === "10_percent" 
-    ? suggestedTip 
-    : tipOption === "custom" 
-      ? (parseFloat(customTip) || 0) 
-      : 0;
-  
   const currentDeliveryFee = orderType === "delivery" ? (parseFloat(deliveryFee) || 0) : 0;
-  const finalTotal = subtotal + tipAmount + currentDeliveryFee;
+  const finalTotal = subtotal + currentDeliveryFee;
 
   useEffect(() => {
     if (isOpen) {
       setAmountReceived("");
       setPaymentMethod(defaultMethod);
-      setTipOption("pending");
-      setCustomTip("");
       setOrderType("pickup");
       setDeliveryFee("");
       setDeliveryAddress("");
@@ -92,19 +79,15 @@ export default function PaymentDialog({
 
   // Update amount received automatically when total changes and we are on cash (and haven't typed yet)
   useEffect(() => {
-    if (isOpen && paymentMethod === "cash" && tipOption !== "pending" && !hasTypedAmount) {
+    if (isOpen && paymentMethod === "cash" && !hasTypedAmount) {
         setAmountReceived(finalTotal.toFixed(0));
     }
-  }, [isOpen, paymentMethod, tipOption, finalTotal, hasTypedAmount]);
+  }, [isOpen, paymentMethod, finalTotal, hasTypedAmount]);
 
 
   const change = paymentMethod === "cash" ? Math.max(0, parseFloat(amountReceived || "0") - finalTotal) : 0;
 
   const handleConfirm = () => {
-    if (tipOption === "pending") {
-      toast.error("Debe registrar la decisión del cliente sobre la propina voluntaria.");
-      return;
-    }
     if (paymentMethod === "cash" && parseFloat(amountReceived || "0") < finalTotal) {
       toast.error("El monto recibido es insuficiente");
       return;
@@ -119,17 +102,10 @@ export default function PaymentDialog({
       }
     }
     
-    // As per Ley 1935, tip cannot exceed 10% strictly if suggested, but we allow an open field if custom
-    // Usually, 10% is the max suggested, let's keep it flexible for custom but warn if it's too high
-    if (tipOption === "custom" && tipAmount > suggestedTip) {
-        toast.warning("La propina sugerida legal máxima es el 10%.");
-        // We will allow it but just warn, since sometimes people want to leave more
-    }
     
     onConfirmPayment(
         paymentMethod, 
         paymentMethod === "cash" ? parseFloat(amountReceived || "0") : finalTotal,
-        tipAmount,
         {
           type: orderType,
           fee: currentDeliveryFee,
@@ -149,7 +125,7 @@ export default function PaymentDialog({
         <DialogHeader>
           <DialogTitle className="text-2xl">Procesar Pago</DialogTitle>
           <DialogDescription>
-            Validación de pago y propina voluntaria
+            Validación de pago
           </DialogDescription>
         </DialogHeader>
 
@@ -213,63 +189,10 @@ export default function PaymentDialog({
             )}
           </div>
 
-          {/* Tip Section - Ley 1935 de 2018 */}
-          <div className="p-4 bg-muted/30 rounded-lg border-2 border-border shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <Heart className="w-5 h-5 text-pink-500" />
-              <Label className="text-base font-bold">Propina Voluntaria</Label>
-            </div>
-            <p className="text-xs text-muted-foreground mb-4">
-              Ley 1935 de 2018: ¿Desea el cliente incluir la propina sugerida del 10%? No constituye base gravable.
-            </p>
-            
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              <Button 
-                variant={tipOption === "10_percent" ? "default" : "outline"} 
-                className={cn("h-16 flex-col gap-1 border-2", tipOption === "10_percent" ? "border-primary bg-primary/20 text-foreground" : "")}
-                onClick={() => setTipOption("10_percent")}
-              >
-                <span>Sugerida</span>
-                <span className="font-bold">{formatCurrency(suggestedTip)}</span>
-              </Button>
-              <Button 
-                variant={tipOption === "none" ? "default" : "outline"} 
-                className={cn("h-16 flex-col gap-1 border-2", tipOption === "none" ? "border-destructive bg-destructive/20 text-foreground hover:bg-destructive/30" : "")}
-                onClick={() => setTipOption("none")}
-              >
-                <X className="w-4 h-4" />
-                <span>No incluir</span>
-              </Button>
-              <Button 
-                variant={tipOption === "custom" ? "default" : "outline"} 
-                className={cn("h-16 flex-col gap-1 border-2", tipOption === "custom" ? "border-accent bg-accent/20 text-foreground hover:bg-accent/30" : "")}
-                onClick={() => setTipOption("custom")}
-              >
-                <Edit2 className="w-4 h-4" />
-                <span>Otro valor</span>
-              </Button>
-            </div>
-
-            {tipOption === "custom" && (
-              <div className="mt-3 animate-in fade-in slide-in-from-top-2">
-                <Label htmlFor="customTip" className="text-xs font-semibold mb-1 block">Monto de Propina</Label>
-                <Input
-                  id="customTip"
-                  type="number"
-                  step="100"
-                  value={customTip}
-                  onChange={(e) => setCustomTip(e.target.value)}
-                  className="font-bold border-2"
-                  placeholder="0.00"
-                />
-              </div>
-            )}
-          </div>
 
           <div className="flex justify-between items-end pb-2 border-b-2 border-dashed">
             <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Subtotal: {formatCurrency(subtotal)}</p>
-                {tipAmount > 0 && <p className="text-sm text-pink-500 font-medium">Propina: {formatCurrency(tipAmount)}</p>}
                 {currentDeliveryFee > 0 && <p className="text-sm text-blue-500 font-medium">Domicilio: {formatCurrency(currentDeliveryFee)}</p>}
             </div>
             <div className="text-right">
@@ -279,7 +202,7 @@ export default function PaymentDialog({
           </div>
 
           {/* Payment Method Grid */}
-          <div className={cn("transition-opacity duration-300", tipOption === "pending" ? "opacity-30 pointer-events-none" : "opacity-100")}>
+          <div>
             <Label className="text-base font-semibold mb-3 block">Método de Pago</Label>
             <div className="grid grid-cols-2 gap-3">
               {PAYMENT_METHODS.map((pm) => (
@@ -301,7 +224,7 @@ export default function PaymentDialog({
           </div>
 
           {/* Cash: Amount Received */}
-          {paymentMethod === "cash" && tipOption !== "pending" && (
+          {paymentMethod === "cash" && (
             <div className="animate-in fade-in slide-in-from-top-4">
               <Label htmlFor="amount" className="text-base font-semibold mb-2 block">
                 Monto Recibido
@@ -347,7 +270,7 @@ export default function PaymentDialog({
             </div>
           )}
           {/* Split Payment: Cash + Transfer */}
-          {paymentMethod === "split" && tipOption !== "pending" && (
+          {paymentMethod === "split" && (
             <div className="animate-in fade-in slide-in-from-top-4 space-y-4 p-4 bg-muted/30 rounded-lg border-2 border-primary/20">
               <div className="flex items-center gap-2 mb-2 text-primary">
                 <DollarSign className="w-5 h-5" />
@@ -418,7 +341,7 @@ export default function PaymentDialog({
           )}
 
           {/* Non-cash confirmation */}
-          {paymentMethod !== "cash" && tipOption !== "pending" && (
+          {paymentMethod !== "cash" && (
             <div className="p-4 bg-muted/50 rounded-lg border-2 border-border text-center animate-in fade-in slide-in-from-top-4">
               <p className="text-muted-foreground text-sm">
                 {paymentMethod === "card" && "Confirma el pago con tarjeta por:"}
@@ -437,7 +360,7 @@ export default function PaymentDialog({
           <Button 
             onClick={handleConfirm} 
             className="gradient-primary min-h-[48px] text-base" 
-            disabled={isProcessing || tipOption === "pending"}
+            disabled={isProcessing}
           >
             {isProcessing ? "Procesando..." : "Confirmar Pago"}
           </Button>

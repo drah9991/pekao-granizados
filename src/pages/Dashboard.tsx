@@ -91,7 +91,7 @@ export default function Dashboard() {
 
       try {
         const [currentRes, comparisonRes, inventoryRes] = await Promise.all([
-          supabase.from("orders").select("id, total, subtotal, delivery_fee, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end),
+          supabase.from("orders").select("id, total, subtotal, tip_amount, delivery_fee, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end),
           supabase.from("orders").select("total, status").eq("store_id", storeId).gte("created_at", ranges.comparison.start).lte("created_at", ranges.comparison.end),
           supabase.from("inventory_items").select("name, stock, min_stock").eq("store_id", storeId)
         ]);
@@ -100,7 +100,7 @@ export default function Dashboard() {
           console.error("Current Orders Error:", currentRes.error);
           // Fallback if delivery_fee still missing
           if (currentRes.error.message?.includes("delivery_fee")) {
-            const fallback = await supabase.from("orders").select("id, total, subtotal, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end);
+            const fallback = await supabase.from("orders").select("id, total, subtotal, tip_amount, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end);
             if (fallback.error) throw fallback.error;
             currentRes.data = fallback.data as any;
           } else {
@@ -122,7 +122,7 @@ export default function Dashboard() {
       const cancelled = orders.filter(o => o.status === 'cancelled');
 
       // Current Metrics
-      const totalRevenue = completed.reduce((sum, o) => sum + Number(o.total || 0), 0);
+      const totalRevenue = completed.reduce((sum, o) => sum + (Number(o.total || 0) - Number(o.tip_amount || 0)), 0);
       const ordersCount = completed.length;
       const cancelledCount = cancelled.length;
       const avgTicket = ordersCount > 0 ? totalRevenue / ordersCount : 0;

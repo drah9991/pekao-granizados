@@ -134,3 +134,25 @@ export const useNotifications = () => {
         refresh: fetchNotifications
     };
 };
+
+export const createNotification = async (notification: {
+    store_id: string;
+    title: string;
+    message: string;
+    type: Notification['type'];
+    priority: Notification['priority'];
+    metadata?: any;
+}) => {
+    const { error } = await (supabase as any)
+        .from('notifications')
+        .insert([{
+            ...notification,
+            is_read: false
+        }]);
+
+    if (error) {
+        console.error("Error creating notification:", error);
+        return { error };
+    }
+    return { data: true };
+};
