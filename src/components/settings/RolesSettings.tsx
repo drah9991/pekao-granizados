@@ -92,7 +92,7 @@ export default function RolesSettings() {
 
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('roles')
         .insert([{
           name: formattedName,
