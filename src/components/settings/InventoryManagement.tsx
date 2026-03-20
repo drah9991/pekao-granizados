@@ -52,7 +52,7 @@ export const InventoryManagement = () => {
                     .eq('id', editingItem.id);
                 if (error) throw error;
             } else {
-                const { error } = await supabase
+                const { error } = await (supabase as any)
                     .from('inventory_items')
                     .insert([{ ...item, store_id: storeId }]);
                 if (error) throw error;
