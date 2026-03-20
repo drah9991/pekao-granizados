@@ -31,7 +31,7 @@ export const InventoryManagement = () => {
         queryKey: ['inventory_items', storeId],
         queryFn: async () => {
             if (!storeId) return [];
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('inventory_items')
                 .select('*')
                 .eq('store_id', storeId)
