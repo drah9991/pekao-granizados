@@ -162,7 +162,7 @@ export default function Auth() {
                         type="button"
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         onClick={() => setShowLoginPassword(!showLoginPassword)}
-                        tabIndex={-1}
+                        aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                       >
                         {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -227,7 +227,7 @@ export default function Auth() {
                         type="button"
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         onClick={() => setShowSignupPassword(!showSignupPassword)}
-                        tabIndex={-1}
+                        aria-label={showSignupPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                       >
                         {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>

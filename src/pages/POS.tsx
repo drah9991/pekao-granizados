@@ -49,16 +49,18 @@ export default function POS() {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<"products" | "cart">("products");
 
+  const handleClearCart = () => {
+    if (cart.length > 0 && window.confirm("¿Estás seguro de que deseas limpiar todo el carrito?")) {
+      resetCart();
+    }
+  };
+
   // Keyboard Shortcuts Listener
   usePOSShortcuts({
     onSearchFocus: () => searchInputRef.current?.focus(),
     onCategoryChange: (index) => setActiveCategoryIndex(index),
     onProcessPayment: () => handleOpenPaymentDialog(),
-    onClearCart: () => {
-      if (cart.length > 0 && window.confirm("¿Estás seguro de que deseas limpiar todo el carrito?")) {
-        resetCart();
-      }
-    }
+    onClearCart: handleClearCart
   });
 
   const handleProductSelect = (product: Product) => {
@@ -253,7 +255,7 @@ export default function POS() {
             total={total}
             onCheckout={() => handleOpenPaymentDialog()}
             onQuickPayment={(method) => handleOpenPaymentDialog(method as PaymentMethod)}
-            onClearCart={() => resetCart()}
+            onClearCart={handleClearCart}
             selectedCustomer={selectedCustomer}
             setSelectedCustomer={setSelectedCustomer}
           />

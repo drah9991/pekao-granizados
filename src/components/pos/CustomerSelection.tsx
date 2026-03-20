@@ -127,7 +127,13 @@ export default function CustomerSelection({ onCustomerSelected, selectedCustomer
                         </div>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={clearSelection} className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={clearSelection}
+                    className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                    aria-label="Quitar cliente seleccionado"
+                >
                     <X className="w-4 h-4" />
                 </Button>
             </div>
@@ -150,6 +156,7 @@ export default function CustomerSelection({ onCustomerSelected, selectedCustomer
                         size="icon"
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
                         onClick={() => setSearchQuery("")}
+                        aria-label="Limpiar búsqueda"
                     >
                         <X className="w-4 h-4" />
                     </Button>

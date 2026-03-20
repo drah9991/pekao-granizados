@@ -158,6 +158,7 @@ export default function CartSummary({
                     size="icon"
                     onClick={() => updateQuantity(item.id, -1)}
                     className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                    aria-label="Disminuir cantidad"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
@@ -167,6 +168,7 @@ export default function CartSummary({
                     size="icon"
                     onClick={() => updateQuantity(item.id, 1)}
                     className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                    aria-label="Aumentar cantidad"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
@@ -176,6 +178,7 @@ export default function CartSummary({
                   size="icon"
                   onClick={() => removeItem(item.id)}
                   className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label="Eliminar producto"
                 >
                   <Trash2 className="w-4.5 h-4.5" />
                 </Button>
@@ -204,6 +207,7 @@ export default function CartSummary({
                   size="icon"
                   onClick={() => setDiscountType("percent")}
                   className={cn("h-full w-9 rounded-lg transition-all", discountType === "percent" && "gradient-primary border-none text-white")}
+                  aria-label="Descuento por porcentaje"
                 >
                   <Percent className="w-4 h-4" />
                 </Button>
@@ -212,6 +216,7 @@ export default function CartSummary({
                   size="icon"
                   onClick={() => setDiscountType("fixed")}
                   className={cn("h-full w-9 rounded-lg transition-all", discountType === "fixed" && "gradient-primary border-none text-white shadow-lg")}
+                  aria-label="Descuento fijo"
                 >
                   <span className="font-bold text-sm">$</span>
                 </Button>
