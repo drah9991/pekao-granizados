@@ -270,7 +270,7 @@ export default function Users() {
         }
 
         // Update profile with store_id and document details
-        const { error: profileUpdateError } = await supabase
+        const { error: profileUpdateError } = await (supabase as any)
           .from("profiles")
           .update({ 
             store_id: formData.store_id,
