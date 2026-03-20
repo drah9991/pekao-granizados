@@ -70,7 +70,7 @@ export const InventoryManagement = () => {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('inventory_items')
                 .delete()
                 .eq('id', id);

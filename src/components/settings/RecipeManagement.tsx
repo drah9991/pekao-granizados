@@ -101,7 +101,7 @@ export const RecipeManagement = () => {
 
     const removeIngredientMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('recipes')
                 .delete()
                 .eq('id', id);

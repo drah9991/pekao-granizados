@@ -72,7 +72,7 @@ export default function CustomerSelection({ onCustomerSelected, selectedCustomer
 
         setIsCreating(true);
         try {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from("customers")
                 .insert([{
                     name: newName.trim(),
