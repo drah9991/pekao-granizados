@@ -38,7 +38,7 @@ export default function Customers() {
     const fetchCustomers = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from("customers")
                 .select("*")
                 .order("name", { ascending: true, nullsFirst: false });

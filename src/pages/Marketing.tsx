@@ -142,7 +142,7 @@ export default function Marketing() {
         if (error) throw error;
         toast.success("Regla actualizada.");
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("pricing_rules")
           .insert([ruleData]);
 

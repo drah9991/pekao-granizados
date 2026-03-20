@@ -66,7 +66,7 @@ export default function Users() {
   }, []);
 
   const fetchDbRoles = async () => {
-    const { data, error } = await supabase.from('roles').select('*').order('name');
+    const { data, error } = await (supabase as any).from('roles').select('*').order('name');
     if (!error && data) {
       setDbRoles(data);
     } else {
