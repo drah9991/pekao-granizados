@@ -18,6 +18,9 @@ type Profile = Tables<'profiles'>;
 
 interface UserWithRole extends Profile {
   role: string | null;
+  email?: string;
+  document_id?: string;
+  consent_habeas_data?: boolean;
 }
 
 interface Store {
