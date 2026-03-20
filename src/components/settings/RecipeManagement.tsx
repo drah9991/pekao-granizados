@@ -61,7 +61,7 @@ export const RecipeManagement = () => {
         queryFn: async () => {
             if (!selectedProduct) return [];
             // we need to join with inventory_items to get the ingredient name
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('recipes')
                 .select(`
           id, 
