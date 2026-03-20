@@ -46,7 +46,7 @@ export const InventoryManagement = () => {
     const saveMutation = useMutation({
         mutationFn: async (item: any) => {
             if (editingItem) {
-                const { error } = await supabase
+                const { error } = await (supabase as any)
                     .from('inventory_items')
                     .update(item)
                     .eq('id', editingItem.id);
