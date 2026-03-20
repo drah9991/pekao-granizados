@@ -58,7 +58,7 @@ export default function Marketing() {
     queryKey: ["pricing_rules", storeId],
     queryFn: async () => {
       if (!storeId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("pricing_rules")
         .select("*")
         .eq("store_id", storeId)
