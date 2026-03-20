@@ -18,6 +18,9 @@ type Profile = Tables<'profiles'>;
 
 interface UserWithRole extends Profile {
   role: string | null;
+  email?: string;
+  document_id?: string;
+  consent_habeas_data?: boolean;
 }
 
 interface Store {
@@ -66,7 +69,7 @@ export default function Users() {
   }, []);
 
   const fetchDbRoles = async () => {
-    const { data, error } = await supabase.from('roles').select('*').order('name');
+    const { data, error } = await (supabase as any).from('roles').select('*').order('name');
     if (!error && data) {
       setDbRoles(data);
     } else {
@@ -220,7 +223,7 @@ export default function Users() {
         // Update role
         await supabase.from("user_roles").delete().eq("user_id", editingUser.id);
 
-        const { error: roleError } = await supabase
+        const { error: roleError } = await (supabase as any)
           .from("user_roles")
           .insert({
             user_id: editingUser.id,
@@ -267,7 +270,7 @@ export default function Users() {
         }
 
         // Update profile with store_id and document details
-        const { error: profileUpdateError } = await supabase
+        const { error: profileUpdateError } = await (supabase as any)
           .from("profiles")
           .update({ 
             store_id: formData.store_id,
@@ -278,7 +281,7 @@ export default function Users() {
         if (profileUpdateError) throw profileUpdateError;
 
         // Assign role
-        const { error: roleError } = await supabase
+        const { error: roleError } = await (supabase as any)
           .from("user_roles")
           .insert({ user_id: authData.user.id, role: formData.role });
         if (roleError) throw roleError;

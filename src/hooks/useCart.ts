@@ -37,7 +37,7 @@ export const useCart = () => {
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
   const [availableSizes, setAvailableSizes] = useState<Tables<'sizes'>[]>([]);
   const [availableToppings, setAvailableToppings] = useState<Product[]>([]);
-  const [pricingRules, setPricingRules] = useState<Tables<'pricing_rules'>[]>([]);
+  const [pricingRules, setPricingRules] = useState<any[]>([]);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
@@ -99,7 +99,7 @@ export const useCart = () => {
       setAvailableToppings(toppingsData as Product[] || []);
 
       // Fetch active dynamic pricing rules
-      const { data: rulesData, error: rulesError } = await supabase
+      const { data: rulesData, error: rulesError } = await (supabase as any)
         .from('pricing_rules')
         .select('*')
         .eq('store_id', storeId)

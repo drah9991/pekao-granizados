@@ -42,7 +42,7 @@ export default function CustomerSelection({ onCustomerSelected, selectedCustomer
 
             setIsSearching(true);
             try {
-                const { data, error } = await supabase
+                const { data, error } = await (supabase as any)
                     .from("customers")
                     .select("id, name, phone, email, document_id")
                     .or(`name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%,document_id.ilike.%${searchQuery}%`)
@@ -72,7 +72,7 @@ export default function CustomerSelection({ onCustomerSelected, selectedCustomer
 
         setIsCreating(true);
         try {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from("customers")
                 .insert([{
                     name: newName.trim(),

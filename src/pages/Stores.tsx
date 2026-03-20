@@ -52,7 +52,7 @@ export default function Stores() {
       if (roleError) {
         console.error("Error fetching current user's role:", roleError);
       } else {
-        setCurrentUserRole(roleData?.role || null);
+        setCurrentUserRole((roleData?.role as AppRole) || null);
       }
 
       // Fetch store_id

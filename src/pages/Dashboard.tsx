@@ -93,7 +93,7 @@ export default function Dashboard() {
         const [currentRes, comparisonRes, inventoryRes] = await Promise.all([
           supabase.from("orders").select("id, total, subtotal, tip_amount, delivery_fee, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end),
           supabase.from("orders").select("total, status").eq("store_id", storeId).gte("created_at", ranges.comparison.start).lte("created_at", ranges.comparison.end),
-          supabase.from("inventory_items").select("name, stock, min_stock").eq("store_id", storeId)
+          (supabase as any).from("inventory_items").select("name, stock, min_stock").eq("store_id", storeId)
         ]);
 
         if (currentRes.error) {

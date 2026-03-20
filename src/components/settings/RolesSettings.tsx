@@ -59,7 +59,7 @@ export default function RolesSettings() {
     setIsLoading(true);
     try {
       const [rolesData, permsData] = await Promise.all([
-        supabase.from('roles').select('*').order('created_at', { ascending: true }),
+        (supabase as any).from('roles').select('*').order('created_at', { ascending: true }),
         supabase.from('role_permissions').select('*')
       ]);
 
@@ -92,7 +92,7 @@ export default function RolesSettings() {
 
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('roles')
         .insert([{
           name: formattedName,
@@ -127,7 +127,7 @@ export default function RolesSettings() {
     }
     
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('roles')
         .delete()
         .eq('id', roleObj.id);
@@ -167,7 +167,7 @@ export default function RolesSettings() {
           toast.success('Permiso removido');
         }
       } else {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('role_permissions')
           .insert([{ role: roleName, resource, action }])
           .select()

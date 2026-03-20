@@ -31,7 +31,7 @@ export const InventoryManagement = () => {
         queryKey: ['inventory_items', storeId],
         queryFn: async () => {
             if (!storeId) return [];
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('inventory_items')
                 .select('*')
                 .eq('store_id', storeId)
@@ -46,13 +46,13 @@ export const InventoryManagement = () => {
     const saveMutation = useMutation({
         mutationFn: async (item: any) => {
             if (editingItem) {
-                const { error } = await supabase
+                const { error } = await (supabase as any)
                     .from('inventory_items')
                     .update(item)
                     .eq('id', editingItem.id);
                 if (error) throw error;
             } else {
-                const { error } = await supabase
+                const { error } = await (supabase as any)
                     .from('inventory_items')
                     .insert([{ ...item, store_id: storeId }]);
                 if (error) throw error;
@@ -70,7 +70,7 @@ export const InventoryManagement = () => {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('inventory_items')
                 .delete()
                 .eq('id', id);

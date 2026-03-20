@@ -58,7 +58,7 @@ export default function Marketing() {
     queryKey: ["pricing_rules", storeId],
     queryFn: async () => {
       if (!storeId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("pricing_rules")
         .select("*")
         .eq("store_id", storeId)
@@ -134,7 +134,7 @@ export default function Marketing() {
       };
 
       if (editingRule) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("pricing_rules")
           .update(ruleData)
           .eq("id", editingRule.id);
@@ -142,7 +142,7 @@ export default function Marketing() {
         if (error) throw error;
         toast.success("Regla actualizada.");
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("pricing_rules")
           .insert([ruleData]);
 

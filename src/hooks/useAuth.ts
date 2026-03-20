@@ -54,7 +54,7 @@ export const useAuth = () => {
         setAuthState(prev => ({
           ...prev,
           user: profile,
-          userRole: roleData?.role || null,
+          userRole: (roleData?.role as AppRole) || null,
           storeId: profile.store_id,
         }));
       }
