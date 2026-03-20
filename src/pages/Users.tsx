@@ -281,7 +281,7 @@ export default function Users() {
         if (profileUpdateError) throw profileUpdateError;
 
         // Assign role
-        const { error: roleError } = await supabase
+        const { error: roleError } = await (supabase as any)
           .from("user_roles")
           .insert({ user_id: authData.user.id, role: formData.role });
         if (roleError) throw roleError;
