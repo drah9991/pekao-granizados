@@ -99,7 +99,7 @@ export const useCart = () => {
       setAvailableToppings(toppingsData as Product[] || []);
 
       // Fetch active dynamic pricing rules
-      const { data: rulesData, error: rulesError } = await supabase
+      const { data: rulesData, error: rulesError } = await (supabase as any)
         .from('pricing_rules')
         .select('*')
         .eq('store_id', storeId)

@@ -167,7 +167,7 @@ export default function RolesSettings() {
           toast.success('Permiso removido');
         }
       } else {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('role_permissions')
           .insert([{ role: roleName, resource, action }])
           .select()
