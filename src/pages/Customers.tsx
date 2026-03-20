@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/formatters";
 import { Tables } from "@/integrations/supabase/types";
 
-type Customer = Tables<'customers'>;
+type Customer = Tables<'customers'> & { document_id?: string; consent_habeas_data?: boolean };
 
 export default function Customers() {
     const [customers, setCustomers] = useState<Customer[]>([]);
