@@ -134,7 +134,7 @@ export default function Marketing() {
       };
 
       if (editingRule) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("pricing_rules")
           .update(ruleData)
           .eq("id", editingRule.id);
