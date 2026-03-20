@@ -127,7 +127,7 @@ export default function RolesSettings() {
     }
     
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('roles')
         .delete()
         .eq('id', roleObj.id);
