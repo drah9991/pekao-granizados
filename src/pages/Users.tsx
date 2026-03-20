@@ -223,7 +223,7 @@ export default function Users() {
         // Update role
         await supabase.from("user_roles").delete().eq("user_id", editingUser.id);
 
-        const { error: roleError } = await supabase
+        const { error: roleError } = await (supabase as any)
           .from("user_roles")
           .insert({
             user_id: editingUser.id,
