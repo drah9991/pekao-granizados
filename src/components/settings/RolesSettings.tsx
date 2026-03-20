@@ -59,7 +59,7 @@ export default function RolesSettings() {
     setIsLoading(true);
     try {
       const [rolesData, permsData] = await Promise.all([
-        supabase.from('roles').select('*').order('created_at', { ascending: true }),
+        (supabase as any).from('roles').select('*').order('created_at', { ascending: true }),
         supabase.from('role_permissions').select('*')
       ]);
 
