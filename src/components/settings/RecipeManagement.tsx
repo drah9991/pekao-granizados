@@ -79,7 +79,7 @@ export const RecipeManagement = () => {
 
     const addIngredientMutation = useMutation({
         mutationFn: async (payload: { product_id: string, inventory_item_id: string, quantity_required: number }) => {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('recipes')
                 .insert([payload]);
             if (error) {
