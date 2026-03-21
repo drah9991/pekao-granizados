@@ -72,8 +72,8 @@ export default defineConfig(({ mode }) => ({
     })
   ].filter(Boolean),
   build: {
-    chunkSizeWarningLimit: 1000,
-    rollupOptions: {
+    chunkSizeWarningLimit: 2000,
+    /*rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
@@ -87,7 +87,7 @@ export default defineConfig(({ mode }) => ({
           }
         }
       }
-    }
+    }*/
   },
   resolve: {
     alias: {
