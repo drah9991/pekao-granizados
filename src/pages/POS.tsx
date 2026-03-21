@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/hooks/useCart";
 import ProductGrid from "@/components/pos/ProductGrid";
 import ProductCustomizationDialog from "@/components/pos/ProductCustomizationDialog";
@@ -11,9 +12,11 @@ import ReceiptDialog from "@/components/pos/ReceiptDialog";
 import { Product } from "@/lib/pos-types";
 import { usePOSShortcuts } from "@/hooks/usePOSShortcuts";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ShoppingBag, Receipt as ReceiptIcon } from "lucide-react";
+import { ShoppingBag, Receipt as ReceiptIcon, WifiOff, CloudUpload, Shield, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useTurn } from "@/hooks/useTurn";
+import { offlineService } from "@/lib/OfflineService";
 
 export default function POS() {
   const {
@@ -32,6 +35,8 @@ export default function POS() {
     selectedCustomer,
     setSelectedCustomer
   } = useCart();
+  const { user, storeId } = useAuth();
+  const { activeTurn, isLoading: isLoadingTurn } = useTurn();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [customizeDialogIsOpen, setCustomizeDialogIsOpen] = useState(false);
@@ -40,6 +45,28 @@ export default function POS() {
   const [lastOrder, setLastOrder] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<PaymentMethod>("cash");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    checkPendingOrders();
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const checkPendingOrders = async () => {
+    const pending = await offlineService.getPendingOrders();
+    setPendingOrdersCount(pending.length);
+  };
 
   // State for shortcuts
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
@@ -102,16 +129,13 @@ export default function POS() {
     setIsProcessing(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuario no autenticado.");
+      if (!storeId) throw new Error("No se pudo obtener la información de la tienda.");
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('store_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile?.store_id) throw new Error("No se pudo obtener la información de la tienda.");
+      if (!activeTurn || activeTurn.status === 'paused') {
+        toast.error("Debes tener un turno activo para procesar ventas.");
+        return;
+      }
 
       const mappedItems = cart.flatMap(item => {
         const toppingsPrice = item.toppings?.reduce((sum, t) => sum + t.price, 0) || 0;
@@ -139,11 +163,10 @@ export default function POS() {
       });
 
       const salePayload = {
-        store_id: profile.store_id,
+        store_id: storeId,
         employee_id: user.id,
         customer_id: selectedCustomer?.id === 'generic' ? null : selectedCustomer?.id,
         subtotal: subtotal, // Original price sum
-        tip_amount: 0,
         delivery_fee: deliveryData?.fee || 0,
         order_type: deliveryData?.type || 'pickup',
         delivery_address: deliveryData?.address || null,
@@ -156,17 +179,27 @@ export default function POS() {
         items: mappedItems
       };
 
-      const { data: orderData, error: rpcError } = await (supabase as any).rpc('process_sale', {
-        sale_data: salePayload
-      });
+      let orderData: any;
 
-      if (rpcError) throw rpcError;
+      if (isOnline) {
+        const { data: orderWithId, error: rpcError } = await (supabase as any).rpc('process_sale', {
+          sale_data: salePayload
+        });
+
+        if (rpcError) throw rpcError;
+        orderData = orderWithId;
+      } else {
+        // Offline Flow
+        const offlineOrder = await offlineService.saveOfflineOrder(salePayload);
+        orderData = offlineOrder.id;
+        toast.info("Venta guardada localmente (Modo Offline)");
+        checkPendingOrders();
+      }
 
       setLastOrder({
         id: orderData,
         total: total + (deliveryData?.fee || 0),
         subtotal: total,
-        tip_amount: 0,
         created_at: new Date().toISOString(),
         items: cart,
         change: method === "cash" ? Math.max(0, amountReceived - (total + (deliveryData?.fee || 0))) : 0,
@@ -187,11 +220,68 @@ export default function POS() {
       setIsProcessing(false);
     }
   };
+
+  const handleSync = async () => {
+    if (!isOnline) {
+      toast.error("No hay conexión a internet para sincronizar.");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const pending = await offlineService.getPendingOrders();
+      if (pending.length === 0) {
+        toast.info("No hay pedidos pendientes.");
+        return;
+      }
+
+      let successCount = 0;
+      for (const order of pending) {
+        try {
+          const { error } = await (supabase as any).rpc('process_sale', {
+            sale_data: order.payload
+          });
+          if (!error) {
+            await offlineService.markOrderSynced(order.id);
+            successCount++;
+          }
+        } catch (e) {
+          console.error("Error syncing order:", order.id, e);
+        }
+      }
+
+      await checkPendingOrders();
+      if (successCount > 0) {
+        toast.success(`Sincronización completada: ${successCount} pedidos subidos.`);
+      }
+    } catch (error: any) {
+      toast.error("Error durante la sincronización: " + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
   return (
     <Layout>
       <div className="h-full flex flex-col lg:flex-row bg-slate-950 relative overflow-hidden">
+        {/* Turn Blocking Overlay */}
+        {(!activeTurn || activeTurn.status === 'paused') && !isLoadingTurn && (
+          <div className="absolute inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+            <div className="w-20 h-20 rounded-full bg-rose-500/10 flex items-center justify-center mb-6 border border-rose-500/20 shadow-[0_0_30px_rgba(244,63,94,0.2)]">
+              <Shield className="w-10 h-10 text-rose-500 animate-pulse" />
+            </div>
+            <h2 className="text-3xl font-black text-white mb-2 tracking-tight uppercase">Punto de Venta Bloqueado</h2>
+            <p className="text-slate-400 max-w-sm mb-8 font-medium">
+              No hay un turno de caja activo para esta tienda. Para comenzar a vender o reanudar tu turno, utiliza el panel de **"Gestión de Turno"** en la barra lateral.
+            </p>
+            <div className="flex gap-4">
+               <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-slate-400 uppercase tracking-widest">
+                 Tienda: {storeId?.slice(0,8)}
+               </div>
+            </div>
+          </div>
+        )}
         {/* Mobile/Tablet Navigation Tabs - Visible below 1024px */}
-        <div className="flex lg:hidden border-b border-white/10 bg-slate-900 sticky top-0 z-20">
+        <div className="flex lg:hidden border-b border-white/10 bg-slate-900 sticky top-0 z-20 items-center pr-4">
           <button
             onClick={() => setViewMode("products")}
             className={cn(
@@ -221,6 +311,17 @@ export default function POS() {
               </span>
             )}
           </button>
+          
+          {pendingOrdersCount > 0 && (
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="text-amber-500 animate-pulse"
+              onClick={handleSync}
+            >
+              <CloudUpload size={20} />
+            </Button>
+          )}
         </div>
 
         {/* Product Grid - Visible always on lg+, or when viewMode is products on smaller screens */}
@@ -228,6 +329,27 @@ export default function POS() {
           "flex-1 h-full overflow-hidden flex flex-col",
           viewMode !== "products" && "hidden lg:flex"
         )}>
+          {/* Desktop Offline Indicator */}
+          {!isOnline && (
+            <div className="hidden lg:flex items-center justify-between px-6 py-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-500 text-xs font-bold animate-pulse">
+              <div className="flex items-center gap-2">
+                <WifiOff className="h-4 w-4" />
+                MODO OFFLINE ACTIVO - Las ventas se guardarán localmente
+              </div>
+              {pendingOrdersCount > 0 && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-7 border-amber-500/50 text-amber-500 hover:bg-amber-500/20"
+                  onClick={handleSync}
+                  disabled={isProcessing}
+                >
+                  <CloudUpload className="mr-2 h-3 w-3" />
+                  Sincronizar {pendingOrdersCount} pedidos
+                </Button>
+              )}
+            </div>
+          )}
           <ProductGrid 
             onProductSelect={handleProductSelect} 
             searchRef={searchInputRef}

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Activity, Search, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 
 interface Movement {
     id: string;
@@ -21,8 +21,10 @@ interface Movement {
 }
 
 const typeMapping: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+    entry: { label: "Entrada", icon: <TrendingUp className="w-4 h-4" />, color: "bg-green-500" },
     in: { label: "Entrada", icon: <TrendingUp className="w-4 h-4" />, color: "bg-green-500" },
-    out: { label: "Salida", icon: <TrendingDown className="w-4 h-4" />, color: "bg-blue-500" },
+    exit: { label: "Salida", icon: <TrendingDown className="w-4 h-4" />, color: "bg-red-500" },
+    out: { label: "Salida", icon: <TrendingDown className="w-4 h-4" />, color: "bg-red-500" },
     sale: { label: "Venta", icon: <Activity className="w-4 h-4" />, color: "bg-primary" },
     waste: { label: "Merma", icon: <AlertTriangle className="w-4 h-4" />, color: "bg-red-500" },
 };
@@ -74,7 +76,10 @@ export default function Movements() {
             (mov.reason || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
             (mov.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
 
-        const matchesType = selectedType === "all" || mov.type === selectedType;
+        const matchesType = selectedType === "all" || 
+            mov.type === selectedType || 
+            (selectedType === "in" && mov.type === "entry") ||
+            (selectedType === "out" && mov.type === "exit");
         return matchesSearch && matchesType;
     });
 
@@ -169,8 +174,8 @@ export default function Movements() {
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right font-bold">
-                                                        <span className={mov.type === 'in' ? 'text-green-600' : 'text-red-600'}>
-                                                            {mov.type === 'in' ? '+' : '-'}{mov.qty}
+                                                        <span className={(mov.type === 'in' || mov.type === 'entry') ? 'text-green-600' : 'text-red-600'}>
+                                                            {(mov.type === 'in' || mov.type === 'entry') ? '+' : ''}{mov.qty}
                                                         </span>
                                                     </TableCell>
                                                     <TableCell className="max-w-[200px] truncate text-muted-foreground">

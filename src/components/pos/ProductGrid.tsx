@@ -6,7 +6,9 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { formatCurrency } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Hash } from "lucide-react";
+import { Search, Hash, WifiOff } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { offlineService } from "@/lib/OfflineService";
 
 interface ProductWithStock extends Product {
   stock?: number;
@@ -36,21 +38,18 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 export default function ProductGrid({ onProductSelect, searchRef, activeCategoryIndex }: ProductGridProps) {
+  const { storeId } = useAuth();
   const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [userStoreId, setUserStoreId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   useEffect(() => {
-    fetchUserStoreId();
-  }, []);
-
-  useEffect(() => {
-    if (userStoreId) {
+    if (storeId) {
       fetchProducts();
     }
-  }, [userStoreId]);
+  }, [storeId]);
 
   // Handle external category change (shortcuts)
   useEffect(() => {
@@ -62,27 +61,11 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
     }
   }, [activeCategoryIndex]);
 
-  const fetchUserStoreId = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('store_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.store_id) {
-        setUserStoreId(profile.store_id);
-      }
-    } catch (error: any) {
-      console.error("Error fetching store ID:", error);
-    }
-  };
 
   const fetchProducts = async () => {
     setLoading(true);
+    setIsOfflineMode(false);
     try {
       // Fetch products and their first recipe item stock for display
       const { data, error } = await supabase
@@ -95,7 +78,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
             )
           )
         `)
-        .eq('store_id', userStoreId!)
+        .eq('store_id', storeId!)
         .eq('active', true)
         .order("name", { ascending: true });
 
@@ -103,14 +86,22 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
       
       const productsWithStock = (data || []).map((p: any) => ({
         ...p,
-        // Using the first recipe's constituent stock as the primary indicator
         stock: p.recipes?.[0]?.inventory_items?.stock
       }));
 
       setProducts(productsWithStock);
+      // Save for offline use
+      await offlineService.saveProducts(productsWithStock);
     } catch (error: any) {
-      console.error("Error fetching products:", error);
-      toast.error("Error al cargar productos");
+      console.error("Error fetching products, trying offline cache:", error);
+      const cachedProducts = await offlineService.getProducts();
+      if (cachedProducts && cachedProducts.length > 0) {
+        setProducts(cachedProducts);
+        setIsOfflineMode(true);
+        toast.info("Cargado desde caché (Sin conexión)");
+      } else {
+        toast.error("Error al cargar productos y no hay caché disponible");
+      }
     } finally {
       setLoading(false);
     }
@@ -161,9 +152,14 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-2">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-4">
+             {isOfflineMode && (
+               <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 text-amber-500 rounded-full text-[10px] font-bold border border-amber-500/20">
+                 <WifiOff className="h-3 w-3" />
+                 SIN CONEXIÓN
+               </div>
+             )}
              <kbd className="hidden sm:inline-flex px-2 py-1 text-[10px] bg-white/10 border border-white/20 rounded-md text-muted-foreground">/ para buscar</kbd>
-             <kbd className="hidden sm:inline-flex px-2 py-1 text-[10px] bg-white/10 border border-white/20 rounded-md text-muted-foreground">F1-F4 categorías</kbd>
           </div>
         </div>
       </div>

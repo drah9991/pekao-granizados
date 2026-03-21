@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -46,7 +46,8 @@ export const RecipeManagement = () => {
             if (!storeId) return [];
             const { data, error } = await supabase
                 .from('inventory_items')
-                .select('id, name, unit_of_measure')
+                // @ts-ignore - The real column in the DB is 'unit'
+                .select('id, name, unit')
                 .eq('store_id', storeId)
                 .order('name');
             if (error) throw error;
@@ -68,7 +69,7 @@ export const RecipeManagement = () => {
           product_id, 
           inventory_item_id, 
           quantity_required,
-          inventory_items (name, unit_of_measure)
+          inventory_items (name, unit)
         `)
                 .eq('product_id', selectedProduct);
             if (error) throw error;
@@ -179,7 +180,7 @@ export const RecipeManagement = () => {
                                                 <SelectContent>
                                                     {inventoryItems?.map(inv => (
                                                         <SelectItem key={inv.id} value={inv.id}>
-                                                            {inv.name} ({inv.unit_of_measure})
+                                                            {inv.name} ({(inv as any).unit || (inv as any).unit_of_measure})
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -230,7 +231,7 @@ export const RecipeManagement = () => {
                                                 {row.inventory_items?.name || "Desconocido"}
                                             </TableCell>
                                             <TableCell>
-                                                {row.quantity_required} {row.inventory_items?.unit_of_measure}
+                                                {row.quantity_required} {(row.inventory_items as any)?.unit || (row.inventory_items as any)?.unit_of_measure}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" onClick={() => removeIngredientMutation.mutate(row.id)}>

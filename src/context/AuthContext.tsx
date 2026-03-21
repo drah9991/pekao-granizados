@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Enums, Tables } from '@/integrations/supabase/types';
+import { identifyUser, clearUser } from '@/lib/sentry';
 
 type AppRole = Enums<'app_role'>;
 type Profile = Tables<'profiles'>;
 
-interface AuthState {
+interface AuthContextType {
   user: Profile | null;
   session: any | null;
   isLoading: boolean;
@@ -13,8 +14,18 @@ interface AuthState {
   storeId: string | null;
 }
 
-export const useAuth = () => {
-  const [authState, setAuthState] = useState<AuthState>({
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  isLoading: true,
+  userRole: null,
+  storeId: null,
+});
+
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [authState, setAuthState] = useState<AuthContextType>({
     user: null,
     session: null,
     isLoading: true,
@@ -54,9 +65,16 @@ export const useAuth = () => {
         setAuthState(prev => ({
           ...prev,
           user: profile,
-          userRole: roleData?.role || null,
+          userRole: (roleData?.role as AppRole) || null,
           storeId: profile.store_id,
         }));
+
+        // Identify user in Sentry for error context
+        identifyUser({
+          id: profile.id,
+          email: profile.email || undefined,
+          name: profile.name || undefined,
+        });
       }
     };
 
@@ -67,6 +85,7 @@ export const useAuth = () => {
 
         if (event === 'SIGNED_OUT') {
           setAuthState({ user: null, session: null, isLoading: false, userRole: null, storeId: null });
+          clearUser(); // Clear Sentry user context
           return;
         }
 
@@ -116,5 +135,9 @@ export const useAuth = () => {
     };
   }, []);
 
-  return authState;
+  return (
+    <AuthContext.Provider value={authState}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

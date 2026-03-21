@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -86,7 +86,7 @@ export const InventoryManagement = () => {
         setEditingItem(item);
         setName(item.name);
         setSku(item.sku || "");
-        setUnitOfMeasure(item.unit_of_measure);
+        setUnitOfMeasure((item as any).unit || item.unit_of_measure || "");
         setStock(item.stock);
         setMinStock(item.min_stock || 0);
         setCostPerUnit(item.cost_per_unit || 0);
@@ -112,7 +112,8 @@ export const InventoryManagement = () => {
         saveMutation.mutate({
             name,
             sku: sku || null,
-            unit_of_measure: unitOfMeasure,
+            // @ts-ignore - The real column in the DB is 'unit' despite types.ts
+            unit: unitOfMeasure,
             stock,
             min_stock: minStock,
             cost_per_unit: costPerUnit
@@ -208,7 +209,7 @@ export const InventoryManagement = () => {
                                         <TableCell className="text-gray-500">{item.sku || '-'}</TableCell>
                                         <TableCell>
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.stock <= (item.min_stock || 0) ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                                                {item.stock} {item.unit_of_measure}
+                                                {item.stock} {(item as any).unit || item.unit_of_measure}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-gray-600">${item.cost_per_unit}</TableCell>

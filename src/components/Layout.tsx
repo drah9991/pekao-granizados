@@ -11,69 +11,29 @@ import {
   X,
   ChevronDown,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
-  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell
+  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useBranding } from "@/context/BrandingContext";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
+import { useTurn } from "@/hooks/useTurn";
+import { TurnStatusChip } from "@/components/TurnStatusChip";
 import NotificationCenter from "@/components/pos/NotificationCenter";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ElementType;
-  type: "link" | "collapsible";
-  children?: NavItem[];
-  roles?: string[];
-}
-
-const navigation: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, type: "link", roles: ["admin", "manager", "store_manager", "cashier", "driver", "customer"] },
-  { name: "POS", href: "/pos", icon: ShoppingCart, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-  { name: "Arqueo de Caja", href: "/cash-register", icon: Calculator, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-  { name: "Ventas", href: "/sales", icon: ReceiptText, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-  { name: "Facturas", href: "/invoices", icon: FileText, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-  { name: "Marketing", href: "/marketing", icon: Megaphone, type: "link", roles: ["admin", "manager"] },
-  {
-    name: "Configuración",
-    href: "/settings",
-    icon: Settings,
-    type: "collapsible",
-    roles: ["admin", "manager", "store_manager", "cashier"],
-    children: [
-      { name: "Branding Visual", href: "/settings?tab=branding", icon: Palette, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Roles de Sistema", href: "/settings?tab=roles", icon: Shield, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Perfil de Negocio", href: "/settings?tab=business", icon: Building2, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Plantillas Recibos", href: "/settings?tab=receipts", icon: Receipt, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Tamaños Estándar", href: "/settings?tab=sizes", icon: Ruler, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Acrónimos SKU", href: "/settings?tab=sku", icon: Tag, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Alertas y Notificaciones", href: "/settings?tab=notifications", icon: Bell, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-    ]
-  },
-  {
-    name: "Maestros",
-    href: "/products",
-    icon: Database,
-    type: "collapsible",
-    roles: ["admin", "manager", "store_manager", "cashier"],
-    children: [
-      { name: "Productos", href: "/products", icon: Package, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Clientes", href: "/customers", icon: UsersIcon, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Inventario", href: "/inventory", icon: ClipboardList, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Recetas", href: "/recipes", icon: ClipboardList, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Usuarios", href: "/users", icon: UsersIcon, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Tiendas", href: "/stores", icon: StoreIcon, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-      { name: "Kardex", href: "/movements", icon: Activity, type: "link", roles: ["admin", "manager", "store_manager", "cashier"] },
-    ],
-  },
-];
+import { navConfig } from "@/config/navConfig";
+import { NavItem, NavGroup, Role } from "@/types/navigation";
+import { useCurrentRole } from "@/hooks/useCurrentRole";
+import { CollapsibleNavGroup } from "./CollapsibleNavGroup";
+import { useLowStockCount } from "@/hooks/useLowStockCount";
+import { Badge } from "@/components/ui/badge";
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
@@ -81,52 +41,48 @@ export default function Layout({ children }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
   const { logoUrl, isLoadingBranding } = useBranding();
   const { userRole, isLoading: isLoadingAuth } = useAuth();
-  const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
+  const { role: currentRole, isLoading: isLoadingRole } = useCurrentRole();
+  const { activeTurn } = useTurn();
+  const lowStockCount = useLowStockCount();
+
+  // Usamos el rol de AuthContext preferentemente, o el del hook si no está disponible
+  const effectiveRole = (userRole as Role) || currentRole;
 
   const isLinkActive = (href: string) => {
+    if (href === "#") return false;
     const currentPath = location.pathname;
     const currentSearch = location.search;
 
-    const targetUrl = new URL(href, window.location.origin);
-    const targetPath = targetUrl.pathname;
-    const targetSearch = targetUrl.search;
+    try {
+      const targetUrl = new URL(href, window.location.origin);
+      const targetPath = targetUrl.pathname;
+      const targetSearch = targetUrl.search;
 
-    if (currentPath !== targetPath) {
-      return false;
-    }
-
-    if (!targetSearch) {
-      return true;
-    }
-
-    const currentSearchParams = new URLSearchParams(currentSearch);
-    const targetSearchParams = new URLSearchParams(targetSearch);
-
-    for (const [key, value] of targetSearchParams.entries()) {
-      if (currentSearchParams.get(key) !== value) {
+      if (currentPath !== targetPath) {
         return false;
       }
-    }
-    return true;
-  };
 
-  const isCollapsibleOpenByDefault = (item: NavItem) => {
-    if (!item.children) return false;
-    return item.children.some(child => isLinkActive(child.href));
+      if (!targetSearch) {
+        return true;
+      }
+
+      const currentSearchParams = new URLSearchParams(currentSearch);
+      const targetSearchParams = new URLSearchParams(targetSearch);
+
+      for (const [key, value] of targetSearchParams.entries()) {
+        if (currentSearchParams.get(key) !== value) {
+          return false;
+        }
+      }
+      return true;
+    } catch (e) {
+      return location.pathname === href;
+    }
   };
 
   useEffect(() => {
     setIsSidebarOpen(!isMobile);
   }, [isMobile]);
-
-  useEffect(() => {
-    const activeParent = navigation.find(item => item.type === "collapsible" && isCollapsibleOpenByDefault(item));
-    if (activeParent) {
-      setOpenCollapsible(activeParent.name);
-    } else {
-      setOpenCollapsible(null);
-    }
-  }, [location.pathname, location.search]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -137,26 +93,13 @@ export default function Layout({ children }: LayoutProps) {
     }
   };
 
-  const handleCollapsibleToggle = (itemName: string) => {
-    setOpenCollapsible(prev => (prev === itemName ? null : itemName));
-  };
-
-  const filteredNavigation = navigation.filter(item => {
-    if (isLoadingAuth || !userRole) return false;
-    if (!item.roles) return true;
-    return item.roles.includes(userRole);
-  }).map(item => {
-    if (item.type === "collapsible" && item.children) {
-      return {
-        ...item,
-        children: item.children.filter(child => {
-          if (!child.roles) return true;
-          return child.roles.includes(userRole!);
-        })
-      };
-    }
-    return item;
-  });
+  const visibleGroups = navConfig.filter(group => {
+    if (isLoadingAuth || !effectiveRole) return false;
+    return group.roles.includes(effectiveRole);
+  }).map(group => ({
+    ...group,
+    items: group.items.filter(item => item.roles.includes(effectiveRole))
+  })).filter(group => group.items.length > 0);
 
   return (
     <div className="flex h-screen bg-background">
@@ -214,107 +157,111 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
 
-        <nav className="flex-1 p-5 space-y-2 overflow-y-auto">
-          {filteredNavigation.map((item) => {
-            const isActive = isLinkActive(item.href);
-            const isOpen = openCollapsible === item.name;
+        <nav className="flex-1 p-5 space-y-6 overflow-y-auto custom-scrollbar">
+          {visibleGroups.map((group, groupIdx) => (
+            <div key={group.label} className="space-y-3">
+              <div className="flex items-center gap-2 px-4 mb-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-sidebar-foreground/30">
+                  {group.label}
+                </span>
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-sidebar-border/30 to-transparent" />
+              </div>
+              
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const isActive = isLinkActive(item.href);
 
-            if (item.type === "link") {
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    "group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
-                    isActive
-                      ? "bg-gradient-to-r from-primary/20 to-primary/10 text-sidebar-foreground shadow-card border border-primary/30"
-                      : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:shadow-md hover:border hover:border-sidebar-border/50"
-                  )}
-                  onClick={() => isMobile && setIsSidebarOpen(false)}
-                >
-                  {isActive && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
-                  )}
-                  <item.icon className={cn(
-                    "w-5 h-5 transition-all duration-300",
-                    isActive
-                      ? "text-primary drop-shadow-lg scale-110"
-                      : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
-                  )} />
-                  <span className="relative z-10">{item.name}</span>
-                  {isActive && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow animate-pulse" />
-                  )}
-                </Link>
-              );
-            } else if (item.type === "collapsible" && item.children) {
-              const parentIsActive = isActive || isCollapsibleOpenByDefault(item);
-              return (
-                <div key={item.name}>
-                  <button
-                    type="button"
-                    onClick={() => handleCollapsibleToggle(item.name)}
-                    className={cn(
-                      "group flex items-center w-full gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
-                      parentIsActive
-                        ? "bg-gradient-to-r from-primary/20 to-primary/10 text-sidebar-foreground shadow-card border border-primary/30"
-                        : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:shadow-md hover:border hover:border-sidebar-border/50"
-                    )}
-                  >
-                    {parentIsActive && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
-                    )}
-                    <item.icon className={cn(
-                      "w-5 h-5 transition-all duration-300",
-                      parentIsActive
-                        ? "text-primary drop-shadow-lg scale-110"
-                        : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
-                    )} />
-                    <span className="relative z-10">{item.name}</span>
-                    <ChevronDown className={cn(
-                      "ml-auto w-4 h-4 transition-transform duration-300",
-                      isOpen ? "rotate-180" : "rotate-0",
-                      parentIsActive ? "text-primary" : "text-sidebar-foreground/60 group-hover:text-primary"
-                    )} />
-                  </button>
-                  {isOpen && (
-                    <div className="ml-6 mt-2 space-y-1">
-                      {item.children.map(child => {
-                        const childIsActive = isLinkActive(child.href);
-                        return (
-                          <Link
-                            key={child.name}
-                            to={child.href}
-                            className={cn(
-                              "group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 text-sm relative overflow-hidden",
-                              childIsActive
-                                ? "bg-primary/10 text-primary font-semibold"
-                                : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
-                            )}
-                            onClick={() => isMobile && setIsSidebarOpen(false)}
-                          >
-                            {childIsActive && (
-                              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
-                            )}
-                            <child.icon className={cn(
-                              "w-4 h-4 transition-all duration-300",
-                              childIsActive ? "text-primary" : "text-sidebar-foreground/60 group-hover:text-primary"
-                            )} />
-                            <span className="relative z-10">{child.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-            return null;
-          })}
+                  if (!item.type || item.type === "link") {
+                    const isPOS = item.href === "/pos";
+                    const isLocked = isPOS && !activeTurn;
+                    
+                    const linkContent = (
+                      <div
+                        className={cn(
+                          "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
+                          isActive
+                            ? "bg-gradient-to-r from-primary/20 to-primary/10 text-sidebar-foreground shadow-card border border-primary/30"
+                            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:shadow-md hover:border hover:border-sidebar-border/50",
+                          isLocked && "opacity-50 cursor-not-allowed grayscale-[0.5]"
+                        )}
+                      >
+                        {isActive && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
+                        )}
+                        <item.icon className={cn(
+                          "w-5 h-5 transition-all duration-300",
+                          isActive
+                            ? "text-primary drop-shadow-lg scale-110"
+                            : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
+                        )} />
+                        <span className="relative z-10">{item.label}</span>
+                        {isActive && (
+                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow animate-pulse" />
+                        )}
+                        {isLocked && (
+                          <Shield className="ml-auto w-4 h-4 text-rose-500/50" />
+                        )}
+                      </div>
+                    );
+
+                    if (isLocked) {
+                      return (
+                        <Tooltip key={item.label} delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            {linkContent}
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="bg-rose-950 border-rose-500/30 text-rose-200 text-[10px] font-bold uppercase tracking-wider">
+                            Abre un turno para vender
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    }
+
+                    return (
+                      <Link
+                        key={item.label}
+                        to={item.href}
+                        onClick={() => isMobile && setIsSidebarOpen(false)}
+                      >
+                        {linkContent}
+                      </Link>
+                    );
+                  } else if (item.type === "collapsible" && item.children) {
+                    const isMaestros = item.label === "Maestros";
+                    const isConfig = item.label === "Configuración";
+                    const defaultOpen = effectiveRole === "admin" || effectiveRole === "owner";
+                    const storageKey = isMaestros ? "sidebar_maestros_open" : isConfig ? "sidebar_config_open" : undefined;
+
+                    return (
+                      <CollapsibleNavGroup
+                        key={item.label}
+                        label={item.label}
+                        icon={item.icon}
+                        items={item.children}
+                        activeTurn={activeTurn}
+                        isMobile={isMobile}
+                        onNavigate={() => setIsSidebarOpen(false)}
+                        isLinkActive={isLinkActive}
+                        defaultOpen={defaultOpen}
+                        storageKey={storageKey}
+                        badgeContent={isMaestros && lowStockCount > 0 ? (
+                          <Badge variant="destructive" className="bg-amber-500 hover:bg-amber-600 text-[10px] py-0 px-1.5 h-4 min-w-4 flex items-center justify-center animate-pulse border-none">
+                            {lowStockCount} bajo
+                          </Badge>
+                        ) : null}
+                      />
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="p-5 border-t border-sidebar-border/30 bg-sidebar-background/50 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-3">
+          <TurnStatusChip />
+          <div className="flex items-center justify-between mb-3 mt-2">
             <span className="text-sm font-medium text-sidebar-foreground/60">Modo Oscuro</span>
             <ThemeToggle />
           </div>

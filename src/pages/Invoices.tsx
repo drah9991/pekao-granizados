@@ -10,7 +10,7 @@ import { FileText, Download, Eye, Search, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 
 interface Invoice {
   id: string;

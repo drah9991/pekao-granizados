@@ -10,7 +10,7 @@ import { Plus, Search, Edit, Trash2, Tag, Code } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, Enums } from "@/integrations/supabase/types";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 
 type SkuAcronym = Tables<'sku_acronyms'>;
 type ProductType = Enums<'product_type'>;

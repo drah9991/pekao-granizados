@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth'; // Import useAuth
+import { useAuth } from '@/context/AuthContext';
 
 interface BrandingContextType {
   logoUrl: string | null;
@@ -13,7 +13,7 @@ interface BrandingContextType {
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
 
 export const BrandingProvider = ({ children }: { children: ReactNode }) => {
-  const { user, isLoading: isLoadingAuth } = useAuth(); // Use useAuth hook
+  const { user, storeId, isLoading: isLoadingAuth } = useAuth(); // Use storeId from AuthContext
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState<string>("#0EA5E9"); // Default primary color
   const [isLoadingBranding, setIsLoadingBranding] = useState(true);
@@ -36,18 +36,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // User is authenticated, proceed to fetch store and branding
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('store_id')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        throw profileError;
-      }
-      
-      if (!profile?.store_id) {
+      if (!storeId) {
         setLogoUrl(null);
         setPrimaryColor("#0EA5E9");
         document.documentElement.style.setProperty('--brand-primary-color', "#0EA5E9");
@@ -58,7 +47,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
       const { data: store, error: storeError } = await supabase
         .from('stores')
         .select('config')
-        .eq('id', profile.store_id)
+        .eq('id', storeId)
         .maybeSingle();
 
       if (storeError) {

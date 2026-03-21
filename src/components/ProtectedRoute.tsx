@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import { Enums } from '@/integrations/supabase/types';
 import { Loader2 } from 'lucide-react';
 
@@ -16,7 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-[#0F1117]">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
