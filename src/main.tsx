@@ -11,10 +11,4 @@ registerSW({ immediate: true });
 // Initialize Sentry before anything else
 initSentry();
 
-// Force Buffer global for third-party libraries
-if (typeof window !== 'undefined') {
-  window.Buffer = Buffer;
-  window.global = window;
-}
-
 createRoot(document.getElementById("root")!).render(<App />);

@@ -44,7 +44,7 @@ export const RecipeManagement = () => {
         queryKey: ['inventory_items', storeId],
         queryFn: async () => {
             if (!storeId) return [];
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('inventory_items')
                 // @ts-ignore - The real column in the DB is 'unit'
                 .select('id, name, unit')
@@ -62,7 +62,7 @@ export const RecipeManagement = () => {
         queryFn: async () => {
             if (!selectedProduct) return [];
             // we need to join with inventory_items to get the ingredient name
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('recipes')
                 .select(`
           id, 
@@ -80,7 +80,7 @@ export const RecipeManagement = () => {
 
     const addIngredientMutation = useMutation({
         mutationFn: async (payload: { product_id: string, inventory_item_id: string, quantity_required: number }) => {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('recipes')
                 .insert([payload]);
             if (error) {
@@ -102,7 +102,7 @@ export const RecipeManagement = () => {
 
     const removeIngredientMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('recipes')
                 .delete()
                 .eq('id', id);

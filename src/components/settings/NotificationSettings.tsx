@@ -67,7 +67,7 @@ export default function NotificationSettings() {
       if (!storeId) throw new Error("No se pudo identificar la tienda.");
 
       const [rolesData, settingsData] = await Promise.all([
-        supabase.from('roles').select('*').order('name', { ascending: true }),
+        (supabase as any).from('roles').select('*').order('name', { ascending: true }),
         (supabase as any).from('notification_settings').select('*').eq('store_id', storeId)
       ]);
 
