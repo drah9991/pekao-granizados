@@ -10,6 +10,11 @@ import {
   User as UserIcon, UserX, Wallet, CreditCard, Smartphone,
   RotateCcw
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatCurrency } from "@/lib/formatters";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -153,32 +158,50 @@ export default function CartSummary({
               
               <div className="flex items-center justify-between pt-1 border-t border-white/5 mt-1">
                 <div className="flex items-center bg-black/40 rounded-xl p-1 gap-1 border border-white/5 shadow-inner">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, -1)}
-                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, -1)}
+                        className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                        aria-label="Disminuir cantidad"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Disminuir cantidad</TooltipContent>
+                  </Tooltip>
                   <span className="font-black text-sm w-8 text-center text-white">{item.quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, 1)}
-                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, 1)}
+                        className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                        aria-label="Aumentar cantidad"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Aumentar cantidad</TooltipContent>
+                  </Tooltip>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeItem(item.id)}
-                  className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  <Trash2 className="w-4.5 h-4.5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeItem(item.id)}
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors"
+                      aria-label="Eliminar del carrito"
+                    >
+                      <Trash2 className="w-4.5 h-4.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Eliminar del carrito</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           ))
@@ -269,7 +292,7 @@ export default function CartSummary({
           <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-10 transition-opacity" />
           <Receipt className="w-8 h-8" />
           <span className="uppercase tracking-widest">Procesar Pago</span>
-          <kbd className="absolute right-6 bottom-4 px-2 py-0.5 text-[10px] bg-black/40 border border-white/20 rounded-lg text-white/60 font-black">Enter</kbd>
+          <kbd className="absolute right-6 bottom-4 px-2 py-0.5 text-[10px] bg-black/40 border border-white/20 rounded-lg text-white/60 font-black">Ctrl + Enter</kbd>
         </Button>
       </div>
     </div>

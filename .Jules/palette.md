@@ -1,0 +1,3 @@
+## 2024-05-24 - [Accessibility and UX Improvements for POS]
+**Learning:** Icon-only buttons (Minus, Plus, Trash) are a common pattern in the POS cart, but they lack semantic meaning for screen readers. Adding `aria-label` and `Tooltip` components significantly improves the accessibility and clarity of these elements without cluttering the UI. Furthermore, ensuring that destructive actions like "Clear Cart" always require confirmation (both via UI and shortcuts) is a critical UX safety net.
+**Action:** Always include `aria-label` and `Tooltip` when implementing icon-only buttons. Use a unified handler for actions triggered by both UI and shortcuts to ensure consistent behavior (like confirmation dialogs).
