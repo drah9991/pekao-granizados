@@ -3,6 +3,11 @@ import CustomerSelection, { Customer } from "@/components/pos/CustomerSelection"
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
@@ -84,7 +89,7 @@ export default function CartSummary({
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={onClearCart}
+          onClick={() => cart.length > 0 && window.confirm("¿Estás seguro de que deseas limpiar todo el carrito?") && onClearCart()}
           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors gap-2 font-bold uppercase text-[10px] tracking-widest"
         >
           Limpiar
@@ -104,6 +109,7 @@ export default function CartSummary({
             type="button"
             variant={isAnonymous ? "default" : "outline"}
             onClick={toggleAnonymous}
+            aria-label={isAnonymous ? "Remover consumidor final" : "Seleccionar consumidor final"}
             className={cn(
               "h-12 w-20 px-0 flex flex-col gap-0.5 rounded-xl border-2 transition-all",
               isAnonymous ? "gradient-secondary border-secondary shadow-lg" : "bg-white/5 border-white/5 text-muted-foreground hover:text-white"
@@ -153,32 +159,50 @@ export default function CartSummary({
               
               <div className="flex items-center justify-between pt-1 border-t border-white/5 mt-1">
                 <div className="flex items-center bg-black/40 rounded-xl p-1 gap-1 border border-white/5 shadow-inner">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, -1)}
-                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, -1)}
+                        aria-label="Disminuir cantidad"
+                        className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Disminuir</TooltipContent>
+                  </Tooltip>
                   <span className="font-black text-sm w-8 text-center text-white">{item.quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, 1)}
-                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, 1)}
+                        aria-label="Aumentar cantidad"
+                        className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Aumentar</TooltipContent>
+                  </Tooltip>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeItem(item.id)}
-                  className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  <Trash2 className="w-4.5 h-4.5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeItem(item.id)}
+                      aria-label="Eliminar producto"
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-4.5 h-4.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Eliminar</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           ))
