@@ -1,0 +1,3 @@
+## 2024-05-18 - React state reference preservation in useCart
+**Learning:** Returning dynamically mapped arrays (like `cleanCartItems(cart)`) from a custom hook like `useCart` breaks React's object identity checks. This causes every consumer of the hook (like `CartSummary`) to re-render on *every single render cycle of the parent component*, even if the cart contents haven't changed.
+**Action:** When holding arrays or objects in React state, ensure they are cleaned or validated *before* being passed to `setState`. Return the raw state value directly from the hook to preserve reference equality and prevent cascading re-renders. Avoid O(N) `.map` operations that create new references inside the render phase.
