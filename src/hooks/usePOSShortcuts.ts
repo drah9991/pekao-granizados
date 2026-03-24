@@ -27,8 +27,8 @@ export const usePOSShortcuts = ({
       if (e.key === "F3") { e.preventDefault(); onCategoryChange(2); }
       if (e.key === "F4") { e.preventDefault(); onCategoryChange(3); }
 
-      // Enter for payment (only if not in an input or if it's explicitly allowed)
-      if (e.key === "Enter" && e.ctrlKey) {
+      // Enter for payment (only if not in an input)
+      if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "INPUT" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
         e.preventDefault();
         onProcessPayment();
       }
