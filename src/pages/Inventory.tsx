@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -186,21 +186,29 @@ export default function Inventory() {
     }
   };
 
-  const filteredItems = stockItems.filter(item => {
-    const matchesStore = selectedStore === "all" || item.store_id === selectedStore;
-    const matchesSearch = !searchQuery || 
-      item.product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.store.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLowStock = !filterLowStock || item.qty < item.min_qty;
-    const matchesProductType = filterProductType === "all" || item.product.type === filterProductType;
-    
-    return matchesStore && matchesSearch && matchesLowStock && matchesProductType;
-  });
+  // ⚡ Bolt Performance Optimization: Memoize filtered and aggregated items
+  // Prevents heavy filtering and matching operations from executing on every render cycle
+  const filteredItems = useMemo(() => {
+    return stockItems.filter(item => {
+      const matchesStore = selectedStore === "all" || item.store_id === selectedStore;
+      const matchesSearch = !searchQuery ||
+        item.product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.store.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLowStock = !filterLowStock || item.qty < item.min_qty;
+      const matchesProductType = filterProductType === "all" || item.product.type === filterProductType;
 
-  const lowStockItems = stockItems.filter(item => item.qty < item.min_qty);
-  const totalStock = stockItems.reduce((sum, item) => sum + item.qty, 0);
-  const activeProducts = new Set(stockItems.map(item => item.product_id)).size;
+      return matchesStore && matchesSearch && matchesLowStock && matchesProductType;
+    });
+  }, [stockItems, selectedStore, searchQuery, filterLowStock, filterProductType]);
+
+  const lowStockItems = useMemo(() => stockItems.filter(item => item.qty < item.min_qty), [stockItems]);
+
+  // ⚡ Bolt Performance Optimization: Memoize total stock calculation to avoid reducing large arrays repeatedly
+  const totalStock = useMemo(() => stockItems.reduce((sum, item) => sum + item.qty, 0), [stockItems]);
+
+  // ⚡ Bolt Performance Optimization: Memoize Set creation and mapping to prevent allocations on every render
+  const activeProducts = useMemo(() => new Set(stockItems.map(item => item.product_id)).size, [stockItems]);
 
   return (
     <div className="p-4 md:p-8 space-y-6 md:space-y-8">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, TablesInsert, Json, Enums } from "@/integrations/supabase/types";
@@ -463,29 +463,37 @@ export default function Products() {
     }
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = !searchQuery ||
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  // ⚡ Bolt Performance Optimization: Memoize filtered products list
+  // Prevents re-running O(n) filtering and string operations on every re-render
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = !searchQuery ||
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesFilter = filterActive === "all" ||
-      (filterActive === "active" && product.active) ||
-      (filterActive === "inactive" && !product.active);
+      const matchesFilter = filterActive === "all" ||
+        (filterActive === "active" && product.active) ||
+        (filterActive === "inactive" && !product.active);
 
-    const matchesType = filterType === "all" || product.type === filterType;
+      const matchesType = filterType === "all" || product.type === filterType;
 
-    return matchesSearch && matchesFilter && matchesType;
-  });
+      return matchesSearch && matchesFilter && matchesType;
+    });
+  }, [products, searchQuery, filterActive, filterType]);
 
-  const stats = {
-    total: products.length,
-    active: products.filter(p => p.active).length,
-    inactive: products.filter(p => !p.active).length,
-    avgPrice: products.length > 0
-      ? products.reduce((sum, p) => sum + p.price, 0) / products.length
-      : 0,
-  };
+  // ⚡ Bolt Performance Optimization: Memoize stats calculations
+  // Prevents re-calculating aggregations (reduce, filter) on every re-render
+  const stats = useMemo(() => {
+    return {
+      total: products.length,
+      active: products.filter(p => p.active).length,
+      inactive: products.filter(p => !p.active).length,
+      avgPrice: products.length > 0
+        ? products.reduce((sum, p) => sum + p.price, 0) / products.length
+        : 0,
+    };
+  }, [products]);
 
   return (
     <Layout>

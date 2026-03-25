@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -214,11 +214,15 @@ export default function Stores() {
 
   const canManageStores = currentUserRole === "admin" || currentUserRole === "manager";
 
-  const filteredStores = stores.filter(store =>
-    store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    store.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (store.currency || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // ⚡ Bolt Performance Optimization: Memoize filtered stores list
+  // Prevents string matching operations from running on every re-render
+  const filteredStores = useMemo(() => {
+    return stores.filter(store =>
+      store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      store.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (store.currency || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [stores, searchQuery]);
 
   return (
     <Layout>
