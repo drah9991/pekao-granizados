@@ -10,6 +10,17 @@ import {
   User as UserIcon, UserX, Wallet, CreditCard, Smartphone,
   RotateCcw
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { formatCurrency } from "@/lib/formatters";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -81,14 +92,32 @@ export default function CartSummary({
             </Badge>
           </h2>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onClearCart}
-          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors gap-2 font-bold uppercase text-[10px] tracking-widest"
-        >
-          Limpiar
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors gap-2 font-bold uppercase text-[10px] tracking-widest"
+              disabled={cart.length === 0}
+            >
+              Limpiar
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Vaciar carrito?</AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-400">
+                Esta acción eliminará todos los productos del pedido actual.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white">Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={onClearCart} className="bg-destructive text-white hover:bg-destructive/90">
+                Vaciar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Customer Area */}
