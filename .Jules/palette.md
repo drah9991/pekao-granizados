@@ -1,0 +1,3 @@
+## 2024-05-24 - [Micro-UX: Cart Summary Accessibility and Feedback]
+**Learning:** Icon-only buttons (Minus, Plus, Trash, Percent, Fixed) in the POS interface were missing ARIA labels and tooltips, making them inaccessible to screen readers and potentially confusing for new users. Additionally, the 'Limpiar' (Clear Cart) button remained active even when the cart was empty, which is a common UX papercut.
+**Action:** Always include `aria-label` and `Tooltip` for icon-only buttons. Ensure destructive or bulk actions (like clearing a cart) are disabled when not applicable to provide immediate visual feedback.
