@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,14 +88,14 @@ export default function POS() {
     }
   });
 
-  const handleProductSelect = (product: Product) => {
+  const handleProductSelect = useCallback((product: Product) => {
     if (product.type === 'sachet' || product.type === 'sweet') {
       addToCart(product, "", [], false);
       return;
     }
     setSelectedProduct(product);
     setCustomizeDialogIsOpen(true);
-  };
+  }, [addToCart]);
 
   const handleAddToCartFromDialog = (product: Product, sizeId: string, toppingIds: string[]) => {
     addToCart(product, sizeId, toppingIds, true);

@@ -114,7 +114,7 @@ export const useCart = () => {
     }
   };
 
-  const addToCart = (
+  const addToCart = useMemo(() => (
     product: Product,
     selectedSizeId: string,
     selectedToppingIds: string[],
@@ -202,7 +202,7 @@ export const useCart = () => {
     } else {
       toast.success("Producto agregado al carrito");
     }
-  };
+  }, [availableSizes, availableToppings, pricingRules, selectedCustomer]);
 
   const updateQuantity = (id: string, delta: number) => {
     const updatedCart = cart.map(item => {
