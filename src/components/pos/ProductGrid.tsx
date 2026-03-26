@@ -2,7 +2,7 @@ import { Product } from "@/lib/pos-types";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, memo } from "react";
 import { formatCurrency } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -37,7 +37,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
   other: "📦",
 };
 
-export default function ProductGrid({ onProductSelect, searchRef, activeCategoryIndex }: ProductGridProps) {
+const ProductGrid = memo(function ProductGrid({ onProductSelect, searchRef, activeCategoryIndex }: ProductGridProps) {
   const { storeId } = useAuth();
   const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -245,4 +245,6 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
       )}
     </div>
   );
-}
+});
+
+export default ProductGrid;
