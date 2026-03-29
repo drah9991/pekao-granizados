@@ -11,6 +11,7 @@ import { TurnProvider } from "@/context/TurnContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 // Eager imports — critical path (landing, login, 404)
 import Index from "./pages/Index";
@@ -52,6 +53,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <SpeedInsights />
         <BrandingProvider>
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
