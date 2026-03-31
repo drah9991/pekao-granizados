@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Package, DollarSign, TrendingUp } from "lucide-react";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 
 interface ProductStatsProps {
   total: number;
@@ -53,7 +53,7 @@ export default function ProductStats({ total, active, inactive, avgPrice }: Prod
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Precio Promedio</p>
-              <p className="text-2xl font-bold text-primary">{formatCurrency(avgPrice)}</p>
+              <p className="text-2xl font-bold text-primary">{formatCOP(avgPrice)}</p>
             </div>
             <DollarSign className="w-8 h-8 text-primary" />
           </div>

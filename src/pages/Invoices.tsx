@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Download, Eye, Search, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
@@ -189,7 +189,7 @@ export default function Invoices() {
 
     const orderDate = invoiceToPrint.order?.created_at ? new Date(invoiceToPrint.order.created_at).toLocaleString('es-CO') : 'Fecha no disponible';
     const customerName = invoiceToPrint.order?.customer_details?.name || 'Cliente General';
-    const totalAmount = formatCurrency(invoiceToPrint.order?.total || 0);
+    const totalAmount = formatCOP(invoiceToPrint.order?.total || 0);
     const invoiceNumber = `F-${invoiceToPrint.id.slice(0, 8).toUpperCase()}`;
 
     printWindow.document.write('<html><head><title>Factura ' + invoiceNumber + '</title>');
@@ -212,7 +212,7 @@ export default function Invoices() {
     printWindow.document.write('</div>');
 
     printWindow.document.write('<div class="total" style="font-size: 16px; font-weight: normal; margin-top: 10px; margin-bottom: 5px;">');
-    printWindow.document.write('Subtotal: ' + formatCurrency(invoiceToPrint.order?.subtotal || invoiceToPrint.order?.total || 0));
+    printWindow.document.write('Subtotal: ' + formatCOP(invoiceToPrint.order?.subtotal || invoiceToPrint.order?.total || 0));
     printWindow.document.write('</div>');
 
 
@@ -275,7 +275,7 @@ export default function Invoices() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary mb-1">{formatCurrency(totalToday)}</div>
+              <div className="text-3xl font-bold text-primary mb-1">{formatCOP(totalToday)}</div>
               <p className="text-xs text-muted-foreground">{invoicesToday.length} facturas emitidas hoy</p>
             </CardContent>
           </Card>
@@ -287,7 +287,7 @@ export default function Invoices() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold mb-1">{formatCurrency(totalThisMonth)}</div>
+              <div className="text-3xl font-bold mb-1">{formatCOP(totalThisMonth)}</div>
               <p className="text-xs text-accent font-medium">{invoicesThisMonth.length} facturas en total</p>
             </CardContent>
           </Card>
@@ -300,7 +300,7 @@ export default function Invoices() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-secondary mb-1">{pendingInvoices.length}</div>
-              <p className="text-xs text-muted-foreground">{formatCurrency(pendingTotal)} por cobrar</p>
+              <p className="text-xs text-muted-foreground">{formatCOP(pendingTotal)} por cobrar</p>
             </CardContent>
           </Card>
         </div>
@@ -366,7 +366,7 @@ export default function Invoices() {
                       <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 border-border">
                         <div className="text-left md:text-right">
                           <p className="text-xl font-bold text-primary">
-                            {formatCurrency(invoice.order?.total || 0)}
+                            {formatCOP(invoice.order?.total || 0)}
                           </p>
                         </div>
 
@@ -425,7 +425,7 @@ export default function Invoices() {
                   <SelectContent>
                     {availableOrders.map((order) => (
                       <SelectItem key={order.id} value={order.id}>
-                        {new Date(order.created_at).toLocaleDateString()} - {order.customer_name} - {formatCurrency(order.total)} (ID: {order.id.slice(0,8)})
+                        {new Date(order.created_at).toLocaleDateString()} - {order.customer_name} - {formatCOP(order.total)} (ID: {order.id.slice(0,8)})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -483,11 +483,11 @@ export default function Invoices() {
                 <div className="border-t pt-4 mt-4">
                   <div className="flex justify-between items-center mb-1">
                     <p className="text-muted-foreground text-sm">Subtotal</p>
-                    <p className="font-medium text-sm">{formatCurrency(selectedInvoice.order?.subtotal || selectedInvoice.order?.total || 0)}</p>
+                    <p className="font-medium text-sm">{formatCOP(selectedInvoice.order?.subtotal || selectedInvoice.order?.total || 0)}</p>
                   </div>
                   <div className="flex justify-between items-center mt-2 border-t pt-2">
                     <p className="font-bold text-lg">Total Pagado</p>
-                    <p className="font-bold text-2xl text-primary">{formatCurrency(selectedInvoice.order?.total || 0)}</p>
+                    <p className="font-bold text-2xl text-primary">{formatCOP(selectedInvoice.order?.total || 0)}</p>
                   </div>
                 </div>
               </div>

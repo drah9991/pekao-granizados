@@ -1,10 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DollarSign, ShoppingBag, Tag, ArrowUpRight, ArrowDownRight, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const formatMoney = (amount: number) => {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-};
+import { formatCOP } from "@/lib/currency";
 
 export function StatCards({ data, label }: { data: any, label: string }) {
   if (!data) return null;
@@ -20,7 +17,7 @@ export function StatCards({ data, label }: { data: any, label: string }) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-black mb-2 tracking-tighter text-white">{formatMoney(data.metrics.revenue.val)}</div>
+          <div className="text-4xl font-black mb-2 tracking-tighter text-white">{formatCOP(data.metrics.revenue.val)}</div>
           <div className="flex items-center gap-1.5">
             <div className={cn("flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black", data.metrics.revenue.delta >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500")}>
               {data.metrics.revenue.delta >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
@@ -62,7 +59,7 @@ export function StatCards({ data, label }: { data: any, label: string }) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-black mb-2 tracking-tighter text-white">{formatMoney(data.metrics.avgTicket.val)}</div>
+          <div className="text-4xl font-black mb-2 tracking-tighter text-white">{formatCOP(data.metrics.avgTicket.val)}</div>
           <div className="flex items-center gap-1.5">
             <div className={cn("flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black", data.metrics.avgTicket.delta >= 0 ? "bg-teal-500/10 text-teal-500" : "bg-red-500/10 text-red-500")}>
               {data.metrics.avgTicket.delta >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
@@ -87,7 +84,7 @@ export function StatCards({ data, label }: { data: any, label: string }) {
           <div className="flex items-center gap-2">
              <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
-               Perdida {formatMoney(data.metrics.cancelled.val * (data.metrics.avgTicket.val || 10000))} aprox.
+               Perdida {formatCOP(data.metrics.cancelled.val * (data.metrics.avgTicket.val || 10000))} aprox.
              </p>
           </div>
         </CardContent>

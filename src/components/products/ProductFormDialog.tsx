@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { Tables, Json, Enums } from "@/integrations/supabase/types";
 import React from "react"; // Corrected import statement
 
@@ -162,11 +162,17 @@ export default function ProductFormDialog({
               <Input
                 id="price"
                 type="number"
-                step="0.01"
+                step="1000"
                 min="0"
-                placeholder="0.00"
+                placeholder="0"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onBlur={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val)) {
+                    setFormData({ ...formData, price: (Math.round(val / 1000) * 1000).toString() });
+                  }
+                }}
                 className="mt-2"
                 required
               />
@@ -177,11 +183,17 @@ export default function ProductFormDialog({
               <Input
                 id="cost"
                 type="number"
-                step="0.01"
+                step="1000"
                 min="0"
-                placeholder="0.00"
+                placeholder="0"
                 value={formData.cost}
                 onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                onBlur={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val)) {
+                    setFormData({ ...formData, cost: (Math.round(val / 1000) * 1000).toString() });
+                  }
+                }}
                 className="mt-2"
               />
             </div>
@@ -225,7 +237,7 @@ export default function ProductFormDialog({
             <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
               <p className="text-sm text-muted-foreground mb-1">Margen de Ganancia</p>
               <p className="text-2xl font-bold text-accent">
-                {formatCurrency(parseFloat(formData.price) - parseFloat(formData.cost))}
+                {formatCOP(parseFloat(formData.price) - parseFloat(formData.cost))}
                 <span className="text-sm ml-2">
                   ({(((parseFloat(formData.price) - parseFloat(formData.cost)) / parseFloat(formData.price)) * 100).toFixed(1)}%)
                 </span>

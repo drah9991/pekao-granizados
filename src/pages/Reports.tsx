@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { reportService, type ReportConfig } from "@/lib/ReportService";
+import { formatCOP } from "@/lib/currency";
 
 type ReportType = "sales" | "inventory" | "movements";
 
@@ -154,7 +155,7 @@ export default function Reports() {
   const calculateSummary = (data: any[]) => {
     if (reportType === "sales") {
       const total = data.reduce((acc, curr) => acc + (curr.Total || 0), 0);
-      setSummary({ total, count: data.length, secondary: `Ticket Promedio: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(total / (data.length || 1))}` });
+      setSummary({ total, count: data.length, secondary: `Ticket Promedio: ${formatCOP(total / (data.length || 1))}` });
     } else if (reportType === "inventory") {
       const lowStock = data.filter(i => i.Estado === "Crítico").length;
       setSummary({ count: data.length, secondary: `Items Bajo Stock: ${lowStock}` });
@@ -442,9 +443,7 @@ export default function Reports() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Total Ventas</p>
-                          <p className="text-2xl font-bold text-emerald-400">
-                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(summary.total || 0)}
-                          </p>
+                             {formatCOP(summary.total || 0)}
                         </div>
                       </div>
                     </CardContent>
@@ -510,7 +509,7 @@ export default function Reports() {
                             {columnsByType[reportType].filter(c => selectedColumns.includes(c.dataKey)).map((col: any) => (
                               <TableCell key={col.dataKey} className="text-slate-300 py-4 font-medium text-sm group-hover:text-white">
                                 {typeof row[col.dataKey] === 'number' && (col.dataKey.toLowerCase().includes('price') || col.dataKey.toLowerCase().includes('total'))
-                                  ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(row[col.dataKey])
+                                  ? formatCOP(row[col.dataKey])
                                   : row[col.dataKey]}
                               </TableCell>
                             ))}

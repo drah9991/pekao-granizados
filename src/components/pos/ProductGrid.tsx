@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, Hash, WifiOff } from "lucide-react";
@@ -224,7 +224,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
                     {product.name}
                   </p>
                   <p className="font-black text-2xl bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-                    {formatCurrency(product.price)}
+                    {formatCOP(product.price)}
                   </p>
                 </div>
               </div>

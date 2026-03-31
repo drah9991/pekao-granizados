@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CartItem } from "@/lib/pos-types";
-import { formatCurrency } from "@/lib/formatters"; // Import the formatter
+import { formatCOP } from "@/lib/currency"; // Import the formatter
 import { Customer } from "@/components/pos/CustomerSelection";
 
 interface ReceiptDialogProps {
@@ -42,7 +42,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
               {/* Retirado sección de propina */}
               <p className="text-sm text-foreground font-semibold mb-1">Total Pagado</p>
               <p className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-                {formatCurrency(lastOrder.total)}
+                {formatCOP(lastOrder.total)}
               </p>
               
               <div className="flex flex-col gap-1 items-center justify-center">
@@ -62,11 +62,11 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                 <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-2 gap-2 text-xs">
                   <div className="bg-white/50 p-2 rounded border border-border/30">
                     <p className="text-muted-foreground mb-0.5">Efectivo</p>
-                    <p className="font-bold text-foreground">{formatCurrency(lastOrder.splitDetails.cash)}</p>
+                    <p className="font-bold text-foreground">{formatCOP(lastOrder.splitDetails.cash)}</p>
                   </div>
                   <div className="bg-white/50 p-2 rounded border border-border/30">
                     <p className="text-muted-foreground mb-0.5">Transferencia</p>
-                    <p className="font-bold text-blue-600">{formatCurrency(lastOrder.splitDetails.transfer)}</p>
+                    <p className="font-bold text-blue-600">{formatCOP(lastOrder.splitDetails.transfer)}</p>
                   </div>
                 </div>
               )}
@@ -75,7 +75,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-sm text-muted-foreground">Cambio Devuelto</p>
                   <p className="text-2xl font-bold text-accent">
-                    {formatCurrency(lastOrder.change)}
+                    {formatCOP(lastOrder.change)}
                   </p>
                 </div>
               )}
@@ -92,7 +92,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                   <p className="text-xs text-muted-foreground">📞 Contacto: {lastOrder.deliveryData.phone}</p>
                 )}
                 {lastOrder.deliveryData.fee > 0 && (
-                  <p className="text-xs text-blue-600 font-medium">Servicio: {formatCurrency(lastOrder.deliveryData.fee)}</p>
+                  <p className="text-xs text-blue-600 font-medium">Servicio: {formatCOP(lastOrder.deliveryData.fee)}</p>
                 )}
               </div>
             )}
@@ -128,7 +128,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                         </span>
                       )}
                     </div>
-                    <span className="font-bold shrink-0 ml-4">{formatCurrency(item.price * item.quantity)}</span>
+                    <span className="font-bold shrink-0 ml-4">{formatCOP(item.price * item.quantity)}</span>
                   </div>
                 ))
               }

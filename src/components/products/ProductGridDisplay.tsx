@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Package, Edit, Trash2, Eye, IceCream, Cherry, Wine, Candy } from "lucide-react";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { Tables, Enums } from "@/integrations/supabase/types";
 
 type Product = Tables<'products'>;
@@ -129,7 +129,7 @@ export default function ProductGridDisplay({
 
               {/* Product main info */}
               <h3 className="text-xl font-bold mb-1">{product.name}</h3>
-              <p className="text-2xl font-bold text-primary mb-2">{formatCurrency(product.price)}</p>
+              <p className="text-2xl font-bold text-primary mb-2">{formatCOP(product.price)}</p>
               {product.description && (
                 <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
               )}

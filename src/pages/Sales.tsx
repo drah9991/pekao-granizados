@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -305,7 +305,7 @@ export default function Sales() {
   const pendingOrdersCount = orders.filter(order => order.status === 'pending').length;
 
   const avgTicket = completedOrdersCount > 0 
-    ? orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total, 0) / completedOrdersCount 
+    ? Math.round(orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total, 0) / completedOrdersCount) 
     : 0;
 
   // Status counts for tabs
@@ -375,7 +375,7 @@ export default function Sales() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-black mb-2 tracking-tighter">{formatCurrency(totalSalesToday)}</div>
+              <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(totalSalesToday)}</div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500">
                   <ArrowUpRight className="w-3 h-3" />
@@ -413,7 +413,7 @@ export default function Sales() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-black mb-2 tracking-tighter">{formatCurrency(avgTicket)}</div>
+              <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(avgTicket)}</div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-slate-500 uppercase">por venta completada</span>
               </div>
@@ -539,7 +539,7 @@ export default function Sales() {
                               "font-black text-lg tabular-nums",
                               order.status === 'cancelled' ? "text-slate-600 line-through" : "text-white"
                             )}>
-                              {formatCurrency(order.total)}
+                              {formatCOP(order.total)}
                             </span>
                             {order.order_type === 'delivery' && (
                               <span className="flex items-center gap-1 text-[10px] text-cyan-500 font-black uppercase tracking-tight">
@@ -652,12 +652,12 @@ export default function Sales() {
                                   {item.qty}
                                 </span>
                                 <span>×</span>
-                                <span>{formatCurrency(item.price)} <span className="opacity-50 italic">c/u</span></span>
+                                <span>{formatCOP(item.price)} <span className="opacity-50 italic">c/u</span></span>
                               </div>
                             )}
                           </div>
                           <div className="shrink-0 ml-4">
-                            <span className="font-black text-sm">{formatCurrency(item.price * item.qty)}</span>
+                            <span className="font-black text-sm">{formatCOP(item.price * item.qty)}</span>
                           </div>
                         </div>
                       ))}
@@ -668,17 +668,17 @@ export default function Sales() {
                 <div className="border-t border-white/5 pt-3 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400 font-medium">Subtotal Base</span>
-                    <span className="font-bold">{formatCurrency(selectedOrder.subtotal)}</span>
+                    <span className="font-bold">{formatCOP(selectedOrder.subtotal)}</span>
                   </div>
                   {selectedOrder.order_type === 'delivery' && (
                     <div className="flex justify-between text-sm text-cyan-500 font-bold">
                       <span>Servicio de Domicilio</span>
-                      <span>{formatCurrency(selectedOrder.delivery_fee || 0)}</span>
+                      <span>{formatCOP(selectedOrder.delivery_fee || 0)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-black text-xl pt-2">
                     <span>Total Pagado</span>
-                    <span className="text-emerald-500">{formatCurrency(selectedOrder.total)}</span>
+                    <span className="text-emerald-500">{formatCOP(selectedOrder.total)}</span>
                   </div>
                 </div>
 
@@ -813,7 +813,7 @@ export default function Sales() {
                       <div key={item.id} className="flex items-center justify-between text-sm py-3 border-b border-white/[0.03] last:border-0 gap-3 group/item hover:bg-white/[0.02] rounded-xl px-2 transition-colors">
                         <div className="flex-1 min-w-0">
                           <p className="font-bold truncate text-white">{item.name}</p>
-                          <p className="text-[10px] text-slate-500 font-medium">{formatCurrency(item.price)} c/u</p>
+                          <p className="text-[10px] text-slate-500 font-medium">{formatCOP(item.price)} c/u</p>
                         </div>
                         
                         <div className="flex items-center gap-2">
@@ -838,7 +838,7 @@ export default function Sales() {
                         </div>
 
                         <div className="text-right min-w-[80px]">
-                          <p className="font-black">{formatCurrency(item.price * item.qty)}</p>
+                          <p className="font-black">{formatCOP(item.price * item.qty)}</p>
                         </div>
 
                         <Button 
@@ -858,7 +858,7 @@ export default function Sales() {
               <div className="bg-slate-900/30 p-5 rounded-2xl border border-white/5">
                 <div className="flex justify-between items-center font-black text-xl">
                   <span className="text-slate-300">Nuevo Total:</span>
-                  <span className="text-emerald-500">{formatCurrency(calculateEditTotals().total)}</span>
+                  <span className="text-emerald-500">{formatCOP(calculateEditTotals().total)}</span>
                 </div>
               </div>
 

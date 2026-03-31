@@ -88,13 +88,13 @@ export default function Dashboard() {
         const totalRevenue = completed.reduce((sum, o) => sum + (Number(o.total || 0) - Number(o.tip_amount || 0)), 0);
         const ordersCount = completed.length;
         const cancelledCount = cancelled.length;
-        const avgTicket = ordersCount > 0 ? totalRevenue / ordersCount : 0;
+        const avgTicket = ordersCount > 0 ? Math.round(totalRevenue / ordersCount) : 0;
 
         // Comparison Metrics
         const compOrders = (comparisonRes.data || []).filter(o => o.status === 'completed');
         const compRevenue = compOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
         const compCount = compOrders.length;
-        const compAvg = compCount > 0 ? compRevenue / compCount : 0;
+        const compAvg = compCount > 0 ? Math.round(compRevenue / compCount) : 0;
         const compCancelled = (comparisonRes.data || []).filter(o => o.status === 'cancelled').length;
 
         // Deltas

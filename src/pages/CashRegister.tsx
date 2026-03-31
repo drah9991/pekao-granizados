@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { DollarSign, CreditCard, Smartphone, Calculator, RefreshCw, TrendingUp, Clock, Receipt, ArrowUpRight, Banknote, Wallet, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import {
@@ -146,7 +146,7 @@ export default function CashRegister() {
     };
 
     // Computed metrics
-    const avgTicket = orders.length > 0 ? summary.total / orders.length : 0;
+    const avgTicket = orders.length > 0 ? Math.round(summary.total / orders.length) : 0;
 
     const cashPercentage = summary.total > 0 ? Math.round((summary.cash / summary.total) * 100) : 0;
     const transferPercentage = summary.total > 0 ? Math.round(((summary.transfer + summary.qr) / summary.total) * 100) : 0;
@@ -270,7 +270,7 @@ export default function CashRegister() {
                                 <div>
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] mb-2">Recaudación Total del Turno</p>
                                     <div className="text-5xl lg:text-6xl font-black tracking-tighter">
-                                        {formatCurrency(summary.total)}
+                                        {formatCOP(summary.total)}
                                     </div>
                                     <div className="flex flex-wrap items-center gap-3 mt-3">
                                         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black">
@@ -280,7 +280,7 @@ export default function CashRegister() {
                                         {orders.length > 0 && (
                                             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black">
                                                 <TrendingUp className="w-3 h-3" />
-                                                Ticket prom: {formatCurrency(avgTicket)}
+                                                Ticket prom: {formatCOP(avgTicket)}
                                             </div>
                                         )}
                                         {peakHour !== '--' && (
@@ -321,7 +321,7 @@ export default function CashRegister() {
                                                 <span className="text-[11px] font-black text-slate-300">Efectivo</span>
                                             </div>
                                             <div className="text-right">
-                                                <span className="text-[11px] font-black text-white">{formatCurrency(summary.cash)}</span>
+                                                <span className="text-[11px] font-black text-white">{formatCOP(summary.cash)}</span>
                                                 <span className="text-[10px] font-bold text-slate-500 ml-2">{cashPercentage}%</span>
                                             </div>
                                         </div>
@@ -337,7 +337,7 @@ export default function CashRegister() {
                                                 <span className="text-[11px] font-black text-slate-300">Transferencias / QR</span>
                                             </div>
                                             <div className="text-right">
-                                                <span className="text-[11px] font-black text-white">{formatCurrency(summary.transfer + summary.qr)}</span>
+                                                <span className="text-[11px] font-black text-white">{formatCOP(summary.transfer + summary.qr)}</span>
                                                 <span className="text-[10px] font-bold text-slate-500 ml-2">{transferPercentage}%</span>
                                             </div>
                                         </div>
@@ -353,7 +353,7 @@ export default function CashRegister() {
                                                 <span className="text-[11px] font-black text-slate-300">Datáfono</span>
                                             </div>
                                             <div className="text-right">
-                                                <span className="text-[11px] font-black text-white">{formatCurrency(summary.card)}</span>
+                                                <span className="text-[11px] font-black text-white">{formatCOP(summary.card)}</span>
                                                 <span className="text-[10px] font-bold text-slate-500 ml-2">{cardPercentage}%</span>
                                             </div>
                                         </div>
@@ -379,7 +379,7 @@ export default function CashRegister() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-4xl font-black mb-2 tracking-tighter">{formatCurrency(summary.cash)}</div>
+                            <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(summary.cash)}</div>
                             <div className="flex items-center gap-2">
                                 {summary.total > 0 ? (
                                     <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500">
@@ -402,7 +402,7 @@ export default function CashRegister() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-4xl font-black mb-2 tracking-tighter">{formatCurrency(summary.transfer + summary.qr)}</div>
+                            <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(summary.transfer + summary.qr)}</div>
                             <div className="flex items-center gap-2">
                                 {summary.total > 0 ? (
                                     <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-cyan-500/10 text-cyan-500">
@@ -425,7 +425,7 @@ export default function CashRegister() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-4xl font-black mb-2 tracking-tighter">{formatCurrency(summary.card)}</div>
+                            <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(summary.card)}</div>
                             <div className="flex items-center gap-2">
                                 {summary.total > 0 ? (
                                     <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-violet-500/10 text-violet-500">
@@ -448,7 +448,7 @@ export default function CashRegister() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-4xl font-black mb-2 tracking-tighter">{formatCurrency(avgTicket)}</div>
+                            <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(avgTicket)}</div>
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">por venta completada</span>
                             </div>
@@ -530,7 +530,7 @@ export default function CashRegister() {
                                                 </td>
                                                 <td className="py-5 text-right pr-2">
                                                     <span className="font-black text-lg text-white tabular-nums">
-                                                        {formatCurrency(order.total)}
+                                                        {formatCOP(order.total)}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -546,27 +546,27 @@ export default function CashRegister() {
                                         <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
                                         <div>
                                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Efectivo</p>
-                                            <p className="text-sm font-black text-white">{formatCurrency(summary.cash)}</p>
+                                            <p className="text-sm font-black text-white">{formatCOP(summary.cash)}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="w-3 h-3 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
                                         <div>
                                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Digital</p>
-                                            <p className="text-sm font-black text-white">{formatCurrency(summary.transfer + summary.qr)}</p>
+                                            <p className="text-sm font-black text-white">{formatCOP(summary.transfer + summary.qr)}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="w-3 h-3 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.4)]" />
                                         <div>
                                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Tarjeta</p>
-                                            <p className="text-sm font-black text-white">{formatCurrency(summary.card)}</p>
+                                            <p className="text-sm font-black text-white">{formatCOP(summary.card)}</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Gran Total</p>
-                                    <p className="text-2xl font-black text-emerald-500">{formatCurrency(summary.total)}</p>
+                                    <p className="text-2xl font-black text-emerald-500">{formatCOP(summary.total)}</p>
                                 </div>
                             </div>
                         </div>

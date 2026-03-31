@@ -10,7 +10,7 @@ import { Plus, Pencil, Trash2, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import Layout from "@/components/Layout";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 
 export const InventoryManagement = () => {
     const { storeId } = useAuth();
@@ -171,7 +171,18 @@ export const InventoryManagement = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Costo por Unidad ($)</Label>
-                                    <Input type="number" value={costPerUnit} onChange={(e) => setCostPerUnit(Number(e.target.value))} />
+                                    <Input 
+                                        type="number" 
+                                        step="1000"
+                                        value={costPerUnit} 
+                                        onChange={(e) => setCostPerUnit(Number(e.target.value))} 
+                                        onBlur={(e) => {
+                                            const val = Number(e.target.value);
+                                            if (!isNaN(val)) {
+                                                setCostPerUnit(Math.round(val / 1000) * 1000);
+                                            }
+                                        }}
+                                    />
                                 </div>
                                 <Button onClick={handleSave} className="w-full" disabled={saveMutation.isPending}>
                                     Guardar
@@ -212,7 +223,7 @@ export const InventoryManagement = () => {
                                                 {item.stock} {(item as any).unit || item.unit_of_measure}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="text-gray-600">${item.cost_per_unit}</TableCell>
+                                        <TableCell className="text-gray-600">{formatCOP(item.cost_per_unit || 0)}</TableCell>
                                         <TableCell className="text-right space-x-2">
                                             <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
                                                 <Pencil className="h-4 w-4 text-blue-500" />

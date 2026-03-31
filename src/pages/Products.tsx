@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, TablesInsert, Json, Enums } from "@/integrations/supabase/types";
 import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { createNotification } from "@/hooks/useNotifications";
 
 // Import new modular components
@@ -483,7 +483,7 @@ export default function Products() {
     active: products.filter(p => p.active).length,
     inactive: products.filter(p => !p.active).length,
     avgPrice: products.length > 0
-      ? products.reduce((sum, p) => sum + p.price, 0) / products.length
+      ? Math.round(products.reduce((sum, p) => sum + p.price, 0) / products.length)
       : 0,
   };
 

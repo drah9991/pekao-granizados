@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Product } from "@/lib/pos-types";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
@@ -157,7 +157,7 @@ export default function ProductCustomizationDialog({
                     >
                       <span className="font-semibold text-sm">{size.name}</span>
                       <span className="text-xs font-bold mt-1">
-                        {formatCurrency(product.price * size.multiplier)}
+                        {formatCOP(product.price * size.multiplier)}
                       </span>
                     </button>
                   ))}
@@ -192,7 +192,7 @@ export default function ProductCustomizationDialog({
                           </div>
                           <span className="font-medium text-sm">{topping.name}</span>
                         </div>
-                        <span className="text-sm font-bold text-primary">+{formatCurrency(topping.price)}</span>
+                        <span className="text-sm font-bold text-primary">+{formatCOP(topping.price)}</span>
                       </button>
                     );
                   })}
@@ -207,7 +207,7 @@ export default function ProductCustomizationDialog({
             Cancelar
           </Button>
           <Button onClick={handleAddToCart} className="gradient-primary min-h-[48px] text-base" disabled={!selectedSize && product.type !== 'sachet'}>
-            Agregar {formatCurrency(finalPrice)}
+            Agregar {formatCOP(finalPrice)}
           </Button>
         </DialogFooter>
       </DialogContent>

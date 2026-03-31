@@ -10,7 +10,7 @@ import {
   User as UserIcon, UserX, Wallet, CreditCard, Smartphone,
   RotateCcw
 } from "lucide-react";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -147,7 +147,7 @@ export default function CartSummary({
                   </div>
                 </div>
                 <p className="font-black text-lg text-white">
-                  {formatCurrency(item.price * item.quantity)}
+                  {formatCOP(item.price * item.quantity)}
                 </p>
               </div>
               
@@ -194,9 +194,20 @@ export default function CartSummary({
               <Input
                 type="number"
                 placeholder="0"
+                step={discountType === "fixed" ? "1000" : "0.1"}
                 value={discount || ""}
                 onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                className="h-9 w-20 bg-transparent border-none text-right font-black focus-visible:ring-0 px-2"
+                onBlur={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val)) {
+                    if (discountType === "fixed") {
+                      setDiscount(Math.round(val / 1000) * 1000);
+                    } else {
+                      setDiscount(parseFloat(val.toFixed(1)));
+                    }
+                  }
+                }}
+                className="h-9 w-24 bg-transparent border-none text-right font-black focus-visible:ring-0 px-2"
               />
               <div className="flex gap-1 h-9">
                 <Button
@@ -223,12 +234,12 @@ export default function CartSummary({
         <div className="space-y-1 py-4 px-2 bg-white/5 rounded-2xl border border-white/5 shadow-inner">
           <div className="flex justify-between items-center px-2">
             <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Subtotal</span>
-            <span className="text-sm font-bold text-slate-300">{formatCurrency(subtotal)}</span>
+            <span className="text-sm font-bold text-slate-300">{formatCOP(subtotal)}</span>
           </div>
           <div className="flex justify-between items-center py-2 px-2 border-t border-white/5 mt-1">
             <span className="text-xl font-black text-white uppercase tracking-tighter">Total</span>
             <span className="text-4xl font-black text-white drop-shadow-glow">
-              {formatCurrency(total)}
+              {formatCOP(total)}
             </span>
           </div>
         </div>

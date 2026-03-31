@@ -2,9 +2,7 @@ import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 
-const formatMoney = (amount: number) => {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-};
+import { formatCOP } from "@/lib/currency";
 
 export function PaymentMethodsWidget({ data }: { data: any }) {
   if (!data) return null;
@@ -36,7 +34,7 @@ export function PaymentMethodsWidget({ data }: { data: any }) {
               <Tooltip 
                 contentStyle={{ backgroundColor: 'rgba(15,17,23,0.9)', backdropFilter: 'blur(10px)', border: '1px solid #ffffff10', borderRadius: '20px' }}
                 itemStyle={{ color: '#fff', fontWeight: 800 }}
-                formatter={(val: number) => formatMoney(val)}
+                formatter={(val: number) => formatCOP(val)}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -50,7 +48,7 @@ export function PaymentMethodsWidget({ data }: { data: any }) {
               <span className="text-sm font-black text-slate-300">{item.name}</span>
             </div>
             <div className="text-right">
-              <p className="text-sm font-black text-white">{formatMoney(item.value)}</p>
+              <p className="text-sm font-black text-white">{formatCOP(item.value)}</p>
               <p className="text-[10px] font-bold text-slate-500">{item.percentage}%</p>
             </div>
           </div>

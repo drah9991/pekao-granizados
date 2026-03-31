@@ -229,7 +229,7 @@ export const useCart = () => {
   }, [subtotal, discount, discountType]);
 
   const total = useMemo(() => {
-    return Math.max(0, subtotal - discountAmount);
+    return Math.max(0, Math.round(subtotal - discountAmount));
   }, [subtotal, discountAmount]);
 
   const resetCart = () => {

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Package } from "lucide-react";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { Tables, Enums } from "@/integrations/supabase/types";
 import React from "react";
 
@@ -102,7 +102,7 @@ export default function ProductDetailsDialog({
                 <div>
                   <Label className="text-muted-foreground">Precio de Venta</Label>
                   <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(viewingProduct.price)}
+                    {formatCOP(viewingProduct.price)}
                   </p>
                 </div>
 
@@ -110,7 +110,7 @@ export default function ProductDetailsDialog({
                   <div>
                     <Label className="text-muted-foreground">Costo</Label>
                     <p className="text-2xl font-bold text-muted-foreground">
-                      {formatCurrency(viewingProduct.cost)}
+                      {formatCOP(viewingProduct.cost)}
                     </p>
                   </div>
                 )}
@@ -120,7 +120,7 @@ export default function ProductDetailsDialog({
                 <div className="p-4 bg-accent/10 rounded-lg">
                   <Label className="text-muted-foreground">Margen de Ganancia</Label>
                   <p className="text-2xl font-bold text-accent">
-                    {formatCurrency(viewingProduct.price - viewingProduct.cost)}
+                    {formatCOP(viewingProduct.price - viewingProduct.cost)}
                     <span className="text-sm ml-2">
                       ({(((viewingProduct.price - viewingProduct.cost) / viewingProduct.price) * 100).toFixed(1)}%)
                     </span>

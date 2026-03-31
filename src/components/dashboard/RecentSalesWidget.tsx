@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
-const formatMoney = (amount: number) => {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-};
+import { formatCOP } from "@/lib/currency";
 
 export function RecentSalesWidget({ data }: { data: any }) {
   if (!data) return null;
@@ -43,7 +41,7 @@ export function RecentSalesWidget({ data }: { data: any }) {
                     {order.status === 'completed' ? 'Completado' : 'Cancelado'}
                   </div>
                 </td>
-                <td className={cn("py-6 text-right font-black text-lg tabular-nums", order.status === 'cancelled' ? "text-slate-600 line-through" : "text-white")}>{formatMoney(order.total)}</td>
+                <td className={cn("py-6 text-right font-black text-lg tabular-nums", order.status === 'cancelled' ? "text-slate-600 line-through" : "text-white")}>{formatCOP(order.total)}</td>
               </tr>
             ))}
           </tbody>

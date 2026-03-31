@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Plus, Edit, Trash2, Users, MapPin, Phone, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { Tables } from "@/integrations/supabase/types";
 
 type Customer = Tables<'customers'> & { document_id?: string; consent_habeas_data?: boolean };
@@ -259,7 +259,7 @@ export default function Customers() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="font-bold text-accent">
-                                                    {formatCurrency(customer.total_spent || 0)}
+                                                    {formatCOP(customer.total_spent || 0)}
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground">
                                                     {customer.last_order_at ? new Date(customer.last_order_at).toLocaleDateString('es-CO') : 'Nunca'}

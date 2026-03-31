@@ -2,9 +2,7 @@ import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertTriangle, ShoppingBasket } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const formatMoney = (amount: number) => {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-};
+import { formatCOP } from "@/lib/currency";
 
 const getEmoji = (name: string) => {
   const n = name.toLowerCase();
@@ -40,7 +38,7 @@ export function PopularProductsWidget({ data }: { data: any }) {
                 </div>
                 <div className="text-right">
                   <p className="text-base font-black text-white">{p.sales} und</p>
-                  <p className="text-[10px] font-bold text-emerald-500">{formatMoney(p.revenue)}</p>
+                  <p className="text-[10px] font-bold text-emerald-500">{formatCOP(p.revenue)}</p>
                 </div>
               </div>
               <div className="h-2 bg-slate-800/50 rounded-full overflow-hidden p-[1px]">

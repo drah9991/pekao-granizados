@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { CreditCard, DollarSign, Smartphone, QrCode, Heart, X, Edit2, Truck, Home } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCOP } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
 export type PaymentMethod = "cash" | "card" | "transfer" | "qr" | "split";
@@ -80,7 +80,7 @@ export default function PaymentDialog({
   // Update amount received automatically when total changes and we are on cash (and haven't typed yet)
   useEffect(() => {
     if (isOpen && paymentMethod === "cash" && !hasTypedAmount) {
-        setAmountReceived(finalTotal.toFixed(0));
+        setAmountReceived(Math.round(finalTotal).toString());
     }
   }, [isOpen, paymentMethod, finalTotal, hasTypedAmount]);
 
@@ -97,7 +97,7 @@ export default function PaymentDialog({
       const cash = parseFloat(splitCash || "0");
       const transfer = parseFloat(splitTransfer || "0");
       if (Math.abs((cash + transfer) - finalTotal) > 1) {
-        toast.error(`La suma de efectivo y transferencia (${formatCurrency(cash + transfer)}) debe ser igual al total (${formatCurrency(finalTotal)})`);
+        toast.error(`La suma de efectivo y transferencia (${formatCOP(cash + transfer)}) debe ser igual al total (${formatCOP(finalTotal)})`);
         return;
       }
     }
@@ -178,10 +178,17 @@ export default function PaymentDialog({
                     <Input 
                       id="deliveryFee" 
                       type="number" 
+                      step="1000"
                       placeholder="0" 
                       className="pl-7"
                       value={deliveryFee}
                       onChange={(e) => setDeliveryFee(e.target.value)}
+                      onBlur={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) {
+                          setDeliveryFee((Math.round(val / 1000) * 1000).toString());
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -192,12 +199,12 @@ export default function PaymentDialog({
 
           <div className="flex justify-between items-end pb-2 border-b-2 border-dashed">
             <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Subtotal: {formatCurrency(subtotal)}</p>
-                {currentDeliveryFee > 0 && <p className="text-sm text-blue-500 font-medium">Domicilio: {formatCurrency(currentDeliveryFee)}</p>}
+                <p className="text-sm text-muted-foreground">Subtotal: {formatCOP(subtotal)}</p>
+                {currentDeliveryFee > 0 && <p className="text-sm text-blue-500 font-medium">Domicilio: {formatCOP(currentDeliveryFee)}</p>}
             </div>
             <div className="text-right">
                 <p className="text-sm font-semibold uppercase text-muted-foreground mr-1">Total a Pagar</p>
-                <p className="text-3xl font-black text-foreground">{formatCurrency(finalTotal)}</p>
+                <p className="text-3xl font-black text-foreground">{formatCOP(finalTotal)}</p>
             </div>
           </div>
 
@@ -232,26 +239,33 @@ export default function PaymentDialog({
               <Input
                 id="amount"
                 type="number"
+                step="1000"
                 value={amountReceived}
                 onChange={(e) => {
                   setAmountReceived(e.target.value);
                   setHasTypedAmount(true);
                 }}
+                onBlur={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val)) {
+                    setAmountReceived((Math.round(val / 1000) * 1000).toString());
+                  }
+                }}
                 className="text-2xl font-bold border-2 h-14"
-                placeholder="0.00"
+                placeholder="0"
               />
               {parseFloat(amountReceived || "0") >= finalTotal && (
                 <div className="mt-4 p-4 bg-accent/10 border-2 border-accent rounded-lg">
                   <p className="text-sm text-muted-foreground">Cambio a devolver</p>
                   <p className="text-3xl font-bold text-accent">
-                    {formatCurrency(change)}
+                    {formatCOP(change)}
                   </p>
                 </div>
               )}
               {parseFloat(amountReceived || "0") > 0 && parseFloat(amountReceived || "0") < finalTotal && (
                 <div className="mt-3 p-3 bg-destructive/10 border border-destructive/30 rounded-lg animate-in fade-in slide-in-from-top-2">
                   <p className="text-sm text-destructive font-bold">
-                    Falta: {formatCurrency(finalTotal - parseFloat(amountReceived || "0"))}
+                    Falta: {formatCOP(finalTotal - parseFloat(amountReceived || "0"))}
                   </p>
                   <Button 
                     variant="ghost" 
@@ -285,6 +299,7 @@ export default function PaymentDialog({
                     <Input
                       id="splitCash"
                       type="number"
+                      step="1000"
                       value={splitCash}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -292,7 +307,13 @@ export default function PaymentDialog({
                         // Auto-calculate the remaining for transfer if possible
                         const numericVal = parseFloat(val || "0");
                         if (numericVal <= finalTotal) {
-                          setSplitTransfer((finalTotal - numericVal).toString());
+                          setSplitTransfer((Math.round(finalTotal - numericVal)).toString());
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) {
+                          setSplitCash((Math.round(val / 1000) * 1000).toString());
                         }
                       }}
                       className="pl-7 font-bold h-12"
@@ -308,6 +329,7 @@ export default function PaymentDialog({
                     <Input
                       id="splitTransfer"
                       type="number"
+                      step="1000"
                       value={splitTransfer}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -315,7 +337,13 @@ export default function PaymentDialog({
                         // Auto-calculate the remaining for cash if possible
                         const numericVal = parseFloat(val || "0");
                         if (numericVal <= finalTotal) {
-                          setSplitCash((finalTotal - numericVal).toString());
+                          setSplitCash((Math.round(finalTotal - numericVal)).toString());
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) {
+                          setSplitTransfer((Math.round(val / 1000) * 1000).toString());
                         }
                       }}
                       className="pl-7 font-bold h-12 border-blue-200 focus:border-blue-400"
@@ -333,8 +361,8 @@ export default function PaymentDialog({
                     ? "text-green-600" 
                     : "text-destructive"
                 )}>
-                  {formatCurrency(parseFloat(splitCash || "0") + parseFloat(splitTransfer || "0"))} 
-                  / {formatCurrency(finalTotal)}
+                  {formatCOP(parseFloat(splitCash || "0") + parseFloat(splitTransfer || "0"))} 
+                  / {formatCOP(finalTotal)}
                 </span>
               </div>
             </div>
@@ -348,7 +376,7 @@ export default function PaymentDialog({
                 {paymentMethod === "transfer" && "Confirma la transferencia recibida por:"}
                 {paymentMethod === "qr" && "Confirma el pago por QR por:"}
               </p>
-              <p className="text-2xl font-bold text-foreground mt-1">{formatCurrency(finalTotal)}</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{formatCOP(finalTotal)}</p>
             </div>
           )}
         </div>

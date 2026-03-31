@@ -1,9 +1,7 @@
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const formatMoney = (amount: number) => {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-};
+import { formatCOP } from "@/lib/currency";
 
 export function SalesChartWidget({ data }: { data: any }) {
   if (!data) return null;
@@ -33,7 +31,7 @@ export function SalesChartWidget({ data }: { data: any }) {
             <Tooltip 
               contentStyle={{ backgroundColor: 'rgba(15,17,23,0.9)', backdropFilter: 'blur(10px)', border: '1px solid #ffffff10', borderRadius: '24px', padding: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
               itemStyle={{ color: '#fff', fontWeight: 900, fontSize: '14px' }}
-              formatter={(val: number) => [formatMoney(val), "Ingresos"]}
+              formatter={(val: number) => [formatCOP(val), "Ingresos"]}
               labelStyle={{ color: '#475569', fontWeight: 800, textTransform: 'uppercase', fontSize: '10px', marginBottom: '8px' }}
               cursor={{ stroke: '#10B981', strokeWidth: 2, strokeDasharray: '4 4' }}
             />
@@ -51,7 +49,7 @@ export function SalesChartWidget({ data }: { data: any }) {
         </div>
         <div className="space-y-1 border-x border-white/5 px-6 text-center">
            <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] mb-2">Venta Máxima</p>
-           <p className="text-xl font-black text-white">{formatMoney(data.maxSale)}</p>
+           <p className="text-xl font-black text-white">{formatCOP(data.maxSale)}</p>
         </div>
         <div className="space-y-1 text-right">
            <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] mb-2">Total Ítems</p>
