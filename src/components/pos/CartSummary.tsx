@@ -5,6 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { 
   Minus, Plus, Trash2, Percent, Tag, Receipt, 
   User as UserIcon, UserX, Wallet, CreditCard, Smartphone,
@@ -81,14 +93,31 @@ export default function CartSummary({
             </Badge>
           </h2>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onClearCart}
-          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors gap-2 font-bold uppercase text-[10px] tracking-widest"
-        >
-          Limpiar
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors gap-2 font-bold uppercase text-[10px] tracking-widest"
+            >
+              Limpiar
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Limpiar el carrito?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción eliminará todos los productos del pedido actual. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={onClearCart} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                Sí, limpiar carrito
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Customer Area */}
@@ -153,32 +182,50 @@ export default function CartSummary({
               
               <div className="flex items-center justify-between pt-1 border-t border-white/5 mt-1">
                 <div className="flex items-center bg-black/40 rounded-xl p-1 gap-1 border border-white/5 shadow-inner">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, -1)}
-                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, -1)}
+                        aria-label="Disminuir cantidad"
+                        className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Disminuir cantidad</TooltipContent>
+                  </Tooltip>
                   <span className="font-black text-sm w-8 text-center text-white">{item.quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, 1)}
-                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, 1)}
+                        aria-label="Aumentar cantidad"
+                        className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Aumentar cantidad</TooltipContent>
+                  </Tooltip>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeItem(item.id)}
-                  className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  <Trash2 className="w-4.5 h-4.5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeItem(item.id)}
+                      aria-label="Eliminar item"
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-4.5 h-4.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Eliminar item</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           ))
@@ -210,22 +257,34 @@ export default function CartSummary({
                 className="h-9 w-24 bg-transparent border-none text-right font-black focus-visible:ring-0 px-2"
               />
               <div className="flex gap-1 h-9">
-                <Button
-                  variant={discountType === "percent" ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setDiscountType("percent")}
-                  className={cn("h-full w-9 rounded-lg transition-all", discountType === "percent" && "gradient-primary border-none text-white")}
-                >
-                  <Percent className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={discountType === "fixed" ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setDiscountType("fixed")}
-                  className={cn("h-full w-9 rounded-lg transition-all", discountType === "fixed" && "gradient-primary border-none text-white shadow-lg")}
-                >
-                  <span className="font-bold text-sm">$</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={discountType === "percent" ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => setDiscountType("percent")}
+                      aria-label="Descuento porcentual"
+                      className={cn("h-full w-9 rounded-lg transition-all", discountType === "percent" && "gradient-primary border-none text-white")}
+                    >
+                      <Percent className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Descuento porcentual</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={discountType === "fixed" ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => setDiscountType("fixed")}
+                      aria-label="Descuento fijo"
+                      className={cn("h-full w-9 rounded-lg transition-all", discountType === "fixed" && "gradient-primary border-none text-white shadow-lg")}
+                    >
+                      <span className="font-bold text-sm">$</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Descuento fijo</TooltipContent>
+                </Tooltip>
               </div>
            </div>
         </div>
