@@ -7,11 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Search, Eye, Receipt, DollarSign, CalendarDays, Trash2, Edit, Truck, MapPin, Phone, TrendingUp, ShoppingBag, Clock, ArrowUpRight, Package } from "lucide-react";
+import { Search, Eye, Receipt, DollarSign, CalendarDays, Trash2, Edit, Truck, MapPin, Phone, TrendingUp, ShoppingBag, Clock, ArrowUpRight, Package, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
+import { useOrderItems } from "@/hooks/useOrderItems";
+import { OrderRowExpand } from "@/components/sales/OrderRowExpand";
+import { Fragment } from "react";
 import { formatCOP } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -57,6 +61,8 @@ export default function Sales() {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<OrderStatus | "all">("all");
   const [loading, setLoading] = useState(true);
   const [currentUserStoreId, setCurrentUserStoreId] = useState<string | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   // Dialog State
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null);
@@ -295,6 +301,49 @@ export default function Sales() {
     return matchesSearch;
   });
 
+  const handleToggleExpand = (id: string) => {
+    setExpandedRowId(expandedRowId === id ? null : id);
+  };
+
+  const handlePrefetchDetails = (id: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ['order-items', id],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('order_items')
+          .select('id, qty, price, subtotal, name, product:products(category)')
+          .eq('order_id', id);
+        if (error) throw error;
+        return data || [];
+      },
+      staleTime: 5 * 60_000,
+    });
+  };
+
+  const handleAnularOrder = async (order: OrderWithDetails) => {
+    const reason = prompt(`¿Estás seguro de anular el pedido #${order.id.slice(0, 8)}? Ingresa el motivo de la anulación (obligatorio):`);
+    
+    if (!reason || reason.trim().length === 0) {
+      if (reason !== null) toast.error("El motivo de anulación es obligatorio.");
+      return;
+    }
+
+    try {
+      // In a real scenario, we would log the reason in a 'movements' or 'audit' table
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', order.id);
+
+      if (error) throw error;
+      toast.success("Pedido anulado correctamente.");
+      fetchOrders();
+    } catch (error: any) {
+      console.error("Error cancelling order:", error);
+      toast.error("Error al anular el pedido: " + error.message);
+    }
+  };
+
   // Computed stats
   const totalSalesToday = orders
     .filter(order => new Date(order.created_at!).toDateString() === new Date().toDateString() && order.status === 'completed')
@@ -505,96 +554,124 @@ export default function Sales() {
                 <tbody className="divide-y divide-white/[0.03]">
                   {filteredOrders.map((order) => {
                     const statusConfig = getStatusConfig(order.status as string);
+                    const isExpanded = expandedRowId === order.id;
                     return (
-                      <tr key={order.id} className="group hover:bg-white/[0.02] transition-colors duration-200">
-                        <td className="py-5 pl-2">
-                          <span className="text-xs font-black text-slate-400 group-hover:text-white transition-colors">
-                            #{order.id.slice(0, 8)}
-                          </span>
-                        </td>
-                        <td className="py-5">
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-slate-300">
-                              {format(new Date(order.created_at!), 'dd MMM yyyy', { locale: es })}
-                            </span>
-                            <span className="text-[10px] text-slate-500 font-medium">
-                              {format(new Date(order.created_at!), 'hh:mm a')}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-5">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-black text-[10px] shadow-inner">
-                              {order.creator_profile?.name?.charAt(0)?.toUpperCase() || '?'}
-                            </div>
-                            <span className="text-xs font-bold text-slate-300">{order.creator_profile?.name || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td className="py-5">
-                          <span className="text-xs font-bold text-slate-300">{order.customer_details?.name || 'Cliente General'}</span>
-                        </td>
-                        <td className="py-5">
-                          <div className="flex flex-col">
-                            <span className={cn(
-                              "font-black text-lg tabular-nums",
-                              order.status === 'cancelled' ? "text-slate-600 line-through" : "text-white"
-                            )}>
-                              {formatCOP(order.total)}
-                            </span>
-                            {order.order_type === 'delivery' && (
-                              <span className="flex items-center gap-1 text-[10px] text-cyan-500 font-black uppercase tracking-tight">
-                                <Truck className="w-3 h-3" /> Domicilio
+                      <Fragment key={order.id}>
+                        <tr 
+                          className={cn(
+                            "group transition-all duration-300 cursor-pointer border-l-2 border-transparent",
+                            isExpanded ? "bg-white/[0.04] border-primary shadow-xl" : "hover:bg-white/[0.02]"
+                          )}
+                          onClick={() => handleToggleExpand(order.id)}
+                          onMouseEnter={() => handlePrefetchDetails(order.id)}
+                        >
+                          <td className="py-5 pl-4">
+                            <div className="flex items-center gap-3">
+                              <ChevronRight className={cn(
+                                "w-4 h-4 text-slate-600 transition-transform duration-300",
+                                isExpanded && "rotate-90 text-primary"
+                              )} />
+                              <span className="text-xs font-black text-slate-400 group-hover:text-white transition-colors">
+                                #{order.id.slice(0, 8)}
                               </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-5">
-                          <div className={cn(
-                            "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tight",
-                            statusConfig.bgClass,
-                            statusConfig.textClass,
-                            statusConfig.glowClass
-                          )}>
+                            </div>
+                          </td>
+                          <td className="py-5">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-slate-300">
+                                {format(new Date(order.created_at!), 'dd MMM yyyy', { locale: es })}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium">
+                                {format(new Date(order.created_at!), 'hh:mm a')}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-black text-[10px] shadow-inner">
+                                {order.creator_profile?.name?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
+                              <span className="text-xs font-bold text-slate-300">{order.creator_profile?.name || 'N/A'}</span>
+                            </div>
+                          </td>
+                          <td className="py-5">
+                            <span className="text-xs font-bold text-slate-300">{order.customer_details?.name || 'Cliente General'}</span>
+                          </td>
+                          <td className="py-5">
+                            <div className="flex flex-col">
+                              <span className={cn(
+                                "font-black text-lg tabular-nums",
+                                order.status === 'cancelled' ? "text-slate-600 line-through" : "text-white"
+                              )}>
+                                {formatCOP(order.total)}
+                              </span>
+                              {order.order_type === 'delivery' && (
+                                <span className="flex items-center gap-1 text-[10px] text-cyan-500 font-black uppercase tracking-tight">
+                                  <Truck className="w-3 h-3" /> Domicilio
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-5">
                             <div className={cn(
-                              "w-1.5 h-1.5 rounded-full",
-                              statusConfig.color,
-                              order.status === 'pending' && "animate-pulse"
-                            )} />
-                            {statusConfig.label}
-                          </div>
-                        </td>
-                        <td className="py-5 text-right pr-2">
-                          <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-all"
-                              onClick={() => handleViewDetails(order)}
-                              title="Ver detalles"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-xl hover:bg-indigo-500/10 hover:text-indigo-500 transition-all"
-                              onClick={() => handleOpenEdit(order)}
-                              title="Editar pedido"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-xl hover:bg-red-500/10 hover:text-red-500 transition-all"
-                              onClick={() => handleDeleteOrder(order)}
-                              title="Eliminar pedido"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
+                              "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tight",
+                              statusConfig.bgClass,
+                              statusConfig.textClass,
+                              statusConfig.glowClass
+                            )}>
+                              <div className={cn(
+                                "w-1.5 h-1.5 rounded-full",
+                                statusConfig.color,
+                                order.status === 'pending' && "animate-pulse"
+                              )} />
+                              {statusConfig.label}
+                            </div>
+                          </td>
+                          <td className="py-5 text-right pr-6">
+                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-all"
+                                onClick={(e) => { e.stopPropagation(); handleViewDetails(order); }}
+                                title="Ver detalles"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-xl hover:bg-indigo-500/10 hover:text-indigo-500 transition-all"
+                                onClick={(e) => { e.stopPropagation(); handleOpenEdit(order); }}
+                                title="Editar pedido"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-xl hover:bg-red-500/10 hover:text-red-500 transition-all"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order); }}
+                                title="Eliminar pedido"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={7} className="p-0 border-none bg-slate-900/10">
+                              <OrderRowExpand 
+                                order={order} 
+                                isOpen={isExpanded}
+                                onVerFactura={handleViewDetails}
+                                onAnular={handleAnularOrder}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
                   })}
                 </tbody>
