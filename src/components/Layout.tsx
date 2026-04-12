@@ -23,6 +23,9 @@ import { useTurn } from "@/hooks/useTurn";
 import { TurnStatusChip } from "@/components/TurnStatusChip";
 import NotificationCenter from "@/components/pos/NotificationCenter";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertManager } from "./alerts/AlertManager";
+import { useAlerts } from "@/hooks/useAlerts";
+import { useRealtimeAlerts } from "@/hooks/useRealtimeAlerts";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -42,8 +45,28 @@ export default function Layout({ children }: LayoutProps) {
   const { logoUrl, isLoadingBranding } = useBranding();
   const { userRole, isLoading: isLoadingAuth } = useAuth();
   const { role: currentRole, isLoading: isLoadingRole } = useCurrentRole();
-  const { activeTurn } = useTurn();
+  const { activeTurn, isLoading: isLoadingTurn } = useTurn();
   const lowStockCount = useLowStockCount();
+  const { showCriticalBanner, hideCriticalBanner } = useAlerts();
+
+  // Initialize Realtime listeners
+  useRealtimeAlerts();
+
+  // Handle automatic Critical Banner for Turn Status
+  useEffect(() => {
+    if (!isLoadingTurn && !activeTurn && location.pathname === '/pos') {
+      showCriticalBanner(
+        "Punto de Venta Bloqueado: No hay un turno activo para procesar ventas.",
+        "Iniciar Turno Ahora",
+        () => {
+           const sidebarTurnBtn = document.querySelector('[href="/pos"]') as HTMLElement;
+           sidebarTurnBtn?.click();
+        }
+      );
+    } else {
+      hideCriticalBanner();
+    }
+  }, [activeTurn, isLoadingTurn, location.pathname, showCriticalBanner, hideCriticalBanner]);
 
   // Usamos el rol de AuthContext preferentemente, o el del hook si no está disponible
   const effectiveRole = (userRole as Role) || currentRole;
@@ -287,6 +310,7 @@ export default function Layout({ children }: LayoutProps) {
         "flex-1 overflow-auto transition-all duration-300 ease-in-out pt-20",
         !isMobile && isSidebarOpen && "pl-64"
       )}>
+        <AlertManager />
         {children}
       </main>
     </div>

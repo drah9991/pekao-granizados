@@ -18,8 +18,12 @@ import { OrderRowExpand } from "@/components/sales/OrderRowExpand";
 import { Fragment } from "react";
 import { formatCOP } from "@/lib/currency";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from "date-fns";
 import { es } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
+import { X } from "lucide-react";
 
 type Order = Tables<'orders'>;
 
@@ -59,6 +63,11 @@ export default function Sales() {
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<OrderStatus | "all">("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => ({
+    from: startOfWeek(new Date(), { weekStartsOn: 1 }),
+    to: endOfWeek(new Date(), { weekStartsOn: 1 })
+  }));
+  const [quickFilter, setQuickFilter] = useState<string>("week");
   const [loading, setLoading] = useState(true);
   const [currentUserStoreId, setCurrentUserStoreId] = useState<string | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
@@ -292,13 +301,45 @@ export default function Sales() {
     }
   };
 
+  const handleQuickFilterChange = (value: string) => {
+    setQuickFilter(value);
+    const now = new Date();
+    switch (value) {
+      case "today":
+        setDateRange({ from: startOfDay(now), to: endOfDay(now) });
+        break;
+      case "week":
+        setDateRange({ from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) });
+        break;
+      case "month":
+        setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+        break;
+      case "year":
+        setDateRange({ from: startOfYear(now), to: endOfYear(now) });
+        break;
+      case "all":
+        setDateRange(undefined);
+        break;
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesSearch = !searchQuery ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.creator_profile?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer_details?.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesSearch;
+    let matchesDate = true;
+    if (dateRange?.from) {
+      const orderDate = new Date(order.created_at!);
+      if (dateRange.to) {
+        matchesDate = isWithinInterval(orderDate, { start: startOfDay(dateRange.from), end: endOfDay(dateRange.to) });
+      } else {
+        matchesDate = isWithinInterval(orderDate, { start: startOfDay(dateRange.from), end: endOfDay(dateRange.from) });
+      }
+    }
+
+    return matchesSearch && matchesDate;
   });
 
   const handleToggleExpand = (id: string) => {
@@ -345,16 +386,16 @@ export default function Sales() {
   };
 
   // Computed stats
-  const totalSalesToday = orders
-    .filter(order => new Date(order.created_at!).toDateString() === new Date().toDateString() && order.status === 'completed')
+  const totalSalesFiltered = filteredOrders
+    .filter(order => order.status === 'completed')
     .reduce((sum, order) => sum + order.total, 0);
 
-  const completedOrdersCount = orders.filter(order => order.status === 'completed').length;
+  const completedOrdersCount = filteredOrders.filter(order => order.status === 'completed').length;
   
-  const pendingOrdersCount = orders.filter(order => order.status === 'pending').length;
+  const pendingOrdersCount = filteredOrders.filter(order => order.status === 'pending').length;
 
   const avgTicket = completedOrdersCount > 0 
-    ? Math.round(orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total, 0) / completedOrdersCount) 
+    ? Math.round(filteredOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total, 0) / completedOrdersCount) 
     : 0;
 
   // Status counts for tabs
@@ -418,13 +459,13 @@ export default function Sales() {
           <Card className="bg-[#1C1F26] border-none rounded-[2.5rem] shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
             <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-emerald-500/0 via-emerald-500/40 to-emerald-500/0" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Ingresos Hoy</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{dateRange ? "Ingresos (Periodo)" : "Ingresos Totales"}</span>
               <div className="w-10 h-10 bg-emerald-500/10 rounded-[1rem] flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
                 <DollarSign className="w-5 h-5 text-emerald-500" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(totalSalesToday)}</div>
+              <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(totalSalesFiltered)}</div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500">
                   <ArrowUpRight className="w-3 h-3" />
@@ -447,7 +488,7 @@ export default function Sales() {
             <CardContent>
               <div className="text-4xl font-black mb-2 tracking-tighter">{completedOrdersCount}</div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">de {orders.length} pedidos totales</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">de {filteredOrders.length} pedidos totales</span>
               </div>
             </CardContent>
           </Card>
@@ -495,16 +536,117 @@ export default function Sales() {
           </Card>
         </div>
 
-        {/* Search Bar */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
+        {/* Search Bar & Time Filters */}
+        <div className="flex flex-col md:flex-row gap-4 items-center mb-2">
+          {/* Active Filter Badge */}
+          {dateRange && (
+            <Badge variant="outline" className="hidden md:flex shrink-0 h-12 px-4 bg-primary/10 border-primary/20 text-primary gap-3 rounded-2xl text-xs font-black uppercase tracking-widest">
+              <span>
+                Mostrando:{" "}
+                {quickFilter === "today" ? "Hoy" : 
+                 quickFilter === "week" ? "Esta sem." : 
+                 quickFilter === "month" ? format(new Date(), "MMMM yyyy", { locale: es }) :
+                 quickFilter === "year" ? format(new Date(), "yyyy") : "Rango"}
+              </span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-5 w-5 rounded-full hover:bg-primary/20 hover:text-white transition-colors" 
+                onClick={() => handleQuickFilterChange("all")}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          )}
+
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
             <Input
               placeholder="Buscar por ID, cajero o cliente..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-11 h-12 bg-[#1C1F26] border-slate-800/50 rounded-2xl text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-medium"
+              className="pl-11 h-12 bg-[#1C1F26] border-slate-800/50 rounded-2xl text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-medium w-full"
             />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            {/* Quick Filter Select */}
+            <Select value={quickFilter} onValueChange={handleQuickFilterChange}>
+              <SelectTrigger className="w-full md:w-[150px] h-12 bg-[#1C1F26] border-slate-800/50 rounded-2xl text-white focus:ring-primary/20 transition-all">
+                <SelectValue placeholder="Rango rápido" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1C1F26] border-slate-800 text-white rounded-2xl">
+                <SelectItem value="all">Todos los tiempos</SelectItem>
+                <SelectItem value="today">Hoy</SelectItem>
+                <SelectItem value="week">Esta Semana</SelectItem>
+                <SelectItem value="month">Este Mes</SelectItem>
+                <SelectItem value="year">Este Año</SelectItem>
+                <SelectItem value="custom">Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Date Range Picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant={"outline"}
+                  className={cn(
+                    "w-full md:w-[260px] h-12 justify-start text-left font-medium bg-[#1C1F26] border-slate-800/50 rounded-2xl text-white hover:bg-slate-800/50 hover:text-white transition-all",
+                    !dateRange && "text-slate-400"
+                  )}
+                >
+                  <CalendarDays className="mr-3 h-4 w-4 text-slate-400" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "LLL dd", { locale: es })} -{" "}
+                        {format(dateRange.to, "LLL dd, y", { locale: es })}
+                      </>
+                    ) : (
+                      format(dateRange.from, "LLL dd, y", { locale: es })
+                    )
+                  ) : (
+                    <span>Selec. rango fechas...</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-[#1C1F26] border-slate-800 rounded-[2rem] overflow-hidden shadow-2xl" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={(range) => {
+                    setDateRange(range);
+                    if (range) setQuickFilter("custom");
+                  }}
+                  numberOfMonths={2}
+                  className="bg-[#1C1F26] text-white p-4"
+                />
+              </PopoverContent>
+            </Popover>
+            
+            {/* Mobile Badge */}
+            {dateRange && (
+              <Badge variant="outline" className="md:hidden flex shrink-0 h-10 px-3 bg-primary/10 border-primary/20 text-primary gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest w-full justify-between mt-2">
+                <span>
+                  Mostrando:{" "}
+                  {quickFilter === "today" ? "Hoy" : 
+                   quickFilter === "week" ? "Esta sem." : 
+                   quickFilter === "month" ? format(new Date(), "MMMM yyyy", { locale: es }) :
+                   quickFilter === "year" ? format(new Date(), "yyyy") : "Rango"}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-5 w-5 rounded-full hover:bg-primary/20 hover:text-white p-0" 
+                  onClick={() => handleQuickFilterChange("all")}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -532,7 +674,9 @@ export default function Sales() {
               <Receipt className="w-20 h-20 mb-6" />
               <h3 className="text-xl font-black mb-2">Sin pedidos</h3>
               <p className="text-slate-400 font-medium text-sm">
-                {searchQuery || selectedStatusFilter !== "all"
+                {dateRange && filteredOrders.length === 0 && !searchQuery
+                  ? "No hubo ventas en este periodo."
+                  : searchQuery || selectedStatusFilter !== "all"
                   ? "No se encontraron pedidos con los filtros aplicados"
                   : "Aún no se han realizado ventas en esta tienda."}
               </p>

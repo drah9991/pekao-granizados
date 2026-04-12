@@ -30,6 +30,7 @@ interface ProductFormDialogProps {
     variants: Json | null;
     recipe: Json | null;
     type: ProductType;
+    stock: string;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     name: string;
@@ -44,6 +45,7 @@ interface ProductFormDialogProps {
     variants: Json | null;
     recipe: Json | null;
     type: ProductType;
+    stock: string;
   }>>;
   onSave: () => void;
   isProcessing: boolean;
@@ -195,6 +197,19 @@ export default function ProductFormDialog({
                   }
                 }}
                 className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="stock">Stock en Tienda</Label>
+              <Input
+                id="stock"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                className="mt-2 font-bold"
               />
             </div>
 

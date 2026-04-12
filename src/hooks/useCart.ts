@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Customer } from "@/components/pos/CustomerSelection";
+import { useAlerts } from "@/hooks/useAlerts";
 
 // Utility function to ensure cart items are valid and clean them up
 const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
@@ -32,6 +33,7 @@ const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
 };
 
 export const useCart = () => {
+  const { notifyCritical } = useAlerts();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
@@ -40,12 +42,29 @@ export const useCart = () => {
   const [pricingRules, setPricingRules] = useState<any[]>([]);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [lastRemovedCart, setLastRemovedCart] = useState<{
+    items: CartItem[];
+    discount: number;
+    discountType: "percent" | "fixed";
+    customer: Customer | null;
+  } | null>(null);
 
   useEffect(() => {
     // Clean cart on initial load to ensure data consistency
     setCart(prevCart => cleanCartItems(prevCart));
     fetchUserStoreIdAndData();
   }, []);
+
+  const restoreLastCart = () => {
+    if (lastRemovedCart) {
+      setCart(lastRemovedCart.items);
+      setDiscount(lastRemovedCart.discount);
+      setDiscountType(lastRemovedCart.discountType);
+      setSelectedCustomer(lastRemovedCart.customer);
+      setLastRemovedCart(null);
+      toast.success("Carrito restaurado");
+    }
+  };
 
   const fetchUserStoreIdAndData = async () => {
     try {
@@ -120,6 +139,13 @@ export const useCart = () => {
     selectedToppingIds: string[],
     customized: boolean = false
   ) => {
+    const currentQty = cart.reduce((sum, i) => i.productId === product.id ? sum + i.quantity : sum, 0);
+
+    if (product.stock !== undefined && (currentQty + 1) > product.stock) {
+      notifyCritical(`Stock insuficiente de ${product.name}`);
+      return;
+    }
+
     const size = selectedSizeId ? availableSizes.find(s => s.id === selectedSizeId) : null;
     const validToppings = availableToppings.filter(t => selectedToppingIds.includes(t.id));
 
@@ -194,6 +220,7 @@ export const useCart = () => {
       customizationId,
       originalPrice: originalPrice !== basePrice ? originalPrice + toppingsPrice : undefined,
       discountMessage,
+      maxStock: product.stock,
     };
 
     setCart(prevCart => cleanCartItems([...prevCart, newItem]));
@@ -205,13 +232,22 @@ export const useCart = () => {
   };
 
   const updateQuantity = (id: string, delta: number) => {
-    const updatedCart = cart.map(item => {
-      if (item.id === id) {
-        const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : item;
+    const item = cart.find(i => i.id === id);
+    if (item && delta > 0 && item.maxStock !== undefined) {
+       const currentTotal = cart.reduce((sum, i) => i.productId === item.productId ? sum + i.quantity : sum, 0);
+       if (currentTotal + delta > item.maxStock) {
+         notifyCritical(`Límite de stock alcanzado (${item.maxStock})`);
+         return;
+       }
+    }
+
+    const updatedCart = cart.map(cartItem => {
+      if (cartItem.id === id) {
+        const newQty = cartItem.quantity + delta;
+        return newQty > 0 ? { ...cartItem, quantity: newQty } : cartItem;
       }
-      return item;
-    }).filter(item => item.quantity > 0);
+      return cartItem;
+    }).filter(cartItem => cartItem.quantity > 0);
 
     setCart(cleanCartItems(updatedCart));
   };
@@ -233,6 +269,14 @@ export const useCart = () => {
   }, [subtotal, discountAmount]);
 
   const resetCart = () => {
+    if (cart.length > 0) {
+      setLastRemovedCart({
+        items: [...cart],
+        discount,
+        discountType,
+        customer: selectedCustomer
+      });
+    }
     setCart([]);
     setDiscount(0);
     setDiscountType("percent");
@@ -253,6 +297,7 @@ export const useCart = () => {
     discountAmount,
     total,
     resetCart,
+    restoreLastCart,
     selectedCustomer,
     setSelectedCustomer
   };

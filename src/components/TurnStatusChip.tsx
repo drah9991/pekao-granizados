@@ -18,6 +18,7 @@ import { Loader2, Play, CircleOff, AlertCircle, PauseCircle, PlayCircle } from '
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAlerts } from '@/hooks/useAlerts';
 
 export function TurnStatusChip() {
   const { activeTurn, isLoading, openTurn, closeTurn, pauseTurn, resumeTurn } = useTurn();
@@ -25,6 +26,7 @@ export function TurnStatusChip() {
   const [isClosing, setIsClosing] = useState(false);
   const [amount, setAmount] = useState<string>("");
   const [notes, setNotes] = useState("");
+  const { showBlockingModal } = useAlerts();
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -46,7 +48,29 @@ export function TurnStatusChip() {
 
   const handleCloseTurn = async () => {
     try {
-      await closeTurn(parseFloat(amount) || 0, notes);
+      const closingAmount = parseFloat(amount) || 0;
+      
+      // Mocked expected amount logic for demonstration
+      // In a real scenario, this would come from a query to the 'orders' table
+      const expectedAmount = (activeTurn?.opening_amount || 0) + 150000; // Mock sales: 150k
+      const difference = Math.abs(closingAmount - expectedAmount);
+      const THRESHOLD = 5000; 
+
+      if (difference > THRESHOLD) {
+        showBlockingModal(
+          "Diferencia de Caja Detectada",
+          "Se ha detectado una discrepancia significativa entre el monto contado y el esperado por el sistema.",
+          {
+            expected: `$${expectedAmount.toLocaleString()}`,
+            actual: `$${closingAmount.toLocaleString()}`,
+            diff: `$${difference.toLocaleString()}`
+          }
+        );
+        // We don't return here because the user can "Understand and Continue" from the modal,
+        // but we show the modal to ensure they are aware.
+      }
+
+      await closeTurn(closingAmount, notes);
       setIsClosing(false);
       setAmount("");
       setNotes("");

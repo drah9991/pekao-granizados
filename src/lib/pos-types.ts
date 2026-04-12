@@ -13,6 +13,7 @@ export interface CartItem {
   customizationId?: string;
   originalPrice?: number;
   discountMessage?: string;
+  maxStock?: number;
 }
 
 export interface Product {
@@ -31,6 +32,7 @@ export interface Product {
   created_at: string | null;
   store_id: string | null;
   cost: number | null;
+  stock?: number;
 }
 
 export interface Size {

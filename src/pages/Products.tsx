@@ -59,6 +59,7 @@ export default function Products() {
     variants: null as Json | null,
     recipe: null as Json | null,
     type: "granizado" as ProductType,
+    stock: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -156,11 +157,23 @@ export default function Products() {
       variants: null,
       recipe: null,
       type: "granizado",
+      stock: "",
     });
     setProductDialogIsOpen(true);
   };
 
-  const openEditDialog = (product: Product) => {
+  const openEditDialog = async (product: Product) => {
+    let currentStock = "0";
+    if (userStoreId) {
+      const { data } = await supabase
+        .from("store_stock")
+        .select("qty")
+        .eq("product_id", product.id)
+        .eq("store_id", userStoreId)
+        .single();
+      if (data) currentStock = data.qty.toString();
+    }
+
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -175,6 +188,7 @@ export default function Products() {
       variants: product.variants || null,
       recipe: product.recipe || null,
       type: product.type || "granizado",
+      stock: currentStock,
     });
     setProductDialogIsOpen(true);
   };
@@ -210,7 +224,7 @@ export default function Products() {
         .insert({
           product_id: newProductData.id,
           store_id: userStoreId,
-          qty: 0,
+          qty: parseInt(formData.stock) || 0,
           min_qty: 0,
         });
       if (stockError) throw stockError;
@@ -235,6 +249,29 @@ export default function Products() {
     if (error) throw error;
 
     if (userStoreId) {
+      const { data: existingStock } = await supabase
+        .from("store_stock")
+        .select("id")
+        .eq("product_id", productId)
+        .eq("store_id", userStoreId)
+        .single();
+        
+      if (existingStock) {
+        await supabase
+          .from("store_stock")
+          .update({ qty: parseInt(formData.stock) || 0, updated_at: new Date().toISOString() })
+          .eq("id", existingStock.id);
+      } else {
+        await supabase
+          .from("store_stock")
+          .insert({
+            product_id: productId,
+            store_id: userStoreId,
+            qty: parseInt(formData.stock) || 0,
+            min_qty: 0,
+          });
+      }
+
       await createNotification({
         store_id: userStoreId,
         title: "Producto Actualizado",

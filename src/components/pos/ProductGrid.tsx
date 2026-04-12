@@ -72,13 +72,13 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
         .from("products")
         .select(`
           *,
+          store_stock ( qty ),
           recipes (
             inventory_items (
               stock
             )
           )
         `)
-        .eq('store_id', storeId!)
         .eq('active', true)
         .order("name", { ascending: true });
 
@@ -86,7 +86,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
       
       const productsWithStock = (data || []).map((p: any) => ({
         ...p,
-        stock: p.recipes?.[0]?.inventory_items?.stock
+        stock: p.store_stock?.[0]?.qty ?? 0
       }));
 
       setProducts(productsWithStock);
@@ -193,28 +193,41 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
         {filteredProducts.map((product) => {
           const colorClass = CATEGORY_COLORS[product.type || "default"] || CATEGORY_COLORS.default;
           const emoji = CATEGORY_EMOJI[product.type || "other"] || "📦";
-          const isLowStock = product.stock !== undefined && product.stock <= 10;
+          const qty = product.stock || 0;
+          const isOutOfStock = qty === 0;
+          const isLowStock = qty > 0 && qty < 10;
 
           return (
             <button
               key={product.id}
-              onClick={() => onProductSelect(product)}
-              className="group relative h-48 rounded-[2rem] border border-white/5 overflow-hidden transition-all duration-300 hover:shadow-elevated hover:-translate-y-2 active:scale-95 bg-white/5"
+              onClick={() => {
+                if (isOutOfStock) {
+                  toast.error(`Sin existencias de ${product.name}`);
+                  return;
+                }
+                onProductSelect(product);
+              }}
+              className={`group relative h-48 rounded-[2rem] border border-white/5 overflow-hidden transition-all duration-300 ${
+                isOutOfStock ? "opacity-50 grayscale hover:scale-100 cursor-not-allowed" : "hover:shadow-elevated hover:-translate-y-2 active:scale-95 bg-white/5"
+              }`}
             >
               {/* Background Glow */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${colorClass} opacity-10 group-hover:opacity-20 transition-opacity`} />
+              <div className={`absolute inset-0 bg-gradient-to-br ${colorClass} opacity-10 ${!isOutOfStock && 'group-hover:opacity-20'} transition-opacity`} />
               
               <div className="relative h-full p-5 flex flex-col items-start justify-between">
                 <div className="w-full flex items-start justify-between">
-                  <div className={`p-4 rounded-2xl bg-gradient-to-br ${colorClass} shadow-lg group-hover:scale-110 transition-transform`}>
+                  <div className={`p-4 rounded-2xl bg-gradient-to-br ${colorClass} shadow-lg ${!isOutOfStock && 'group-hover:scale-110'} transition-transform`}>
                      <span className="text-3xl filter drop-shadow-md">{emoji}</span>
                   </div>
                   {product.stock !== undefined && (
                     <Badge 
-                       variant={isLowStock ? "destructive" : "secondary"}
-                       className={`font-black text-[10px] px-2 py-0.5 rounded-full ${!isLowStock && 'bg-emerald-500/20 text-emerald-400 border-none'}`}
+                       className={`font-black text-[10px] px-2 py-0.5 rounded-full border-none ${
+                        isOutOfStock ? "bg-red-500 text-white" : 
+                        isLowStock ? "bg-orange-500 text-white" : 
+                        "bg-emerald-500/20 text-emerald-400"
+                       }`}
                     >
-                      {product.stock.toFixed(0)} uds
+                      Stock: {qty}
                     </Badge>
                   )}
                 </div>

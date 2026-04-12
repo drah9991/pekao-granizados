@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useTurn } from "@/hooks/useTurn";
 import { offlineService } from "@/lib/OfflineService";
+import { useAlerts } from "@/hooks/useAlerts";
 
 export default function POS() {
   const {
@@ -32,6 +33,7 @@ export default function POS() {
     discountAmount,
     total,
     resetCart,
+    restoreLastCart,
     selectedCustomer,
     setSelectedCustomer
   } = useCart();
@@ -47,6 +49,7 @@ export default function POS() {
   const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<PaymentMethod>("cash");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const { notifyInfo, notifyWarning, notifyCritical } = useAlerts();
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -84,6 +87,13 @@ export default function POS() {
     onClearCart: () => {
       if (cart.length > 0 && window.confirm("¿Estás seguro de que deseas limpiar todo el carrito?")) {
         resetCart();
+        toast("Carrito vaciado", {
+          action: {
+            label: "Deshacer",
+            onClick: () => restoreLastCart()
+          },
+          duration: 5000
+        });
       }
     }
   });
@@ -104,11 +114,11 @@ export default function POS() {
 
   const handleOpenPaymentDialog = (method: PaymentMethod = "cash") => {
     if (cart.length === 0) {
-      toast.error("El carrito está vacío");
+      notifyWarning("El carrito está vacío");
       return;
     }
     if (!selectedCustomer) {
-      toast.error("Debe seleccionar un cliente antes de proceder al pago");
+      notifyWarning("Debe seleccionar un cliente antes de proceder al pago");
       return;
     }
     setDefaultPaymentMethod(method);
@@ -133,7 +143,7 @@ export default function POS() {
       if (!storeId) throw new Error("No se pudo obtener la información de la tienda.");
 
       if (!activeTurn || activeTurn.status === 'paused') {
-        toast.error("Debes tener un turno activo para procesar ventas.");
+        notifyCritical("Debes tener un turno activo para procesar ventas.");
         return;
       }
 
@@ -192,7 +202,7 @@ export default function POS() {
         // Offline Flow
         const offlineOrder = await offlineService.saveOfflineOrder(salePayload);
         orderData = offlineOrder.id;
-        toast.info("Venta guardada localmente (Modo Offline)");
+        notifyInfo("Venta guardada localmente (Modo Offline)");
         checkPendingOrders();
       }
 
@@ -209,13 +219,13 @@ export default function POS() {
         splitDetails
       });
 
-      toast.success("¡Venta procesada exitosamente!");
+      notifyInfo("¡Venta procesada exitosamente!");
       setPaymentDialogIsOpen(false);
       setReceiptDialogIsOpen(true);
       resetCart();
     } catch (error: any) {
       console.error("Error processing sale:", error);
-      toast.error("Error al procesar la venta: " + error.message);
+      notifyCritical("Error al procesar la venta: " + error.message);
     } finally {
       setIsProcessing(false);
     }
@@ -223,7 +233,7 @@ export default function POS() {
 
   const handleSync = async () => {
     if (!isOnline) {
-      toast.error("No hay conexión a internet para sincronizar.");
+      notifyCritical("No hay conexión a internet para sincronizar.");
       return;
     }
 
@@ -231,7 +241,7 @@ export default function POS() {
     try {
       const pending = await offlineService.getPendingOrders();
       if (pending.length === 0) {
-        toast.info("No hay pedidos pendientes.");
+        notifyInfo("No hay pedidos pendientes.");
         return;
       }
 
@@ -252,10 +262,10 @@ export default function POS() {
 
       await checkPendingOrders();
       if (successCount > 0) {
-        toast.success(`Sincronización completada: ${successCount} pedidos subidos.`);
+        notifyInfo(`Sincronización completada: ${successCount} pedidos subidos.`);
       }
     } catch (error: any) {
-      toast.error("Error durante la sincronización: " + error.message);
+      notifyCritical("Error durante la sincronización: " + error.message);
     } finally {
       setIsProcessing(false);
     }
@@ -263,25 +273,9 @@ export default function POS() {
   return (
     <Layout>
       <div className="h-full flex flex-col lg:flex-row bg-slate-950 relative overflow-hidden">
-        {/* Turn Blocking Overlay */}
-        {(!activeTurn || activeTurn.status === 'paused') && !isLoadingTurn && (
-          <div className="absolute inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-            <div className="w-20 h-20 rounded-full bg-rose-500/10 flex items-center justify-center mb-6 border border-rose-500/20 shadow-[0_0_30px_rgba(244,63,94,0.2)]">
-              <Shield className="w-10 h-10 text-rose-500 animate-pulse" />
-            </div>
-            <h2 className="text-3xl font-black text-white mb-2 tracking-tight uppercase">Punto de Venta Bloqueado</h2>
-            <p className="text-slate-400 max-w-sm mb-8 font-medium">
-              No hay un turno de caja activo para esta tienda. Para comenzar a vender o reanudar tu turno, utiliza el panel de **"Gestión de Turno"** en la barra lateral.
-            </p>
-            <div className="flex gap-4">
-               <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-slate-400 uppercase tracking-widest">
-                 Tienda: {storeId?.slice(0,8)}
-               </div>
-            </div>
-          </div>
-        )}
-        {/* Mobile/Tablet Navigation Tabs - Visible below 1024px */}
-        <div className="flex lg:hidden border-b border-white/10 bg-slate-900 sticky top-0 z-20 items-center pr-4">
+        {/* Turn Blocking logic is now handled by CriticalBanner in Layout */}
+        {/* Mobile/Tablet Navigation Tabs - Visible below 800px */}
+        <div className="flex lg:hidden xl:hidden border-b border-white/10 bg-slate-900 sticky top-0 z-20 items-center pr-4 [@media(min-width:800px)]:hidden">
           <button
             onClick={() => setViewMode("products")}
             className={cn(
@@ -327,7 +321,7 @@ export default function POS() {
         {/* Product Grid - Visible always on lg+, or when viewMode is products on smaller screens */}
         <div className={cn(
           "flex-1 h-full overflow-hidden flex flex-col",
-          viewMode !== "products" && "hidden lg:flex"
+          viewMode !== "products" && "hidden lg:flex [@media(min-width:800px)]:flex"
         )}>
           {/* Desktop Offline Indicator */}
           {!isOnline && (
@@ -360,7 +354,7 @@ export default function POS() {
         {/* Cart Summary - Visible always on lg+, or when viewMode is cart on smaller screens */}
         <div className={cn(
           "h-full overflow-hidden flex flex-col",
-          viewMode !== "cart" && "hidden lg:flex"
+          viewMode !== "cart" && "hidden lg:flex [@media(min-width:800px)]:flex"
         )}>
           <CartSummary
             cart={cart}
@@ -375,7 +369,17 @@ export default function POS() {
             total={total}
             onCheckout={() => handleOpenPaymentDialog()}
             onQuickPayment={(method) => handleOpenPaymentDialog(method as PaymentMethod)}
-            onClearCart={() => resetCart()}
+            onClearCart={() => {
+               resetCart();
+               toast("Carrito vaciado", {
+                 action: {
+                   label: "Deshacer",
+                   onClick: () => restoreLastCart()
+                 },
+                 duration: 6000
+               });
+            }}
+            restoreLastCart={restoreLastCart}
             selectedCustomer={selectedCustomer}
             setSelectedCustomer={setSelectedCustomer}
           />

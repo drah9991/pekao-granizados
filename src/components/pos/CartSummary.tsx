@@ -28,6 +28,7 @@ interface CartSummaryProps {
   onCheckout: () => void;
   onQuickPayment: (method: string) => void;
   onClearCart: () => void;
+  restoreLastCart?: () => void;
   selectedCustomer: Customer | null;
   setSelectedCustomer: (customer: Customer | null) => void;
 }
@@ -58,7 +59,7 @@ export default function CartSummary({
     } else {
       setSelectedCustomer({
         id: 'generic',
-        name: 'Consumidor Final',
+        name: 'Público General',
         document_id: '222222222222',
         phone: null,
         email: null
@@ -110,7 +111,7 @@ export default function CartSummary({
             )}
           >
             {isAnonymous ? <UserIcon size={16} /> : <UserX size={16} />}
-            <span className="text-[9px] font-black uppercase tracking-tighter">Anón.</span>
+            <span className="text-[9px] font-black uppercase tracking-tighter">Públ. Gral</span>
           </Button>
         </div>
       </div>
@@ -157,18 +158,18 @@ export default function CartSummary({
                     variant="ghost"
                     size="icon"
                     onClick={() => updateQuantity(item.id, -1)}
-                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                    className="h-10 w-10 sm:h-8 sm:w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-5 h-5 sm:w-4 sm:h-4" />
                   </Button>
-                  <span className="font-black text-sm w-8 text-center text-white">{item.quantity}</span>
+                  <span className="font-black text-lg sm:text-sm w-10 sm:w-8 text-center text-white">{item.quantity}</span>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => updateQuantity(item.id, 1)}
-                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                    className="h-10 w-10 sm:h-8 sm:w-8 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
                 <Button
@@ -190,44 +191,74 @@ export default function CartSummary({
         {/* Discount Row */}
         <div className="flex items-center justify-between gap-4">
            <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Descuento</Label>
-           <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
-              <Input
-                type="number"
-                placeholder="0"
-                step={discountType === "fixed" ? "1000" : "0.1"}
-                value={discount || ""}
-                onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                onBlur={(e) => {
-                  const val = parseFloat(e.target.value);
-                  if (!isNaN(val)) {
-                    if (discountType === "fixed") {
-                      setDiscount(Math.round(val / 1000) * 1000);
-                    } else {
-                      setDiscount(parseFloat(val.toFixed(1)));
-                    }
-                  }
-                }}
-                className="h-9 w-24 bg-transparent border-none text-right font-black focus-visible:ring-0 px-2"
-              />
-              <div className="flex gap-1 h-9">
-                <Button
-                  variant={discountType === "percent" ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setDiscountType("percent")}
-                  className={cn("h-full w-9 rounded-lg transition-all", discountType === "percent" && "gradient-primary border-none text-white")}
-                >
-                  <Percent className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={discountType === "fixed" ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setDiscountType("fixed")}
-                  className={cn("h-full w-9 rounded-lg transition-all", discountType === "fixed" && "gradient-primary border-none text-white shadow-lg")}
-                >
-                  <span className="font-bold text-sm">$</span>
-                </Button>
-              </div>
-           </div>
+            <div className="flex flex-col gap-2">
+               <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    step={discountType === "fixed" ? "1000" : "0.1"}
+                    value={discount || ""}
+                    onChange={(e) => {
+                       const val = parseFloat(e.target.value) || 0;
+                       // Safety Cap at 50% for percent, or 50% of subtotal for fixed
+                       if (discountType === "percent" && val > 50) return;
+                       if (discountType === "fixed" && val > subtotal * 0.5) return;
+                       setDiscount(val);
+                    }}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        if (discountType === "fixed") {
+                          setDiscount(Math.round(val / 1000) * 1000);
+                        } else {
+                          setDiscount(parseFloat(val.toFixed(1)));
+                        }
+                      }
+                    }}
+                    className="h-9 w-24 bg-transparent border-none text-right font-black focus-visible:ring-0 px-2"
+                  />
+                  <div className="flex gap-1 h-9">
+                    <Button
+                      variant={discountType === "percent" ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => setDiscountType("percent")}
+                      className={cn("h-full w-9 rounded-lg transition-all", discountType === "percent" && "gradient-primary border-none text-white")}
+                    >
+                      <Percent className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant={discountType === "fixed" ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => setDiscountType("fixed")}
+                      className={cn("h-full w-9 rounded-lg transition-all", discountType === "fixed" && "gradient-primary border-none text-white shadow-lg")}
+                    >
+                      <span className="font-bold text-sm">$</span>
+                    </Button>
+                  </div>
+               </div>
+               {/* Quick Discount Presets */}
+               <div className="flex gap-2">
+                 {[5, 10, 15].map(v => (
+                    <Button 
+                      key={v}
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => { setDiscountType('percent'); setDiscount(v); }}
+                      className="h-7 px-3 text-[10px] font-black border-white/10 hover:bg-white/10 uppercase tracking-tighter"
+                    >
+                      -{v}%
+                    </Button>
+                 ))}
+                 <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => { setDiscount(0); }}
+                    className="h-7 px-3 text-[10px] font-black border-white/10 hover:text-destructive uppercase tracking-tighter"
+                 >
+                    Limpiar
+                 </Button>
+               </div>
+            </div>
         </div>
 
         {/* Totals */}
@@ -268,7 +299,7 @@ export default function CartSummary({
              className="h-12 bg-white/5 border-white/10 rounded-xl flex flex-col gap-0.5 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all group"
            >
               <Smartphone size={16} className="text-purple-400 group-hover:scale-110 transition-transform" />
-              <span className="text-[9px] font-black uppercase">Nequi/Tra.</span>
+              <span className="text-[9px] font-black uppercase">Nequi / QR</span>
            </Button>
         </div>
 
