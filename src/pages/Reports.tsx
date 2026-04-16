@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar as CalendarIcon, FileSpreadsheet, FileText, Download, Loader2, BarChart3, Eye, RefreshCcw, Check, ChevronRight, Hash, DollarSign, Package as PackageIcon, ShoppingCart } from "lucide-react";
+import { Calendar as CalendarIcon, FileSpreadsheet, FileText, Download, Loader2, BarChart3, Eye, RefreshCcw, Check, ChevronRight, Hash, DollarSign, Package as PackageIcon, ShoppingCart, Zap, TrendingUp, TrendingDown, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,8 +20,26 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { reportService, type ReportConfig } from "@/lib/ReportService";
 import { formatCOP } from "@/lib/currency";
+import { motion, AnimatePresence } from "framer-motion";
 
 type ReportType = "sales" | "inventory" | "movements";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 100, damping: 15 }
+  }
+};
 
 export default function Reports() {
   const { storeId } = useAuth();
@@ -38,7 +56,6 @@ export default function Reports() {
   const [groupBy, setGroupBy] = useState<string>("none");
   const [summary, setSummary] = useState<{ total?: number; count?: number; secondary?: string } | null>(null);
 
-  // Available columns per report type
   const columnsByType: Record<string, { header: string; dataKey: string }[]> = {
     sales: [
       { header: "ID", dataKey: "ID" },
@@ -66,7 +83,6 @@ export default function Reports() {
     ]
   };
 
-  // Reset columns when report type changes
   useEffect(() => {
     setSelectedColumns(columnsByType[reportType].map(c => c.dataKey));
     setPreviewData([]);
@@ -96,7 +112,7 @@ export default function Reports() {
     return data.map(order => ({
       ID: order.id.slice(0, 8),
       Fecha: format(new Date(order.created_at!), 'dd/MM/yyyy HH:mm'),
-      Cliente: order.customers?.name || 'Genérico',
+      Cliente: order.customers?.name || 'GENÉRICO',
       Empleado: order.profiles?.name || 'N/A',
       Metodo_Pago: (order.payment as any)?.method || 'N/A',
       Subtotal: order.subtotal,
@@ -115,7 +131,7 @@ export default function Reports() {
     if (error) throw error;
 
     return data.map(item => ({
-      Nombre: item.name,
+      Nombre: item.name.toUpperCase(),
       SKU: item.sku || '-',
       Unidad: item.unit_of_measure,
       Stock_Actual: item.stock,
@@ -144,8 +160,8 @@ export default function Reports() {
 
     return data.map(mov => ({
       Fecha: format(new Date(mov.created_at!), 'dd/MM/yyyy HH:mm'),
-      Producto: mov.products?.name || 'N/A',
-      Tipo: mov.type === 'entry' ? 'Entrada' : 'Salida',
+      Producto: (mov.products?.name || 'N/A').toUpperCase(),
+      Tipo: mov.type === 'entry' ? 'ENTRADA' : 'SALIDA',
       Cantidad: mov.qty,
       Motivo: mov.reason || '-',
       Usuario: mov.profiles?.name || 'N/A'
@@ -155,13 +171,13 @@ export default function Reports() {
   const calculateSummary = (data: any[]) => {
     if (reportType === "sales") {
       const total = data.reduce((acc, curr) => acc + (curr.Total || 0), 0);
-      setSummary({ total, count: data.length, secondary: `Ticket Promedio: ${formatCOP(total / (data.length || 1))}` });
+      setSummary({ total, count: data.length, secondary: `TICKET PROMEDIO: ${formatCOP(total / (data.length || 1))}` });
     } else if (reportType === "inventory") {
-      const lowStock = data.filter(i => i.Estado === "Crítico").length;
-      setSummary({ count: data.length, secondary: `Items Bajo Stock: ${lowStock}` });
+      const lowStock = data.filter(i => i.Estado === "BAJO").length;
+      setSummary({ count: data.length, secondary: `ITEMS BAJO STOCK: ${lowStock}` });
     } else if (reportType === "movements") {
       const entries = data.filter(m => m.Tipo === "ENTRADA").length;
-      setSummary({ count: data.length, secondary: `Entradas: ${entries} / Salidas: ${data.length - entries}` });
+      setSummary({ count: data.length, secondary: `ENTRADAS: ${entries} / SALIDAS: ${data.length - entries}` });
     }
   };
 
@@ -184,10 +200,8 @@ export default function Reports() {
       else if (reportType === "inventory") data = await fetchInventoryData();
       else if (reportType === "movements") data = await fetchMovementsData();
 
-      const rawDataCount = data.length;
       calculateSummary(data);
 
-      // Apply grouping logic if enabled
       if (groupBy !== "none" && reportType === "sales") {
         const groupedMap: Record<string, any> = {};
         const dateDisplay = format(dateRange.from, 'dd/MM/yyyy') === format(dateRange.to, 'dd/MM/yyyy')
@@ -217,7 +231,7 @@ export default function Reports() {
       }
     } catch (error: any) {
       console.error("Error loading preview:", error);
-      toast.error("Error al cargar vista previa");
+      toast.error("Fallo técnico en generación de vista previa");
     } finally {
       setIsLoadingPreview(false);
     }
@@ -241,9 +255,9 @@ export default function Reports() {
       const filteredColumns = columnsByType[reportType].filter(c => selectedColumns.includes(c.dataKey));
       
       const config: ReportConfig = {
-        title: reportType === 'sales' ? "Reporte de Ventas" : reportType === 'inventory' ? "Estado de Inventario" : "Kardex de Movimientos",
-        subtitle: `${reportType === 'sales' ? 'Ventas' : reportType === 'inventory' ? 'Inventario' : 'Movimientos'} desde ${format(dateRange.from, 'dd/MM/yyyy')} hasta ${format(dateRange.to, 'dd/MM/yyyy')}`,
-        fileName: `reporte_${reportType}`,
+        title: reportType === 'sales' ? "REPORTE DE VENTAS" : reportType === 'inventory' ? "ESTADO DE INVENTARIO" : "KARDEX DE MOVIMIENTOS",
+        subtitle: `${reportType === 'sales' ? 'VENTAS' : reportType === 'inventory' ? 'INVENTARIO' : 'MOVIMIENTOS'} DESDE ${format(dateRange.from, 'dd/MM/yyyy')} HASTA ${format(dateRange.to, 'dd/MM/yyyy')}`,
+        fileName: `REPORTE_PEKAO_${reportType.toUpperCase()}`,
         columns: filteredColumns
       };
 
@@ -252,10 +266,10 @@ export default function Reports() {
       } else {
         reportService.exportToPDF(data, config);
       }
-      toast.success("Reporte generado con éxito");
+      toast.success("Documento generado y exportado");
     } catch (error: any) {
       console.error("Error exporting report:", error);
-      toast.error("Error al generar reporte");
+      toast.error("Error crítico en exportación de datos");
     } finally {
       setIsExporting(false);
     }
@@ -263,282 +277,286 @@ export default function Reports() {
 
   return (
     <Layout>
-      <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-              <BarChart3 className="text-primary h-8 w-8" />
-              Reportes Ejecutivos
-            </h1>
-            <p className="text-muted-foreground mt-1">Genera y exporta informes detallados de tu negocio.</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Configuración del Reporte */}
-          <Card className="md:col-span-1 bg-slate-900/50 border-white/5 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-lg">Configuración</CardTitle>
-              <CardDescription>Selecciona el tipo y rango.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-400">Tipo de Informe</label>
-                <Select value={reportType} onValueChange={(v) => setReportType(v as ReportType)}>
-                  <SelectTrigger className="bg-slate-950/50 border-white/10 text-white">
-                    <SelectValue placeholder="Seleccionar tipo" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-white/10 text-white">
-                    <SelectItem value="sales">Ventas Mensuales</SelectItem>
-                    <SelectItem value="inventory">Estado de Inventario</SelectItem>
-                    <SelectItem value="movements">Kardex de Movimientos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {reportType !== "inventory" && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-400">Rango de Fechas</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal bg-slate-950/50 border-white/10 text-white",
-                          !dateRange && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-                        {dateRange?.from ? (
-                          dateRange.to ? (
-                            <>
-                              {format(dateRange.from, "dd LLL", { locale: es })} -{" "}
-                              {format(dateRange.to, "dd LLL", { locale: es })}
-                            </>
-                          ) : (
-                            format(dateRange.from, "LLL dd, y")
-                          )
-                        ) : (
-                          <span>Seleccionar fecha</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-slate-900 border-white/10" align="start">
-                      <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={dateRange?.from}
-                        selected={{ from: dateRange.from, to: dateRange.to }}
-                        onSelect={(range: any) => range?.from && range?.to && setDateRange(range)}
-                        numberOfMonths={1}
-                        className="bg-slate-900 text-white"
-                        locale={es}
-                      />
-                    </PopoverContent>
-                  </Popover>
+      <motion.div 
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="min-h-screen text-foreground p-6 lg:p-10 space-y-10"
+      >
+        {/* Header Section */}
+        <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-8 animate-pro-in">
+            <div className="flex items-center gap-6">
+                <div className="w-20 h-20 rounded-[2rem] bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-glow-pro group-hover:scale-110 transition-all duration-700 overflow-hidden relative">
+                    <BarChart3 className="w-10 h-10 text-indigo-400 relative z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent" />
                 </div>
-              )}
-
-              <div className="space-y-4">
-                <Label className="text-sm font-bold text-slate-400 uppercase tracking-widest">Personalización</Label>
-                <div className="grid grid-cols-1 gap-2">
-                  <p className="text-xs text-muted-foreground mb-1">Columnas a incluir:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {columnsByType[reportType].map((col) => (
-                      <Badge 
-                        key={col.dataKey}
-                        variant="secondary"
-                        className={cn(
-                          "cursor-pointer px-3 py-1.5 transition-all border",
-                          selectedColumns.includes(col.dataKey) 
-                            ? "bg-primary/20 text-primary border-primary/30" 
-                            : "bg-white/5 text-muted-foreground border-transparent opacity-50"
-                        )}
-                        onClick={() => toggleColumn(col.dataKey)}
-                      >
-                        {selectedColumns.includes(col.dataKey) && <Check className="w-3 h-3 mr-1" />}
-                        {col.header}
-                      </Badge>
-                    ))}
-                  </div>
+                <div>
+                    <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tighter mb-1 bg-gradient-to-r from-foreground via-foreground/80 to-foreground/40 bg-clip-text text-transparent italic uppercase font-space-grotesk whitespace-nowrap">
+                    Executive Analytics
+                    </h1>
+                    <p className="text-indigo-400 font-black uppercase tracking-[0.3em] text-[10px] italic font-space-grotesk">
+                    Business Intelligence • Data Visualization v2.0
+                    </p>
                 </div>
-
-                {reportType === "sales" && (
-                   <div className="pt-2">
-                    <p className="text-xs text-muted-foreground mb-2">Agrupar por:</p>
-                    <Select value={groupBy} onValueChange={setGroupBy}>
-                      <SelectTrigger className="bg-white/5 border-white/10 h-10">
-                        <SelectValue placeholder="Sin agrupar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sin agrupar</SelectItem>
-                        <SelectItem value="payment">Método de Pago</SelectItem>
-                        <SelectItem value="employee">Cajero/Vendedor</SelectItem>
-                      </SelectContent>
-                    </Select>
-                   </div>
-                )}
-              </div>
-
-              <Separator className="bg-white/5" />
-
-              <div className="pt-2 space-y-3">
+            </div>
+            
+            <div className="flex flex-wrap gap-4">
                 <Button 
-                  onClick={handleLoadPreview} 
-                  variant="secondary"
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white border-none shadow-lg shadow-blue-900/20 h-12"
-                  disabled={isLoadingPreview}
+                    onClick={handleLoadPreview} 
+                    className="h-14 px-8 rounded-2xl bg-primary text-primary-foreground font-black italic uppercase tracking-widest text-[10px] hover:shadow-glow-pro transition-all gap-4 border-none shadow-pro"
+                    disabled={isLoadingPreview}
                 >
-                  {isLoadingPreview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4 text-white/80" />}
-                  Generar Datos
+                    {isLoadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" /> }
+                    Refrescar Telemetría
                 </Button>
-                
-                <div className="pt-2 grid grid-cols-2 gap-2">
-                  <Button 
-                    onClick={() => handleExport("excel")} 
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white border-none h-12"
-                    disabled={isExporting || previewData.length === 0}
-                  >
-                    {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
-                    Excel
-                  </Button>
-                  <Button 
-                    onClick={() => handleExport("pdf")} 
-                    variant="outline"
-                    className="flex-1 border-white/10 bg-rose-950/20 hover:bg-rose-900/30 text-rose-200 h-12 hover:text-white"
-                    disabled={isExporting || previewData.length === 0}
-                  >
-                    {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                    PDF
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+        </motion.div>
 
-          {/* Vista Previa Interactiva */}
-          <div className="md:col-span-2 space-y-6">
-            {/* Resumen Ejecutivo */}
-            {summary && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="bg-slate-900/50 border-white/5 backdrop-blur-sm">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-blue-500/10 rounded-xl">
-                        <Hash className="h-6 w-6 text-blue-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Registros</p>
-                        <p className="text-2xl font-bold">{summary.count}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                {reportType === 'sales' && (
-                  <Card className="bg-slate-900/50 border-white/5 backdrop-blur-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-500/10 rounded-xl">
-                          <DollarSign className="h-6 w-6 text-emerald-500" />
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+            {/* Left Column: Configuration Bento */}
+            <motion.div variants={itemVariants} className="xl:col-span-4 space-y-8">
+                <Card className="bg-muted border border-border rounded-[3rem] shadow-pro glass-pro p-10 group overflow-hidden relative">
+                    <CardHeader className="px-0 pt-0 pb-8 border-b border-border/50 mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-muted border border-border rounded-2xl text-foreground/40">
+                                <Zap className="w-5 h-5" />
+                            </div>
+                            <CardTitle className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight">Configuration</CardTitle>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Total Ventas</p>
-                             {formatCOP(summary.total || 0)}
+                    </CardHeader>
+                    <CardContent className="px-0 space-y-8">
+                        <div className="space-y-3">
+                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">PARÁMETRO DE REPORTE</label>
+                            <Select value={reportType} onValueChange={(v) => setReportType(v as ReportType)}>
+                                <SelectTrigger className="h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk focus:ring-primary/20 shadow-pro transition-all">
+                                    <SelectValue placeholder="SELECCIONAR TIPO" />
+                                </SelectTrigger>
+                                <SelectContent className="glass-pro border-border rounded-3xl">
+                                    <SelectItem value="sales" className="text-[10px] font-black uppercase italic">VENTAS MENSUALES</SelectItem>
+                                    <SelectItem value="inventory" className="text-[10px] font-black uppercase italic">ESTADO DE INVENTARIO</SelectItem>
+                                    <SelectItem value="movements" className="text-[10px] font-black uppercase italic">KARDEX DE MOVIMIENTOS</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                      </div>
+
+                        {reportType !== "inventory" && (
+                            <div className="space-y-3">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">VENTANA DE TIEMPO</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            className="w-full h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk justify-start px-6 gap-3 hover:bg-muted transition-all border shadow-pro"
+                                        >
+                                            <CalendarIcon className="w-4 h-4 text-indigo-400" />
+                                            {dateRange?.from ? (
+                                                dateRange.to ? (
+                                                    <span className="text-foreground">
+                                                        {format(dateRange.from, "dd LLL", { locale: es })} — {format(dateRange.to, "dd LLL", { locale: es })}
+                                                    </span>
+                                                ) : (
+                                                    format(dateRange.from, "LLL dd, y")
+                                                )
+                                            ) : (
+                                                <span>Seleccionar fecha</span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 bg-background border-border rounded-3xl shadow-pro" align="start">
+                                        <Calendar
+                                            initialFocus
+                                            mode="range"
+                                            defaultMonth={dateRange?.from}
+                                            selected={{ from: dateRange.from, to: dateRange.to }}
+                                            onSelect={(range: any) => range?.from && range?.to && setDateRange(range)}
+                                            numberOfMonths={1}
+                                            className="text-foreground"
+                                            locale={es}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        )}
+
+                        <div className="space-y-6">
+                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">COLUMN MASTER (FILTER)</label>
+                            <div className="flex flex-wrap gap-3">
+                                {columnsByType[reportType].map((col) => (
+                                    <button 
+                                        key={col.dataKey}
+                                        onClick={() => toggleColumn(col.dataKey)}
+                                        className={cn(
+                                            "px-4 h-9 rounded-xl text-[9px] font-black uppercase italic tracking-widest transition-all border",
+                                            selectedColumns.includes(col.dataKey) 
+                                                ? "bg-primary/20 text-primary border-primary/40 shadow-glow-pro" 
+                                                : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                                        )}
+                                    >
+                                        {col.header}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {reportType === "sales" && (
+                            <div className="space-y-3 pt-4">
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">AGRUPACIÓN TÁCTICA</label>
+                                <Select value={groupBy} onValueChange={setGroupBy}>
+                                    <SelectTrigger className="h-14 bg-muted/40 border-border rounded-2xl text-[10px] font-black uppercase tracking-widest italic font-space-grotesk focus:ring-primary/20 transition-all">
+                                        <SelectValue placeholder="SIN AGRUPAR" />
+                                    </SelectTrigger>
+                                    <SelectContent className="glass-pro border-border rounded-2xl">
+                                        <SelectItem value="none" className="text-[10px] font-black uppercase italic">DIRECTO (DETALLADO)</SelectItem>
+                                        <SelectItem value="payment" className="text-[10px] font-black uppercase italic">VÍA MÉTODO DE PAGO</SelectItem>
+                                        <SelectItem value="employee" className="text-[10px] font-black uppercase italic">VÍA ANALISTA DE CAJA</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        <div className="pt-10 grid grid-cols-2 gap-4">
+                            <Button 
+                                onClick={() => handleExport("excel")} 
+                                className="h-16 rounded-[1.5rem] bg-emerald-500/10 text-emerald-500 font-black italic uppercase tracking-widest text-[10px] hover:bg-emerald-500 hover:text-primary-foreground transition-all shadow-pro border border-emerald-500/20 gap-3"
+                                disabled={isExporting || previewData.length === 0}
+                            >
+                                <FileSpreadsheet className="w-4 h-4" /> Excel Matrix
+                            </Button>
+                            <Button 
+                                onClick={() => handleExport("pdf")} 
+                                className="h-16 rounded-[1.5rem] bg-rose-500/10 text-rose-500 font-black italic uppercase tracking-widest text-[10px] hover:bg-rose-500 hover:text-primary-foreground transition-all shadow-pro border border-rose-500/20 gap-3"
+                                disabled={isExporting || previewData.length === 0}
+                            >
+                                <FileText className="w-4 h-4" /> PDF Report
+                            </Button>
+                        </div>
                     </CardContent>
-                  </Card>
-                )}
-                <Card className="bg-slate-900/50 border-white/5 backdrop-blur-sm">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-amber-500/10 rounded-xl">
-                        {reportType === 'sales' ? <ShoppingCart className="h-6 w-6 text-amber-500" /> : <PackageIcon className="h-6 w-6 text-amber-500" />}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Observación</p>
-                        <p className="text-sm font-bold text-slate-300">{summary.secondary}</p>
-                      </div>
-                    </div>
-                  </CardContent>
                 </Card>
-              </div>
-            )}
+            </motion.div>
 
-            <Card className="bg-slate-900/50 border-white/5 backdrop-blur-sm relative overflow-hidden h-[500px] flex flex-col">
-              <CardHeader className="flex-none bg-slate-950/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">Vista Previa de {reportType.toUpperCase()}</CardTitle>
-                    <CardDescription>
-                      {previewData.length > 0 
-                        ? `Mostrando ${previewData.length} registros.`
-                        : 'Utiliza el panel lateral para generar los datos.'}
-                    </CardDescription>
-                  </div>
-                  {previewData.length > 0 && (
-                    <div className="flex gap-2">
-                       <Badge variant="outline" className="text-[10px] border-white/10 uppercase font-black tracking-widest text-primary/80">
-                         {selectedColumns.length} columnas
-                       </Badge>
-                       {groupBy !== 'none' && (
-                         <Badge variant="outline" className="text-[10px] border-emerald-500/20 bg-emerald-500/5 text-emerald-400 uppercase font-black tracking-widest">
-                           Agrupado por {groupBy}
-                         </Badge>
-                       )}
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-hidden p-0">
-                {previewData.length > 0 ? (
-                  <ScrollArea className="h-full w-full">
-                    <Table>
-                      <TableHeader className="bg-slate-950 sticky top-0 z-20 shadow-md">
-                        <TableRow className="border-white/5 hover:bg-slate-950">
-                          {columnsByType[reportType].filter(c => selectedColumns.includes(c.dataKey)).map((col: any) => (
-                            <TableHead key={col.dataKey} className="text-slate-400 font-black uppercase text-[10px] tracking-wider py-5">
-                              {col.header}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {previewData.map((row, idx) => (
-                          <TableRow key={idx} className="border-white/5 hover:bg-white/5 transition-colors group">
-                            {columnsByType[reportType].filter(c => selectedColumns.includes(c.dataKey)).map((col: any) => (
-                              <TableCell key={col.dataKey} className="text-slate-300 py-4 font-medium text-sm group-hover:text-white">
-                                {typeof row[col.dataKey] === 'number' && (col.dataKey.toLowerCase().includes('price') || col.dataKey.toLowerCase().includes('total'))
-                                  ? formatCOP(row[col.dataKey])
-                                  : row[col.dataKey]}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </ScrollArea>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
-                    <div className="p-8 bg-slate-950/50 rounded-full border border-white/5 shadow-inner">
-                      <BarChart3 className="h-16 w-16 text-slate-800 animate-pulse" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-bold text-slate-400">Panel de Inspector vacío</h3>
-                      <p className="text-sm text-slate-500 max-w-xs mx-auto">
-                        Configura tus requerimientos a la izquierda y haz clic en "Generar Datos" para iniciar el análisis.
-                      </p>
-                    </div>
-                    <Button onClick={handleLoadPreview} variant="outline" className="mt-4 border-white/10 hover:bg-white/5">
-                       Cargar datos ahora
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+            {/* Right Column: Intelligence Bento Grid */}
+            <motion.div variants={itemVariants} className="xl:col-span-8 space-y-10">
+                {/* Summary Tiles */}
+                <AnimatePresence mode="wait">
+                    {summary && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                        >
+                            <Card className="bg-[#1C1F26] border border-white/5 rounded-[2.5rem] shadow-pro glass-pro p-8">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic font-space-grotesk">REGISTROS DETECTADOS</span>
+                                    <ClipboardCheck className="w-4 h-4 text-indigo-400" />
+                                </div>
+                                <div className="text-2xl lg:text-4xl font-black italic font-space-grotesk text-white tabular-nums">{summary.count}</div>
+                                <div className="mt-2 text-[9px] font-bold text-white/20 uppercase tracking-widest italic tracking-widest">Data Clusters Indexados</div>
+                            </Card>
+
+                            {reportType === 'sales' && (
+                                <Card className="bg-[#1C1F26] border border-white/5 rounded-[2.5rem] shadow-pro glass-pro p-8 relative overflow-hidden">
+                                    <div className="flex items-center justify-between mb-4 relative z-10">
+                                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic font-space-grotesk">FLUJO DE RECAUDO</span>
+                                        <DollarSign className="w-4 h-4 text-emerald-500 shadow-glow-pro" />
+                                    </div>
+                                    <div className="text-2xl lg:text-4xl font-black italic font-space-grotesk text-white tabular-nums relative z-10">{formatCOP(summary.total || 0).replace("$", "")}</div>
+                                    <div className="mt-2 text-[9px] font-bold text-emerald-500/40 uppercase tracking-widest italic relative z-10 font-space-grotesk">Capital Bruto (COP)</div>
+                                    <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl" />
+                                </Card>
+                            )}
+
+                            <Card className={cn(
+                                "bg-[#1C1F26] border border-white/5 rounded-[2.5rem] shadow-pro glass-pro p-8",
+                                reportType === 'inventory' && summary.secondary?.includes("ITEMS BAJO STOCK: 0") === false ? "border-rose-500/30" : ""
+                            )}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic font-space-grotesk">INSIGHT OPERATIVO</span>
+                                    <TrendingUp className="w-4 h-4 text-amber-500" />
+                                </div>
+                                <div className="text-lg font-black italic font-space-grotesk text-white uppercase tracking-tight">{summary.secondary}</div>
+                                <div className="mt-2 text-[9px] font-bold text-white/20 uppercase tracking-widest italic">Observación Predictiva</div>
+                            </Card>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Data Inspector Table */}
+                <Card className="bg-[#1C1F26] border border-white/5 rounded-[3.5rem] shadow-pro glass-pro overflow-hidden flex flex-col min-h-[500px] xl:h-[700px]">
+                    <CardHeader className="p-10 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.02]">
+                        <div>
+                            <CardTitle className="text-xl lg:text-3xl font-black italic uppercase font-space-grotesk tracking-tighter">Data Inspector</CardTitle>
+                            <CardDescription className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mt-1 italic font-space-grotesk">
+                                {previewData.length > 0 ? `SYNC ACTIVE: ${previewData.length} NODOS DE DATOS` : "WAITING FOR GENERATION COMMAND"}
+                            </CardDescription>
+                        </div>
+                        {previewData.length > 0 && (
+                            <div className="flex gap-4">
+                               <div className="flex items-center gap-2 bg-indigo-500/10 px-4 h-9 rounded-full border border-indigo-500/20 font-black text-[9px] text-indigo-400 italic uppercase">
+                                  <Hash className="w-3.5 h-3.5" /> {selectedColumns.length} COLS
+                               </div>
+                            </div>
+                        )}
+                    </CardHeader>
+                    <CardContent className="p-0 flex-1 overflow-hidden relative">
+                        {previewData.length > 0 ? (
+                            <ScrollArea className="h-full w-full">
+                                <Table>
+                                    <TableHeader className="bg-[#12141a] sticky top-0 z-20 shadow-pro">
+                                        <TableRow className="border-white/5 hover:bg-[#12141a]">
+                                            {columnsByType[reportType].filter(c => selectedColumns.includes(c.dataKey)).map((col: any) => (
+                                                <TableHead key={col.dataKey} className="px-10 h-20 text-[10px] font-black text-white/40 uppercase tracking-[0.3em] font-space-grotesk italic">
+                                                    {col.header}
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <AnimatePresence mode="popLayout">
+                                            {previewData.map((row, idx) => (
+                                                <motion.tr
+                                                    key={idx}
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ delay: idx * 0.005 }}
+                                                    className="border-white/5 hover:bg-white/[0.04] transition-all group h-20"
+                                                >
+                                                    {columnsByType[reportType].filter(c => selectedColumns.includes(c.dataKey)).map((col: any) => (
+                                                        <TableCell key={col.dataKey} className="px-10 text-white font-black font-space-grotesk italic text-sm tracking-tight group-hover:text-indigo-400 transition-colors">
+                                                            {typeof row[col.dataKey] === 'number' && (col.dataKey.toLowerCase().includes('price') || col.dataKey.toLowerCase().includes('total'))
+                                                                ? formatCOP(row[col.dataKey])
+                                                                : row[col.dataKey]}
+                                                        </TableCell>
+                                                    ))}
+                                                </motion.tr>
+                                            ))}
+                                        </AnimatePresence>
+                                    </TableBody>
+                                </Table>
+                            </ScrollArea>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full gap-8 p-20 opacity-30">
+                                <div className="w-32 h-32 rounded-[2.5rem] bg-white/5 border border-dashed border-white/20 flex items-center justify-center">
+                                    <BarChart3 className="w-16 h-16 text-white" />
+                                </div>
+                                <div className="text-center">
+                                    <h3 className="text-2xl font-black italic uppercase font-space-grotesk tracking-widest text-white">Inspector Inactivo</h3>
+                                    <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.2em] mt-3 max-w-xs mx-auto italic leading-relaxed">
+                                        Configure los parámetros en el panel lateral y ejecute el comando de telemetría para visualizar la red de datos.
+                                    </p>
+                                </div>
+                                <Button onClick={handleLoadPreview} variant="ghost" className="h-14 px-10 rounded-2xl border border-white/10 font-black italic uppercase tracking-widest text-[10px] hover:bg-white/5 transition-all text-white/40">
+                                    INIT DATA FLOW ✓
+                                </Button>
+                            </div>
+                        )}
+                        {/* Dimensional Gradient overlays */}
+                        <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-[#1C1F26] to-transparent pointer-events-none z-10" />
+                        <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#1C1F26] to-transparent pointer-events-none z-10" />
+                    </CardContent>
+                </Card>
+            </motion.div>
         </div>
-      </div>
+      </motion.div>
     </Layout>
   );
 }

@@ -21,7 +21,8 @@ import {
   Bell,
   UserCog,
   FileText,
-  Users
+  Users,
+  FlaskConical
 } from "lucide-react";
 import { NavGroup } from "@/types/navigation";
 
@@ -34,6 +35,7 @@ export const navConfig: NavGroup[] = [
       { label: "POS", href: "/pos", icon: ShoppingCart, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Arqueo de Caja", href: "/cash-register", icon: Calculator, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Ventas", href: "/sales", icon: ReceiptText, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
+      { label: "Preparación", href: "/preparation", icon: FlaskConical, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Facturas", href: "/invoices", icon: FileText, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
     ]
   },
@@ -78,6 +80,7 @@ export const navConfig: NavGroup[] = [
           { label: "Plantillas Recibos", href: "/settings?tab=receipts", icon: Receipt, roles: ["admin", "owner"] },
           { label: "Tamaños Estándar", href: "/settings?tab=sizes", icon: Ruler, roles: ["admin", "owner"] },
           { label: "Acrónimos SKU", href: "/settings?tab=sku", icon: Tag, roles: ["admin", "owner"] },
+          { label: "Tipos de Producto", href: "/settings?tab=product_types", icon: Package, roles: ["admin", "owner"] },
           { label: "Alertas y Notificaciones", href: "/settings?tab=notifications", icon: Bell, roles: ["admin", "owner", "manager"] },
         ]
       }

@@ -121,7 +121,7 @@ export default function PaymentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar">
         <DialogHeader>
           <DialogTitle className="text-2xl">Procesar Pago</DialogTitle>
           <DialogDescription>
@@ -150,7 +150,7 @@ export default function PaymentDialog({
             </Tabs>
 
             {orderType === "delivery" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20 animate-in fade-in zoom-in-95 duration-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-muted/40 rounded-lg border border-border animate-in fade-in zoom-in-95 duration-200">
                 <div className="md:col-span-2">
                   <Label htmlFor="deliveryAddress" className="text-xs font-bold uppercase text-primary">Dirección de Entrega *</Label>
                   <Input 
@@ -204,7 +204,7 @@ export default function PaymentDialog({
             </div>
             <div className="text-right">
                 <p className="text-sm font-semibold uppercase text-muted-foreground mr-1">Total a Pagar</p>
-                <p className="text-3xl font-black text-foreground">{formatCOP(finalTotal)}</p>
+                <p className="text-2xl lg:text-3xl font-black text-foreground">{formatCOP(finalTotal)}</p>
             </div>
           </div>
 
@@ -257,7 +257,7 @@ export default function PaymentDialog({
               {parseFloat(amountReceived || "0") >= finalTotal && (
                 <div className="mt-4 p-4 bg-accent/10 border-2 border-accent rounded-lg">
                   <p className="text-sm text-muted-foreground">Cambio a devolver</p>
-                  <p className="text-3xl font-bold text-accent">
+                  <p className="text-2xl lg:text-3xl font-bold text-primary">
                     {formatCOP(change)}
                   </p>
                 </div>
@@ -285,7 +285,7 @@ export default function PaymentDialog({
           )}
           {/* Split Payment: Cash + Transfer */}
           {paymentMethod === "split" && (
-            <div className="animate-in fade-in slide-in-from-top-4 space-y-4 p-4 bg-muted/30 rounded-lg border-2 border-primary/20">
+            <div className="animate-in fade-in slide-in-from-top-4 space-y-4 p-4 bg-muted/60 rounded-lg border-2 border-border">
               <div className="flex items-center gap-2 mb-2 text-primary">
                 <DollarSign className="w-5 h-5" />
                 <Label className="text-base font-bold">Pago Mixto (Efe + Tra)</Label>
@@ -370,13 +370,13 @@ export default function PaymentDialog({
 
           {/* Non-cash confirmation */}
           {paymentMethod !== "cash" && (
-            <div className="p-4 bg-muted/50 rounded-lg border-2 border-border text-center animate-in fade-in slide-in-from-top-4">
+            <div className="p-4 bg-muted/40 rounded-lg border-2 border-border text-center animate-in fade-in slide-in-from-top-4">
               <p className="text-muted-foreground text-sm">
                 {paymentMethod === "card" && "Confirma el pago con tarjeta por:"}
                 {paymentMethod === "transfer" && "Confirma la transferencia recibida por:"}
                 {paymentMethod === "qr" && "Confirma el pago por QR por:"}
               </p>
-              <p className="text-2xl font-bold text-foreground mt-1">{formatCOP(finalTotal)}</p>
+              <p className="text-xl lg:text-2xl font-bold text-foreground mt-1">{formatCOP(finalTotal)}</p>
             </div>
           )}
         </div>

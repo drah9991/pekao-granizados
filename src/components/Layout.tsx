@@ -37,6 +37,7 @@ import { useCurrentRole } from "@/hooks/useCurrentRole";
 import { CollapsibleNavGroup } from "./CollapsibleNavGroup";
 import { useLowStockCount } from "@/hooks/useLowStockCount";
 import { Badge } from "@/components/ui/badge";
+import { InteractiveCursor } from "./ui/InteractiveCursor";
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
@@ -124,8 +125,22 @@ export default function Layout({ children }: LayoutProps) {
     items: group.items.filter(item => item.roles.includes(effectiveRole))
   })).filter(group => group.items.length > 0);
 
+  const getMoodClass = () => {
+    const path = location.pathname;
+    if (path.startsWith('/pos')) return 'mood-pos';
+    if (path.startsWith('/reports') || path.startsWith('/sales') || path.startsWith('/invoices')) return 'mood-reports';
+    if (path.startsWith('/settings') || path.startsWith('/preparation')) return 'mood-settings';
+    return '';
+  };
+
+  const moodClass = getMoodClass();
+
   return (
-    <div className="flex h-screen bg-background">
+    <div className={cn(
+      "flex h-screen bg-background bg-aurora animate-aurora relative overflow-hidden transition-colors duration-1000",
+      moodClass
+    )}>
+      <InteractiveCursor />
       <Button
         variant="ghost"
         size="icon"
@@ -136,17 +151,17 @@ export default function Layout({ children }: LayoutProps) {
       </Button>
 
       {/* Top Right Actions Area */}
-      <div className="fixed top-4 right-4 z-[60] flex items-center gap-2 p-2 bg-card/70 backdrop-blur-lg border border-border/40 rounded-2xl shadow-elevated animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="flex items-center gap-3 px-3 py-1.5 border-r border-border/30 mr-1 hidden sm:flex">
+      <div className="fixed top-4 right-4 z-[60] flex items-center gap-2 p-2 glass-pro rounded-2xl shadow-pro animate-pro-in">
+        <div className="flex items-center gap-3 px-3 py-1.5 border-r border-border/50 mr-1 hidden sm:flex">
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black uppercase tracking-widest text-primary/80 leading-none mb-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary/80 leading-none mb-1 font-space-grotesk">
               {isLoadingAuth ? 'Cargando...' : 'Sesión Activa'}
             </span>
             <span className="text-[12px] font-bold text-foreground/80 leading-none">
               {userRole ? userRole.replace('_', ' ') : 'Invitado'}
             </span>
           </div>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-black text-sm shadow-inner transition-transform hover:scale-105">
+          <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-black text-sm shadow-inner transition-transform hover:scale-105 border border-primary/20">
             {userRole?.charAt(0).toUpperCase() || '?'}
           </div>
         </div>
@@ -157,25 +172,25 @@ export default function Layout({ children }: LayoutProps) {
 
       <aside
         className={cn(
-          "w-64 bg-gradient-to-b from-sidebar-background to-sidebar-background/95 border-r border-sidebar-border/50 flex flex-col shadow-elevated backdrop-blur-sm",
-          "fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out",
+          "w-64 glass-pro border-r border-border/50 flex flex-col shadow-pro",
+          "fixed inset-y-0 left-0 z-50 transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="p-6 border-b border-sidebar-border/30">
+        <div className="p-6 border-b border-border/50 bg-muted/30 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl gradient-hero flex items-center justify-center shadow-glow transition-smooth hover:scale-105">
+            <div className="w-14 h-14 rounded-2xl gradient-hero flex items-center justify-center shadow-glow-pro transition-smooth hover:rotate-3 hover:scale-110">
               {isLoadingBranding ? (
-                <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full" />
+                <div className="animate-spin w-6 h-6 border-2 border-primary-foreground border-t-transparent rounded-full" />
               ) : logoUrl ? (
-                <img src={logoUrl} alt="Business Logo" className="max-w-full max-h-full object-contain" />
+                <img src={logoUrl} alt="Business Logo" className="max-w-full max-h-full object-contain p-2" />
               ) : (
-                <IceCream className="w-7 h-7 text-white drop-shadow-lg" />
+                <IceCream className="w-7 h-7 text-primary-foreground drop-shadow-xl" />
               )}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-sidebar-foreground tracking-tight">Pekao</h1>
-              <p className="text-xs text-sidebar-foreground/50 font-medium">Granizados ({userRole || 'sin rol'})</p>
+              <h1 className="text-xl font-black text-sidebar-foreground tracking-tighter font-space-grotesk italic">PEKAO</h1>
+              <p className="text-[10px] text-primary font-black uppercase tracking-widest opacity-80">PRO MAX SYSTEM</p>
             </div>
           </div>
         </div>
@@ -184,10 +199,10 @@ export default function Layout({ children }: LayoutProps) {
           {visibleGroups.map((group, groupIdx) => (
             <div key={group.label} className="space-y-3">
               <div className="flex items-center gap-2 px-4 mb-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-sidebar-foreground/30">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk">
                   {group.label}
                 </span>
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-sidebar-border/30 to-transparent" />
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
               </div>
               
               <div className="space-y-1">
@@ -201,11 +216,11 @@ export default function Layout({ children }: LayoutProps) {
                     const linkContent = (
                       <div
                         className={cn(
-                          "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
-                          isActive
-                            ? "bg-gradient-to-r from-primary/20 to-primary/10 text-sidebar-foreground shadow-card border border-primary/30"
-                            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:shadow-md hover:border hover:border-sidebar-border/50",
-                          isLocked && "opacity-50 cursor-not-allowed grayscale-[0.5]"
+                          "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-500 text-sm font-bold relative overflow-hidden font-dm-sans",
+                            isActive
+                            ? "bg-primary text-primary-foreground shadow-glow-pro border border-primary/50 translate-x-1"
+                            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-muted/50 hover:translate-x-1",
+                          isLocked && "opacity-40 cursor-not-allowed grayscale"
                         )}
                       >
                         {isActive && (
@@ -214,7 +229,7 @@ export default function Layout({ children }: LayoutProps) {
                         <item.icon className={cn(
                           "w-5 h-5 transition-all duration-300",
                           isActive
-                            ? "text-primary drop-shadow-lg scale-110"
+                            ? "text-primary-foreground drop-shadow-lg scale-110"
                             : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
                         )} />
                         <span className="relative z-10">{item.label}</span>
@@ -233,7 +248,7 @@ export default function Layout({ children }: LayoutProps) {
                           <TooltipTrigger asChild>
                             {linkContent}
                           </TooltipTrigger>
-                          <TooltipContent side="right" className="bg-rose-950 border-rose-500/30 text-rose-200 text-[10px] font-bold uppercase tracking-wider">
+                          <TooltipContent side="right" className="bg-primary border-primary/30 text-primary-foreground text-[10px] font-bold uppercase tracking-wider">
                             Abre un turno para vender
                           </TooltipContent>
                         </Tooltip>
@@ -282,7 +297,7 @@ export default function Layout({ children }: LayoutProps) {
           ))}
         </nav>
 
-        <div className="p-5 border-t border-sidebar-border/30 bg-sidebar-background/50 backdrop-blur-sm">
+        <div className="p-5 border-t border-border/30 bg-muted/40 backdrop-blur-sm">
           <TurnStatusChip />
           <div className="flex items-center justify-between mb-3 mt-2">
             <span className="text-sm font-medium text-sidebar-foreground/60">Modo Oscuro</span>
@@ -301,17 +316,19 @@ export default function Layout({ children }: LayoutProps) {
 
       {isMobile && isSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50"
+          className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-300 ease-in-out pt-20",
+        "flex-1 overflow-auto transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] pt-20 relative z-10",
         !isMobile && isSidebarOpen && "pl-64"
       )}>
-        <AlertManager />
-        {children}
+        <div className="animate-pro-in p-4 md:p-8 perspective-1000">
+            <AlertManager />
+            {children}
+        </div>
       </main>
     </div>
   );

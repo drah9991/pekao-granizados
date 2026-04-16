@@ -14,6 +14,9 @@ export interface CartItem {
   originalPrice?: number;
   discountMessage?: string;
   maxStock?: number;
+  isGranizado?: boolean;
+  mixtureStock?: number;
+  baseVolume?: number;
 }
 
 export interface Product {
@@ -33,6 +36,10 @@ export interface Product {
   store_id: string | null;
   cost: number | null;
   stock?: number;
+  base_volume?: number | null;
+  unit_measure?: string | null;
+  mixtureStock?: number;
+  has_recipe?: boolean;
 }
 
 export interface Size {

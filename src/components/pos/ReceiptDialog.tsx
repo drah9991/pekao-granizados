@@ -74,7 +74,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
               {lastOrder.change > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-sm text-muted-foreground">Cambio Devuelto</p>
-                  <p className="text-2xl font-bold text-accent">
+                  <p className="text-2xl font-bold text-primary">
                     {formatCOP(lastOrder.change)}
                   </p>
                 </div>
@@ -83,8 +83,8 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
 
             {/* Delivery Info */}
             {lastOrder.deliveryData?.type === 'delivery' && (
-              <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 text-sm space-y-1.5 animate-in fade-in slide-in-from-top-2">
-                <p className="font-bold text-blue-700 flex items-center gap-1.5 uppercase text-[10px] tracking-tight">
+              <div className="bg-primary/10 p-3 rounded-lg border border-primary/20 text-sm space-y-1.5 animate-in fade-in slide-in-from-top-2">
+                <p className="font-bold text-primary flex items-center gap-1.5 uppercase text-[10px] tracking-tight">
                   🚀 Para Entrega a Domicilio
                 </p>
                 <p className="text-foreground leading-snug">{lastOrder.deliveryData.address}</p>
@@ -92,14 +92,14 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                   <p className="text-xs text-muted-foreground">📞 Contacto: {lastOrder.deliveryData.phone}</p>
                 )}
                 {lastOrder.deliveryData.fee > 0 && (
-                  <p className="text-xs text-blue-600 font-medium">Servicio: {formatCOP(lastOrder.deliveryData.fee)}</p>
+                  <p className="text-xs text-primary font-medium">Servicio: {formatCOP(lastOrder.deliveryData.fee)}</p>
                 )}
               </div>
             )}
 
             {/* Customer Info */}
             {lastOrder.customer && lastOrder.customer.id !== 'generic' ? (
-              <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 text-sm">
+              <div className="bg-muted p-3 rounded-lg border border-border text-sm">
                 <p className="font-semibold text-primary mb-1">Cliente:</p>
                 <p className="font-medium text-base">{lastOrder.customer.name}</p>
                 <div className="grid grid-cols-2 gap-1 mt-1 text-xs text-muted-foreground w-full">
@@ -124,7 +124,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                       <span className="font-medium">{item.quantity}x {item.name} {item.size && <span className="text-muted-foreground font-normal">({item.size})</span>}</span>
                       {item.toppings && item.toppings.length > 0 && (
                         <span className="text-xs text-muted-foreground pl-4 mt-0.5 whitespace-pre-wrap">
-                          + {item.toppings.map(t => t.name).join(', ')}
+                          + {(item.toppings || []).map(t => t.name).join(', ')}
                         </span>
                       )}
                     </div>

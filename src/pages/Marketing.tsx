@@ -174,8 +174,8 @@ export default function Marketing() {
       <div className="space-y-6">
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Megaphone className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground flex items-center gap-2">
+              <Megaphone className="h-7 w-7 text-primary" />
               Precios Dinámicos
             </h1>
             <p className="text-muted-foreground mt-2 max-w-2xl">
@@ -266,7 +266,7 @@ export default function Marketing() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto custom-scrollbar">
           <DialogHeader>
             <DialogTitle>{editingRule ? 'Editar Regla de Precios' : 'Nueva Regla de Precios'}</DialogTitle>
           </DialogHeader>

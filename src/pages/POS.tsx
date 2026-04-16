@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useTurn } from "@/hooks/useTurn";
 import { offlineService } from "@/lib/OfflineService";
 import { useAlerts } from "@/hooks/useAlerts";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function POS() {
   const {
@@ -38,6 +39,7 @@ export default function POS() {
     setSelectedCustomer
   } = useCart();
   const { user, storeId } = useAuth();
+  const queryClient = useQueryClient();
   const { activeTurn, isLoading: isLoadingTurn } = useTurn();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -157,7 +159,8 @@ export default function POS() {
           price: baseItemPrice,
           name: item.name,
           size: item.size || null,
-          size_multiplier: item.sizeMultiplier || 1
+          size_multiplier: item.sizeMultiplier || 1,
+          base_volume: item.baseVolume || 4
         };
 
         const toppings = (item.toppings || []).map(topping => ({
@@ -223,6 +226,9 @@ export default function POS() {
       setPaymentDialogIsOpen(false);
       setReceiptDialogIsOpen(true);
       resetCart();
+      
+      // Refresh products stock immediately after sale
+      queryClient.invalidateQueries({ queryKey: ['products-grid'] });
     } catch (error: any) {
       console.error("Error processing sale:", error);
       notifyCritical("Error al procesar la venta: " + error.message);
@@ -272,17 +278,15 @@ export default function POS() {
   };
   return (
     <Layout>
-      <div className="h-full flex flex-col lg:flex-row bg-slate-950 relative overflow-hidden">
-        {/* Turn Blocking logic is now handled by CriticalBanner in Layout */}
-        {/* Mobile/Tablet Navigation Tabs - Visible below 800px */}
-        <div className="flex lg:hidden xl:hidden border-b border-white/10 bg-slate-900 sticky top-0 z-20 items-center pr-4 [@media(min-width:800px)]:hidden">
+      <div className="h-full flex flex-col lg:flex-row bg-background relative overflow-hidden">
+        <div className="flex lg:hidden xl:hidden border-b border-border bg-muted/30 sticky top-0 z-20 items-center pr-4 [@media(min-width:800px)]:hidden">
           <button
             onClick={() => setViewMode("products")}
             className={cn(
               "flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all",
               viewMode === "products" 
                 ? "text-primary border-b-2 border-primary bg-primary/5" 
-                : "text-muted-foreground hover:text-white"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <ShoppingBag size={18} />
@@ -294,13 +298,13 @@ export default function POS() {
               "flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all relative",
               viewMode === "cart" 
                 ? "text-primary border-b-2 border-primary bg-primary/5" 
-                : "text-muted-foreground hover:text-white"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <ReceiptIcon size={18} />
             Carrito
             {cart.length > 0 && (
-              <span className="absolute top-3 right-1/4 w-5 h-5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center animate-pulse shadow-glow">
+              <span className="absolute top-3 right-1/4 w-5 h-5 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center animate-pulse shadow-glow">
                 {cart.reduce((acc, item) => acc + item.quantity, 0)}
               </span>
             )}

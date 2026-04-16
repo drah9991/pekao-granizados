@@ -39,6 +39,7 @@ export const useCart = () => {
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
   const [availableSizes, setAvailableSizes] = useState<Tables<'sizes'>[]>([]);
   const [availableToppings, setAvailableToppings] = useState<Product[]>([]);
+  const [productTypes, setProductTypes] = useState<any[]>([]);
   const [pricingRules, setPricingRules] = useState<any[]>([]);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -117,6 +118,10 @@ export const useCart = () => {
       if (toppingsError) throw toppingsError;
       setAvailableToppings(toppingsData as Product[] || []);
 
+      // Fetch product types config
+      const { data: typesData } = await supabase.from('product_types_config').select('*').eq('active', true);
+      setProductTypes(typesData || []);
+
       // Fetch active dynamic pricing rules
       const { data: rulesData, error: rulesError } = await (supabase as any)
         .from('pricing_rules')
@@ -139,11 +144,33 @@ export const useCart = () => {
     selectedToppingIds: string[],
     customized: boolean = false
   ) => {
-    const currentQty = cart.reduce((sum, i) => i.productId === product.id ? sum + i.quantity : sum, 0);
+    const typeCfg = productTypes.find(t => t.code === product.type);
+    const trackMixture = typeCfg?.track_mixture_inventory || product.type === 'granizado' || product.category === 'Granizado';
 
-    if (product.stock !== undefined && (currentQty + 1) > product.stock) {
-      notifyCritical(`Stock insuficiente de ${product.name}`);
-      return;
+    // Eliminamos el bloqueo obligatorio por receta para permitir ventas 
+    // basadas solo en el stock del producto si así se desea.
+
+    const baseVol = Number(product.base_volume) || 4;
+    const currentSize = selectedSizeId ? availableSizes.find(s => s.id === selectedSizeId) : null;
+    const itemMultiplier = currentSize?.multiplier || 1;
+    const OZ_TO_ML = 29.57;
+
+    if (trackMixture && product.mixtureStock !== undefined && product.mixtureStock > 0) {
+      const requestedMl = baseVol * itemMultiplier * OZ_TO_ML;
+      const currentMlInCart = cart
+        .filter(i => i.productId === product.id)
+        .reduce((sum, i) => sum + (i.quantity * (i.baseVolume || 4) * (i.sizeMultiplier || 1) * OZ_TO_ML), 0);
+
+      if (currentMlInCart + requestedMl > product.mixtureStock) {
+        notifyCritical(`No hay suficiente mezcla de ${product.name} disponible.`);
+        return;
+      }
+    } else if (!trackMixture && product.stock !== undefined) {
+      const currentQty = cart.reduce((sum, i) => i.productId === product.id ? sum + i.quantity : sum, 0);
+      if ((currentQty + 1) > product.stock) {
+        notifyCritical(`Stock insuficiente de ${product.name}`);
+        return;
+      }
     }
 
     const size = selectedSizeId ? availableSizes.find(s => s.id === selectedSizeId) : null;
@@ -221,6 +248,9 @@ export const useCart = () => {
       originalPrice: originalPrice !== basePrice ? originalPrice + toppingsPrice : undefined,
       discountMessage,
       maxStock: product.stock,
+      isGranizado: trackMixture,
+      mixtureStock: product.mixtureStock,
+      baseVolume: Number(product.base_volume) || 4
     };
 
     setCart(prevCart => cleanCartItems([...prevCart, newItem]));
@@ -233,11 +263,31 @@ export const useCart = () => {
 
   const updateQuantity = (id: string, delta: number) => {
     const item = cart.find(i => i.id === id);
-    if (item && delta > 0 && item.maxStock !== undefined) {
-       const currentTotal = cart.reduce((sum, i) => i.productId === item.productId ? sum + i.quantity : sum, 0);
-       if (currentTotal + delta > item.maxStock) {
-         notifyCritical(`Límite de stock alcanzado (${item.maxStock})`);
-         return;
+    if (item && delta > 0) {
+       const OZ_TO_ML = 29.57;
+       if (item.isGranizado && item.mixtureStock !== undefined && item.mixtureStock > 0) {
+         const requestedNewQty = item.quantity + delta;
+         const currentMlInCartTotal = cart
+           .filter(i => i.productId === item.productId)
+           .reduce((sum, i) => {
+             const qty = i.id === id ? requestedNewQty : i.quantity;
+             return sum + (qty * (i.baseVolume || 4) * (i.sizeMultiplier || 1) * OZ_TO_ML);
+           }, 0);
+
+         if (currentMlInCartTotal > item.mixtureStock) {
+           notifyCritical(`Límite de mezcla alcanzado para este sabor.`);
+           return;
+         }
+       } else if (item.maxStock !== undefined) {
+         const currentTotalWithNew = cart.reduce((sum, i) => {
+           const qty = i.id === id ? i.quantity + delta : i.quantity;
+           return i.productId === item.productId ? sum + qty : sum;
+         }, 0);
+
+         if (currentTotalWithNew > item.maxStock) {
+           notifyCritical(`Límite de stock alcanzado (${item.maxStock})`);
+           return;
+         }
        }
     }
 

@@ -31,9 +31,9 @@ export function TurnStatusChip() {
 
   if (isLoading) {
     return (
-      <div className="p-4 bg-white/5 rounded-xl border border-white/10 space-y-2">
-        <Skeleton className="h-4 w-24 bg-white/10" />
-        <Skeleton className="h-3 w-32 bg-white/10" />
+      <div className="p-4 bg-muted/20 rounded-xl border border-border space-y-2">
+        <Skeleton className="h-4 w-24 bg-muted/30" />
+        <Skeleton className="h-3 w-32 bg-muted/30" />
       </div>
     );
   }
@@ -88,7 +88,7 @@ export function TurnStatusChip() {
               <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Turno Pausado</span>
             </div>
             <div className="space-y-1 mb-4">
-              <p className="text-xs font-bold text-slate-200 truncate">
+              <p className="text-xs font-bold text-foreground truncate">
                 Abierto: {format(new Date(activeTurn.opened_at), 'HH:mm', { locale: es })}
               </p>
               <p className="text-[10px] text-amber-200/60 font-medium truncate uppercase">
@@ -110,10 +110,10 @@ export function TurnStatusChip() {
             <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Turno Activo</span>
           </div>
           <div className="space-y-1 mb-4">
-            <p className="text-xs font-bold text-slate-200 truncate">
+            <p className="text-xs font-bold text-foreground truncate">
               Abierto: {format(new Date(activeTurn.opened_at), 'HH:mm', { locale: es })}
             </p>
-            <p className="text-[10px] text-slate-400 font-medium truncate uppercase">
+            <p className="text-[10px] text-muted-foreground font-medium truncate uppercase">
               Cajero: {activeTurn.cashier_name || 'Desconocido'}
             </p>
           </div>
@@ -130,10 +130,10 @@ export function TurnStatusChip() {
                   Finalizar Turno
                 </Button>
               </DialogTrigger>
-            <DialogContent className="bg-slate-900 border-white/10 text-white max-w-sm">
+            <DialogContent className="bg-background border-border text-foreground max-w-sm">
               <DialogHeader>
                 <DialogTitle>Cierre de Caja</DialogTitle>
-                <DialogDescription className="text-slate-400">
+                <DialogDescription className="text-muted-foreground">
                   Ingresa el monto contado físicamente en la caja para finalizar el turno.
                 </DialogDescription>
               </DialogHeader>
@@ -145,7 +145,7 @@ export function TurnStatusChip() {
                     placeholder="0.00" 
                     value={amount} 
                     onChange={(e) => setAmount(e.target.value)}
-                    className="bg-slate-950 border-white/10"
+                    className="bg-muted border-border"
                   />
                 </div>
                 <div className="space-y-2">
@@ -154,7 +154,7 @@ export function TurnStatusChip() {
                     placeholder="..." 
                     value={notes} 
                     onChange={(e) => setNotes(e.target.value)}
-                    className="bg-slate-950 border-white/10"
+                    className="bg-muted border-border"
                   />
                 </div>
               </div>
@@ -185,10 +185,10 @@ export function TurnStatusChip() {
                 Iniciar Turno
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-900 border-white/10 text-white max-w-sm">
+            <DialogContent className="bg-background border-border text-foreground max-w-sm">
               <DialogHeader>
                 <DialogTitle>Apertura de Turno</DialogTitle>
-                <DialogDescription className="text-slate-400">
+                <DialogDescription className="text-muted-foreground">
                   Especifica con cuánto dinero inicias la base de caja hoy.
                 </DialogDescription>
               </DialogHeader>
@@ -205,7 +205,7 @@ export function TurnStatusChip() {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleOpenTurn} className="w-full bg-primary hover:bg-primary/90 text-white border-none">
+                <Button onClick={handleOpenTurn} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground border-none">
                   Abrir Turno Ahora
                 </Button>
               </DialogFooter>

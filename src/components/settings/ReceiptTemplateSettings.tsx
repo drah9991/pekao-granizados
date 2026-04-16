@@ -5,9 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Receipt, Save, Eye } from "lucide-react";
+import { Receipt, Save, Eye, Layout, Type, ShieldCheck, Zap, Instagram, QrCode, Globe, Smartphone, User, Calendar, Hash, Calculator, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface TemplateData {
   header: {
@@ -33,6 +35,7 @@ interface TemplateData {
 
 export default function ReceiptTemplateSettings() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [storeId, setStoreId] = useState<string>("");
   const [templateId, setTemplateId] = useState<string>("");
   const [templateData, setTemplateData] = useState<TemplateData>({
@@ -62,13 +65,14 @@ export default function ReceiptTemplateSettings() {
   }, []);
 
   const loadTemplate = async () => {
+    setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('store_id') // Select only store_id
+        .select('store_id')
         .eq('id', user.id)
         .single();
 
@@ -80,7 +84,7 @@ export default function ReceiptTemplateSettings() {
         .select('*')
         .eq('store_id', profile.store_id)
         .eq('is_default', true)
-        .single();
+        .maybeSingle();
 
       if (template) {
         setTemplateId(template.id);
@@ -88,22 +92,22 @@ export default function ReceiptTemplateSettings() {
       }
     } catch (error) {
       console.error('Error loading template:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSave = async () => {
-    setIsLoading(true);
+    setIsSyncing(true);
     try {
       if (templateId) {
-        // Update existing template
         const { error } = await supabase
           .from('receipt_templates')
-          .update({ template_data: templateData as any })
+          .update({ template_data: templateData as any, updated_at: new Date().toISOString() })
           .eq('id', templateId);
 
         if (error) throw error;
       } else {
-        // Create new template
         const { error } = await supabase
           .from('receipt_templates')
           .insert([{
@@ -116,13 +120,13 @@ export default function ReceiptTemplateSettings() {
         if (error) throw error;
       }
 
-      toast.success('Plantilla de recibo actualizada');
+      toast.success('Arquitectura de recibo sincronizada ✓');
       loadTemplate();
     } catch (error: any) {
       console.error('Error saving template:', error);
-      toast.error('Error al guardar: ' + error.message);
+      toast.error('Fallo técnico en persistencia: ' + error.message);
     } finally {
-      setIsLoading(false);
+      setIsSyncing(false);
     }
   };
 
@@ -136,258 +140,361 @@ export default function ReceiptTemplateSettings() {
     });
   };
 
+  if (isLoading) {
+    return (
+        <div className="flex flex-col items-center justify-center py-24 gap-6">
+            <Loader2 className="w-12 h-12 animate-spin text-primary shadow-glow-pro" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary italic animate-pulse">Indexando Layout de Impresión...</p>
+        </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Editor de Plantilla de Recibo</h2>
-        <p className="text-muted-foreground">
-          Personaliza qué elementos aparecen en tus recibos
-        </p>
+    <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="space-y-10"
+    >
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-white/5 pb-10">
+        <div>
+          <h2 className="text-3xl font-black italic uppercase font-space-grotesk tracking-tight text-white leading-none">Thermal Receipt Architect</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mt-1 italic leading-relaxed">Configuración de Layout y Protocolos Fiscales</p>
+        </div>
+        <div className="flex items-center gap-3 bg-white/5 px-4 h-10 rounded-full border border-white/10 font-black text-[9px] text-white/40 italic uppercase tracking-widest leading-none">
+            <Layout className="w-4 h-4 text-primary" /> Template Engine v2.0
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Configuration */}
-        <div className="space-y-6">
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle>Encabezado del Recibo</CardTitle>
-              <CardDescription>Elementos superiores del recibo</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-logo">Mostrar Logo</Label>
-                <Switch
-                  id="show-logo"
-                  checked={templateData.header.show_logo}
-                  onCheckedChange={(checked) => updateTemplateSection('header', 'show_logo', checked)}
-                />
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
+        {/* Configuration Bento */}
+        <div className="xl:col-span-12 lg:col-span-7 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Header Settings */}
+            <Card className="bg-[#1C1F26] border border-white/5 rounded-[3rem] shadow-pro glass-pro p-10 group overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform duration-1000">
+                  <Type className="w-24 h-24 text-primary" />
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-store-name">Mostrar Nombre de Tienda</Label>
-                <Switch
-                  id="show-store-name"
-                  checked={templateData.header.show_store_name}
-                  onCheckedChange={(checked) => updateTemplateSection('header', 'show_store_name', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-address">Mostrar Dirección</Label>
-                <Switch
-                  id="show-address"
-                  checked={templateData.header.show_address}
-                  onCheckedChange={(checked) => updateTemplateSection('header', 'show_address', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-phone">Mostrar Teléfono</Label>
-                <Switch
-                  id="show-phone"
-                  checked={templateData.header.show_phone}
-                  onCheckedChange={(checked) => updateTemplateSection('header', 'show_phone', checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
+              <CardHeader className="p-0 pb-8 border-b border-white/5 mb-8 bg-transparent">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center text-primary shadow-glow-pro">
+                        <Type className="w-5 h-5" />
+                    </div>
+                    <div>
+                       <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Header Core</CardTitle>
+                       <CardDescription className="text-[8px] font-bold text-white/20 uppercase tracking-widest italic leading-none">Elementos Superiores</CardDescription>
+                    </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 space-y-4">
+                {[
+                  { id: "show-logo", label: "LOGOTIPO CORPO", field: "show_logo" },
+                  { id: "show-store-name", label: "RAZÓN SOCIAL", field: "show_store_name" },
+                  { id: "show-address", label: "HUB DE UBICACIÓN", field: "show_address" },
+                  { id: "show-phone", label: "VECTOR CONTACTO", field: "show_phone" },
+                ].map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/toggle hover:bg-white/[0.04] transition-colors">
+                    <Label htmlFor={item.id} className="text-[9px] font-black uppercase italic tracking-widest text-white/40 group-hover/toggle:text-white transition-colors">{item.label}</Label>
+                    <Switch
+                      id={item.id}
+                      checked={templateData.header[item.field as keyof typeof templateData.header]}
+                      onCheckedChange={(checked) => updateTemplateSection('header', item.field, checked)}
+                      className="scale-90 data-[state=checked]:bg-primary"
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
 
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle>Cuerpo del Recibo</CardTitle>
-              <CardDescription>Información principal de la venta</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-date">Mostrar Fecha y Hora</Label>
-                <Switch
-                  id="show-date"
-                  checked={templateData.body.show_date}
-                  onCheckedChange={(checked) => updateTemplateSection('body', 'show_date', checked)}
-                />
+            {/* Body Settings */}
+            <Card className="bg-[#1C1F26] border border-white/5 rounded-[3.5rem] shadow-pro glass-pro p-10 group overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform duration-1000">
+                  <Calculator className="w-24 h-24 text-indigo-400" />
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-order">Mostrar # de Pedido</Label>
-                <Switch
-                  id="show-order"
-                  checked={templateData.body.show_order_number}
-                  onCheckedChange={(checked) => updateTemplateSection('body', 'show_order_number', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-cashier">Mostrar Cajero</Label>
-                <Switch
-                  id="show-cashier"
-                  checked={templateData.body.show_cashier}
-                  onCheckedChange={(checked) => updateTemplateSection('body', 'show_cashier', checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
+              <CardHeader className="p-0 pb-8 border-b border-white/5 mb-8 bg-transparent">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 shadow-glow-pro font-space-grotesk">
+                        <Calculator className="w-5 h-5" />
+                    </div>
+                    <div>
+                       <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Transactional Body</CardTitle>
+                       <CardDescription className="text-[8px] font-bold text-white/20 uppercase tracking-widest italic leading-none">Datos de Transacción</CardDescription>
+                    </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 space-y-4">
+                {[
+                  { id: "show-date", label: "TIMESTAMP DE VENTA", field: "show_date" },
+                  { id: "show-order", label: "VECTOR DE PEDIDO #", field: "show_order_number" },
+                  { id: "show-cashier", label: "IDENTIDAD CAJERO", field: "show_cashier" },
+                ].map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/toggle hover:bg-white/[0.04] transition-colors">
+                    <Label htmlFor={item.id} className="text-[9px] font-black uppercase italic tracking-widest text-white/40 group-hover/toggle:text-white transition-colors">{item.label}</Label>
+                    <Switch
+                      id={item.id}
+                      checked={templateData.body[item.field as keyof typeof templateData.body]}
+                      onCheckedChange={(checked) => updateTemplateSection('body', item.field, checked)}
+                      className="scale-90 data-[state=checked]:bg-indigo-500"
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
 
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle>Pie de Página</CardTitle>
-              <CardDescription>Mensaje final y elementos adicionales</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="footer-message">Mensaje de Agradecimiento</Label>
-                <Textarea
-                  id="footer-message"
-                  value={templateData.footer.message}
-                  onChange={(e) => updateTemplateSection('footer', 'message', e.target.value)}
-                  placeholder="¡Gracias por tu compra!"
-                  rows={2}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-social">Mostrar Redes Sociales</Label>
-                <Switch
-                  id="show-social"
-                  checked={templateData.footer.show_social_media}
-                  onCheckedChange={(checked) => updateTemplateSection('footer', 'show_social_media', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-qr">Mostrar QR de Encuesta</Label>
-                <Switch
-                  id="show-qr"
-                  checked={templateData.footer.show_qr_survey}
-                  onCheckedChange={(checked) => updateTemplateSection('footer', 'show_qr_survey', checked)}
-                />
-              </div>
-              {templateData.footer.show_qr_survey && (
-                <div className="space-y-2">
-                  <Label htmlFor="qr-url">URL de Encuesta</Label>
-                  <Input
-                    id="qr-url"
-                    value={templateData.footer.qr_survey_url}
-                    onChange={(e) => updateTemplateSection('footer', 'qr_survey_url', e.target.value)}
-                    placeholder="https://forms.gle/..."
+            {/* Footer Settings */}
+            <Card className="bg-[#1C1F26] border border-white/5 rounded-[3.5rem] shadow-pro glass-pro p-10 group overflow-hidden relative lg:col-span-1 md:col-span-2">
+              <CardHeader className="p-0 pb-8 border-b border-white/5 mb-8 bg-transparent">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 shadow-glow-pro">
+                        <Zap className="w-5 h-5" />
+                    </div>
+                    <div>
+                       <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Footer Assets</CardTitle>
+                       <CardDescription className="text-[8px] font-bold text-white/20 uppercase tracking-widest italic leading-none">Engagement & Fidelidad</CardDescription>
+                    </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="footer-message" className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">MENSAJE DE GRATITUD</Label>
+                  <Textarea
+                    id="footer-message"
+                    value={templateData.footer.message}
+                    onChange={(e) => updateTemplateSection('footer', 'message', e.target.value.toUpperCase())}
+                    placeholder="¡GRACIAS POR INDEXAR TU COMPRA!"
+                    rows={2}
+                    className="bg-white/5 border-white/10 rounded-2xl text-[10px] font-black italic tracking-widest focus:ring-primary/20 shadow-pro transition-all"
                   />
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Preview */}
-        <div className="lg:sticky lg:top-6">
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                Vista Previa del Recibo
-              </CardTitle>
-              <CardDescription>
-                Así se verá tu recibo impreso
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="border-2 border-dashed rounded-xl p-6 bg-white text-black font-mono text-xs space-y-4">
-                {/* Header */}
-                {templateData.header.show_logo && (
-                  <div className="text-center">
-                    <div className="w-24 h-24 mx-auto bg-muted rounded-lg flex items-center justify-center">
-                      <Receipt className="w-12 h-12 text-muted-foreground" />
-                    </div>
-                  </div>
-                )}
-                {templateData.header.show_store_name && (
-                  <div className="text-center font-bold text-sm">
-                    PEKAO GRANIZADOS
-                  </div>
-                )}
-                {templateData.header.show_address && (
-                  <div className="text-center text-xs">
-                    Calle 123 #45-67, Barrio Centro
-                  </div>
-                )}
-                {templateData.header.show_phone && (
-                  <div className="text-center text-xs">
-                    Tel: +57 300 123 4567
-                  </div>
-                )}
                 
-                <div className="border-t border-dashed border-gray-400 my-4"></div>
-                
-                {/* Body */}
-                {templateData.body.show_date && (
-                  <div>Fecha: 15/12/2024 14:30</div>
-                )}
-                {templateData.body.show_order_number && (
-                  <div>Pedido: #1001</div>
-                )}
-                {templateData.body.show_cashier && (
-                  <div>Cajero: Juan Pérez</div>
-                )}
-                
-                <div className="border-t border-dashed border-gray-400 my-4"></div>
-                
-                {templateData.body.show_items && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>1x Granizado Fresa (M)</span>
-                      <span>$8,000</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/toggle">
+                      <Label htmlFor="show-social" className="text-[9px] font-black uppercase italic tracking-widest text-white/40">SOCIAL HUB</Label>
+                      <Switch
+                        id="show-social"
+                        checked={templateData.footer.show_social_media}
+                        onCheckedChange={(checked) => updateTemplateSection('footer', 'show_social_media', checked)}
+                        className="scale-90"
+                      />
                     </div>
-                    <div className="flex justify-between">
-                      <span>  + Leche Condensada</span>
-                      <span>$1,000</span>
+                    <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/toggle">
+                      <Label htmlFor="show-qr" className="text-[9px] font-black uppercase italic tracking-widest text-white/40">QR ANALYTICS</Label>
+                      <Switch
+                        id="show-qr"
+                        checked={templateData.footer.show_qr_survey}
+                        onCheckedChange={(checked) => updateTemplateSection('footer', 'show_qr_survey', checked)}
+                        className="scale-90"
+                      />
                     </div>
-                  </div>
-                )}
-                
-                <div className="border-t border-dashed border-gray-400 my-4"></div>
-                
-                {templateData.body.show_totals && (
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span>$9,000</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>IVA (19%):</span>
-                      <span>$1,710</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-sm">
-                      <span>TOTAL:</span>
-                      <span>$10,710</span>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="border-t border-dashed border-gray-400 my-4"></div>
-                
-                {/* Footer */}
-                <div className="text-center text-xs space-y-2">
-                  <div>{templateData.footer.message}</div>
-                  {templateData.footer.show_social_media && (
-                    <div>
-                      <div>Síguenos en @pekaogranizados</div>
-                    </div>
-                  )}
-                  {templateData.footer.show_qr_survey && (
-                    <div className="flex justify-center mt-4">
-                      <div className="w-20 h-20 bg-muted rounded flex items-center justify-center">
-                        <span className="text-xs">QR</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
-            </CardContent>
+
+                <AnimatePresence>
+                  {templateData.footer.show_qr_survey && (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-3 pt-4 border-t border-white/5"
+                    >
+                      <Label htmlFor="qr-url" className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">URL ENCUESTA DE EXPERIENCIA</Label>
+                      <Input
+                        id="qr-url"
+                        value={templateData.footer.qr_survey_url}
+                        onChange={(e) => updateTemplateSection('footer', 'qr_survey_url', e.target.value)}
+                        placeholder="HTTPS://FORMS.GLE/ALPHA..."
+                        className="h-12 bg-white/5 border-white/10 rounded-xl text-[10px] font-black tracking-widest italic"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Global Preview Sticky - Bento Center */}
+        <div className="xl:col-span-12 flex flex-col gap-10">
+          <Card className="bg-[#1C1F26] border border-white/5 rounded-[4rem] shadow-pro glass-pro p-12 group relative overflow-hidden flex flex-col lg:flex-row gap-12 items-center lg:items-start">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
+            
+            <div className="lg:w-1/3 space-y-8 flex flex-col justify-center">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-primary/10 rounded-[1.5rem] text-primary shadow-glow-pro">
+                        <Eye className="w-8 h-8" />
+                    </div>
+                    <div>
+                       <h3 className="text-2xl font-black italic uppercase font-space-grotesk tracking-tighter text-white">Live Simulator</h3>
+                       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 italic">Vectores de Impresión Térmica</p>
+                    </div>
+                </div>
+                
+                <p className="text-[11px] text-white/30 font-bold uppercase italic leading-relaxed tracking-tight">
+                    Esta simulación proyecta cómo se comportará la inyección de tinta en el papel térmico de <strong className="text-white/40">80mm Alpha</strong>. El motor adapta dinámicamente el layout según los switches seleccionados.
+                </p>
+                
+                <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
+                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        <span className="text-[9px] font-black uppercase italic tracking-widest text-emerald-500/80">Aritmética Fiscal Verificada</span>
+                    </div>
+                    <Button 
+                        onClick={handleSave} 
+                        disabled={isSyncing}
+                        className="h-16 px-12 rounded-[2rem] bg-indigo-500 text-white font-black italic uppercase tracking-widest text-[11px] hover:shadow-glow-pro hover:shadow-indigo-500/40 transition-all gap-4 border-none shadow-pro group font-space-grotesk mt-4"
+                    >
+                        {isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-5 h-5 group-hover:scale-110 transition-transform" /> }
+                        {isSyncing ? 'SINCRO...' : 'SINCRONIZAR ARQUITECTURA ✓'}
+                    </Button>
+                </div>
+            </div>
+
+            {/* Realistic Thermal Receipt Preview */}
+            <div className="lg:w-2/3 flex-1 w-full max-w-sm ml-auto">
+              <motion.div 
+                layout
+                className="bg-[#FFFFFE] text-black font-mono text-[11px] space-y-6 p-10 pb-20 shadow-[0px_40px_100px_rgba(0,0,0,0.6)] relative overflow-hidden min-h-[500px]"
+                style={{
+                  filter: 'contrast(1.2) grayscale(1)',
+                  backgroundImage: 'radial-gradient(#00000005 1px, transparent 1px)',
+                  backgroundSize: '10px 10px'
+                }}
+              >
+                {/* Paper texture and cut effect */}
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-b from-gray-200 to-transparent" />
+                <div className="absolute bottom-0 left-0 w-full h-8 bg-white" style={{ clipPath: 'polygon(0 0, 5% 40%, 10% 0, 15% 40%, 20% 0, 25% 40%, 30% 0, 35% 40%, 40% 0, 45% 40%, 50% 0, 55% 40%, 60% 0, 65% 40%, 70% 0, 75% 40%, 80% 0, 85% 40%, 90% 0, 95% 40%, 100% 0, 100% 100%, 0 100%)' }} />
+                
+                {/* Header Section */}
+                <div className="text-center space-y-2">
+                    {templateData.header.show_logo && (
+                    <div className="mb-4">
+                        <div className="w-20 h-20 mx-auto border-4 border-black border-double flex items-center justify-center font-black text-xl italic font-space-grotesk tracking-tighter">
+                            PK
+                        </div>
+                        <p className="text-[8px] font-bold mt-1 tracking-[0.4em uppercase italic">ALPHA NODE</p>
+                    </div>
+                    )}
+                    {templateData.header.show_store_name && (
+                    <div className="font-black text-lg tracking-tighter italic uppercase leading-none">
+                        PEKAO GRANIZADOS
+                    </div>
+                    )}
+                    {templateData.header.show_address && (
+                    <div className="text-[9px] font-bold uppercase tracking-tight">
+                        CALLE 123 #45-67, MATRIX HUB
+                    </div>
+                    )}
+                    {templateData.header.show_phone && (
+                    <div className="text-[9px] font-bold uppercase">
+                        COM: +57 300 123 4567
+                    </div>
+                    )}
+                </div>
+                
+                <div className="border-t border-black border-dashed my-6 opacity-30"></div>
+                
+                {/* Transaction Metadata */}
+                <div className="space-y-1 font-bold">
+                    {templateData.body.show_date && (
+                    <div className="flex justify-between items-center px-2">
+                        <span>TIMESTAMP:</span>
+                        <span>15/12/26 14:30</span>
+                    </div>
+                    )}
+                    {templateData.body.show_order_number && (
+                    <div className="flex justify-between items-center px-2">
+                        <span>VECTOR ID:</span>
+                        <span className="bg-black text-white px-2 py-0.5">#1001-A</span>
+                    </div>
+                    )}
+                    {templateData.body.show_cashier && (
+                    <div className="flex justify-between items-center px-2">
+                        <span>CORE OPERATOR:</span>
+                        <span>JUAN PÉREZ</span>
+                    </div>
+                    )}
+                </div>
+                
+                <div className="border-t border-black border-dashed my-6 opacity-30"></div>
+                
+                {/* Items and Ledger */}
+                {templateData.body.show_items && (
+                  <div className="space-y-4 px-2">
+                    <div className="space-y-1">
+                        <div className="flex justify-between font-black uppercase italic">
+                            <span>1x GRANIZADO FRESA (M)</span>
+                            <span>$8,000</span>
+                        </div>
+                        <div className="flex justify-between text-[9px] pl-4 opacity-70 italic font-bold">
+                            <span>+ LECHE CONDENSADA XT</span>
+                            <span>$1,000</span>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex justify-between font-black uppercase italic">
+                            <span>1x TOPPING OREO CRUSH</span>
+                            <span>$1,500</span>
+                        </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="border-t-2 border-black border-double my-6"></div>
+                
+                {/* Financial Calculus */}
+                {templateData.body.show_totals && (
+                  <div className="space-y-2 px-2 font-black">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span>SUBTOTAL OPERATIVO:</span>
+                      <span>$10,500</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span>IVA (19.00%):</span>
+                      <span>$1,995</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xl italic font-space-grotesk pt-2 border-t border-black border-dashed">
+                      <span>TOTAL:</span>
+                      <span>$12,495</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="border-t border-black border-dashed my-6 opacity-30"></div>
+                
+                {/* Footer and Engagement */}
+                <div className="text-center space-y-6 px-4">
+                  <div className="font-black italic uppercase tracking-tight text-[10px] leading-relaxed">
+                    "{templateData.footer.message}"
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {templateData.footer.show_social_media && (
+                      <div className="flex flex-col items-center gap-1 border border-black p-3 bg-black/[0.02]">
+                        <div className="flex items-center gap-2">
+                            <Instagram className="w-4 h-4" />
+                            <span className="font-black tracking-widest text-[9px]">@PEKAOGRANIZADOS</span>
+                        </div>
+                        <p className="text-[7px] font-bold opacity-50">SYNC YOUR EXPERIENCE</p>
+                      </div>
+                    )}
+
+                    {templateData.footer.show_qr_survey && (
+                      <div className="flex flex-col items-center gap-3 pt-4 border-t border-black border-dashed">
+                        <div className="w-24 h-24 p-2 border-2 border-black border-double flex items-center justify-center bg-white">
+                           <QrCode className="w-16 h-16 opacity-80" />
+                        </div>
+                        <div className="text-[7px] font-black uppercase tracking-[0.3em]">FEEDBACK PROTOCOL ACTIVE</div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="pt-6 font-bold text-[8px] opacity-20 tracking-widest">
+                    POWERED BY PEKAO OS v2.0-PRO
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </Card>
         </div>
       </div>
-
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleSave} 
-          disabled={isLoading}
-          className="gradient-primary text-white px-8"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {isLoading ? 'Guardando...' : 'Guardar Plantilla'}
-        </Button>
-      </div>
-    </div>
+    </motion.div>
   );
 }

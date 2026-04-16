@@ -31,6 +31,7 @@ const Products = lazy(() => import("./pages/Products"));
 const Users = lazy(() => import("./pages/Users"));
 const Stores = lazy(() => import("./pages/Stores"));
 const Reports = lazy(() => import("./pages/Reports"));
+const Preparation = lazy(() => import("./pages/Preparation"));
 const InventoryManagement = lazy(() => import("./components/settings/InventoryManagement").then(m => ({ default: m.InventoryManagement })));
 const RecipeManagement = lazy(() => import("./components/settings/RecipeManagement").then(m => ({ default: m.RecipeManagement })));
 
@@ -38,9 +39,13 @@ const queryClient = new QueryClient();
 
 // Loading fallback for Suspense
 const PageLoader = () => (
-  <div className="flex flex-col h-screen items-center justify-center bg-[#0F1117]">
-    <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-    <p className="text-slate-500 text-sm font-bold animate-pulse">Cargando módulo...</p>
+  <div className="flex flex-col h-screen items-center justify-center bg-background bg-aurora animate-aurora relative overflow-hidden">
+    <div className="relative z-10 flex flex-col items-center">
+      <div className="w-20 h-20 rounded-3xl bg-primary/20 flex items-center justify-center border border-primary/30 shadow-glow-pro animate-pro-in">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+      <p className="text-primary font-black uppercase tracking-[0.4em] text-[10px] mt-6 animate-pulse font-space-grotesk">Sincronizando v2.0</p>
+    </div>
   </div>
 );
 
@@ -206,6 +211,17 @@ const App = () => (
                   <ProtectedRoute requiredRole={["admin", "manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Reportes">
                       <Reports />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/preparation"
+                element={
+                  <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
+                    <ErrorBoundary fallbackTitle="Error en Preparación">
+                      <Preparation />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }

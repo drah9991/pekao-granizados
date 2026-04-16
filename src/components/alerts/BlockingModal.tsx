@@ -14,11 +14,9 @@ export const BlockingModal = () => {
   const { isVisible, title, description, data } = useAlertStore((state) => state.modal);
   const hideModal = useAlertStore((state) => state.hideModal);
 
-  if (!isVisible) return null;
-
   return (
     <Dialog open={isVisible} onOpenChange={(open) => !open && hideModal()}>
-      <DialogContent className="sm:max-w-md bg-slate-950 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar bg-slate-950 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
         <DialogHeader className="flex flex-col items-center justify-center pt-6">
           <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mb-4 border border-rose-500/20 shadow-[0_0_20px_rgba(244,63,94,0.15)]">
             <ShieldAlert className="w-8 h-8 text-rose-500" />

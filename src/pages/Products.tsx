@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables, TablesInsert, Json, Enums } from "@/integrations/supabase/types";
@@ -14,12 +14,13 @@ import ProductFormDialog from "@/components/products/ProductFormDialog";
 import ProductDetailsDialog from "@/components/products/ProductDetailsDialog";
 import ProductImportExportButtons from "@/components/products/ProductImportExportButtons";
 import Layout from "@/components/Layout";
-
-import { IceCream, Cherry, Wine, Candy } from "lucide-react"; // Icons for product types
+import { motion, AnimatePresence } from "framer-motion";
+import { IceCream, Cherry, Wine, Candy, Plus, Globe, Package, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type Product = Tables<'products'>;
 type ProductType = Enums<'product_type'>;
-type SkuAcronym = Tables<'sku_acronyms'>; // Import SkuAcronym type
+type SkuAcronym = Tables<'sku_acronyms'>;
 
 interface StockInfo {
   store_name: string;
@@ -34,9 +35,26 @@ const productTypeOptions: { value: ProductType; label: string; icon: React.Eleme
   { value: "sweet", label: "Dulce", icon: Candy },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 100, damping: 15 }
+  }
+};
+
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [skuAcronyms, setSkuAcronyms] = useState<SkuAcronym[]>([]); // New state for SKU acronyms
+  const [skuAcronyms, setSkuAcronyms] = useState<SkuAcronym[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterActive, setFilterActive] = useState<string>("all");
   const [filterType, setFilterType] = useState<ProductType | "all">("all");
@@ -60,6 +78,8 @@ export default function Products() {
     recipe: null as Json | null,
     type: "granizado" as ProductType,
     stock: "",
+    base_volume: "" as string | number,
+    unit_measure: "oz",
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -76,32 +96,25 @@ export default function Products() {
   useEffect(() => {
     fetchUserStoreId();
     fetchProducts();
-    fetchSkuAcronyms(); // Fetch SKU acronyms on load
+    fetchSkuAcronyms();
   }, []);
 
   const fetchUserStoreId = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Usuario no autenticado.");
-        return;
-      }
+      if (!user) return;
 
-      const { data: profile, error } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('store_id')
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
       if (profile?.store_id) {
         setUserStoreId(profile.store_id);
-      } else {
-        toast.warning("No se encontró un ID de tienda para el usuario. No podrás crear productos.");
       }
-    } catch (error: any) {
-      console.error("Error fetching user's store ID:", error);
-      toast.error("Error al obtener ID de tienda: " + error.message);
+    } catch (err: any) {
+      console.error("Error fetching user store id:", err);
     }
   };
 
@@ -111,7 +124,7 @@ export default function Products() {
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("name", { ascending: true });
 
       if (error) throw error;
       setProducts(data || []);
@@ -125,24 +138,108 @@ export default function Products() {
 
   const fetchSkuAcronyms = async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("sku_acronyms")
-        .select("*")
-        .order("type", { ascending: true });
-
-      if (error) throw error;
+        .select("*");
       setSkuAcronyms(data || []);
     } catch (error: any) {
       console.error("Error fetching SKU acronyms:", error);
-      toast.error("Error al cargar acrónimos SKU: " + error.message);
+    }
+  };
+
+  const handleSaveProduct = async () => {
+    if (!formData.name || !formData.price || !formData.type) {
+      toast.error("Los campos nombre, precio y tipo son obligatorios.");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const productData: TablesInsert<'products'> = {
+        name: formData.name.toUpperCase(),
+        sku: formData.sku || null,
+        description: formData.description || null,
+        price: parseFloat(formData.price),
+        cost: formData.cost ? parseFloat(formData.cost) : null,
+        active: formData.active,
+        category: formData.category ? formData.category.toUpperCase() : null,
+        is_public: formData.is_public,
+        images: formData.images,
+        variants: formData.variants,
+        recipe: formData.recipe,
+        type: formData.type,
+        base_volume: formData.base_volume ? parseFloat(formData.base_volume.toString()) : null,
+        unit_measure: formData.unit_measure,
+        store_id: userStoreId,
+      };
+
+      if (editingProduct) {
+        const { error } = await supabase
+          .from("products")
+          .update(productData)
+          .eq("id", editingProduct.id);
+        if (error) throw error;
+      } else {
+        const { data: newProd, error: insError } = await supabase
+          .from("products")
+          .insert(productData)
+          .select()
+          .single();
+        
+        if (insError) throw insError;
+
+        if (formData.stock && parseFloat(formData.stock) > 0 && userStoreId) {
+            await supabase.from('store_stock').insert({
+                product_id: newProd.id,
+                store_id: userStoreId,
+                qty: parseFloat(formData.stock),
+                min_qty: 10
+            });
+            
+            await supabase.from('movements').insert({
+                product_id: newProd.id,
+                store_id: userStoreId,
+                qty: parseFloat(formData.stock),
+                type: 'entry',
+                reason: 'Stock inicial al crear producto',
+                user_id: (await supabase.auth.getUser()).data.user?.id
+            });
+        }
+      }
+
+      toast.success(editingProduct ? "Operación de actualización completada" : "Registro de activo exitoso");
+      setProductDialogIsOpen(false);
+      fetchProducts();
+    } catch (error: any) {
+      console.error("Error saving product:", error);
+      toast.error("Fallo en sincronización: " + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteProduct = async (product: Product) => {
+    if (!confirm(`¿Estás seguro de eliminar el producto "${product.name}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", product.id);
+
+      if (error) throw error;
+
+      toast.success("Activo removido del ecosistema");
+      fetchProducts();
+    } catch (error: any) {
+      console.error("Error deleting product:", error);
+      toast.error("Fallo en eliminación");
     }
   };
 
   const openCreateDialog = () => {
-    if (!userStoreId) {
-      toast.error("No tienes una tienda asignada para crear productos. Contacta a un administrador.");
-      return;
-    }
     setEditingProduct(null);
     setFormData({
       name: "",
@@ -158,22 +255,13 @@ export default function Products() {
       recipe: null,
       type: "granizado",
       stock: "",
+      base_volume: "",
+      unit_measure: "oz",
     });
     setProductDialogIsOpen(true);
   };
 
-  const openEditDialog = async (product: Product) => {
-    let currentStock = "0";
-    if (userStoreId) {
-      const { data } = await supabase
-        .from("store_stock")
-        .select("qty")
-        .eq("product_id", product.id)
-        .eq("store_id", userStoreId)
-        .single();
-      if (data) currentStock = data.qty.toString();
-    }
-
+  const openEditDialog = (product: Product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -181,338 +269,118 @@ export default function Products() {
       description: product.description || "",
       price: product.price.toString(),
       cost: product.cost?.toString() || "",
-      active: product.active || false,
+      active: product.active,
       category: product.category || "",
-      is_public: product.is_public || false,
-      images: product.images || [],
-      variants: product.variants || null,
-      recipe: product.recipe || null,
-      type: product.type || "granizado",
-      stock: currentStock,
+      is_public: product.is_public || true,
+      images: (product.images as string[]) || [],
+      variants: product.variants,
+      recipe: product.recipe,
+      type: product.type as ProductType,
+      stock: "",
+      base_volume: product.base_volume?.toString() || "",
+      unit_measure: product.unit_measure || "oz",
     });
     setProductDialogIsOpen(true);
-  };
-
-  const prepareProductData = (): TablesInsert<'products'> => ({
-    name: formData.name.trim(),
-    sku: formData.sku.trim() || null,
-    description: formData.description.trim() || null,
-    price: parseFloat(formData.price),
-    cost: formData.cost ? parseFloat(formData.cost) : null,
-    active: formData.active,
-    category: formData.category.trim() || null,
-    is_public: formData.is_public,
-    images: formData.images.length > 0 ? formData.images : null,
-    variants: formData.variants,
-    recipe: formData.recipe,
-    type: formData.type,
-    ...(editingProduct ? {} : { store_id: userStoreId! }),
-  });
-
-  const createProduct = async (productData: TablesInsert<'products'>) => {
-    const { data: newProductData, error } = await supabase
-      .from("products")
-      .insert([productData])
-      .select('id')
-      .single();
-
-    if (error) throw error;
-
-    if (newProductData?.id && userStoreId) {
-      const { error: stockError } = await supabase
-        .from("store_stock")
-        .insert({
-          product_id: newProductData.id,
-          store_id: userStoreId,
-          qty: parseInt(formData.stock) || 0,
-          min_qty: 0,
-        });
-      if (stockError) throw stockError;
-    }
-
-    await createNotification({
-      store_id: userStoreId,
-      title: "Nuevo Producto",
-      message: `El producto "${productData.name}" ha sido creado.`,
-      type: "system_event",
-      priority: "medium"
-    });
-
-    toast.success("Producto creado correctamente");
-  };
-
-  const updateProduct = async (productId: string, productData: TablesInsert<'products'>) => {
-    const { error } = await supabase
-      .from("products")
-      .update(productData)
-      .eq("id", productId);
-    if (error) throw error;
-
-    if (userStoreId) {
-      const { data: existingStock } = await supabase
-        .from("store_stock")
-        .select("id")
-        .eq("product_id", productId)
-        .eq("store_id", userStoreId)
-        .single();
-        
-      if (existingStock) {
-        await supabase
-          .from("store_stock")
-          .update({ qty: parseInt(formData.stock) || 0, updated_at: new Date().toISOString() })
-          .eq("id", existingStock.id);
-      } else {
-        await supabase
-          .from("store_stock")
-          .insert({
-            product_id: productId,
-            store_id: userStoreId,
-            qty: parseInt(formData.stock) || 0,
-            min_qty: 0,
-          });
-      }
-
-      await createNotification({
-        store_id: userStoreId,
-        title: "Producto Actualizado",
-        message: `El producto "${productData.name}" ha sido actualizado.`,
-        type: "system_event",
-        priority: "low"
-      });
-    }
-
-    toast.success("Producto actualizado correctamente");
-  };
-
-  const handleSaveProduct = async () => {
-    if (!formData.name || !formData.price) {
-      toast.error("Nombre y precio son obligatorios");
-      return;
-    }
-    if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) < 0) {
-      toast.error("El precio debe ser un número positivo.");
-      return;
-    }
-    if (formData.cost && (isNaN(parseFloat(formData.cost)) || parseFloat(formData.cost) < 0)) {
-      toast.error("El costo debe ser un número positivo.");
-      return;
-    }
-    if (!userStoreId && !editingProduct) {
-      toast.error("No se pudo determinar la tienda para este producto.");
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      const productData = prepareProductData();
-
-      if (editingProduct) {
-        await updateProduct(editingProduct.id, productData);
-      } else {
-        await createProduct(productData);
-      }
-
-      setProductDialogIsOpen(false);
-      fetchProducts();
-    } catch (error: any) {
-      console.error("Error saving product:", error);
-      toast.error("Error al guardar producto: " + error.message);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleDeleteProduct = async (product: Product) => {
-    if (!confirm(`¿Estás seguro de eliminar "${product.name}"?`)) return;
-
-    try {
-      const { error } = await supabase
-        .from("products")
-        .delete()
-        .eq("id", product.id);
-
-      if (error) throw error;
-
-      if (product.store_id) {
-        await createNotification({
-          store_id: product.store_id,
-          title: "Producto Eliminado",
-          message: `El producto "${product.name}" ha sido eliminado.`,
-          type: "system_event",
-          priority: "high"
-        });
-      }
-
-      toast.success("Producto eliminado correctamente");
-      fetchProducts();
-    } catch (error: any) {
-      console.error("Error deleting product:", error);
-      toast.error("Error al eliminar producto: " + error.message);
-    }
   };
 
   const openDetailsDialog = async (product: Product) => {
     setViewingProduct(product);
     setDetailsDialogIsOpen(true);
-
+    
     try {
-      const { data, error } = await supabase
-        .from("store_stock")
+      const { data } = await supabase
+        .from('store_stock')
         .select(`
           qty,
           min_qty,
-          stores:store_id (
-            name
-          )
+          stores ( name )
         `)
-        .eq("product_id", product.id);
-
-      if (error) throw error;
-
-      const stockInfo = (data || []).map(item => ({
-        store_name: Array.isArray(item.stores) ? item.stores[0]?.name : item.stores?.name || "N/A",
+        .eq('product_id', product.id);
+        
+      const formattedStock = (data || []).map((item: any) => ({
+        store_name: item.stores.name,
         qty: item.qty,
-        min_qty: item.min_qty,
+        min_qty: item.min_qty
       }));
-
-      setProductStock(stockInfo);
-    } catch (error) {
-      console.error("Error fetching stock:", error);
-      setProductStock([]);
+      
+      setProductStock(formattedStock);
+    } catch (err) {
+      console.error("Error fetching product stock details:", err);
     }
-  };
-
-  const handleExportProducts = () => {
-    if (products.length === 0) {
-      toast.info("No hay productos para exportar.");
-      return;
-    }
-    const csv = exportToCsv(products);
-    downloadFile("productos.csv", csv, "text/csv");
-    toast.success("Productos exportados correctamente.");
   };
 
   const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImportFile(file);
+    if (e.target.files && e.target.files[0]) {
+      setImportFile(e.target.files[0]);
     }
   };
 
   const handleImportProducts = async () => {
     if (!importFile) {
-      toast.error("Por favor, selecciona un archivo CSV para importar.");
-      return;
-    }
-    if (!userStoreId) {
-      toast.error("No tienes una tienda asignada para importar productos.");
+      toast.error("Selecciona un archivo CSV para importar.");
       return;
     }
 
     setIsImporting(true);
     try {
-      const fileContent = await importFile.text();
-      const importedData = importFromCsv<Product>(fileContent);
+      const results = await importFromCsv(importFile);
+      
+      const productsToInsert = results.map((row: any) => ({
+        name: (row.name || "PRODUCTO SIN NOMBRE").toUpperCase(),
+        sku: row.sku || null,
+        description: row.description || null,
+        price: parseFloat(row.price) || 0,
+        cost: row.cost ? parseFloat(row.cost) : null,
+        active: row.active === 'true' || row.active === true,
+        type: row.type || 'granizado',
+        category: row.category ? row.category.toUpperCase() : null,
+        store_id: userStoreId
+      }));
 
-      if (importedData.length === 0) {
-        toast.error("El archivo CSV está vacío o no contiene datos válidos.");
-        return;
-      }
+      const { error } = await supabase.from("products").insert(productsToInsert);
+      if (error) throw error;
 
-      let importedCount = 0;
-      let updatedCount = 0;
-      let errorCount = 0;
-
-      for (const item of importedData) {
-        if (!item.name || typeof item.price !== 'number' || item.price < 0) {
-          toast.error(`Fila inválida (nombre o precio faltante/inválido): ${JSON.stringify(item)}`);
-          errorCount++;
-          continue;
-        }
-
-        const productToSave: TablesInsert<'products'> = {
-          name: item.name,
-          sku: item.sku || null,
-          description: item.description || null,
-          price: item.price,
-          cost: item.cost || null,
-          active: item.active ?? true,
-          category: item.category || null,
-          is_public: item.is_public ?? true,
-          images: item.images || null,
-          variants: item.variants || null,
-          recipe: item.recipe || null,
-          type: item.type || "granizado",
-          store_id: userStoreId,
-        };
-
-        const existingProduct = products.find(p => p.sku === item.sku && item.sku !== null) || products.find(p => p.name === item.name);
-
-        if (existingProduct) {
-          const { error } = await supabase
-            .from("products")
-            .update(productToSave)
-            .eq("id", existingProduct.id);
-          if (error) {
-            console.error("Error updating product:", error);
-            errorCount++;
-          } else {
-            updatedCount++;
-          }
-        } else {
-          const { data: newProductData, error } = await supabase
-            .from("products")
-            .insert([productToSave])
-            .select('id')
-            .single();
-
-          if (error) {
-            console.error("Error inserting product:", error);
-            errorCount++;
-          } else if (newProductData?.id) {
-            const { error: stockError } = await supabase
-              .from("store_stock")
-              .insert({
-                product_id: newProductData.id,
-                store_id: userStoreId,
-                qty: 0,
-                min_qty: 0,
-              });
-            if (stockError) {
-              console.error("Error creating stock for imported product:", stockError);
-              errorCount++;
-            } else {
-              importedCount++;
-            }
-          }
-        }
-      }
-
-      toast.success(`Importación completada: ${importedCount} creados, ${updatedCount} actualizados, ${errorCount} errores.`);
+      toast.success(`${productsToInsert.length} activos indexados correctamente.`);
       setImportDialogIsOpen(false);
       setImportFile(null);
       fetchProducts();
     } catch (error: any) {
       console.error("Error importing products:", error);
-      toast.error("Error al importar productos: " + error.message);
+      toast.error("Fallo masivo en importación: " + error.message);
     } finally {
       setIsImporting(false);
     }
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = !searchQuery ||
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleExportProducts = () => {
+    if (products.length === 0) {
+      toast.error("No hay registros para exportar.");
+      return;
+    }
 
-    const matchesFilter = filterActive === "all" ||
-      (filterActive === "active" && product.active) ||
-      (filterActive === "inactive" && !product.active);
+    const exportData = products.map(p => ({
+      name: p.name,
+      sku: p.sku,
+      description: p.description,
+      price: p.price,
+      cost: p.cost,
+      active: p.active,
+      type: p.type,
+      category: p.category
+    }));
 
+    const csvContent = exportToCsv(exportData);
+    downloadFile(csvContent, `catalogo_pekao_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+    toast.success("Ecosistema exportado con éxito.");
+  };
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesActive = filterActive === "all" || (filterActive === "active" ? product.active : !product.active);
     const matchesType = filterType === "all" || product.type === filterType;
 
-    return matchesSearch && matchesFilter && matchesType;
+    return matchesSearch && matchesActive && matchesType;
   });
 
   const stats = {
@@ -526,59 +394,87 @@ export default function Products() {
 
   return (
     <Layout>
-      <div className="space-y-6 p-6 md:p-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
-              Catálogo de Productos
-            </h1>
-            <p className="text-muted-foreground">Gestiona tu inventario de productos</p>
-          </div>
-          <ProductImportExportButtons
-            onExport={handleExportProducts}
-            onImport={handleImportProducts}
-            onImportFileChange={handleImportFileChange}
-            importFile={importFile}
-            isImporting={isImporting}
-            importDialogIsOpen={importDialogIsOpen}
-            setImportDialogIsOpen={setImportDialogIsOpen}
-            userStoreId={userStoreId}
-            loading={loading}
-            products={products}
-            openCreateDialog={openCreateDialog}
+      <motion.div 
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="min-h-screen bg-transparent text-foreground p-6 lg:p-10 space-y-10"
+      >
+        {/* Header Section */}
+        <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="flex items-center gap-6">
+                <div className="w-20 h-20 rounded-[2rem] bg-primary/10 border border-primary/20 flex items-center justify-center shadow-glow-pro group-hover:scale-110 transition-all duration-700 overflow-hidden relative">
+                    <Zap className="w-10 h-10 text-primary relative z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
+                </div>
+                <div>
+                    <h1 className="text-4xl lg:text-5xl font-black tracking-tighter mb-1 bg-gradient-to-r from-foreground via-foreground/80 to-foreground/40 bg-clip-text text-transparent italic uppercase font-space-grotesk">
+                    Master Catalog
+                    </h1>
+                    <p className="text-primary font-black uppercase tracking-[0.3em] text-[10px] italic font-space-grotesk">
+                    Catering Intelligence • Global Assets Management v2.0
+                    </p>
+                </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-4">
+                <ProductImportExportButtons
+                    onExport={handleExportProducts}
+                    onImport={handleImportProducts}
+                    onImportFileChange={handleImportFileChange}
+                    importFile={importFile}
+                    isImporting={isImporting}
+                    importDialogIsOpen={importDialogIsOpen}
+                    setImportDialogIsOpen={setImportDialogIsOpen}
+                    userStoreId={userStoreId}
+                    loading={loading}
+                    products={products}
+                    openCreateDialog={openCreateDialog}
+                />
+            </div>
+        </motion.div>
+
+        {/* Executive Stats Bento */}
+        <motion.div variants={itemVariants}>
+          <ProductStats {...stats} />
+        </motion.div>
+
+        {/* Global Catalog Controls */}
+        <motion.div variants={itemVariants}>
+          <ProductFiltersAndSearch
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filterType={filterType}
+            setFilterType={setFilterType}
+            filterActive={filterActive}
+            setFilterActive={setFilterActive}
+            productTypeOptions={productTypeOptions}
           />
-        </div>
+        </motion.div>
 
-        {/* Stats Cards */}
-        <ProductStats {...stats} />
+        {/* Assets Grid */}
+        <motion.div variants={itemVariants}>
+           <div className="flex items-center justify-between mb-10">
+              <h2 className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight text-foreground leading-none">Activos de Venta</h2>
+              <div className="flex items-center gap-3 bg-muted/30 px-4 h-9 rounded-full border border-border font-black text-[10px] text-muted-foreground italic uppercase">
+                 <Globe className="w-3.5 h-3.5" /> Ecosistema Global
+              </div>
+           </div>
 
-        {/* Search and Filters */}
-        <ProductFiltersAndSearch
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filterType={filterType}
-          setFilterType={setFilterType}
-          filterActive={filterActive}
-          setFilterActive={setFilterActive}
-          productTypeOptions={productTypeOptions}
-        />
+           <ProductGridDisplay
+            products={filteredProducts}
+            loading={loading}
+            searchQuery={searchQuery}
+            filterActive={filterActive}
+            filterType={filterType}
+            openCreateDialog={openCreateDialog}
+            openEditDialog={openEditDialog}
+            openDetailsDialog={openDetailsDialog}
+            handleDeleteProduct={handleDeleteProduct}
+            userStoreId={userStoreId}
+          />
+        </motion.div>
 
-        {/* Products Grid */}
-        <ProductGridDisplay
-          products={filteredProducts}
-          loading={loading}
-          searchQuery={searchQuery}
-          filterActive={filterActive}
-          filterType={filterType}
-          openCreateDialog={openCreateDialog}
-          openEditDialog={openEditDialog}
-          openDetailsDialog={openDetailsDialog}
-          handleDeleteProduct={handleDeleteProduct}
-          userStoreId={userStoreId}
-        />
-
-        {/* Create/Edit Product Dialog */}
         <ProductFormDialog
           isOpen={productDialogIsOpen}
           onClose={() => setProductDialogIsOpen(false)}
@@ -588,17 +484,17 @@ export default function Products() {
           onSave={handleSaveProduct}
           isProcessing={isProcessing}
           productTypeOptions={productTypeOptions}
-          skuAcronyms={skuAcronyms} // Pass SKU acronyms here
+          skuAcronyms={skuAcronyms}
+          storeId={userStoreId}
         />
 
-        {/* Product Details Dialog */}
         <ProductDetailsDialog
           isOpen={detailsDialogIsOpen}
           onClose={() => setDetailsDialogIsOpen(false)}
           viewingProduct={viewingProduct}
           productStock={productStock}
         />
-      </div>
+      </motion.div>
     </Layout>
   );
 }

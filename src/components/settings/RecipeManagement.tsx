@@ -16,12 +16,27 @@ export const RecipeManagement = () => {
     const { storeId } = useAuth();
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const [selectedProductType, setSelectedProductType] = useState<string | null>(null);
     const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
 
     // Recipe Form State
     const [isAddingIngredient, setIsAddingIngredient] = useState(false);
     const [selectedInventoryItem, setSelectedInventoryItem] = useState<string>("");
     const [qtyRequired, setQtyRequired] = useState<number>(0);
+
+    // Fetch product types config
+    const { data: productTypes } = useQuery({
+        queryKey: ['product_types_config'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('product_types_config')
+                .select('*')
+                .eq('active', true)
+                .order('code');
+            if (error) throw error;
+            return data;
+        }
+    });
 
     // Fetch all products for this store
     const { data: products } = useQuery({
@@ -30,8 +45,9 @@ export const RecipeManagement = () => {
             if (!storeId) return [];
             const { data, error } = await supabase
                 .from('products')
-                .select('id, name')
+                .select('id, name, type')
                 .eq('store_id', storeId)
+                .eq('active', true)
                 .order('name');
             if (error) throw error;
             return data;
@@ -127,46 +143,102 @@ export const RecipeManagement = () => {
         });
     };
 
+    const filteredProducts = products?.filter(p => p.type === selectedProductType) || [];
+    const selectedTypeConfig = productTypes?.find(t => t.code === selectedProductType);
+
     return (
         <Layout>
-            <div className="p-6 md:p-8 space-y-6 md:space-y-8">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+            <div className="p-6 md:p-8 space-y-6 md:space-y-8 animate-in fade-in duration-500">
+                <div className="bg-card/50 backdrop-blur-sm p-6 rounded-2xl shadow-elevated border-2 border-border/50 space-y-6">
                     <div>
-                        <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent flex items-center gap-2">
-                            <ChefHat className="h-6 w-6 text-purple-600" />
+                        <h2 className="text-3xl font-black tracking-tight bg-gradient-hero bg-clip-text text-transparent flex items-center gap-3">
+                            <ChefHat className="h-8 w-8 text-primary" />
                             Recetas de Productos
                         </h2>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm font-medium text-muted-foreground mt-1">
                             Asigna qué y cuánta materia prima se descuenta al vender cada producto.
                         </p>
                     </div>
 
-                    <div className="max-w-md">
-                        <Label className="mb-2 block">Selecciona un Producto Base</Label>
-                        <Select value={selectedProduct || ""} onValueChange={setSelectedProduct}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Ej. Granizado de Maracuyá Base" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {products?.map(p => (
-                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label className="block font-bold">1. Categoría de Producto</Label>
+                            <Select 
+                                value={selectedProductType || ""} 
+                                onValueChange={(val) => {
+                                    setSelectedProductType(val);
+                                    setSelectedProduct(null); // Reset product when type changes
+                                }}
+                            >
+                                <SelectTrigger className="h-12 rounded-xl bg-white/5 border-2 border-border focus:border-primary/50 font-bold">
+                                    <SelectValue placeholder="Ej. Granizado, Topping..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {productTypes?.map((t: any) => (
+                                        <SelectItem key={t.code} value={t.code}>
+                                            <div className="flex items-center gap-2">
+                                                <span>{t.emoji_icon}</span>
+                                                {t.label}
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="block font-bold">2. Producto Específico</Label>
+                            <Select 
+                                value={selectedProduct || ""} 
+                                onValueChange={setSelectedProduct}
+                                disabled={!selectedProductType}
+                            >
+                                <SelectTrigger className="h-12 rounded-xl bg-white/5 border-2 border-border focus:border-primary/50 font-bold">
+                                    <SelectValue placeholder={selectedProductType ? "Selecciona el producto..." : "Primero elige una categoría"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {filteredProducts.length > 0 ? (
+                                        filteredProducts.map(p => (
+                                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                        ))
+                                    ) : (
+                                        <div className="p-2 text-sm text-muted-foreground italic text-center">No hay productos activos</div>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </div>
 
+                {selectedProduct && selectedTypeConfig && (
+                    <div className="bg-primary/5 border-2 border-primary/20 rounded-2xl p-5 animate-in fade-in slide-in-from-top-2">
+                        <div className="flex gap-4 items-start">
+                           <span className="text-3xl filter drop-shadow-md">{selectedTypeConfig.emoji_icon}</span>
+                           <div className="space-y-1">
+                               <h4 className="font-black tracking-wide text-primary">
+                                    Lógica de Descuento: {selectedTypeConfig.sales_mode === 'sizes' ? 'VOLUMÉTRICO (POR TAMAÑOS)' : 'UNIDAD DIRECTA (1 A 1)'}
+                               </h4>
+                               <p className="text-sm font-medium text-foreground/80 leading-relaxed">
+                                   {selectedTypeConfig.sales_mode === 'sizes' 
+                                     ? "El POS multiplicará la Cantidad Requerida que definas aquí por el tamaño del vaso (Onzas/Multiplicador del tamaño). Es decir, estás formulando la base para la medida unitaria (Ej: para 1 oz)."
+                                     : "Este producto se vende por unidad. El POS descontará exactamente la cantidad que definas aquí por cada vez que se agregue al carrito, independientemente de los tamaños de otros productos."}
+                               </p>
+                           </div>
+                        </div>
+                    </div>
+                )}
+
                 {selectedProduct && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b flex justify-between items-center bg-gray-50/50">
-                            <h3 className="font-semibold text-gray-800">Fórmula de Descuento</h3>
+                    <div className="bg-card/50 backdrop-blur-sm rounded-2xl shadow-elevated border-2 border-border/50 overflow-hidden">
+                        <div className="p-5 border-b-2 border-border/50 flex justify-between items-center bg-primary/5">
+                            <h3 className="font-bold text-foreground">Fórmula de Descuento</h3>
                             <Dialog open={isAddingIngredient} onOpenChange={setIsAddingIngredient}>
                                 <DialogTrigger asChild>
                                     <Button size="sm">
                                         <Plus className="h-4 w-4 mr-1" /> Agregar Insumo
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="sm:max-w-sm">
+                                <DialogContent className="sm:max-w-sm max-h-[90dvh] overflow-y-auto custom-scrollbar">
                                     <DialogHeader>
                                         <DialogTitle>Añadir a la receta</DialogTitle>
                                     </DialogHeader>
@@ -195,7 +267,7 @@ export const RecipeManagement = () => {
                                                 onChange={(e) => setQtyRequired(Number(e.target.value))}
                                                 placeholder="Ej. 1.5, 250"
                                             />
-                                            <p className="text-xs text-gray-500">
+                                            <p className="text-xs text-muted-foreground">
                                                 Unidades usadas por cada venta.
                                             </p>
                                         </div>
@@ -220,17 +292,17 @@ export const RecipeManagement = () => {
                                     <TableRow><TableCell colSpan={3} className="text-center py-4">Cargando receta...</TableCell></TableRow>
                                 ) : recipes?.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="text-center py-8 text-gray-500">
+                                        <TableCell colSpan={3} className="text-center py-8 text-muted-foreground font-medium">
                                             Este producto no tiene receta (no descontará insumos).
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     recipes?.map((row: any) => (
                                         <TableRow key={row.id}>
-                                            <TableCell className="font-medium text-gray-800">
+                                            <TableCell className="font-bold text-foreground">
                                                 {row.inventory_items?.name || "Desconocido"}
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="font-medium text-foreground/80">
                                                 {row.quantity_required} {(row.inventory_items as any)?.unit || (row.inventory_items as any)?.unit_of_measure}
                                             </TableCell>
                                             <TableCell className="text-right">

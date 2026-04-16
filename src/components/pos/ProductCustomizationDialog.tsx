@@ -144,23 +144,46 @@ export default function ProductCustomizationDialog({
               <div>
                 <Label className="text-base font-semibold mb-3 block">Tamaño</Label>
                 <div className="grid grid-cols-2 gap-3">
-                  {availableSizes.map((size) => (
-                    <button
-                      key={size.id}
-                      onClick={() => setSelectedSize(size.id)}
-                      className={cn(
-                        "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-150 min-h-[72px] active:scale-95",
-                        selectedSize === size.id
-                          ? "border-primary bg-primary/10 text-primary shadow-md"
-                          : "border-border hover:border-muted-foreground/50"
-                      )}
-                    >
-                      <span className="font-semibold text-sm">{size.name}</span>
-                      <span className="text-xs font-bold mt-1">
-                        {formatCOP(product.price * size.multiplier)}
-                      </span>
-                    </button>
-                  ))}
+                   {(availableSizes || []).map((size) => {
+                      const baseVol = Number(product.base_volume) || 4;
+                      const unitFactor = product.unit_measure === "ml" ? 1 : 29.57;
+                      const sizeVolumeMl = baseVol * size.multiplier * unitFactor;
+                      const remainingServings = product.mixtureStock ? Math.floor(product.mixtureStock / sizeVolumeMl) : null;
+                      
+                      return (
+                        <button
+                          key={size.id}
+                          onClick={() => setSelectedSize(size.id)}
+                          className={cn(
+                            "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-150 min-h-[85px] active:scale-95 text-center relative overflow-hidden group",
+                            selectedSize === size.id
+                              ? "border-primary bg-primary/10 text-primary shadow-md"
+                              : "border-border hover:border-muted-foreground/50 bg-muted/20"
+                          )}
+                        >
+                          <span className="font-bold text-sm">
+                            {size.name}
+                            {product.base_volume && (
+                              <span className="ml-1 text-[10px] opacity-70">
+                                ({(product.base_volume * size.multiplier).toFixed(0)} {product.unit_measure || 'oz'})
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-xs font-black mt-1">
+                            {formatCOP(product.price * size.multiplier)}
+                          </span>
+                          
+                          {(product.type === 'granizado' || product.category === 'Granizado') && remainingServings !== null && (
+                            <div className={cn(
+                              "mt-2 text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full",
+                              remainingServings <= 5 ? "bg-red-500/20 text-red-500" : "bg-emerald-500/10 text-emerald-500"
+                            )}>
+                              {remainingServings} dispon.
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -170,7 +193,7 @@ export default function ProductCustomizationDialog({
               <div>
                 <Label className="text-base font-semibold mb-3 block">Toppings</Label>
                 <div className="space-y-2">
-                  {availableToppings.map((topping) => {
+                  {(availableToppings || []).map((topping) => {
                     const isSelected = selectedToppings.includes(topping.id);
                     return (
                       <button

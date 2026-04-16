@@ -1,19 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Search, Eye, Receipt, DollarSign, CalendarDays, Trash2, Edit, Truck, MapPin, Phone, TrendingUp, ShoppingBag, Clock, ArrowUpRight, Package, ChevronRight } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Eye, Receipt, DollarSign, CalendarDays, Trash2, Edit, Truck, MapPin, Phone, TrendingUp, ShoppingBag, Clock, ArrowUpRight, Package, ChevronRight, Filter, X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
-import { useOrderItems } from "@/hooks/useOrderItems";
 import { OrderRowExpand } from "@/components/sales/OrderRowExpand";
 import { Fragment } from "react";
 import { formatCOP } from "@/lib/currency";
@@ -23,7 +23,7 @@ import { es } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
-import { X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Order = Tables<'orders'>;
 
@@ -48,16 +48,42 @@ interface OrderItem {
   name: string;
   qty: number;
   price: number;
+  product_id?: string;
+  size?: string;
+  size_multiplier?: number;
 }
 
 const orderStatusOptions: { value: OrderStatus | "all"; label: string; color: string; bgClass: string; textClass: string; glowClass: string }[] = [
-  { value: "all", label: "Todos", color: "bg-gray-500", bgClass: "bg-slate-500/10", textClass: "text-slate-400", glowClass: "" },
-  { value: "pending", label: "Pendiente", color: "bg-yellow-500", bgClass: "bg-amber-500/10", textClass: "text-amber-500", glowClass: "shadow-[0_0_15px_rgba(245,158,11,0.15)]" },
-  { value: "completed", label: "Completado", color: "bg-green-500", bgClass: "bg-emerald-500/10", textClass: "text-emerald-500", glowClass: "shadow-[0_0_15px_rgba(16,185,129,0.15)]" },
-  { value: "cancelled", label: "Cancelado", color: "bg-red-500", bgClass: "bg-red-500/10", textClass: "text-red-500", glowClass: "shadow-[0_0_15px_rgba(239,68,68,0.15)]" },
-  { value: "processing", label: "En proceso", color: "bg-blue-500", bgClass: "bg-blue-500/10", textClass: "text-blue-500", glowClass: "shadow-[0_0_15px_rgba(59,130,246,0.15)]" },
-  { value: "delivered", label: "Entregado", color: "bg-purple-500", bgClass: "bg-violet-500/10", textClass: "text-violet-500", glowClass: "shadow-[0_0_15px_rgba(139,92,246,0.15)]" },
+  { value: "all", label: "Todos", color: "bg-gray-500", bgClass: "bg-muted", textClass: "text-muted-foreground", glowClass: "" },
+  { value: "pending", label: "Pendiente", color: "bg-yellow-500", bgClass: "bg-amber-500/10", textClass: "text-amber-500", glowClass: "shadow-glow-pro" },
+  { value: "completed", label: "Completado", color: "bg-green-500", bgClass: "bg-emerald-500/10", textClass: "text-emerald-500", glowClass: "shadow-glow-pro" },
+  { value: "cancelled", label: "Cancelado", color: "bg-red-500", bgClass: "bg-red-500/10", textClass: "text-red-500", glowClass: "shadow-glow-pro" },
+  { value: "processing", label: "En proceso", color: "bg-blue-500", bgClass: "bg-blue-500/10", textClass: "text-blue-500", glowClass: "shadow-glow-pro" },
+  { value: "delivered", label: "Entregado", color: "bg-purple-500", bgClass: "bg-violet-500/10", textClass: "text-violet-500", glowClass: "shadow-glow-pro" },
 ];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15
+    }
+  }
+};
 
 export default function Sales() {
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
@@ -89,6 +115,13 @@ export default function Sales() {
   const [editDeliveryPhone, setEditDeliveryPhone] = useState<string>("");
   const [availableCustomers, setAvailableCustomers] = useState<{ id: string, name: string | null }[]>([]);
 
+  // --- Estado del diálogo de anulación ---
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [cancelTargetOrder, setCancelTargetOrder] = useState<OrderWithDetails | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelItems, setCancelItems] = useState<OrderItem[]>([]);
+
   useEffect(() => {
     fetchCurrentUserStoreId();
     fetchCustomers();
@@ -103,10 +136,7 @@ export default function Sales() {
   const fetchCurrentUserStoreId = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Usuario no autenticado.");
-        return;
-      }
+      if (!user) return;
 
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -117,12 +147,9 @@ export default function Sales() {
       if (error) throw error;
       if (profile?.store_id) {
         setCurrentUserStoreId(profile.store_id);
-      } else {
-        toast.warning("No se encontró un ID de tienda para el usuario. No podrás ver las ventas.");
       }
     } catch (error: any) {
       console.error("Error fetching user's store ID:", error);
-      toast.error("Error al obtener ID de tienda: " + error.message);
     }
   };
 
@@ -188,23 +215,47 @@ export default function Sales() {
     }
   };
 
-  const handleDeleteOrder = async (order: OrderWithDetails) => {
-    if (!confirm(`¿Estás seguro de eliminar el pedido #${order.id.slice(0, 8)}? Esta acción no se puede deshacer.`)) return;
-
+  const handleOpenCancelDialog = async (order: OrderWithDetails) => {
+    setCancelTargetOrder(order);
+    setCancelReason("");
+    setIsCancelDialogOpen(true);
     try {
-      const { error } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', order.id);
+      const { data, error } = await supabase
+        .from('order_items')
+        .select('id, name, qty, price')
+        .eq('order_id', order.id);
+      if (!error) setCancelItems(data || []);
+    } catch (_) { setCancelItems([]); }
+  };
 
+  const handleConfirmCancel = async () => {
+    if (!cancelTargetOrder) return;
+    if (!cancelReason.trim()) {
+      toast.error("El motivo de anulación es obligatorio.");
+      return;
+    }
+    setIsCancelling(true);
+    try {
+      const { error } = await (supabase as any).rpc('cancel_sale_with_stock_restore', {
+        p_order_id: cancelTargetOrder.id,
+        p_reason:   cancelReason.trim()
+      });
       if (error) throw error;
-      toast.success("Pedido eliminado correctamente.");
+      toast.success("✅ Venta anulada. Inventario restaurado correctamente.");
+      setIsCancelDialogOpen(false);
+      setCancelTargetOrder(null);
+      setCancelItems([]);
       fetchOrders();
+      queryClient.invalidateQueries({ queryKey: ['products-grid'] });
     } catch (error: any) {
-      console.error("Error deleting order:", error);
-      toast.error("Error al eliminar el pedido: " + error.message);
+      console.error("Error anulando venta:", error);
+      toast.error("Error al anular: " + error.message);
+    } finally {
+      setIsCancelling(false);
     }
   };
+
+  const handleAnularOrder = (order: OrderWithDetails) => handleOpenCancelDialog(order);
 
   const handleOpenEdit = async (order: OrderWithDetails) => {
     setSelectedOrder(order);
@@ -219,7 +270,7 @@ export default function Sales() {
     try {
       const { data, error } = await supabase
         .from('order_items')
-        .select('id, name, qty, price, product_id')
+        .select('id, name, qty, price, product_id, size, size_multiplier')
         .eq('order_id', order.id);
 
       if (error) throw error;
@@ -263,11 +314,12 @@ export default function Sales() {
     const { subtotal, total } = calculateEditTotals();
     
     const mappedItems = editItems.map(item => ({
-      product_id: (item as any).product_id,
+      product_id: item.product_id,
       quantity: item.qty,
       price: item.price,
       name: item.name,
-      size_multiplier: 1
+      size: item.size || null,
+      size_multiplier: item.size_multiplier || 1
     }));
 
     const updatePayload = {
@@ -361,44 +413,17 @@ export default function Sales() {
     });
   };
 
-  const handleAnularOrder = async (order: OrderWithDetails) => {
-    const reason = prompt(`¿Estás seguro de anular el pedido #${order.id.slice(0, 8)}? Ingresa el motivo de la anulación (obligatorio):`);
-    
-    if (!reason || reason.trim().length === 0) {
-      if (reason !== null) toast.error("El motivo de anulación es obligatorio.");
-      return;
-    }
-
-    try {
-      // In a real scenario, we would log the reason in a 'movements' or 'audit' table
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: 'cancelled' })
-        .eq('id', order.id);
-
-      if (error) throw error;
-      toast.success("Pedido anulado correctamente.");
-      fetchOrders();
-    } catch (error: any) {
-      console.error("Error cancelling order:", error);
-      toast.error("Error al anular el pedido: " + error.message);
-    }
-  };
-
   // Computed stats
   const totalSalesFiltered = filteredOrders
     .filter(order => order.status === 'completed')
     .reduce((sum, order) => sum + order.total, 0);
 
   const completedOrdersCount = filteredOrders.filter(order => order.status === 'completed').length;
-  
   const pendingOrdersCount = filteredOrders.filter(order => order.status === 'pending').length;
-
   const avgTicket = completedOrdersCount > 0 
-    ? Math.round(filteredOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total, 0) / completedOrdersCount) 
+    ? Math.round(totalSalesFiltered / completedOrdersCount) 
     : 0;
 
-  // Status counts for tabs
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: orders.length };
     orders.forEach(o => {
@@ -413,207 +438,128 @@ export default function Sales() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-[#0F1117] text-white p-6 lg:p-10 space-y-8 animate-in fade-in duration-700">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <motion.div 
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="min-h-screen bg-transparent text-foreground p-6 lg:p-10 space-y-10"
+      >
+        {/* Header Section */}
+        <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-black tracking-tight mb-1 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tighter mb-1 bg-gradient-to-r from-white via-white/80 to-white/40 bg-clip-text text-transparent italic uppercase font-space-grotesk whitespace-nowrap">
               Historial de Ventas
             </h1>
-            <p className="text-slate-400 font-medium">
-              Gestión completa de transacciones • {format(new Date(), "eeee d MMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase())}
+            <p className="text-primary font-black uppercase tracking-[0.3em] text-[10px] italic font-space-grotesk">
+              Auditoría y Gestión Transaccional • Standard v2.0
             </p>
           </div>
 
-          {/* Status Filter Pills */}
-          <div className="flex items-center bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800/50 backdrop-blur-xl shadow-inner self-start flex-wrap gap-1">
+          <div className="flex items-center bg-muted/40 p-1.5 rounded-[1.5rem] border border-border backdrop-blur-xl shadow-pro self-start flex-wrap gap-1">
             {orderStatusOptions.filter(o => o.value === "all" || (statusCounts[o.value] || 0) > 0).map((option) => (
               <Button
                 key={option.value}
                 variant="ghost"
                 className={cn(
-                  "px-4 h-9 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                  selectedStatusFilter === option.value 
-                    ? `${option.bgClass} ${option.textClass} shadow-lg` 
-                    : "text-slate-500 hover:text-white"
+                  "px-5 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest italic transition-all font-space-grotesk",
+                   option.value === selectedStatusFilter
+                    ? `${option.bgClass} ${option.textClass} shadow-glow-pro border border-border/50` 
+                    : "text-muted-foreground hover:text-foreground"
                 )}
                 onClick={() => setSelectedStatusFilter(option.value as OrderStatus | "all")}
               >
                 {option.label}
-                {statusCounts[option.value] !== undefined && (
-                  <span className={cn(
-                    "ml-2 text-[9px] px-1.5 py-0.5 rounded-full font-black",
-                    selectedStatusFilter === option.value ? `${option.bgClass}` : "bg-slate-800"
-                  )}>
-                    {statusCounts[option.value]}
-                  </span>
-                )}
+                <span className={cn(
+                  "ml-3 text-[9px] px-2 py-0.5 rounded-full font-black tabular-nums transition-colors",
+                  selectedStatusFilter === option.value ? `${option.bgClass} border border-border/50` : "bg-muted/50"
+                )}>
+                  {statusCounts[option.value] || 0}
+                </span>
               </Button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Revenue Today */}
-          <Card className="bg-[#1C1F26] border-none rounded-[2.5rem] shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
-            <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-emerald-500/0 via-emerald-500/40 to-emerald-500/0" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{dateRange ? "Ingresos (Periodo)" : "Ingresos Totales"}</span>
-              <div className="w-10 h-10 bg-emerald-500/10 rounded-[1rem] flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                <DollarSign className="w-5 h-5 text-emerald-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(totalSalesFiltered)}</div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500">
-                  <ArrowUpRight className="w-3 h-3" />
-                  En vivo
+        {/* KPI Grid */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { label: "INGRESOS FILTRADOS", icon: DollarSign, val: formatCOP(totalSalesFiltered), sub: "Completados", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+            { label: "PEDIDOS EXITOSOS", icon: ShoppingBag, val: completedOrdersCount, sub: `De ${filteredOrders.length} totales`, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+            { label: "TICKET PROMEDIO", icon: TrendingUp, val: formatCOP(avgTicket), sub: "Venta Media", color: "text-teal-500", bg: "bg-teal-500/10" },
+            { label: "ÓRDENES PENDIENTES", icon: Clock, val: pendingOrdersCount, sub: pendingOrdersCount > 0 ? "Requieren Acción" : "Todo al día", color: "text-amber-500", bg: "bg-amber-500/10", glow: pendingOrdersCount > 0 }
+          ].map((kpi, i) => (
+            <Card key={i} className="bg-muted border border-border rounded-[2.5rem] shadow-pro glass-pro group hover:scale-[1.02] transition-all duration-500 overflow-hidden">
+              <CardContent className="p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic font-space-grotesk">{kpi.label}</span>
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-glow-pro transition-transform group-hover:scale-110", kpi.bg, kpi.color)}>
+                    <kpi.icon className="w-5 h-5" />
+                  </div>
                 </div>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-              </div>
-            </CardContent>
-          </Card>
+                <div className="text-2xl lg:text-4xl font-black font-space-grotesk italic text-foreground tracking-tighter mb-2">
+                  {typeof kpi.val === 'string' ? kpi.val.replace("$", "") : kpi.val}
+                </div>
+                <div className="flex items-center gap-2">
+                   {kpi.glow && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shadow-glow-pro" />}
+                   <span className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest italic">{kpi.sub}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </motion.div>
 
-          {/* Completed Orders */}
-          <Card className="bg-[#1C1F26] border-none rounded-[2.5rem] shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
-            <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-indigo-500/0 via-indigo-500/40 to-indigo-500/0" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Completados</span>
-              <div className="w-10 h-10 bg-indigo-500/10 rounded-[1rem] flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                <ShoppingBag className="w-5 h-5 text-indigo-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-black mb-2 tracking-tighter">{completedOrdersCount}</div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">de {filteredOrders.length} pedidos totales</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Avg Ticket */}
-          <Card className="bg-[#1C1F26] border-none rounded-[2.5rem] shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
-            <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Ticket Promedio</span>
-              <div className="w-10 h-10 bg-teal-500/10 rounded-[1rem] flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                <TrendingUp className="w-5 h-5 text-teal-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-black mb-2 tracking-tighter">{formatCOP(avgTicket)}</div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">por venta completada</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pending */}
-          <Card className="bg-[#1C1F26] border-none rounded-[2.5rem] shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
-            <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-amber-500/0 via-amber-500/40 to-amber-500/0" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Pendientes</span>
-              <div className="w-10 h-10 bg-amber-500/10 rounded-[1rem] flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                <Clock className="w-5 h-5 text-amber-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-black mb-2 tracking-tighter">{pendingOrdersCount}</div>
-              <div className="flex items-center gap-2">
-                {pendingOrdersCount > 0 && (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-                    <span className="text-[10px] font-bold text-amber-500 uppercase">Requieren atención</span>
-                  </>
-                )}
-                {pendingOrdersCount === 0 && (
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Todo al día ✓</span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search Bar & Time Filters */}
-        <div className="flex flex-col md:flex-row gap-4 items-center mb-2">
-          {/* Active Filter Badge */}
-          {dateRange && (
-            <Badge variant="outline" className="hidden md:flex shrink-0 h-12 px-4 bg-primary/10 border-primary/20 text-primary gap-3 rounded-2xl text-xs font-black uppercase tracking-widest">
-              <span>
-                Mostrando:{" "}
-                {quickFilter === "today" ? "Hoy" : 
-                 quickFilter === "week" ? "Esta sem." : 
-                 quickFilter === "month" ? format(new Date(), "MMMM yyyy", { locale: es }) :
-                 quickFilter === "year" ? format(new Date(), "yyyy") : "Rango"}
-              </span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-5 w-5 rounded-full hover:bg-primary/20 hover:text-white transition-colors" 
-                onClick={() => handleQuickFilterChange("all")}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
+        {/* Filters Bento */}
+        <motion.div variants={itemVariants} className="flex flex-col md:flex-row gap-5 items-stretch">
+          <div className="relative flex-1 group">
+            <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
             <Input
-              placeholder="Buscar por ID, cajero o cliente..."
+              placeholder="BUSCAR POR ID, CAJERO O CLIENTE..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-11 h-12 bg-[#1C1F26] border-slate-800/50 rounded-2xl text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-medium w-full"
+              className="pl-14 h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk focus:border-primary/50 focus:ring-primary/20 transition-all shadow-pro"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            {/* Quick Filter Select */}
+          <div className="flex flex-wrap items-center gap-3">
             <Select value={quickFilter} onValueChange={handleQuickFilterChange}>
-              <SelectTrigger className="w-full md:w-[150px] h-12 bg-[#1C1F26] border-slate-800/50 rounded-2xl text-white focus:ring-primary/20 transition-all">
-                <SelectValue placeholder="Rango rápido" />
+              <SelectTrigger className="w-[180px] h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk shadow-pro backdrop-blur-xl">
+                <SelectValue placeholder="PERIODO" />
               </SelectTrigger>
-              <SelectContent className="bg-[#1C1F26] border-slate-800 text-white rounded-2xl">
-                <SelectItem value="all">Todos los tiempos</SelectItem>
-                <SelectItem value="today">Hoy</SelectItem>
-                <SelectItem value="week">Esta Semana</SelectItem>
-                <SelectItem value="month">Este Mes</SelectItem>
-                <SelectItem value="year">Este Año</SelectItem>
-                <SelectItem value="custom">Personalizado</SelectItem>
+              <SelectContent className="glass-pro border-border rounded-[1.5rem]">
+                <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest italic">Todo el Historial</SelectItem>
+                <SelectItem value="today" className="text-[10px] font-black uppercase tracking-widest italic">Hoy</SelectItem>
+                <SelectItem value="week" className="text-[10px] font-black uppercase tracking-widest italic">Esta Semana</SelectItem>
+                <SelectItem value="month" className="text-[10px] font-black uppercase tracking-widest italic">Este Mes</SelectItem>
+                <SelectItem value="year" className="text-[10px] font-black uppercase tracking-widest italic">Este Año</SelectItem>
+                <SelectItem value="custom" className="text-[10px] font-black uppercase tracking-widest italic">Personalizado</SelectItem>
               </SelectContent>
             </Select>
 
-            {/* Date Range Picker */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  id="date"
-                  variant={"outline"}
+                  variant="outline"
                   className={cn(
-                    "w-full md:w-[260px] h-12 justify-start text-left font-medium bg-[#1C1F26] border-slate-800/50 rounded-2xl text-white hover:bg-slate-800/50 hover:text-white transition-all",
-                    !dateRange && "text-slate-400"
+                    "min-w-[240px] h-16 justify-start text-left bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk hover:bg-muted/80 transition-all shadow-pro",
+                    !dateRange && "text-muted-foreground/40"
                   )}
                 >
-                  <CalendarDays className="mr-3 h-4 w-4 text-slate-400" />
+                  <CalendarDays className="mr-3 h-4 w-4 text-primary" />
                   {dateRange?.from ? (
                     dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "LLL dd", { locale: es })} -{" "}
-                        {format(dateRange.to, "LLL dd, y", { locale: es })}
-                      </>
+                      <span className="text-foreground">
+                        {format(dateRange.from, "dd MMM", { locale: es })} — {format(dateRange.to, "dd MMM", { locale: es })}
+                      </span>
                     ) : (
-                      format(dateRange.from, "LLL dd, y", { locale: es })
+                      <span className="text-foreground">{format(dateRange.from, "dd MMM, y", { locale: es })}</span>
                     )
                   ) : (
-                    <span>Selec. rango fechas...</span>
+                    "RANGO CALENDARIO"
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-[#1C1F26] border-slate-800 rounded-[2rem] overflow-hidden shadow-2xl" align="end">
+              <PopoverContent className="glass-pro border-white/10 rounded-[2rem] p-4 shadow-pro" align="end">
                 <Calendar
-                  initialFocus
                   mode="range"
                   defaultMonth={dateRange?.from}
                   selected={dateRange}
@@ -622,487 +568,435 @@ export default function Sales() {
                     if (range) setQuickFilter("custom");
                   }}
                   numberOfMonths={2}
-                  className="bg-[#1C1F26] text-white p-4"
+                  className="bg-transparent text-foreground"
                 />
               </PopoverContent>
             </Popover>
-            
-            {/* Mobile Badge */}
-            {dateRange && (
-              <Badge variant="outline" className="md:hidden flex shrink-0 h-10 px-3 bg-primary/10 border-primary/20 text-primary gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest w-full justify-between mt-2">
-                <span>
-                  Mostrando:{" "}
-                  {quickFilter === "today" ? "Hoy" : 
-                   quickFilter === "week" ? "Esta sem." : 
-                   quickFilter === "month" ? format(new Date(), "MMMM yyyy", { locale: es }) :
-                   quickFilter === "year" ? format(new Date(), "yyyy") : "Rango"}
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-5 w-5 rounded-full hover:bg-primary/20 hover:text-white p-0" 
-                  onClick={() => handleQuickFilterChange("all")}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+          </div>
+        </motion.div>
+
+        {/* Orders Table Container */}
+        <motion.div variants={itemVariants}>
+          <Card className="bg-muted border border-border rounded-[3.5rem] p-10 shadow-pro glass-pro overflow-hidden">
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <h2 className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight text-foreground mb-1 leading-none">Registro Maestro de Audits</h2>
+                <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em]">Trazabilidad Total de Transacciones</p>
+              </div>
+              <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-black uppercase tracking-widest italic px-4 h-9">
+                {filteredOrders.length} OPERACIONES REGISTRADAS
               </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Orders Table */}
-        <Card className="bg-[#1C1F26] border-none rounded-[3.5rem] p-8 lg:p-10 shadow-2xl border-t border-white/5 overflow-hidden">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <CardTitle className="text-2xl font-black tracking-tight mb-1">Registro de Pedidos</CardTitle>
-              <CardDescription className="text-slate-400 font-medium tracking-wide">
-                {filteredOrders.length} transacciones encontradas
-              </CardDescription>
             </div>
-            <div className="p-1 px-4 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
-              {selectedStatusFilter === 'all' ? 'Todos' : getStatusConfig(selectedStatusFilter).label}
-            </div>
-          </div>
 
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-14 h-14 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6" />
-              <p className="text-slate-400 font-bold animate-pulse">Sincronizando pedidos...</p>
-            </div>
-          ) : filteredOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 opacity-40">
-              <Receipt className="w-20 h-20 mb-6" />
-              <h3 className="text-xl font-black mb-2">Sin pedidos</h3>
-              <p className="text-slate-400 font-medium text-sm">
-                {dateRange && filteredOrders.length === 0 && !searchQuery
-                  ? "No hubo ventas en este periodo."
-                  : searchQuery || selectedStatusFilter !== "all"
-                  ? "No se encontraron pedidos con los filtros aplicados"
-                  : "Aún no se han realizado ventas en esta tienda."}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto -mx-8 lg:-mx-10 px-8 lg:px-10">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
-                    <th className="pb-6 pl-2">ID Pedido</th>
-                    <th className="pb-6">Fecha / Hora</th>
-                    <th className="pb-6">Cajero</th>
-                    <th className="pb-6">Cliente</th>
-                    <th className="pb-6">Total</th>
-                    <th className="pb-6">Estado</th>
-                    <th className="pb-6 text-right pr-2">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.03]">
-                  {filteredOrders.map((order) => {
-                    const statusConfig = getStatusConfig(order.status as string);
-                    const isExpanded = expandedRowId === order.id;
-                    return (
-                      <Fragment key={order.id}>
-                        <tr 
-                          className={cn(
-                            "group transition-all duration-300 cursor-pointer border-l-2 border-transparent",
-                            isExpanded ? "bg-white/[0.04] border-primary shadow-xl" : "hover:bg-white/[0.02]"
-                          )}
-                          onClick={() => handleToggleExpand(order.id)}
-                          onMouseEnter={() => handlePrefetchDetails(order.id)}
-                        >
-                          <td className="py-5 pl-4">
-                            <div className="flex items-center gap-3">
-                              <ChevronRight className={cn(
-                                "w-4 h-4 text-slate-600 transition-transform duration-300",
-                                isExpanded && "rotate-90 text-primary"
-                              )} />
-                              <span className="text-xs font-black text-slate-400 group-hover:text-white transition-colors">
-                                #{order.id.slice(0, 8)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-5">
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-slate-300">
-                                {format(new Date(order.created_at!), 'dd MMM yyyy', { locale: es })}
-                              </span>
-                              <span className="text-[10px] text-slate-500 font-medium">
-                                {format(new Date(order.created_at!), 'hh:mm a')}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-5">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-black text-[10px] shadow-inner">
-                                {order.creator_profile?.name?.charAt(0)?.toUpperCase() || '?'}
-                              </div>
-                              <span className="text-xs font-bold text-slate-300">{order.creator_profile?.name || 'N/A'}</span>
-                            </div>
-                          </td>
-                          <td className="py-5">
-                            <span className="text-xs font-bold text-slate-300">{order.customer_details?.name || 'Cliente General'}</span>
-                          </td>
-                          <td className="py-5">
-                            <div className="flex flex-col">
-                              <span className={cn(
-                                "font-black text-lg tabular-nums",
-                                order.status === 'cancelled' ? "text-slate-600 line-through" : "text-white"
-                              )}>
-                                {formatCOP(order.total)}
-                              </span>
-                              {order.order_type === 'delivery' && (
-                                <span className="flex items-center gap-1 text-[10px] text-cyan-500 font-black uppercase tracking-tight">
-                                  <Truck className="w-3 h-3" /> Domicilio
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-5">
-                            <div className={cn(
-                              "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tight",
-                              statusConfig.bgClass,
-                              statusConfig.textClass,
-                              statusConfig.glowClass
-                            )}>
-                              <div className={cn(
-                                "w-1.5 h-1.5 rounded-full",
-                                statusConfig.color,
-                                order.status === 'pending' && "animate-pulse"
-                              )} />
-                              {statusConfig.label}
-                            </div>
-                          </td>
-                          <td className="py-5 text-right pr-6">
-                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-all"
-                                onClick={(e) => { e.stopPropagation(); handleViewDetails(order); }}
-                                title="Ver detalles"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-xl hover:bg-indigo-500/10 hover:text-indigo-500 transition-all"
-                                onClick={(e) => { e.stopPropagation(); handleOpenEdit(order); }}
-                                title="Editar pedido"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-xl hover:bg-red-500/10 hover:text-red-500 transition-all"
-                                onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order); }}
-                                title="Eliminar pedido"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                        {isExpanded && (
-                          <tr>
-                            <td colSpan={7} className="p-0 border-none bg-slate-900/10">
-                              <OrderRowExpand 
-                                order={order} 
-                                isOpen={isExpanded}
-                                onVerFactura={handleViewDetails}
-                                onAnular={handleAnularOrder}
-                              />
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-
-        {/* Order Details Dialog */}
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className="sm:max-w-md bg-[#1C1F26] border-slate-800/50 rounded-[2.5rem] text-white shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-black tracking-tight">Detalle de Venta</DialogTitle>
-              <DialogDescription className="sr-only">Desglose exacto de la venta, cliente y métodos de pago.</DialogDescription>
-            </DialogHeader>
-            {selectedOrder && (
-              <div className="space-y-4 py-4">
-                <div className="flex justify-between items-center text-sm border-b border-white/5 pb-3">
-                  <span className="font-black text-slate-400">Pedido: <span className="text-white">#{selectedOrder.id.slice(0, 8)}</span></span>
-                  <span className="text-[11px] font-bold text-slate-500">{new Date(selectedOrder.created_at!).toLocaleString('es-CO')}</span>
-                </div>
-
-                <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 text-sm">
-                  <p className="font-black text-primary text-[10px] uppercase tracking-[0.15em] mb-1.5">Cliente</p>
-                  <p className="font-black text-lg">{selectedOrder.customer_details?.name || 'Consumidor Final'}</p>
-                  {selectedOrder.customer_details && selectedOrder.customer_details.name && (
-                    <div className="flex gap-4 mt-2 text-[11px] text-slate-400 font-medium">
-                      {selectedOrder.customer_details.document_id && <span>CC: {selectedOrder.customer_details.document_id}</span>}
-                      {selectedOrder.customer_details.phone && <span>Tel: {selectedOrder.customer_details.phone}</span>}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <p className="font-black text-[10px] text-slate-400 uppercase tracking-[0.2em] border-b border-white/5 pb-2">Artículos</p>
-                  {fetchingDetails ? (
-                    <div className="py-8 text-center"><div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto" /></div>
-                  ) : orderItems.length === 0 ? (
-                    <p className="text-center text-sm text-slate-500 py-4">No se encontraron artículos.</p>
-                  ) : (
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                      {orderItems.map((item) => (
-                        <div key={item.id} className="flex justify-between items-start py-2.5 border-b border-white/[0.03] last:border-0">
-                          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                            <span className="font-bold text-sm leading-tight">
-                              {item.name.startsWith('Topping:') ? (
-                                <span className="text-slate-400 font-normal ml-3">+ {item.name.replace('Topping:', '').trim()}</span>
-                              ) : (
-                                <span>{item.name}</span>
-                              )}
-                            </span>
-                            {!item.name.startsWith('Topping:') && (
-                              <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-slate-800 font-black text-primary text-[10px]">
-                                  {item.qty}
-                                </span>
-                                <span>×</span>
-                                <span>{formatCOP(item.price)} <span className="opacity-50 italic">c/u</span></span>
-                              </div>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-24">
+                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6 shadow-glow-pro" />
+                <p className="text-primary font-black uppercase tracking-widest text-[10px] italic animate-pulse">Sincronizando Libro Maestro...</p>
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 opacity-30">
+                <Receipt className="w-20 h-20 mb-6 text-foreground" />
+                <h3 className="text-xl font-black italic uppercase tracking-widest text-foreground">SIN OPERACIONES</h3>
+                <p className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-[0.2em] mt-2">No se han detectado transacciones en este bloque.</p>
+              </div>
+            ) : (
+              <div className="table-container-pro max-h-[700px]">
+                <table className="w-full text-left">
+                  <thead className="sticky-header-pro">
+                    <tr className="text-muted-foreground/40 text-[9px] font-black uppercase tracking-[0.3em] font-space-grotesk italic">
+                      <th className="py-6 pl-6 whitespace-nowrap">TIMESTAMP</th>
+                      <th className="py-6 whitespace-nowrap">ID TRANSACCIÓN</th>
+                      <th className="py-6 whitespace-nowrap">OPERADOR</th>
+                      <th className="py-6 whitespace-nowrap">DESTINATARIO</th>
+                      <th className="py-6 whitespace-nowrap">LIQUIDACIÓN</th>
+                      <th className="py-6 whitespace-nowrap">ESTADO FINAL</th>
+                      <th className="py-6 text-right pr-6 whitespace-nowrap">CONTROL</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.03]">
+                    {filteredOrders.map((order, idx) => {
+                      const statusConfig = getStatusConfig(order.status as string);
+                      const isExpanded = expandedRowId === order.id;
+                      return (
+                        <Fragment key={order.id}>
+                          <motion.tr 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.03 }}
+                            className={cn(
+                              "group transition-all duration-300 cursor-pointer",
+                              isExpanded ? "bg-white/5 shadow-pro" : "hover:bg-white/[0.02]"
                             )}
-                          </div>
-                          <div className="shrink-0 ml-4">
-                            <span className="font-black text-sm">{formatCOP(item.price * item.qty)}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t border-white/5 pt-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-400 font-medium">Subtotal Base</span>
-                    <span className="font-bold">{formatCOP(selectedOrder.subtotal)}</span>
-                  </div>
-                  {selectedOrder.order_type === 'delivery' && (
-                    <div className="flex justify-between text-sm text-cyan-500 font-bold">
-                      <span>Servicio de Domicilio</span>
-                      <span>{formatCOP(selectedOrder.delivery_fee || 0)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-black text-xl pt-2">
-                    <span>Total Pagado</span>
-                    <span className="text-emerald-500">{formatCOP(selectedOrder.total)}</span>
-                  </div>
-                </div>
-
-                {selectedOrder.order_type === 'delivery' && (
-                  <div className="bg-cyan-500/5 p-4 rounded-2xl border border-cyan-500/10 text-sm space-y-2">
-                    <div className="flex items-center gap-2 text-cyan-500 font-black text-[10px] uppercase tracking-[0.2em]">
-                      <MapPin className="w-3.5 h-3.5" /> Dirección de Entrega
-                    </div>
-                    <p className="text-white font-medium">{selectedOrder.delivery_address || 'Sin dirección registrada'}</p>
-                    {selectedOrder.delivery_phone && (
-                      <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                        <Phone className="w-3 h-3" /> {selectedOrder.delivery_phone}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold pt-4 border-t border-white/5">
-                  <span>Atendido por: {selectedOrder.creator_profile?.name || 'N/A'}</span>
-                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
-                    {selectedOrder.payment ? Object.values(selectedOrder.payment)[0] as string : 'Efectivo'}
-                  </span>
-                </div>
+                            onClick={() => handleToggleExpand(order.id)}
+                            onMouseEnter={() => handlePrefetchDetails(order.id)}
+                          >
+                            <td className="py-6 pl-6">
+                               <div className="flex items-center gap-4">
+                                  <ChevronRight className={cn("w-4 h-4 text-muted-foreground/20 transition-transform", isExpanded && "rotate-90 text-primary")} />
+                                  <div className="flex flex-col">
+                                    <span className="text-[11px] font-black text-foreground italic font-space-grotesk">
+                                      {format(new Date(order.created_at!), 'dd MMM', { locale: es })}
+                                    </span>
+                                    <span className="text-[9px] text-muted-foreground/60 font-black">{format(new Date(order.created_at!), 'HH:mm')}</span>
+                                  </div>
+                               </div>
+                            </td>
+                            <td className="py-6">
+                              <span className="text-[10px] font-black text-muted-foreground/40 group-hover:text-primary transition-colors bg-muted/20 px-3 py-1.5 rounded-xl border border-border font-mono">
+                                #{order.id.slice(0, 8).toUpperCase()}
+                              </span>
+                            </td>
+                            <td className="py-6">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-black text-[10px] italic border border-primary/20">
+                                  {order.creator_profile?.name?.charAt(0)?.toUpperCase()}
+                                </div>
+                                <span className="text-[11px] font-black text-foreground group-hover:text-primary transition-colors italic uppercase">{order.creator_profile?.name?.split(' ')[0]}</span>
+                              </div>
+                            </td>
+                            <td className="py-6">
+                              <span className="text-[11px] font-black text-muted-foreground italic uppercase">{order.customer_details?.name || 'GENÉRICO'}</span>
+                            </td>
+                            <td className="py-6">
+                              <div className="flex flex-col">
+                                <span className={cn(
+                                  "text-lg font-black italic font-space-grotesk tabular-nums leading-none",
+                                  order.status === 'cancelled' ? "text-muted-foreground/40 line-through" : "text-foreground"
+                                )}>
+                                  {formatCOP(order.total)}
+                                </span>
+                                {order.order_type === 'delivery' && (
+                                  <span className="text-[8px] text-cyan-500 font-black uppercase tracking-widest mt-1 italic flex items-center gap-1">
+                                    <Truck className="w-2.5 h-2.5" /> DOMICILIO
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-6">
+                               <div className={cn(
+                                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest italic border shadow-glow-pro transition-all",
+                                  statusConfig.bgClass, statusConfig.textClass, "border-white/10"
+                               )}>
+                                  <div className={cn("w-1.5 h-1.5 rounded-full", statusConfig.color, order.status === 'pending' && "animate-pulse")} />
+                                  {statusConfig.label}
+                               </div>
+                            </td>
+                            <td className="py-6 text-right pr-6">
+                              <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                                <Button
+                                  variant="ghost" size="icon" className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary transition-all shadow-pro"
+                                  onClick={(e) => { e.stopPropagation(); handleViewDetails(order); }}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost" size="icon" className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-indigo-500/20 hover:text-indigo-400 transition-all shadow-pro"
+                                  onClick={(e) => { e.stopPropagation(); handleOpenEdit(order); }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost" size="icon" className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-red-500/20 hover:text-red-400 transition-all shadow-pro"
+                                  onClick={(e) => { e.stopPropagation(); handleOpenCancelDialog(order); }}
+                                  disabled={order.status === 'cancelled'}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </motion.tr>
+                          {isExpanded && (
+                            <tr>
+                              <td colSpan={7} className="p-0 border-none">
+                                <motion.div 
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  className="bg-muted/30"
+                                >
+                                  <OrderRowExpand 
+                                    order={order} 
+                                    isOpen={isExpanded}
+                                    onVerFactura={handleViewDetails}
+                                    onAnular={handleAnularOrder}
+                                  />
+                                </motion.div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
-          </DialogContent>
-        </Dialog>
+          </Card>
+        </motion.div>
 
-        {/* Update Order Dialog */}
+        {/* Dialogs: Detailed Audit View */}
+        <AnimatePresence>
+          {isDetailsOpen && (
+            <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+              <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-border rounded-[3rem] text-foreground shadow-pro animate-in zoom-in-95 duration-300">
+                <DialogHeader className="mb-6">
+                  <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-glow-pro">
+                        <Receipt className="w-6 h-6 text-primary" />
+                     </div>
+                     <div>
+                        <DialogTitle className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight">Audit Auditivo</DialogTitle>
+                        <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">Registro Maestro #{selectedOrder?.id.slice(0, 8).toUpperCase()}</DialogDescription>
+                     </div>
+                  </div>
+                </DialogHeader>
+
+                {selectedOrder && (
+                  <div className="space-y-6">
+                    <div className="p-6 glass-pro rounded-[2rem] border border-border bg-primary/5 shadow-pro relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                          <Package className="w-16 h-16 text-primary" />
+                       </div>
+                       <p className="text-[9px] font-black uppercase tracking-[0.3em] text-primary/60 italic mb-2 font-space-grotesk">DESTINATARIO FINAL</p>
+                       <p className="text-xl lg:text-3xl font-black italic font-space-grotesk text-foreground mb-2 truncate pr-2">{selectedOrder.customer_details?.name || 'CONSUMIDOR GENERAL'}</p>
+                       {selectedOrder.customer_details && (
+                         <div className="flex gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 italic">
+                             {selectedOrder.customer_details.document_id && <span>DNI: {selectedOrder.customer_details.document_id}</span>}
+                             {selectedOrder.customer_details.phone && <span>TEL: {selectedOrder.customer_details.phone}</span>}
+                         </div>
+                       )}
+                    </div>
+
+                    <div className="space-y-4">
+                       <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 italic px-2 font-space-grotesk border-b border-border/50 pb-2">DESGLOSE DE MERCANCÍA</p>
+                       {fetchingDetails ? (
+                         <div className="py-12 flex justify-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+                       ) : (
+                         <div className="space-y-3 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
+                            {orderItems.map((item) => (
+                              <div key={item.id} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-white/10 transition-all">
+                                 <div className="flex flex-col">
+                                    <span className={cn("text-xs font-black italic uppercase font-space-grotesk", item.name.startsWith('Topping:') ? "text-muted-foreground" : "text-foreground")}>
+                                      {item.name.replace('Topping:', '+ ')}
+                                    </span>
+                                    {!item.name.startsWith('Topping:') && (
+                                       <span className="text-[9px] font-black text-muted-foreground/40">QUANTITY: {item.qty} × {formatCOP(item.price)}</span>
+                                    )}
+                                 </div>
+                                 <span className="text-sm font-black italic font-space-grotesk tabular-nums">{formatCOP(item.price * item.qty)}</span>
+                              </div>
+                            ))}
+                         </div>
+                       )}
+                    </div>
+
+                    <div className="p-6 glass-pro rounded-[2.5rem] border border-border space-y-3">
+                       <div className="flex justify-between text-[11px] font-black uppercase italic text-muted-foreground font-space-grotesk">
+                          <span>BASE IMPONIBLE</span>
+                          <span className="text-foreground">{formatCOP(selectedOrder.subtotal)}</span>
+                       </div>
+                       {selectedOrder.order_type === 'delivery' && (
+                         <div className="flex justify-between text-[11px] font-black uppercase italic text-cyan-500 font-space-grotesk">
+                           <span>LOGÍSTICA ENTREGA</span>
+                           <span>{formatCOP(selectedOrder.delivery_fee || 0)}</span>
+                         </div>
+                       )}
+                       <div className="flex justify-between items-center pt-3 border-t border-white/5 mt-2">
+                          <span className="text-xs font-black uppercase tracking-widest text-primary italic">LIQUIDACIÓN TOTAL</span>
+                          <span className="text-2xl lg:text-3xl font-black italic font-space-grotesk text-emerald-500 shadow-glow-pro-text">{formatCOP(selectedOrder.total)}</span>
+                       </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-5 glass-pro rounded-2xl border border-border/50">
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border border-border italic font-black text-[9px]">
+                              {selectedOrder.creator_profile?.name?.charAt(0)}
+                           </div>
+                           <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">CAJERO: {selectedOrder.creator_profile?.name?.toUpperCase()}</span>
+                        </div>
+                        <Badge className="bg-muted text-muted-foreground border-border text-[9px] font-black uppercase italic px-3">
+                           {selectedOrder.payment ? String(Object.values(selectedOrder.payment)[0]).toUpperCase() : 'EFECTIVO'}
+                        </Badge>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+          )}
+        </AnimatePresence>
+
+        {/* Edit Process Logic Remains consistent but with v2.0 Aesthetics */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <DialogContent className="sm:max-w-md lg:max-w-lg bg-[#1C1F26] border-slate-800/50 rounded-[2.5rem] text-white shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-black tracking-tight">Editar Pedido</DialogTitle>
-              <DialogDescription className="text-slate-400 font-medium">Modifica el estado, cliente o productos del pedido.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Estado</label>
-                  <Select
-                    value={editStatus}
-                    onValueChange={(value: OrderStatus) => setEditStatus(value)}
-                  >
-                    <SelectTrigger className="w-full h-10 bg-slate-900/50 border-slate-800/50 rounded-xl text-white">
-                      <SelectValue placeholder="Estado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {orderStatusOptions.filter(o => o.value !== "all").map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Cliente</label>
-                  <Select
-                    value={editCustomerId || "generic"}
-                    onValueChange={(value: string) => setEditCustomerId(value)}
-                  >
-                    <SelectTrigger className="w-full h-10 bg-slate-900/50 border-slate-800/50 rounded-xl text-white">
-                      <SelectValue placeholder="Consumidor Final" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="generic">Consumidor Final</SelectItem>
-                      {availableCustomers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Tipo de Pedido</label>
-                <Tabs 
-                  value={editOrderType} 
-                  onValueChange={(val) => setEditOrderType(val as 'pickup' | 'delivery')}
-                  className="w-full"
-                >
-                  <TabsList className="grid w-full grid-cols-2 h-10 bg-slate-900/50 rounded-xl">
-                    <TabsTrigger value="pickup" className="text-xs font-black rounded-lg">Local</TabsTrigger>
-                    <TabsTrigger value="delivery" className="text-xs font-black rounded-lg">Domicilio</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-
-                {editOrderType === "delivery" && (
-                  <div className="grid grid-cols-2 gap-3 p-4 bg-cyan-500/5 rounded-2xl border border-cyan-500/10 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="col-span-2">
-                      <label className="text-[10px] font-black uppercase text-cyan-500 tracking-[0.15em]">Dirección de Entrega</label>
-                      <Input 
-                        value={editDeliveryAddress}
-                        onChange={(e) => setEditDeliveryAddress(e.target.value)}
-                        className="h-9 text-sm bg-slate-900/50 border-slate-800/50 rounded-xl text-white mt-1"
-                        placeholder="Calle... # ..."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-black uppercase text-cyan-500 tracking-[0.15em]">Teléfono</label>
-                      <Input 
-                        value={editDeliveryPhone}
-                        onChange={(e) => setEditDeliveryPhone(e.target.value)}
-                        className="h-9 text-sm bg-slate-900/50 border-slate-800/50 rounded-xl text-white mt-1"
-                        placeholder="300..."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-black uppercase text-cyan-500 tracking-[0.15em]">Costo Domicilio</label>
-                      <Input 
-                        type="number"
-                        value={editDeliveryFee}
-                        onChange={(e) => setEditDeliveryFee(Number(e.target.value))}
-                        className="h-9 text-sm bg-slate-900/50 border-slate-800/50 rounded-xl text-white mt-1"
-                        placeholder="0"
-                      />
-                    </div>
+           <DialogContent className="sm:max-w-xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-border/50 rounded-[3rem] text-foreground shadow-pro">
+              <DialogHeader className="mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center shadow-glow-pro">
+                    <Edit className="w-6 h-6 text-indigo-400" />
                   </div>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <p className="font-black text-[10px] text-slate-400 uppercase tracking-[0.2em] border-b border-white/5 pb-2">Editar Artículos</p>
-                {fetchingDetails ? (
-                  <div className="py-8 text-center"><div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto" /></div>
-                ) : (
-                  <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 scrollbar-hide">
-                    {editItems.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between text-sm py-3 border-b border-white/[0.03] last:border-0 gap-3 group/item hover:bg-white/[0.02] rounded-xl px-2 transition-colors">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold truncate text-white">{item.name}</p>
-                          <p className="text-[10px] text-slate-500 font-medium">{formatCOP(item.price)} c/u</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-7 w-7 rounded-lg bg-slate-900/50 border-slate-800/50 text-white hover:bg-slate-800"
-                            onClick={() => handleUpdateItemQty(item.id, item.qty - 1)}
-                            disabled={item.qty <= 1}
-                          >
-                            -
-                          </Button>
-                          <span className="w-8 text-center font-black">{item.qty}</span>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-7 w-7 rounded-lg bg-slate-900/50 border-slate-800/50 text-white hover:bg-slate-800"
-                            onClick={() => handleUpdateItemQty(item.id, item.qty + 1)}
-                          >
-                            +
-                          </Button>
-                        </div>
-
-                        <div className="text-right min-w-[80px]">
-                          <p className="font-black">{formatCOP(item.price * item.qty)}</p>
-                        </div>
-
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-7 w-7 rounded-lg text-red-500 hover:bg-red-500/10"
-                          onClick={() => handleRemoveItem(item.id)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    ))}
+                  <div>
+                    <DialogTitle className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight">Recalibrar Registro</DialogTitle>
+                    <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">Modificación Auditada de Transacción</DialogDescription>
                   </div>
-                )}
-              </div>
-
-              <div className="bg-slate-900/30 p-5 rounded-2xl border border-white/5">
-                <div className="flex justify-between items-center font-black text-xl">
-                  <span className="text-slate-300">Nuevo Total:</span>
-                  <span className="text-emerald-500">{formatCOP(calculateEditTotals().total)}</span>
                 </div>
-              </div>
+              </DialogHeader>
 
-              <div className="flex justify-end gap-3">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setIsEditOpen(false)}
-                  className="rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-bold"
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  className="gradient-primary rounded-xl font-black shadow-[0_0_20px_rgba(14,165,233,0.3)] hover:shadow-[0_0_30px_rgba(14,165,233,0.4)] transition-all px-8" 
-                  onClick={handleUpdateOrder} 
-                  disabled={isUpdating || fetchingDetails}
-                >
-                  {isUpdating ? "Guardando..." : "Finalizar Edición"}
-                </Button>
+              <div className="space-y-6">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground italic px-2">Estado Auditado</Label>
+                       <Select value={editStatus} onValueChange={(value: OrderStatus) => setEditStatus(value)}>
+                          <SelectTrigger className="h-14 bg-muted border-border rounded-2xl text-[10px] font-black italic uppercase font-space-grotesk">
+                             <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="glass-pro border-border rounded-2xl">
+                             {orderStatusOptions.filter(o => o.value !== "all").map(opt => (
+                               <SelectItem key={opt.value} value={opt.value} className="text-[10px] font-black uppercase italic">{opt.label}</SelectItem>
+                             ))}
+                          </SelectContent>
+                       </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                       <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground italic px-2">Identidad Cliente</Label>
+                       <Select value={editCustomerId || "generic"} onValueChange={setEditCustomerId}>
+                          <SelectTrigger className="h-14 bg-muted border-border rounded-2xl text-[10px] font-black italic uppercase font-space-grotesk">
+                             <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="glass-pro border-border rounded-2xl">
+                             <SelectItem value="generic" className="text-[10px] font-black uppercase italic">Anónimo / Consumidor Final</SelectItem>
+                             {availableCustomers.map(c => <SelectItem key={c.id} value={c.id} className="text-[10px] font-black uppercase italic">{c.name}</SelectItem>)}
+                          </SelectContent>
+                       </Select>
+                    </div>
+                 </div>
+
+                 <div className="space-y-3">
+                    <Tabs value={editOrderType} onValueChange={(v) => setEditOrderType(v as any)} className="w-full">
+                       <TabsList className="grid grid-cols-2 h-14 bg-muted rounded-2xl p-1 border border-border">
+                          <TabsTrigger value="pickup" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-[10px] font-black uppercase italic rounded-xl">ATENCION EN LOCAL</TabsTrigger>
+                          <TabsTrigger value="delivery" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-600 dark:data-[state=active]:text-cyan-400 text-[10px] font-black uppercase italic rounded-xl">LOGÍSTICA DOMICILIO</TabsTrigger>
+                       </TabsList>
+                    </Tabs>
+                    
+                    {editOrderType === 'delivery' && (
+                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-6 glass-pro bg-cyan-500/5 rounded-[2rem] border border-cyan-500/20 space-y-4">
+                          <div>
+                             <Label className="text-[8px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-widest italic mb-2">VECTOR DIRECCIONAL (ENTREGA)</Label>
+                             <Input 
+                                value={editDeliveryAddress} 
+                                onChange={(e) => setEditDeliveryAddress(e.target.value)}
+                                className="h-12 bg-muted border-border rounded-xl text-[11px] font-black uppercase italic font-space-grotesk" 
+                                placeholder="INGRESE DIRECCIÓN..."
+                             />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                             <div>
+                                <Label className="text-[8px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-widest italic mb-2">TELECOM</Label>
+                                <Input value={editDeliveryPhone} onChange={(e) => setEditDeliveryPhone(e.target.value)} className="h-12 bg-muted border-border rounded-xl text-[11px] font-black font-space-grotesk" placeholder="CONTACTO..." />
+                             </div>
+                             <div>
+                                <Label className="text-[8px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-widest italic mb-2">COSTO LOGÍSTIVO</Label>
+                                <Input type="number" value={editDeliveryFee} onChange={(e) => setEditDeliveryFee(Number(e.target.value))} className="h-12 bg-muted border-border rounded-xl text-[11px] font-black font-space-grotesk italic" />
+                             </div>
+                          </div>
+                       </motion.div>
+                    )}
+                 </div>
+
+                 <div className="space-y-4">
+                   <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2 font-space-grotesk border-b border-border pb-2">RECALIBRACIÓN DE ARTÍCULOS</Label>
+                   <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                      {editItems.map(item => (
+                        <div key={item.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border group hover:border-primary/30 transition-all">
+                           <div className="flex-1 min-w-0">
+                              <p className="text-xs font-black italic uppercase font-space-grotesk text-foreground truncate">{item.name}</p>
+                              <p className="text-[9px] font-black text-muted-foreground italic">{formatCOP(item.price)} C/U</p>
+                           </div>
+                           <div className="flex items-center gap-3 ml-4 bg-muted p-1 rounded-xl border border-border">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground" onClick={() => handleUpdateItemQty(item.id, item.qty - 1)} disabled={item.qty <= 1}>-</Button>
+                              <span className="text-[11px] font-black italic tabular-nums w-4 text-center">{item.qty}</span>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground" onClick={() => handleUpdateItemQty(item.id, item.qty + 1)}>+</Button>
+                           </div>
+                           <div className="w-[80px] text-right font-black italic font-space-grotesk text-sm tabular-nums ml-4">{formatCOP(item.price * item.qty)}</div>
+                           <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500/40 hover:text-red-500 ml-2" onClick={() => handleRemoveItem(item.id)}><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      ))}
+                   </div>
+                 </div>
+
+                 <div className="p-8 glass-pro rounded-[2.5rem] border border-border flex items-center justify-between bg-emerald-500/5 mt-4">
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600 dark:text-emerald-500/60 italic font-space-grotesk">NUEVA LIQUIDACIÓN TOTAL</span>
+                    <span className="text-2xl lg:text-4xl font-black italic font-space-grotesk text-emerald-600 dark:text-emerald-500 shadow-glow-pro-text tabular-nums">{formatCOP(calculateEditTotals().total)}</span>
+                 </div>
+
+                 <div className="flex gap-4 pt-4">
+                    <Button variant="ghost" onClick={() => setIsEditOpen(false)} className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase italic tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted">ABORTAR CAMBIOS</Button>
+                    <Button onClick={handleUpdateOrder} disabled={isUpdating} className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-black italic uppercase tracking-widest shadow-glow-pro hover:shadow-primary/40 transition-all">
+                       {isUpdating ? "SINCRONIZANDO..." : "COMPROMETER CAMBIOS ✓"}
+                    </Button>
+                 </div>
               </div>
-            </div>
-          </DialogContent>
+           </DialogContent>
         </Dialog>
-      </div>
+
+        {/* Cancel Dialog: v2.0 Appetite Standard */}
+        <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+           <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-red-500/20 rounded-[3rem] text-foreground shadow-pro">
+              <DialogHeader className="mb-6">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center shadow-glow-pro">
+                       <Trash2 className="w-6 h-6 text-red-500" />
+                    </div>
+                    <div>
+                       <DialogTitle className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight">Anular Transacción</DialogTitle>
+                       <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-500/60 italic">Operación Destructiva Auditada</DialogDescription>
+                    </div>
+                 </div>
+              </DialogHeader>
+
+              {cancelTargetOrder && (
+                 <div className="space-y-6">
+                    <div className="p-6 glass-pro bg-red-500/5 rounded-[2rem] border border-red-500/10 space-y-4">
+                        <div className="flex justify-between items-center">
+                            <div>
+                               <p className="text-[9px] font-black uppercase text-muted-foreground italic tracking-widest">ID TRANSACCIÓN</p>
+                               <p className="text-xl font-black italic font-space-grotesk underline decoration-red-500/30">#{cancelTargetOrder.id.slice(0, 8).toUpperCase()}</p>
+                            </div>
+                            <div className="text-right">
+                               <p className="text-[9px] font-black uppercase text-red-600 dark:text-red-500/60 italic tracking-widest">VALOR A REVERTIR</p>
+                               <p className="text-2xl lg:text-3xl font-black italic font-space-grotesk text-red-600 dark:text-red-500 tabular-nums">{formatCOP(cancelTargetOrder.total)}</p>
+                            </div>
+                        </div>
+                        <p className="text-[10px] font-medium text-muted-foreground text-center leading-relaxed">
+                          La anulación restaurará el <span className="text-emerald-600 dark:text-emerald-500 font-bold uppercase italic tracking-tighter">STOCK INMEDIATAMENTE</span>. 
+                          Esta acción no se puede revertir.
+                        </p>
+                    </div>
+
+                    <div className="space-y-4">
+                       <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">JUSTIFICACIÓN OBLIGATORIA</Label>
+                       <textarea
+                         className="w-full bg-muted border border-border rounded-[1.5rem] p-5 text-[11px] font-black italic uppercase font-space-grotesk text-foreground placeholder:text-muted-foreground/30 focus:border-red-500 focus:ring-red-500/20 transition-all resize-none h-32"
+                         placeholder="EJ: ERROR EN LIQUIDACIÓN, DEVOLUCIÓN POR CALIDAD..."
+                         value={cancelReason}
+                         onChange={(e) => setCancelReason(e.target.value)}
+                       />
+                    </div>
+
+                    <div className="flex gap-4 pt-2">
+                       <Button variant="ghost" onClick={() => setIsCancelDialogOpen(false)} className="flex-1 h-16 rounded-[1.5rem] text-[10px] font-black uppercase italic tracking-widest text-muted-foreground hover:text-foreground">ABORTAR</Button>
+                       <Button 
+                          onClick={handleConfirmCancel} 
+                          disabled={isCancelling || !cancelReason.trim()}
+                          className="flex-1 h-16 rounded-[1.5rem] bg-rose-600 text-white font-black italic uppercase tracking-widest shadow-glow-pro hover:bg-rose-500 transition-all"
+                       >
+                          {isCancelling ? "REVIRTIENDO..." : "ANULAR OPERACIÓN ✓"}
+                       </Button>
+                    </div>
+                 </div>
+              )}
+           </DialogContent>
+        </Dialog>
+      </motion.div>
     </Layout>
   );
 }

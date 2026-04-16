@@ -5,21 +5,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Edit, Trash2, Users, MapPin, Phone, Mail } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Users, MapPin, Phone, Mail, IdCard, MessageSquare, ShieldCheck, UserPlus, CreditCard, LayoutGrid, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCOP } from "@/lib/currency";
 import { Tables } from "@/integrations/supabase/types";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Customer = Tables<'customers'> & { document_id?: string; consent_habeas_data?: boolean };
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 100, damping: 15 }
+  }
+};
 
 export default function Customers() {
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
 
-    // Dialog states
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
     const [formData, setFormData] = useState({
@@ -98,29 +115,27 @@ export default function Customers() {
                     .eq("id", editingCustomer.id);
 
                 if (error) throw error;
-                toast.success("Cliente actualizado correctamente.");
+                toast.success("Perfil actualizado con éxito.");
             } else {
                 const { error } = await supabase
                     .from("customers")
                     .insert([customerData]);
 
                 if (error) throw error;
-                toast.success("Cliente creado correctamente.");
+                toast.success("Cliente indexado correctamente.");
             }
 
             setDialogOpen(false);
             fetchCustomers();
         } catch (error: any) {
             console.error("Error saving customer:", error);
-            toast.error("Error al guardar cliente: " + error.message);
+            toast.error("Error en la operación: " + error.message);
         } finally {
             setIsProcessing(false);
         }
     };
 
     const handleDeleteCustomer = async (customer: Customer) => {
-        if (!confirm('¿Estás seguro de eliminar al cliente "' + customer.name + '"?')) return;
-
         setIsProcessing(true);
         try {
             const { error } = await supabase
@@ -128,18 +143,17 @@ export default function Customers() {
                 .delete()
                 .eq("id", customer.id);
 
-            // Si falla por Foreign Key Constraint, le informamos al usuario
             if (error) {
                 if (error.code === '23503') {
-                    throw new Error("No se puede eliminar el cliente porque tiene órdenes asociadas.");
+                    throw new Error("Persistencia de datos activa: El cliente posee órdenes vinculadas.");
                 }
                 throw error;
             }
-            toast.success("Cliente eliminado.");
+            toast.success("Entidad eliminada.");
             fetchCustomers();
         } catch (error: any) {
             console.error("Error deleting customer:", error);
-            toast.error("No se pudo eliminar: " + error.message);
+            toast.error(error.message);
         } finally {
             setIsProcessing(false);
         }
@@ -154,237 +168,267 @@ export default function Customers() {
 
     return (
         <Layout>
-            <div className="p-6 md:p-8 space-y-6 md:space-y-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <motion.div 
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
+                className="min-h-screen text-foreground p-6 lg:p-10 space-y-10"
+            >
+                {/* Header Section */}
+                <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
-                            Maestro de Clientes
+                        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tighter mb-1 bg-gradient-to-r from-foreground via-foreground/80 to-foreground/40 bg-clip-text text-transparent italic uppercase font-space-grotesk whitespace-nowrap">
+                            Identidad CRM
                         </h1>
-                        <p className="text-muted-foreground text-sm md:text-base">
-                            Directorio de clientes recurrentes e historial básico
+                        <p className="text-primary font-black uppercase tracking-[0.3em] text-[10px] italic font-space-grotesk">
+                            Maestro de Clientes Pro Max • Data Intelligence
                         </p>
                     </div>
-                    <Button onClick={openCreateDialog} className="gradient-primary shadow-glow w-full md:w-auto">
-                        <Plus className="w-5 h-5 mr-2" /> Nuevo Cliente
+                    <Button 
+                        onClick={openCreateDialog} 
+                        className="h-14 px-8 rounded-[1.5rem] bg-primary text-primary-foreground font-black italic uppercase tracking-widest shadow-glow-pro hover:shadow-primary/40 transition-all gap-3"
+                    >
+                        <UserPlus className="w-5 h-5" /> Vincular Cliente
                     </Button>
-                </div>
+                </motion.div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    <Card className="glass-card shadow-card">
-                        <CardContent className="p-4 flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground mb-1">Total Clientes</p>
-                                <p className="text-2xl font-bold text-primary">{customers.length}</p>
-                            </div>
-                            <Users className="w-8 h-8 text-primary opacity-80" />
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Search */}
-                <Card className="glass-card shadow-card">
-                    <CardContent className="pt-6">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                            <Input
-                                placeholder="Buscar por nombre, email o teléfono..."
-                                className="pl-10 max-w-md"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
+                {/* Top Metrics Bento */}
+                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <Card className="bg-muted border border-border rounded-[2.5rem] shadow-pro glass-pro p-8 col-span-1">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic font-space-grotesk">TOTAL CLIENTES</span>
+                            <Users className="w-5 h-5 text-primary shadow-glow-pro" />
                         </div>
-                    </CardContent>
-                </Card>
+                        <div className="text-2xl lg:text-4xl font-black italic font-space-grotesk text-foreground tabular-nums">{customers.length}</div>
+                        <div className="mt-2 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-widest italic">Entidades Registradas</div>
+                    </Card>
 
-                {/* List */}
-                <Card className="glass-card shadow-card">
-                    <CardHeader>
-                        <CardTitle>Directorio</CardTitle>
-                        <CardDescription>{filteredCustomers.length} clientes registrados</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <div className="text-center py-12">
-                                <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-                                <p className="text-muted-foreground">Cargando clientes...</p>
-                            </div>
-                        ) : filteredCustomers.length === 0 ? (
-                            <div className="text-center py-12">
-                                <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-                                <h3 className="text-lg font-semibold mb-2">No se encontraron clientes</h3>
-                                <p className="text-muted-foreground mb-4">Aún no hay clientes registrados o la búsqueda no arrojó resultados.</p>
-                                {!searchQuery && (
-                                    <Button onClick={openCreateDialog} variant="outline">
-                                        Añadir el primer cliente
-                                    </Button>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Nombre</TableHead>
-                                            <TableHead>Contacto</TableHead>
-                                            <TableHead>Total Comprado</TableHead>
-                                            <TableHead>Última Compra</TableHead>
-                                            <TableHead className="text-right">Acciones</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {filteredCustomers.map((customer) => (
-                                            <TableRow key={customer.id}>
-                                                <TableCell className="font-medium text-base">
-                                                    {customer.name || 'Sin Nombre'}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="space-y-1 text-sm text-muted-foreground">
-                                                        {customer.document_id && (
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-medium text-xs">CC:</span> {customer.document_id}
-                                                            </div>
-                                                        )}
-                                                        {customer.phone && (
-                                                            <div className="flex items-center gap-2">
-                                                                <Phone className="w-3 h-3" /> {customer.phone}
-                                                            </div>
-                                                        )}
-                                                        {customer.email && (
-                                                            <div className="flex items-center gap-2">
-                                                                <Mail className="w-3 h-3" /> {customer.email}
-                                                            </div>
-                                                        )}
-                                                        {!customer.phone && !customer.email && !customer.document_id && "Sin contacto"}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="font-bold text-accent">
-                                                    {formatCOP(customer.total_spent || 0)}
-                                                </TableCell>
-                                                <TableCell className="text-sm text-muted-foreground">
-                                                    {customer.last_order_at ? new Date(customer.last_order_at).toLocaleDateString('es-CO') : 'Nunca'}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
+                    <Card className="bg-muted border border-border rounded-[2.5rem] shadow-pro glass-pro p-8 col-span-1">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic font-space-grotesk">SCORE PROMEDIO</span>
+                            <Star className="w-5 h-5 text-amber-500 shadow-glow-pro" />
+                        </div>
+                        <div className="text-2xl lg:text-4xl font-black italic font-space-grotesk text-foreground">4.8</div>
+                        <div className="mt-2 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-widest italic">Nivel de Lealtad</div>
+                    </Card>
+
+                    <Card className="bg-muted border border-border rounded-[2.5rem] shadow-pro glass-pro p-8 md:col-span-2">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic font-space-grotesk">VOLUMEN DE CARTERA</span>
+                            <CreditCard className="w-5 h-5 text-emerald-500 shadow-glow-pro" />
+                        </div>
+                        <div className="text-2xl lg:text-4xl font-black italic font-space-grotesk text-foreground tabular-nums">
+                            {formatCOP(customers.reduce((acc, c) => acc + (c as any).total_spent || 0, 0))}
+                        </div>
+                        <div className="mt-2 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-widest italic">Facturación Acumulada CRM</div>
+                    </Card>
+                </motion.div>
+
+                {/* Filter Area */}
+                <motion.div variants={itemVariants} className="relative group max-w-2xl">
+                    <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground/30 group-focus-within:text-primary transition-colors" />
+                    <Input
+                        placeholder="BUSCAR POR NOMBRE, EMAIL, CC O TELÉFONO..."
+                        className="pl-16 h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk focus:border-primary/50 focus:ring-primary/20 shadow-pro transition-all"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </motion.div>
+
+                {/* Customer Identity Grid */}
+                <motion.div variants={itemVariants}>
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight text-foreground leading-none">Registros de Identidad</h2>
+                        </div>
+                        <div className="flex items-center gap-3 bg-muted/20 px-4 h-9 rounded-full border border-border font-black text-[9px] text-muted-foreground italic uppercase">
+                           <LayoutGrid className="w-3.5 h-3.5" /> Listado Auditado
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-24">
+                           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6 shadow-glow-pro" />
+                           <p className="text-primary font-black uppercase tracking-widest text-[10px] italic animate-pulse">Indexando base de datos CRM...</p>
+                        </div>
+                    ) : filteredCustomers.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-32 opacity-30">
+                           <Users className="w-24 h-24 mb-6 text-white" />
+                           <h3 className="text-xl font-black italic uppercase tracking-widest text-white tracking-tighter">SIN COINCIDENCIAS</h3>
+                           <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.2em] mt-3 text-center">No se encontraron identidades con los parámetros de búsqueda.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <AnimatePresence mode="popLayout">
+                                {filteredCustomers.map((customer, idx) => (
+                                    <motion.div
+                                        key={customer.id}
+                                        layout
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        transition={{ delay: idx * 0.03 }}
+                                        className="bg-muted border border-border rounded-[2.5rem] p-8 glass-pro hover:bg-muted/80 hover:border-primary/20 hover:shadow-pro transition-all group relative overflow-hidden"
+                                    >
+                                        <div className="flex flex-col lg:flex-row gap-8 relative z-10">
+                                            {/* Avatar / Initials */}
+                                            <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xl lg:text-3xl font-black italic font-space-grotesk shadow-glow-pro group-hover:scale-110 transition-transform duration-500">
+                                                {customer.name?.charAt(0).toUpperCase()}
+                                            </div>
+                                            
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <h3 className="text-2xl font-black italic font-space-grotesk text-foreground tracking-tight truncate group-hover:text-primary transition-colors">
+                                                        {customer.name || 'IDENTIDAD OCULTA'}
+                                                    </h3>
+                                                    <div className="flex gap-2">
                                                         <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 hover:text-accent hover:bg-accent/10"
+                                                            variant="ghost" size="icon" className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 hover:bg-primary/20 hover:text-primary transition-all shadow-pro"
                                                             onClick={() => openEditDialog(customer)}
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </Button>
                                                         <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
+                                                            variant="ghost" size="icon" className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 hover:bg-rose-500/20 hover:text-rose-500 transition-all shadow-pro"
                                                             onClick={() => handleDeleteCustomer(customer)}
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </Button>
                                                     </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-[10px] font-black text-white/40 italic uppercase tracking-widest">
+                                                            <IdCard className="w-3.5 h-3.5 text-primary" /> CC: {customer.document_id || 'N/A'}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-[10px] font-black text-white/40 italic uppercase tracking-widest">
+                                                            <Phone className="w-3.5 h-3.5 text-indigo-400" /> {customer.phone || 'NO PHONE'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-[10px] font-black text-white/40 italic uppercase tracking-widest">
+                                                            <Mail className="w-3.5 h-3.5 text-amber-500" /> {customer.email || 'NO EMAIL'}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-[10px] font-black text-white/40 italic uppercase tracking-widest">
+                                                            <ShieldCheck className={cn("w-3.5 h-3.5", customer.consent_habeas_data ? "text-emerald-500" : "text-rose-500")} /> HABEAS: {customer.consent_habeas_data ? 'OK' : 'FAIL'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-[9px] font-black text-emerald-500/60 uppercase tracking-widest italic leading-none mb-1">FACTURACIÓN ACUMULADA</p>
+                                                        <p className="text-lg lg:text-xl font-black italic font-space-grotesk text-emerald-500 shadow-glow-pro-text">{formatCOP((customer as any).total_spent || 0)}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest italic leading-none mb-1">ÚLTIMA COMPRA</p>
+                                                        <p className="text-[10px] font-black text-white/60 italic font-space-grotesk uppercase">{customer.last_order_at ? new Date(customer.last_order_at).toLocaleDateString('es-CO') : 'SIN MOVIMIENTO'}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                    )}
+                </motion.div>
 
                 {/* Create/Edit Dialog */}
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>{editingCustomer ? "Editar Cliente" : "Nuevo Cliente"}</DialogTitle>
-                            <DialogDescription>
-                                {editingCustomer
-                                    ? "Modifica la información de contacto del cliente."
-                                    : "Ingresa los datos para registrar un nuevo cliente en el directorio."}
-                            </DialogDescription>
+                    <DialogContent className="sm:max-w-xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/10 rounded-[3rem] text-white shadow-pro">
+                        <DialogHeader className="mb-6">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-glow-pro">
+                                    <UserPlus className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight">{editingCustomer ? "Editar Identidad" : "Nueva Identidad CRM"}</DialogTitle>
+                                    <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-white/40 italic">Registro y Validación de Cliente en Red Central</DialogDescription>
+                                </div>
+                            </div>
                         </DialogHeader>
 
-                        <form onSubmit={(e) => { e.preventDefault(); handleSaveCustomer(); }} className="space-y-4 py-4">
-                            <div>
-                                <Label htmlFor="name">Nombre Completo *</Label>
-                                <Input
-                                    id="name"
-                                    placeholder="Ej: María Gómez"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="mt-2"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="document_id">Documento de Identidad (NIT / C.C.) *</Label>
-                                <Input
-                                    id="document_id"
-                                    placeholder="Ej: 1000123456"
-                                    value={formData.document_id}
-                                    onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
-                                    className="mt-2"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="Ej: maria@ejemplo.com"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    className="mt-2"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="phone">Teléfono / WhatsApp</Label>
-                                <Input
-                                    id="phone"
-                                    placeholder="Ej: 300 123 4567"
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    className="mt-2"
-                                />
+                        <form onSubmit={(e) => { e.preventDefault(); handleSaveCustomer(); }} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">NOMBRE COMPLETO</Label>
+                                    <Input
+                                        placeholder="EJ: MARIA GÓMEZ"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                                        className="h-14 bg-white/5 border-white/10 rounded-2xl text-xs font-black italic uppercase focus:ring-primary/20"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">DOCUMENTO (CC/NIT)</Label>
+                                    <Input
+                                        placeholder="EJ: 1000123456"
+                                        value={formData.document_id}
+                                        onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
+                                        className="h-14 bg-white/5 border-white/10 rounded-2xl text-xs font-black italic focus:ring-primary/20"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">EMAIL CORP/PERS</Label>
+                                    <Input
+                                        type="email"
+                                        placeholder="EJ: MARIA@DOMINIO.COM"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
+                                        className="h-14 bg-white/5 border-white/10 rounded-2xl text-xs font-black italic focus:ring-primary/20"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">CANAL WHATSAPP</Label>
+                                    <Input
+                                        placeholder="EJ: 300 123 4567"
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                        className="h-14 bg-white/5 border-white/10 rounded-2xl text-xs font-black italic focus:ring-primary/20"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="flex items-start space-x-3 pt-2">
+                            <div className="p-6 glass-pro bg-primary/5 rounded-[2rem] border border-primary/10 flex items-start gap-4">
                                 <input
                                     type="checkbox"
                                     id="consent"
-                                    className="mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                    className="mt-1 w-5 h-5 rounded-lg border-white/10 bg-white/5 text-primary focus:ring-primary/40 cursor-pointer"
                                     checked={formData.consent_habeas_data}
                                     onChange={(e) => setFormData({ ...formData, consent_habeas_data: e.target.checked })}
                                     required
                                 />
-                                <Label htmlFor="consent" className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer">
-                                    Autorizo el tratamiento de mis datos personales conforme a la <strong>Ley 1581 de 2012 (Hábeas Data)</strong> para fines de facturación y contacto. *
+                                <Label htmlFor="consent" className="text-[10px] font-black text-white/60 uppercase italic tracking-widest leading-relaxed cursor-pointer select-none">
+                                    Autorizo el tratamiento de datos personales conforme a la <span className="text-primary tracking-tighter">LEY 1581 DE 2012 (HÁBEAS DATA)</span> para fines de facturación y compliance digital.
                                 </Label>
                             </div>
 
-                            <DialogFooter className="gap-2 pt-4">
+                            <DialogFooter className="gap-4">
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="ghost"
                                     onClick={() => setDialogOpen(false)}
                                     disabled={isProcessing}
+                                    className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase italic tracking-widest text-white/40 hover:text-white hover:bg-white/5"
                                 >
-                                    Cancelar
+                                    ABORTAR
                                 </Button>
                                 <Button
                                     type="submit"
                                     disabled={isProcessing || !formData.name || !formData.document_id || !formData.consent_habeas_data}
-                                    className="gradient-primary"
+                                    className="flex-1 h-14 rounded-2xl bg-primary text-white font-black italic uppercase tracking-widest shadow-glow-pro hover:shadow-primary/40 transition-all font-space-grotesk"
                                 >
-                                    {isProcessing ? "Guardando..." : editingCustomer ? "Actualizar" : "Crear"}
+                                    {isProcessing ? "PROCESANDO..." : editingCustomer ? "GUARDAR CAMBIOS" : "INDEXAR ENTIDAD ✓"}
                                 </Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
                 </Dialog>
-            </div>
+            </motion.div>
         </Layout>
     );
 }

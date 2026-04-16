@@ -75,14 +75,16 @@ BEGIN
         size_multiplier numeric
     )
     LOOP
-        INSERT INTO public.order_items (order_id, product_id, name, qty, price, tax)
+        INSERT INTO public.order_items (order_id, product_id, name, qty, price, tax, size, size_multiplier)
         VALUES (
             new_sale_id,
             v_item.product_id,
             v_item.name,
             v_item.quantity,
             v_item.price,
-            0
+            0,
+            v_item.size,
+            v_item.size_multiplier
         );
 
         -- =====================================
@@ -197,7 +199,7 @@ BEGIN
             SELECT inventory_item_id, quantity_required 
             FROM public.recipes WHERE product_id = item_row.product_id
         LOOP
-            restoration := recipe_row.quantity_required * item_row.qty;
+            restoration := recipe_row.quantity_required * item_row.qty * COALESCE(item_row.size_multiplier, 1);
             UPDATE public.inventory_items SET stock = stock + restoration, updated_at = NOW()
             WHERE id = recipe_row.inventory_item_id AND store_id = v_old_store_id;
         END LOOP;
@@ -224,11 +226,11 @@ BEGIN
     -- Apply New Items and Deduct Stock
     -- =====================================
     FOR item_row IN SELECT * FROM jsonb_to_recordset(v_items) AS x(
-        product_id uuid, quantity numeric, price numeric, name text, size_multiplier numeric
+        product_id uuid, quantity numeric, price numeric, name text, size text, size_multiplier numeric
     )
     LOOP
-        INSERT INTO public.order_items (order_id, product_id, name, qty, price, tax)
-        VALUES (v_order_id, item_row.product_id, item_row.name, item_row.quantity, item_row.price, 0);
+        INSERT INTO public.order_items (order_id, product_id, name, qty, price, tax, size, size_multiplier)
+        VALUES (v_order_id, item_row.product_id, item_row.name, item_row.quantity, item_row.price, 0, item_row.size, item_row.size_multiplier);
 
         -- Deduct Product Stock
         UPDATE public.store_stock SET qty = qty - item_row.quantity, updated_at = NOW()

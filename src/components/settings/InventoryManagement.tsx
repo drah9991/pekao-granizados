@@ -5,16 +5,17 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Tag } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Search, SlidersHorizontal, Beaker, Box, AlertTriangle, ArrowUpRight, ArrowDownRight, Plus, Pencil, Trash2 } from "lucide-react";
 import Layout from "@/components/Layout";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatCOP } from "@/lib/currency";
 
 export const InventoryManagement = () => {
     const { storeId } = useAuth();
-    const { toast } = useToast();
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
@@ -26,6 +27,8 @@ export const InventoryManagement = () => {
     const [stock, setStock] = useState<number>(0);
     const [minStock, setMinStock] = useState<number>(0);
     const [costPerUnit, setCostPerUnit] = useState<number>(0);
+    const [isMixture, setIsMixture] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const { data: inventoryItems, isLoading } = useQuery({
         queryKey: ['inventory_items', storeId],
@@ -60,11 +63,11 @@ export const InventoryManagement = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['inventory_items'] });
-            toast({ title: "Éxito", description: "Insumo guardado correctamente." });
+            toast.success("Insumo guardado correctamente.");
             handleClose();
         },
-        onError: (error) => {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
+        onError: (error: any) => {
+            toast.error("Error: " + error.message);
         }
     });
 
@@ -78,7 +81,7 @@ export const InventoryManagement = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['inventory_items'] });
-            toast({ title: "Éxito", description: "Insumo eliminado." });
+            toast.success("Insumo eliminado.");
         }
     });
 
@@ -90,6 +93,7 @@ export const InventoryManagement = () => {
         setStock(item.stock);
         setMinStock(item.min_stock || 0);
         setCostPerUnit(item.cost_per_unit || 0);
+        setIsMixture(item.is_mixture || false);
         setIsOpen(true);
     };
 
@@ -102,140 +106,178 @@ export const InventoryManagement = () => {
         setStock(0);
         setMinStock(0);
         setCostPerUnit(0);
+        setIsMixture(false);
     };
 
     const handleSave = () => {
         if (!name || !unitOfMeasure) {
-            toast({ title: "Error", description: "Faltan requeridos", variant: "destructive" });
+            toast.error("Faltan campos requeridos");
             return;
         }
         saveMutation.mutate({
             name,
             sku: sku || null,
-            // @ts-ignore - The real column in the DB is 'unit' despite types.ts
+            // @ts-ignore
             unit: unitOfMeasure,
             stock,
             min_stock: minStock,
-            cost_per_unit: costPerUnit
+            cost_per_unit: costPerUnit,
+            is_mixture: isMixture
         });
     };
 
+    const filteredItems = inventoryItems?.filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <Layout>
-            <div className="p-6 md:p-8 space-y-6 md:space-y-8">
-                <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="space-y-6 p-6 md:p-8">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                        <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
                             Materia Prima e Insumos
-                        </h2>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Gestiona el catálogo base para construir tus recetas.
-                        </p>
+                        </h1>
+                        <p className="text-muted-foreground">Gestiona el catálogo base para tus recetas y granizados</p>
                     </div>
-
+                    
                     <Dialog open={isOpen} onOpenChange={setIsOpen}>
                         <DialogTrigger asChild>
-                            <Button onClick={handleClose} className="rounded-full shadow-sm">
+                            <Button onClick={handleClose} className="gradient-primary shadow-glow">
                                 <Plus className="h-4 w-4 mr-2" />
                                 Nuevo Insumo
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar">
                             <DialogHeader>
-                                <DialogTitle>{editingItem ? 'Editar Insumo' : 'Crear Insumo'}</DialogTitle>
+                                <DialogTitle className="text-2xl font-bold">{editingItem ? 'Editar Insumo' : 'Crear Insumo'}</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4 pt-4">
                                 <div className="space-y-2">
-                                    <Label>Nombre del Insumo</Label>
+                                    <Label className="font-semibold">Nombre del Insumo</Label>
                                     <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Leche Entera" />
                                 </div>
+
+                                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl border">
+                                    <div className="space-y-0.5">
+                                        <Label className="font-bold">¿Es una Mezcla?</Label>
+                                        <p className="text-[10px] text-muted-foreground">Activa esto para registrar producciones de granizados</p>
+                                    </div>
+                                    <Switch checked={isMixture} onCheckedChange={setIsMixture} />
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>SKU / Código</Label>
+                                        <Label className="font-semibold">SKU / Código</Label>
                                         <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="OPCIONAL" />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Unidad de Medida</Label>
-                                        <Input value={unitOfMeasure} onChange={(e) => setUnitOfMeasure(e.target.value)} placeholder="Ej. ml, gr, und" />
+                                        <Label className="font-semibold">Unidad de Medida</Label>
+                                        <Input value={unitOfMeasure} onChange={(e) => setUnitOfMeasure(e.target.value)} placeholder="Ej. ml, gr, un" />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Inventario Actual</Label>
+                                        <Label className="font-semibold">Inventario Actual</Label>
                                         <Input type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Stock Mínimo (Alerta)</Label>
+                                        <Label className="font-semibold">Alerta Stock Bajo</Label>
                                         <Input type="number" value={minStock} onChange={(e) => setMinStock(Number(e.target.value))} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Costo por Unidad ($)</Label>
-                                    <Input 
-                                        type="number" 
-                                        step="1000"
-                                        value={costPerUnit} 
-                                        onChange={(e) => setCostPerUnit(Number(e.target.value))} 
-                                        onBlur={(e) => {
-                                            const val = Number(e.target.value);
-                                            if (!isNaN(val)) {
-                                                setCostPerUnit(Math.round(val / 1000) * 1000);
-                                            }
-                                        }}
-                                    />
+                                    <Label className="font-semibold">Costo por Unidad ($)</Label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                        <Input 
+                                            type="number" 
+                                            value={costPerUnit} 
+                                            onChange={(e) => setCostPerUnit(Number(e.target.value))} 
+                                            className="pl-7 font-bold"
+                                        />
+                                    </div>
                                 </div>
-                                <Button onClick={handleSave} className="w-full" disabled={saveMutation.isPending}>
-                                    Guardar
+                                <Button onClick={handleSave} className="w-full gradient-primary shadow-glow h-12 text-base font-bold" disabled={saveMutation.isPending}>
+                                    {editingItem ? 'Actualizar Insumo' : 'Guardar Insumo'}
                                 </Button>
                             </div>
                         </DialogContent>
                     </Dialog>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Search Bar */}
+                <div className="relative max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Buscar por nombre o SKU..." 
+                        className="pl-10 bg-card shadow-sm border-border/50"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+
+                <div className="bg-card rounded-2xl shadow-card border border-border/50 overflow-hidden">
                     <Table>
-                        <TableHeader className="bg-gray-50/50">
+                        <TableHeader className="bg-muted/30">
                             <TableRow>
-                                <TableHead>Insumo</TableHead>
+                                <TableHead className="py-4 pl-6">Insumo</TableHead>
                                 <TableHead>SKU</TableHead>
-                                <TableHead>Stock / Medida</TableHead>
-                                <TableHead>Costo U.</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
+                                <TableHead>Inventario / Medida</TableHead>
+                                <TableHead>Costo Unitario</TableHead>
+                                <TableHead className="text-right pr-6">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={5} className="text-center py-8">Cargando...</TableCell></TableRow>
-                            ) : inventoryItems?.length === 0 ? (
+                                <TableRow><TableCell colSpan={5} className="text-center py-12">Cargando catálogo...</TableCell></TableRow>
+                            ) : filteredItems?.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-12 text-gray-500">
-                                        <Tag className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                                    <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
                                         No hay insumos registrados
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                inventoryItems?.map((item) => (
-                                    <TableRow key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <TableCell className="font-medium text-gray-900">{item.name}</TableCell>
-                                        <TableCell className="text-gray-500">{item.sku || '-'}</TableCell>
-                                        <TableCell>
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.stock <= (item.min_stock || 0) ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                                                {item.stock} {(item as any).unit || item.unit_of_measure}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-gray-600">{formatCOP(item.cost_per_unit || 0)}</TableCell>
-                                        <TableCell className="text-right space-x-2">
-                                            <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
-                                                <Pencil className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => {
-                                                if (confirm('¿Eliminar insumo?')) deleteMutation.mutate(item.id);
-                                            }}>
-                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                filteredItems?.map((item) => {
+                                    const isLow = item.stock <= (item.min_stock || 0);
+                                    const unit = (item as any).unit || item.unit_of_measure;
+                                    const displayStock = (item.is_mixture && unit === 'ml') 
+                                        ? `${(item.stock / 1000).toFixed(1)} L` 
+                                        : `${item.stock} ${unit}`;
+
+                                    return (
+                                        <TableRow key={item.id} className="hover:bg-muted/10 transition-colors">
+                                            <TableCell className="py-4 pl-6 font-bold">
+                                                <div className="flex items-center gap-2">
+                                                    {item.is_mixture ? <Beaker className="w-4 h-4 text-primary" /> : <Box className="w-4 h-4 text-muted-foreground" />}
+                                                    {item.name}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="text-[10px] font-mono">{item.sku || '-'}</Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge className={isLow ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'}>
+                                                    {isLow && <AlertTriangle className="w-3 h-3 mr-1" />}
+                                                    {displayStock}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="font-medium text-slate-600">{formatCOP(item.cost_per_unit || 0)}</TableCell>
+                                            <TableCell className="text-right pr-6 space-x-1">
+                                                <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)} className="hover:text-primary">
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" onClick={() => {
+                                                    if (confirm('¿Eliminar insumo?')) deleteMutation.mutate(item.id);
+                                                }} className="hover:text-destructive">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>

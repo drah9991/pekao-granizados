@@ -20,6 +20,7 @@ import { SalesChartWidget } from "@/components/dashboard/SalesChartWidget";
 import { PaymentMethodsWidget } from "@/components/dashboard/PaymentMethodsWidget";
 import { RecentSalesWidget } from "@/components/dashboard/RecentSalesWidget";
 import { PopularProductsWidget } from "@/components/dashboard/PopularProductsWidget";
+import { MixtureStockWidget } from "@/components/dashboard/MixtureStockWidget";
 
 export default function Dashboard() {
   const { storeId, user } = useAuth();
@@ -64,7 +65,8 @@ export default function Dashboard() {
         const [currentRes, comparisonRes, inventoryRes] = await Promise.all([
           supabase.from("orders").select("id, total, subtotal, tip_amount, delivery_fee, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end),
           supabase.from("orders").select("total, status").eq("store_id", storeId).gte("created_at", ranges.comparison.start).lte("created_at", ranges.comparison.end),
-          (supabase as any).from("inventory_items").select("name, stock, min_stock").eq("store_id", storeId)
+          (supabase as any).from("inventory_items").select("name, stock, min_stock, is_mixture").eq("store_id", storeId),
+          supabase.from("sizes").select("name, multiplier").eq("store_id", storeId)
         ]);
 
         if (currentRes.error) {
@@ -174,12 +176,15 @@ export default function Dashboard() {
           });
         });
 
-        const popularProducts = Object.entries(productMap)
+        const sortedProducts = Object.entries(productMap)
           .map(([name, data]) => ({ name, sales: data.sales, revenue: data.revenue }))
           .sort((a, b) => b.sales - a.sales)
           .slice(0, 5);
 
-        const lowStockItems = (inventoryRes.data || []).filter(item => item.stock <= (item.min_stock || 0));
+        const inventoryData = inventoryRes.data || [];
+        const sizesData = (await supabase.from("sizes").select("name, multiplier").eq("store_id", storeId)).data || [];
+        
+        const lowStock = inventoryData.filter(item => item.stock <= (item.min_stock || 0) || item.is_mixture);
 
         return {
           metrics: {
@@ -194,8 +199,9 @@ export default function Dashboard() {
           maxSale,
           totalItems,
           pieData,
-          popularProducts,
-          lowStock: lowStockItems
+          popularProducts: sortedProducts,
+          lowStock,
+          sizes: sizesData
         };
       } catch (err) {
         throw err;
@@ -210,9 +216,9 @@ export default function Dashboard() {
   if (isLoading && !dashboardData) {
     return (
       <Layout>
-        <div className="flex flex-col h-[calc(100vh-64px)] items-center justify-center bg-[#0F1117] text-white">
+        <div className="flex flex-col h-[calc(100vh-64px)] items-center justify-center bg-background text-foreground">
           <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-          <p className="text-slate-400 font-bold animate-pulse">Sincronizando datos del negocio...</p>
+          <p className="text-muted-foreground font-bold animate-pulse">Sincronizando datos del negocio...</p>
         </div>
       </Layout>
     );
@@ -221,12 +227,12 @@ export default function Dashboard() {
   if (queryError) {
     return (
       <Layout>
-        <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-[#0F1117] p-10 font-poppins">
-           <Card className="bg-red-500/10 border-red-500/20 p-8 text-center max-w-md rounded-[2.5rem] shadow-2xl">
-              <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <AlertTriangle className="w-10 h-10 text-red-500" />
+        <div className="flex h-[calc(100vh-64px)] items-center justify-center p-10 font-poppins">
+           <Card className="bg-destructive/10 border-destructive/20 p-8 text-center max-w-md rounded-[2.5rem] shadow-2xl">
+              <div className="w-16 h-16 bg-destructive/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <AlertTriangle className="w-10 h-10 text-destructive" />
               </div>
-              <CardTitle className="text-white text-2xl font-black mb-2">Error de Sincronización</CardTitle>
+              <CardTitle className="text-foreground text-2xl font-black mb-2">Error de Sincronización</CardTitle>
               <CardDescription className="text-red-400 font-medium mb-6">
                 {(queryError as any)?.message || (queryError as any)?.details || JSON.stringify(queryError)}
               </CardDescription>
@@ -241,26 +247,29 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-[#0F1117] text-white p-6 lg:p-10 space-y-8 animate-in fade-in duration-700 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-3xl lg:text-4xl font-black tracking-tight mb-1 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-              Resumen del negocio
+      <div className="min-h-screen p-2 md:p-4 lg:p-6 space-y-10 animate-pro-in">
+        {/* Header - Bento Style */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-4 border-b border-border/50 relative">
+          <div className="absolute -left-10 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-primary/50 to-transparent rounded-full shadow-glow-pro" />
+          <div className="animate-pro-in">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground mb-2">
+              INTELIGENCIA <span className="text-primary text-glow italic">DE NEGOCIO</span>
             </h1>
-            <p className="text-slate-400 font-medium">
-              Dashboard sincronizado • {format(new Date(), "eeee d MMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase())}
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60 font-space-grotesk italic">
+               Sincronización v2.0 • {format(new Date(), "eeee d MMM yyyy", { locale: es })}
             </p>
           </div>
 
-          <div className="flex items-center bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800/50 backdrop-blur-xl shadow-inner self-start">
+          <div className="flex items-center gap-1 p-1.5 glass-pro rounded-[1.5rem] self-start border-border overflow-x-auto no-scrollbar max-w-full">
             {(['today', 'week', 'month', 'year'] as const).map((p) => (
               <Button
                 key={p}
                 variant="ghost"
                 className={cn(
-                  "px-6 h-10 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-                  period === p ? "bg-primary text-white shadow-[0_0_20px_rgba(14,165,233,0.3)] hover:text-white" : "text-slate-500 hover:text-white"
+                  "px-6 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500",
+                  period === p 
+                    ? "bg-primary text-primary-foreground shadow-glow-pro scale-105" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                 )}
                 onClick={() => setPeriod(p)}
               >
@@ -270,17 +279,47 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Dashboard Widgets Refactored */}
-        <StatCards data={dashboardData} label={comparisonLabel} />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <SalesChartWidget data={dashboardData} />
-          <PaymentMethodsWidget data={dashboardData} />
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <RecentSalesWidget data={dashboardData} />
-          <PopularProductsWidget data={dashboardData} />
+        {/* Bento Grid Body */}
+        <div className="bento-grid">
+            {/* Main Stats - Bento Wide */}
+            <div className="md:col-span-2 lg:col-span-4 dim-layering">
+                <StatCards data={dashboardData} label={comparisonLabel} />
+            </div>
+
+            {/* Sales Chart - Bento Large */}
+            <div className="bento-item-large dim-layering group">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700">
+                    <SalesChartWidget data={dashboardData} />
+                </div>
+            </div>
+
+            {/* Payment Split - Bento Tall */}
+            <div className="bento-item-tall dim-layering group">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700">
+                    <PaymentMethodsWidget data={dashboardData} />
+                </div>
+            </div>
+
+            {/* Mixture Status - Bento Normal */}
+            <div className="dim-layering group">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700">
+                    <MixtureStockWidget data={dashboardData} />
+                </div>
+            </div>
+
+            {/* Popular Products - Bento Normal */}
+            <div className="dim-layering group">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700">
+                    <PopularProductsWidget data={dashboardData} />
+                </div>
+            </div>
+
+            {/* Recent Sales - Bento Wide */}
+            <div className="bento-item-wide dim-layering group">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-white/5 hover:border-primary/30 transition-all duration-700">
+                    <RecentSalesWidget data={dashboardData} />
+                </div>
+            </div>
         </div>
       </div>
     </Layout>

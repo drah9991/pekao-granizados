@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2, User, Phone, Mail, Shield } from "lucide-react";
+import { Plus, Search, Edit, Trash2, User, Phone, Mail, Shield, UserCheck, Store, Lock, ShieldAlert, LayoutGrid, Filter, UserCog, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
 import Layout from "@/components/Layout";
 import { createNotification } from "@/hooks/useNotifications";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Profile = Tables<'profiles'>;
 
@@ -35,6 +36,23 @@ interface RoleDb {
   is_system: boolean | null;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 100, damping: 15 }
+  }
+};
+
 export default function Users() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -46,7 +64,6 @@ export default function Users() {
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
-  // Dialog states
   const [userDialogIsOpen, setUserDialogIsOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [formData, setFormData] = useState({
@@ -72,19 +89,12 @@ export default function Users() {
     const { data, error } = await (supabase as any).from('roles').select('*').order('name');
     if (!error && data) {
       setDbRoles(data);
-    } else {
-      console.error('Error fetching roles:', error);
     }
   };
 
   const fetchStores = async () => {
     const { data, error } = await supabase.from("stores").select("id, name").order("name");
-    if (error) {
-      console.error("Error fetching stores:", error);
-      toast.error("Error al cargar tiendas");
-    } else {
-      setStores(data || []);
-    }
+    if (!error) setStores(data || []);
   };
 
   const fetchCurrentUserStoreAndRole = async () => {
@@ -119,7 +129,6 @@ export default function Users() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all user_roles
       const { data: rolesData, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role");
@@ -137,7 +146,7 @@ export default function Users() {
       setUsers(usersWithRoles);
     } catch (error: any) {
       console.error("Error fetching users:", error);
-      toast.error("Error al cargar usuarios: " + error.message);
+      toast.error("Error al cargar el directorio: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -183,14 +192,13 @@ export default function Users() {
       return;
     }
     if (!editingUser && (!formData.email || !formData.password)) {
-      toast.error("Email y contraseña son obligatorios para nuevos usuarios.");
+      toast.error("Credenciales obligatorias para nuevos usuarios.");
       return;
     }
 
     setIsProcessing(true);
     try {
       if (editingUser) {
-        // Update profile
         const { error: profileUpdateError } = await supabase
           .from("profiles")
           .update({
@@ -205,71 +213,30 @@ export default function Users() {
 
         if (profileUpdateError) throw profileUpdateError;
 
-        // Update password if provided via Edge Function
         if (formData.password) {
-          if (formData.password.length < 6) {
-            toast.error("La contraseña debe tener al menos 6 caracteres.");
-            setIsProcessing(false);
-            return;
-          }
           const { data, error } = await supabase.functions.invoke('update-user', {
             body: { userId: editingUser.id, password: formData.password },
           });
-
-          if (error) throw new Error(error.message);
-          if (data && data.error) throw new Error(data.error);
+          if (error || (data && data.error)) throw new Error(error?.message || data.error);
         }
 
-        // Update role
         await supabase.from("user_roles").delete().eq("user_id", editingUser.id);
-
         const { error: roleError } = await (supabase as any)
           .from("user_roles")
-          .insert({
-            user_id: editingUser.id,
-            role: formData.role,
-          });
+          .insert({ user_id: editingUser.id, role: formData.role });
 
         if (roleError) throw roleError;
-
-        toast.success("Usuario actualizado correctamente.");
-
-        if (currentUserStoreId) {
-          await createNotification({
-            store_id: currentUserStoreId,
-            title: "Usuario Actualizado",
-            message: `El usuario "${formData.name}" ha sido actualizado.`,
-            type: "system_event",
-            priority: "low"
-          });
-        }
+        toast.success("Perfil actualizado con éxito.");
       } else {
-        // Create new user
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email.trim(),
           password: formData.password,
-          options: {
-            data: {
-              name: formData.name.trim(),
-              phone: formData.phone.trim() || null,
-            },
-          },
+          options: { data: { name: formData.name.trim(), phone: formData.phone.trim() || null } },
         });
 
-        if (authError) {
-          if (authError.message.includes("User already registered")) {
-            toast.error("Ya existe una cuenta con este email.");
-          } else {
-            throw authError;
-          }
-          return;
-        }
+        if (authError) throw authError;
+        if (!authData.user) throw new Error("Fallo en creación de identidad Auth.");
 
-        if (!authData.user) {
-          throw new Error("No se pudo crear el usuario de autenticación.");
-        }
-
-        // Update profile with store_id and document details
         const { error: profileUpdateError } = await (supabase as any)
           .from("profiles")
           .update({ 
@@ -280,46 +247,29 @@ export default function Users() {
           .eq("id", authData.user.id);
         if (profileUpdateError) throw profileUpdateError;
 
-        // Assign role
         const { error: roleError } = await (supabase as any)
           .from("user_roles")
           .insert({ user_id: authData.user.id, role: formData.role });
         if (roleError) throw roleError;
 
-        if (currentUserStoreId) {
-          await createNotification({
-            store_id: currentUserStoreId,
-            title: "Nuevo Usuario",
-            message: `El usuario "${formData.name}" ha sido creado con el rol ${formData.role}.`,
-            type: "system_event",
-            priority: "medium"
-          });
-        }
-
-        toast.success("Usuario creado correctamente. Se ha enviado un correo de verificación.");
+        toast.success("Usuario indexado. Correo de verificación enviado.");
       }
 
       setUserDialogIsOpen(false);
       fetchUsers();
     } catch (error: any) {
       console.error("Error saving user:", error);
-      toast.error("Error al guardar usuario: " + error.message);
+      toast.error("Error en la operación: " + error.message);
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleDeleteUser = async (user: UserWithRole) => {
-    if (!canManageUsers) {
-      toast.error("No tienes permiso para eliminar usuarios.");
-      return;
-    }
     if (user.id === currentUserId) {
-      toast.error("No puedes eliminar tu propia cuenta desde aquí.");
+      toast.error("Acción restringida: No puede eliminar su propia identidad.");
       return;
     }
-
-    if (!window.confirm(`¿Estás seguro de eliminar al usuario "${user.name}"? Esta acción es irreversible.`)) return;
 
     setIsProcessing(true);
     try {
@@ -327,24 +277,13 @@ export default function Users() {
         body: { userId: user.id },
       });
 
-      if (error) throw new Error(error.message);
-      if (data && data.error) throw new Error(data.error);
+      if (error || (data && data.error)) throw new Error(error?.message || data.error);
 
-      if (currentUserStoreId) {
-        await createNotification({
-          store_id: currentUserStoreId,
-          title: "Usuario Eliminado",
-          message: `El usuario "${user.name}" ha sido eliminado del sistema.`,
-          type: "system_event",
-          priority: "high"
-        });
-      }
-
-      toast.success("Usuario eliminado correctamente.");
+      toast.success("Entidad eliminada del sistema.");
       fetchUsers();
     } catch (error: any) {
       console.error("Error deleting user:", error);
-      toast.error("Error al eliminar usuario: " + error.message);
+      toast.error("Fallo en eliminación: " + error.message);
     } finally {
       setIsProcessing(false);
     }
@@ -363,300 +302,311 @@ export default function Users() {
     return matchesSearch && matchesRole;
   });
 
+  const getRoleStyle = (role: string | null) => {
+    switch (role) {
+      case 'admin': return { label: 'ADMINISTRADOR', bg: 'bg-rose-500/10', text: 'text-rose-500', glow: 'shadow-rose-500/20' };
+      case 'manager': return { label: 'GERENCIA', bg: 'bg-indigo-500/10', text: 'text-indigo-400', glow: 'shadow-indigo-500/20' };
+      case 'cashier': return { label: 'OPERATIVO', bg: 'bg-emerald-500/10', text: 'text-emerald-500', glow: 'shadow-emerald-500/20' };
+      default: return { label: role?.toUpperCase() || 'SIN ROL', bg: 'bg-muted/50', text: 'text-muted-foreground', glow: '' };
+    }
+  };
+
   return (
     <Layout>
-      <div className="p-6 md:p-8 space-y-6 md:space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <motion.div 
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="min-h-screen bg-transparent text-foreground p-6 lg:p-10 space-y-10"
+      >
+        {/* Header Section */}
+        <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-hero bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tighter mb-1 bg-gradient-to-r from-foreground via-foreground/80 to-foreground/40 bg-clip-text text-transparent italic uppercase font-space-grotesk whitespace-nowrap">
               Maestro de Usuarios
             </h1>
-            <p className="text-muted-foreground">Gestiona los usuarios y sus roles en el sistema</p>
+            <p className="text-primary font-black uppercase tracking-[0.3em] text-[10px] italic font-space-grotesk">
+              Gestión de Permisos y Roles • Core Access Pro Max
+            </p>
           </div>
           <Button
-            className="gradient-primary shadow-glow w-full md:w-auto"
+            className="h-14 px-8 rounded-[1.5rem] bg-primary text-primary-foreground font-black italic uppercase tracking-widest shadow-glow-pro hover:shadow-primary/40 transition-all gap-3"
             onClick={openCreateDialog}
             disabled={!canManageUsers}
           >
-            <Plus className="mr-2 w-5 h-5" />
-            Nuevo Usuario
+            <Plus className="w-5 h-5" /> Vincular Identidad
           </Button>
-        </div>
+        </motion.div>
 
-        {/* Search and Filters */}
-        <Card className="glass-card shadow-card">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+        {/* Filters Bento Grid */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3 relative group">
+                <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
                 <Input
-                  placeholder="Buscar por nombre, teléfono o rol..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  disabled={!canManageUsers}
+                    placeholder="FILTRAR POR NOMBRE, ROL O IDENTIDAD..."
+                    className="pl-16 h-16 bg-muted/30 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk focus:border-primary/50 focus:ring-primary/20 shadow-pro transition-all"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    disabled={!canManageUsers}
                 />
-              </div>
-
-              <Select
-                value={selectedRoleFilter}
-                onValueChange={(value: string) => setSelectedRoleFilter(value)}
-                disabled={!canManageUsers}
-              >
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Filtrar por rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los Roles</SelectItem>
-                  {dbRoles.map((role) => (
-                    <SelectItem key={role.name} value={role.name}>
-                      <span className="capitalize">{role.name.replace(/_/g, ' ')}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
-          </CardContent>
-        </Card>
+            <div className="relative">
+                <Filter className="absolute left-5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground/60 z-10 pointer-events-none" />
+                <Select value={selectedRoleFilter} onValueChange={setSelectedRoleFilter} disabled={!canManageUsers}>
+                    <SelectTrigger className="h-16 bg-muted/30 border-border rounded-[1.5rem] pl-14 text-[10px] font-black italic uppercase font-space-grotesk">
+                        <SelectValue placeholder="FILTRAR ROL" />
+                    </SelectTrigger>
+                    <SelectContent className="glass-pro border-border rounded-2xl">
+                        <SelectItem value="all" className="text-[9px] font-black italic uppercase p-4 border-b border-border/50 last:border-0">TODOS LOS ROLES</SelectItem>
+                        {dbRoles.map((role) => (
+                            <SelectItem key={role.name} value={role.name} className="text-[9px] font-black italic uppercase p-4 border-b border-white/5 last:border-0 capitalize">
+                                {role.name.replace(/_/g, ' ')}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </motion.div>
 
-        {/* Users List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-muted-foreground">Cargando usuarios...</p>
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <Card className="glass-card shadow-card">
-            <CardContent className="text-center py-12">
-              <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No hay usuarios</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery || selectedRoleFilter !== "all"
-                  ? "No se encontraron usuarios con los filtros aplicados"
-                  : "Comienza creando tu primer usuario"}
-              </p>
-              {!searchQuery && selectedRoleFilter === "all" && (
-                <Button onClick={openCreateDialog} className="gradient-primary" disabled={!canManageUsers}>
-                  <Plus className="mr-2 w-4 h-4" />
-                  Crear Primer Usuario
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="glass-card shadow-card">
-            <CardHeader>
-              <CardTitle>Lista de Usuarios</CardTitle>
-              <CardDescription>Gestiona los detalles de cada usuario.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Teléfono</TableHead>
-                      <TableHead>Rol</TableHead>
-                      <TableHead>Tienda</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{user.email || 'N/A'}</TableCell>
-                        <TableCell>{user.phone || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={`text-xs px-3 py-1.5 rounded-full font-semibold ${user.role === 'admin' ? 'bg-primary' : 'bg-secondary'}`}
-                          >
-                            <span className="capitalize">{user.role ? user.role.replace(/_/g, ' ') : "Sin Rol"}</span>
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{stores.find(s => s.id === user.store_id)?.name || "N/A"}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:text-accent hover:bg-accent/10"
-                              onClick={() => openEditDialog(user)}
-                              disabled={!canManageUsers && user.id !== (currentUserId || '')}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDeleteUser(user)}
-                              disabled={!canManageUsers || user.id === (currentUserId || '')}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+        {/* User Identity Grid */}
+        <motion.div variants={itemVariants}>
+           <div className="flex items-center justify-between mb-10">
+              <h2 className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight text-foreground leading-none">Entidades del Sistema</h2>
+              <div className="flex items-center gap-3 bg-muted/30 px-4 h-9 rounded-full border border-border font-black text-[9px] text-muted-foreground italic uppercase">
+                 <LayoutGrid className="w-3.5 h-3.5" /> Directiva Activa
               </div>
-            </CardContent>
-          </Card>
-        )}
+           </div>
 
-        {/* Create/Edit User Dialog */}
+           {loading ? (
+               <div className="flex flex-col items-center justify-center py-24">
+                  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6 shadow-glow-pro" />
+                  <p className="text-primary font-black uppercase tracking-widest text-[10px] italic animate-pulse">Sincronizando perfiles de acceso...</p>
+               </div>
+           ) : filteredUsers.length === 0 ? (
+               <Card className="bg-muted border border-border rounded-[3.5rem] p-32 shadow-pro glass-pro text-center opacity-30">
+                  <ShieldAlert className="w-24 h-24 mx-auto mb-6 text-foreground" />
+                  <h3 className="text-xl font-black italic uppercase tracking-widest text-foreground">ZONA DESIERTA</h3>
+                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-3">No se detectaron perfiles con el criterio actual.</p>
+               </Card>
+           ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <AnimatePresence mode="popLayout">
+                        {filteredUsers.map((user, idx) => {
+                            const rStyle = getRoleStyle(user.role);
+                            const userStore = stores.find(s => s.id === user.store_id)?.name || "ASIGNACIÓN PENDIENTE";
+                            
+                            return (
+                                <motion.div
+                                    key={user.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ delay: idx * 0.03 }}
+                                    className="bg-muted border border-border rounded-[2.5rem] p-8 glass-pro hover:bg-muted/80 hover:shadow-pro transition-all group overflow-hidden relative"
+                                >
+                                    <div className="flex flex-col lg:flex-row gap-8 relative z-10">
+                                        {/* Identity Seal */}
+                                        <div className="w-24 h-24 rounded-3xl bg-muted border border-border flex items-center justify-center relative group-hover:scale-110 transition-transform duration-500 shadow-pro">
+                                            <div className="absolute inset-0 bg-primary/10 blur-xl group-hover:bg-primary/20 transition-all rounded-full" />
+                                            <User className="w-8 h-8 lg:w-10 lg:h-10 text-foreground relative z-10" />
+                                            <div className="absolute -bottom-2 -right-2 w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-muted border border-border flex items-center justify-center">
+                                                <Shield className={cn("w-5 h-5", rStyle.text)} />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                   <h3 className="text-xl lg:text-2xl font-black italic font-space-grotesk text-foreground tracking-tight group-hover:text-primary transition-colors truncate">
+                                                      {user.name?.toUpperCase() || 'ANÓNIMO'}
+                                                   </h3>
+                                                   <div className={cn("inline-flex px-3 py-1 rounded-full text-[9px] font-black italic uppercase tracking-[0.2em] border border-border/50 mt-2", rStyle.bg, rStyle.text, rStyle.glow)}>
+                                                      {rStyle.label}
+                                                   </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-muted border border-border hover:bg-primary/20 hover:text-primary transition-all shadow-pro"
+                                                        onClick={() => openEditDialog(user)}
+                                                        disabled={!canManageUsers && user.id !== currentUserId}
+                                                    >
+                                                        <UserCog className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-muted border border-border hover:bg-rose-500/20 hover:text-rose-500 transition-all shadow-pro"
+                                                        onClick={() => handleDeleteUser(user)}
+                                                        disabled={!canManageUsers || user.id === currentUserId}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                               <div className="space-y-3">
+                                                  <div className="flex items-center gap-2 text-[10px] font-black text-white/40 italic uppercase tracking-widest">
+                                                     <Mail className="w-3.5 h-3.5 text-primary" /> {user.email || 'NO AUTH EMAIL'}
+                                                  </div>
+                                                  <div className="flex items-center gap-2 text-[10px] font-black text-white/40 italic uppercase tracking-widest">
+                                                     <Phone className="w-3.5 h-3.5 text-indigo-400" /> {user.phone || 'NO CONTACT'}
+                                                  </div>
+                                               </div>
+                                               <div className="space-y-3">
+                                                  <div className="flex items-center gap-2 text-[10px] font-black text-white/40 italic uppercase tracking-widest">
+                                                     <Store className="w-3.5 h-3.5 text-emerald-500" /> {userStore}
+                                                  </div>
+                                                  <div className="flex items-center gap-2 text-[10px] font-black text-white/40 italic uppercase tracking-widest">
+                                                     <UserCheck className={cn("w-3.5 h-3.5", user.consent_habeas_data ? "text-emerald-500" : "text-rose-500")} /> HABEAS: {user.consent_habeas_data ? 'COMPLIANT' : 'PENDING'}
+                                                  </div>
+                                               </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3 pt-4 border-t border-white/5">
+                                               <span className="text-[9px] font-black text-muted-foreground/30 uppercase italic tracking-widest">SISTEMA ID:</span>
+                                               <span className="text-[9px] font-bold text-muted-foreground/50 italic font-space-grotesk truncate">{user.id}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </AnimatePresence>
+                </div>
+           )}
+        </motion.div>
+
+        {/* Form Dialog */}
         <Dialog open={userDialogIsOpen} onOpenChange={setUserDialogIsOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {editingUser ? "Editar Usuario" : "Nuevo Usuario"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingUser
-                  ? "Actualiza la información del usuario y su rol."
-                  : "Crea una nueva cuenta de usuario y asigna un rol."}
-              </DialogDescription>
+          <DialogContent className="sm:max-w-xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-border rounded-[3rem] text-foreground shadow-pro">
+            <DialogHeader className="mb-6">
+              <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-glow-pro text-primary">
+                    <UserCog className="w-6 h-6" />
+                 </div>
+                 <div>
+                    <DialogTitle className="text-xl lg:text-2xl font-black italic uppercase font-space-grotesk tracking-tight">
+                       {editingUser ? "Configuración de Perfil" : "Emisión de Identidad"}
+                    </DialogTitle>
+                    <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">Administración de Credenciales y Protocolos de Acceso</DialogDescription>
+                 </div>
+              </div>
             </DialogHeader>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleSaveUser(); }} className="space-y-4 py-4">
-              <div>
-                <Label htmlFor="name">Nombre Completo *</Label>
-                <Input
-                  id="name"
-                  placeholder="Ej: Juan Pérez"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-2"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="document_id">Documento de Identidad (C.C.) *</Label>
-                <Input
-                  id="document_id"
-                  placeholder="Ej: 1000123456"
-                  value={formData.document_id}
-                  onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
-                  className="mt-2"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="correo@ejemplo.com"
-                    className="pl-10"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required={!editingUser} // Email is required only for new users
-                  />
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveUser(); }} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">NOMBRE COMPLETO</Label>
+                        <Input
+                            placeholder="EJ: JUAN PÉREZ"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                            className="h-14 bg-muted/40 border-border rounded-2xl text-xs font-black italic uppercase focus:ring-primary/20"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">CC / IDENTIDAD</Label>
+                        <Input
+                            placeholder="EJ: 1000123456"
+                            value={formData.document_id}
+                            onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
+                            className="h-14 bg-muted/40 border-border rounded-2xl text-xs font-black italic focus:ring-primary/20"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">EMAIL DE ACCESO</Label>
+                        <Input
+                            type="email"
+                            placeholder="CORREO@SISTEMA.COM"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
+                            className="h-14 bg-muted/40 border-border rounded-2xl text-xs font-black italic focus:ring-primary/20"
+                            required={!editingUser}
+                        />
+                    </div>
+                    <div className="space-y-2 relative">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">
+                           {editingUser ? "SECURITY OVERRIDE (PWD)" : "PASSWORD DE ACCESO"}
+                        </Label>
+                        <Input
+                            type="password"
+                            placeholder={editingUser ? "SOLO PARA CAMBIO" : "MÍN. 6 CARACTERES"}
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            className="h-14 bg-muted/40 border-border rounded-2xl text-xs font-black italic focus:ring-primary/20"
+                            required={!editingUser}
+                            minLength={6}
+                        />
+                        <Key className="absolute right-4 top-10 w-4 h-4 text-muted-foreground/20" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">VECTOR DE ROL</Label>
+                        <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v })}>
+                            <SelectTrigger className="h-14 bg-muted/40 border-border rounded-2xl text-xs font-black italic uppercase">
+                                <SelectValue placeholder="SELECCIONAR ROL" />
+                            </SelectTrigger>
+                            <SelectContent className="glass-pro border-border rounded-2xl">
+                                {dbRoles.map((role) => (
+                                    <SelectItem key={role.name} value={role.name} className="text-[9px] font-black italic uppercase p-4 border-b border-border/50 last:border-0">
+                                        {role.name.replace(/_/g, ' ')}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic px-2">TIENDA ASIGNADA</Label>
+                        <Select value={formData.store_id || ""} onValueChange={(v) => setFormData({ ...formData, store_id: v || null })}>
+                            <SelectTrigger className="h-14 bg-muted/40 border-border rounded-2xl text-xs font-black italic uppercase">
+                                <SelectValue placeholder="SELECCIONAR NODO" />
+                            </SelectTrigger>
+                            <SelectContent className="glass-pro border-border rounded-2xl">
+                                {stores.map((s) => (
+                                    <SelectItem key={s.id} value={s.id} className="text-[9px] font-black italic uppercase p-4 border-b border-border/50 last:border-0">{s.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">
-                  {editingUser ? "Nueva Contraseña (Dejar en blanco para no cambiar)" : "Contraseña *"}
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder={editingUser ? "Opcional" : "Mínimo 6 caracteres"}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required={!editingUser}
-                  minLength={6}
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Teléfono</Label>
-                <Input
-                  id="phone"
-                  placeholder="Ej: +57 300 123 4567"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="mt-2"
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Rol *</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value: string) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Seleccionar rol" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dbRoles.map((role) => (
-                      <SelectItem key={role.name} value={role.name}>
-                        <span className="capitalize">{role.name.replace(/_/g, ' ')}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="store_id">Tienda Asignada</Label>
-                <Select
-                  value={formData.store_id || ""}
-                  onValueChange={(value) => setFormData({ ...formData, store_id: value || null })}
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Seleccionar tienda" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stores.map((store) => (
-                      <SelectItem key={store.id} value={store.id}>
-                        {store.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="p-6 glass-pro bg-primary/5 rounded-[2rem] border border-primary/10 flex items-start gap-4">
+                    <input
+                        type="checkbox"
+                        id="consent_user"
+                        className="mt-1 w-5 h-5 rounded-lg border-border bg-muted text-primary focus:ring-primary/40 cursor-pointer"
+                        checked={formData.consent_habeas_data}
+                        onChange={(e) => setFormData({ ...formData, consent_habeas_data: e.target.checked })}
+                        required
+                    />
+                    <Label htmlFor="consent_user" className="text-[10px] font-black text-muted-foreground uppercase italic tracking-widest leading-relaxed cursor-pointer select-none">
+                        Certifico que el titular ha autorizado el tratamiento de datos personales conforme a la <span className="text-primary tracking-tighter">LEY 1581 DE 2012</span> para el registro operativo.
+                    </Label>
+                </div>
 
-              <div className="flex items-start space-x-3 pt-2">
-                <input
-                  type="checkbox"
-                  id="consent_user"
-                  className="mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                  checked={formData.consent_habeas_data}
-                  onChange={(e) => setFormData({ ...formData, consent_habeas_data: e.target.checked })}
-                  required
-                />
-                <Label htmlFor="consent_user" className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer">
-                  Autorizo el tratamiento de mis datos personales conforme a la <strong>Ley 1581 de 2012 (Hábeas Data)</strong>. *
-                </Label>
-              </div>
-
-              <DialogFooter className="gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setUserDialogIsOpen(false)}
-                  disabled={isProcessing}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isProcessing || !formData.name || !formData.role || !formData.document_id || !formData.consent_habeas_data}
-                  className="gradient-primary"
-                >
-                  {isProcessing ? "Guardando..." : editingUser ? "Actualizar Usuario" : "Crear Usuario"}
-                </Button>
-              </DialogFooter>
+                <DialogFooter className="gap-4">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setUserDialogIsOpen(false)}
+                        disabled={isProcessing}
+                        className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase italic tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted"
+                    >
+                        CANCELAR PROTOCOLO
+                    </Button>
+                    <Button
+                        type="submit"
+                        disabled={isProcessing || !formData.name || !formData.role || !formData.document_id || !formData.consent_habeas_data}
+                        className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-black italic uppercase tracking-widest shadow-glow-pro hover:shadow-primary/40 transition-all font-space-grotesk"
+                    >
+                        {isProcessing ? "VALIDANDO..." : editingUser ? "ACTUALIZAR PERFIL ✓" : "EMITIR IDENTIDAD ✓"}
+                    </Button>
+                </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </motion.div>
     </Layout>
   );
 }
