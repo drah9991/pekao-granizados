@@ -263,6 +263,7 @@ export default function Movements() {
                         )}
                 </Card>
             </motion.div>
-        </Layout>
+        </motion.div>
+    </Layout>
     );
 }
