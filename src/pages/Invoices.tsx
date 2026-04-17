@@ -399,7 +399,7 @@ export default function Invoices() {
                 })}
               </div>
             )}
-          </CardContent>
+          </Card>
         </motion.div>
 
         {/* Manual Invoice Modal */}

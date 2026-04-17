@@ -173,7 +173,7 @@ export default function Layout({ children }: LayoutProps) {
       <aside
         className={cn(
           "w-64 glass-pro border-r border-border/50 flex flex-col shadow-pro",
-          "fixed inset-y-0 left-0 z-50 transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+          "fixed inset-y-0 left-0 z-50 transition-all duration-500 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)]",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -322,7 +322,7 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] pt-20 relative z-10",
+        "flex-1 overflow-auto transition-all duration-700 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] pt-20 relative z-10",
         !isMobile && isSidebarOpen && "pl-64"
       )}>
         <div className="animate-pro-in p-4 md:p-8 perspective-1000">
