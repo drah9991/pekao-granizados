@@ -32,7 +32,9 @@ const Users = lazy(() => import("./pages/Users"));
 const Stores = lazy(() => import("./pages/Stores"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Preparation = lazy(() => import("./pages/Preparation"));
+const Inventory = lazy(() => import("./pages/Inventory"));
 const InventoryManagement = lazy(() => import("./components/settings/InventoryManagement").then(m => ({ default: m.InventoryManagement })));
+
 const RecipeManagement = lazy(() => import("./components/settings/RecipeManagement").then(m => ({ default: m.RecipeManagement })));
 
 const queryClient = new QueryClient();
@@ -168,9 +170,9 @@ const App = () => (
               <Route
                 path="/inventory"
                 element={
-                  <ProtectedRoute requiredRole={["admin", "manager"]}>
+                  <ProtectedRoute requiredRole={["admin", "manager", "owner" as any, "store_manager" as any]}>
                     <ErrorBoundary fallbackTitle="Error en Inventario">
-                      <InventoryManagement />
+                      <Inventory />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }

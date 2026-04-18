@@ -89,7 +89,7 @@ export const InventoryManagement = () => {
         setEditingItem(item);
         setName(item.name);
         setSku(item.sku || "");
-        setUnitOfMeasure((item as any).unit || item.unit_of_measure || "");
+        setUnitOfMeasure((item as any).unit || "");
         setStock(item.stock);
         setMinStock(item.min_stock || 0);
         setCostPerUnit(item.cost_per_unit || 0);
@@ -242,7 +242,7 @@ export const InventoryManagement = () => {
                             ) : (
                                 filteredItems?.map((item) => {
                                     const isLow = item.stock <= (item.min_stock || 0);
-                                    const unit = (item as any).unit || item.unit_of_measure;
+                                    const unit = (item as any).unit || "";
                                     const displayStock = (item.is_mixture && unit === 'ml') 
                                         ? `${(item.stock / 1000).toFixed(1)} L` 
                                         : `${item.stock} ${unit}`;

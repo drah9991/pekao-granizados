@@ -133,7 +133,7 @@ export default function Reports() {
     return data.map(item => ({
       Nombre: item.name.toUpperCase(),
       SKU: item.sku || '-',
-      Unidad: item.unit_of_measure,
+      Unidad: (item as any).unit || (item as any).unit_of_measure,
       Stock_Actual: item.stock,
       Stock_Minimo: item.min_stock || 0,
       Estado: item.stock <= (item.min_stock || 0) ? 'BAJO' : 'OK'

@@ -21,10 +21,14 @@ import { PaymentMethodsWidget } from "@/components/dashboard/PaymentMethodsWidge
 import { RecentSalesWidget } from "@/components/dashboard/RecentSalesWidget";
 import { PopularProductsWidget } from "@/components/dashboard/PopularProductsWidget";
 import { MixtureStockWidget } from "@/components/dashboard/MixtureStockWidget";
+import DashboardCustomizer, { DashboardConfig, defaultDashboardConfig } from "@/components/dashboard/DashboardCustomizer";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const { storeId, user } = useAuth();
   const [period, setPeriod] = useState<"today" | "week" | "month" | "year">("today");
+  const [uiConfig, setUiConfig] = useState<DashboardConfig>(defaultDashboardConfig);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
 
   const ranges = useMemo(() => {
     const today = new Date();
@@ -62,6 +66,18 @@ export default function Dashboard() {
         return null;
       }
       try {
+        // Fetch UI Config from store settings
+        const { data: storeData } = await supabase
+          .from('stores')
+          .select('config')
+          .eq('id', storeId)
+          .single();
+        
+        if (storeData?.config && typeof storeData.config === 'object') {
+            const savedConfig = (storeData.config as any).dashboard_v2;
+            if (savedConfig) setUiConfig(savedConfig);
+        }
+
         const [currentRes, comparisonRes, inventoryRes] = await Promise.all([
           supabase.from("orders").select("id, total, subtotal, tip_amount, delivery_fee, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end),
           supabase.from("orders").select("total, status").eq("store_id", storeId).gte("created_at", ranges.comparison.start).lte("created_at", ranges.comparison.end),
@@ -211,6 +227,27 @@ export default function Dashboard() {
     refetchInterval: 30000,
   });
 
+  const handleSaveConfig = async () => {
+    if (!storeId) return;
+    setIsSavingConfig(true);
+    try {
+        const { data: currentStore } = await supabase.from('stores').select('config').eq('id', storeId).single();
+        const newConfig = {
+            ...(currentStore?.config as any || {}),
+            dashboard_v2: uiConfig
+        };
+
+        const { error } = await supabase.from('stores').update({ config: newConfig }).eq('id', storeId);
+        if (error) throw error;
+        toast.success("Dashboard parametrizado con éxito");
+    } catch (err: any) {
+        console.error("Error saving dashboard config:", err);
+        toast.error("Fallo en persistencia: " + err.message);
+    } finally {
+        setIsSavingConfig(false);
+    }
+  };
+
   const comparisonLabel = period === 'today' ? 'ayer' : (period === 'week' ? 'sem. pasada' : (period === 'month' ? 'mes pasado' : 'año pasado'));
 
   if (isLoading && !dashboardData) {
@@ -277,49 +314,70 @@ export default function Dashboard() {
               </Button>
             ))}
           </div>
+
+          <div className="flex items-center gap-4">
+              <DashboardCustomizer 
+                config={uiConfig} 
+                onChange={setUiConfig} 
+                onSave={handleSaveConfig} 
+                isSaving={isSavingConfig}
+              />
+          </div>
         </div>
 
-        {/* Bento Grid Body */}
-        <div className="bento-grid">
+        {/* Bento Grid Body - Pro Max Zero Scroll Layout */}
+        <div className="dashboard-grid no-scrollbar">
             {/* Main Stats - Bento Wide */}
-            <div className="md:col-span-2 lg:col-span-4 dim-layering">
-                <StatCards data={dashboardData} label={comparisonLabel} />
-            </div>
+            {uiConfig.showStats && (
+                <div className="area-stats animate-pro-in">
+                    <StatCards data={dashboardData} label={comparisonLabel} />
+                </div>
+            )}
 
             {/* Sales Chart - Bento Large */}
-            <div className="bento-item-large dim-layering group">
-                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700">
-                    <SalesChartWidget data={dashboardData} />
+            {uiConfig.showChart && (
+                <div className="area-chart animate-pro-in delay-100">
+                    <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                        <SalesChartWidget data={dashboardData} />
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Payment Split - Bento Tall */}
-            <div className="bento-item-tall dim-layering group">
-                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700">
-                    <PaymentMethodsWidget data={dashboardData} />
+            {uiConfig.showPaymentMethods && (
+                <div className="area-pie animate-pro-in delay-200">
+                    <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                        <PaymentMethodsWidget data={dashboardData} />
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Mixture Status - Bento Normal */}
-            <div className="dim-layering group">
-                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700">
-                    <MixtureStockWidget data={dashboardData} />
+            {uiConfig.showMixtureStock && (
+                <div className="area-stock animate-pro-in delay-300">
+                    <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                        <MixtureStockWidget data={dashboardData} />
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Popular Products - Bento Normal */}
-            <div className="dim-layering group">
-                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700">
-                    <PopularProductsWidget data={dashboardData} />
+            {uiConfig.showPopularProducts && (
+                <div className="area-popular animate-pro-in delay-400">
+                    <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                        <PopularProductsWidget data={dashboardData} />
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Recent Sales - Bento Wide */}
-            <div className="bento-item-wide dim-layering group">
-                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-white/5 hover:border-primary/30 transition-all duration-700">
-                    <RecentSalesWidget data={dashboardData} />
+            {uiConfig.showRecentSales && (
+                <div className="area-recent animate-pro-in delay-500">
+                    <div className="h-full glass-pro rounded-[2.5rem] p-1 border-white/5 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                        <RecentSalesWidget data={dashboardData} />
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
       </div>
     </Layout>

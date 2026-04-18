@@ -14,6 +14,8 @@ import { formatCOP } from "@/lib/currency";
 import { Enums } from "@/integrations/supabase/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MixManagement from "@/components/inventory/MixManagement";
+import InventoryEntry from "@/components/inventory/InventoryEntry";
+
 import { useAuth } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
 import { motion, AnimatePresence } from "framer-motion";
@@ -369,6 +371,11 @@ export default function Inventory() {
                             Preparación de Mezclas
                             <div className="absolute -bottom-2 left-0 w-0 h-1 bg-primary transition-all duration-500 group-data-[state=active]:w-full rounded-full shadow-glow-pro" />
                         </TabsTrigger>
+                        <TabsTrigger value="entry" className="bg-transparent border-none p-0 text-muted-foreground/40 data-[state=active]:text-primary data-[state=active]:shadow-none font-black italic uppercase tracking-[0.2em] font-space-grotesk text-sm relative group">
+                            Registro de Entrada
+                            <div className="absolute -bottom-2 left-0 w-0 h-1 bg-primary transition-all duration-500 group-data-[state=active]:w-full rounded-full shadow-glow-pro" />
+                        </TabsTrigger>
+
                     </TabsList>
                 </div>
 
@@ -471,7 +478,15 @@ export default function Inventory() {
                 <TabsContent value="mixes" className="focus:outline-none">
                     <MixManagement storeId={userStoreId || stores[0]?.id} />
                 </TabsContent>
+
+                <TabsContent value="entry" className="focus:outline-none">
+                    <InventoryEntry 
+                        storeId={userStoreId || (selectedStore !== 'all' ? selectedStore : stores[0]?.id)} 
+                        onSuccess={() => fetchStockData()} 
+                    />
+                </TabsContent>
             </Tabs>
+
         </motion.div>
 
         {/* Tactical Adjustment Dialog */}

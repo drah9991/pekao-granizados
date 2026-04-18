@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 interface InventoryItem {
   id: string;
   name: string;
-  unit_of_measure: string;
+  unit: string;
   stock: number;
 }
 
@@ -87,7 +87,8 @@ export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, 
     setNotes("");
   };
 
-  return     <Dialog open={isOpen} onOpenChange={onOpenChange}>
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md glass-pro border-white/20 shadow-pro overflow-hidden p-0 rounded-[2.5rem] animate-pro-in">
         {/* Header with Background Accent */}
         <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-8 border-b border-white/10 relative overflow-hidden">

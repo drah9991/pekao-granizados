@@ -252,7 +252,7 @@ export const RecipeManagement = () => {
                                                 <SelectContent>
                                                     {inventoryItems?.map(inv => (
                                                         <SelectItem key={inv.id} value={inv.id}>
-                                                            {inv.name} ({(inv as any).unit || (inv as any).unit_of_measure})
+                                                            {inv.name} ({(inv as any).unit || ""})
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -303,7 +303,7 @@ export const RecipeManagement = () => {
                                                 {row.inventory_items?.name || "Desconocido"}
                                             </TableCell>
                                             <TableCell className="font-medium text-foreground/80">
-                                                {row.quantity_required} {(row.inventory_items as any)?.unit || (row.inventory_items as any)?.unit_of_measure}
+                                                {row.quantity_required} {(row.inventory_items as any)?.unit || ""}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" onClick={() => removeIngredientMutation.mutate(row.id)}>

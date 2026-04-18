@@ -11,9 +11,8 @@ import { cn } from "@/lib/utils";
 import MixReloadDialog from "./MixReloadDialog";
 
 interface InventoryItem {
-  id: string;
   name: string;
-  unit_of_measure: string;
+  unit: string;
   stock: number;
   min_stock: number;
 }
@@ -50,7 +49,7 @@ export default function MixManagement({ storeId }: { storeId: string }) {
         .from("inventory_items")
         .select("*")
         .eq("store_id", storeId)
-        .eq("unit_of_measure", "ml") // Assume mixes are measured in ml
+        .eq("unit", "ml") // Assume mixes are measured in ml
         .order("name", { ascending: true });
 
       if (error) throw error;

@@ -137,6 +137,14 @@
     overflow-x: hidden;
   }
 
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   /* Atomic Noise Overlay Base */
   body::before {
     content: "";
@@ -215,6 +223,31 @@
     grid-auto-rows: minmax(180px, auto);
     gap: 1.5rem;
   }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: auto repeat(2, 1fr);
+    gap: 1.5rem;
+    height: calc(100vh - 220px);
+    min-height: 700px;
+  }
+
+  @media (max-width: 1024px) {
+    .dashboard-grid {
+      display: flex;
+      flex-direction: column;
+      height: auto;
+    }
+  }
+
+  /* Specific Bento Areas */
+  .area-stats { grid-column: span 12; }
+  .area-chart { grid-column: span 8; grid-row: span 1; }
+  .area-pie { grid-column: span 4; grid-row: span 1; }
+  .area-stock { grid-column: span 3; grid-row: span 1; }
+  .area-popular { grid-column: span 3; grid-row: span 1; }
+  .area-recent { grid-column: span 6; grid-row: span 1; }
 
   .shadow-pro {
     box-shadow: var(--shadow-pro);
