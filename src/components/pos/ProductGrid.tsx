@@ -185,11 +185,21 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
     });
   }, [products, searchQuery, activeCategory]);
 
-  if (loading) {
+  if (loading && !products.length) {
     return (
-      <div className="flex-1 p-6 flex flex-col items-center justify-center space-y-4">
-        <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full shadow-glow" />
-        <p className="text-muted-foreground font-medium animate-pulse">Preparando inventario...</p>
+      <div className="flex-1 flex flex-col items-center justify-center p-20 bg-background/50 backdrop-blur-xl rounded-[3rem] border border-white/5 shadow-pro animate-pulse">
+        <div className="relative mb-8">
+           <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin shadow-glow-primary" />
+           <div className="absolute inset-0 flex items-center justify-center">
+              <span className="w-2 h-2 bg-primary rounded-full animate-ping" />
+           </div>
+        </div>
+        <h3 className="text-xl font-black font-space-grotesk italic uppercase tracking-tighter text-foreground mb-1">
+          Sincronizando <span className="text-primary text-glow">Menú</span>
+        </h3>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 font-space-grotesk italic">
+           Data Stream Pipeline Active • v2.0
+        </p>
       </div>
     );
   }
@@ -228,7 +238,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
               variant={isActive ? "default" : "outline"}
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                "h-14 lg:h-16 px-4 lg:px-8 gap-3 rounded-2xl transition-all border font-space-grotesk shrink-0",
+                "h-12 sm:h-14 lg:h-16 px-3 sm:px-4 lg:px-8 gap-2 sm:gap-3 rounded-xl sm:rounded-2xl transition-all border font-space-grotesk shrink-0",
                 isActive 
                   ? "bg-primary text-primary-foreground border-primary shadow-glow-pro scale-105" 
                   : "bg-muted/40 border-border text-muted-foreground hover:bg-muted/80 hover:border-primary/20 hover:text-foreground"
@@ -277,7 +287,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
                     onProductSelect(product);
                   }}
                   className={cn(
-                    "group relative w-full h-48 lg:h-56 rounded-[2.5rem] border overflow-hidden transition-all duration-700",
+                    "group relative w-full h-36 sm:h-48 lg:h-56 rounded-[1.5rem] sm:rounded-[2.5rem] border overflow-hidden transition-all duration-700",
                     isOutOfStock 
                       ? "opacity-40 grayscale border-border cursor-not-allowed bg-muted/40" 
                       : "glass-pro border-border hover:border-primary/50 hover:shadow-glow-pro active:scale-95"
@@ -287,19 +297,19 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent group-hover:via-primary transition-all duration-1000" />
                   )}
                   
-                  <div className="relative h-full p-6 flex flex-col items-start justify-between">
+                  <div className="relative h-full p-3 sm:p-6 flex flex-col items-start justify-between">
                     <div className="w-full flex items-start justify-between">
                       <div className={cn(
-                        "p-4 rounded-3xl transition-all duration-700 shadow-pro",
+                        "p-2 sm:p-4 rounded-xl sm:rounded-3xl transition-all duration-700 shadow-pro",
                         isOutOfStock ? "bg-muted" : "bg-primary/20 border border-primary/20 group-hover:rotate-12 group-hover:scale-110"
                       )}>
-                         <span className="text-4xl filter drop-shadow-xl">{emoji}</span>
+                         <span className="text-2xl sm:text-4xl filter drop-shadow-xl">{emoji}</span>
                       </div>
                       
                       {product.stock !== undefined && (
                         <Badge 
                            className={cn(
-                             "font-black text-[9px] px-3 py-1 rounded-xl border-none font-space-grotesk tracking-widest uppercase shadow-pro",
+                             "font-black text-[8px] sm:text-[9px] px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border-none font-space-grotesk tracking-widest uppercase shadow-pro absolute top-2 right-2 sm:relative sm:top-0 sm:right-0",
                              isOutOfStock ? "bg-rose-500 text-white shadow-glow-pro animate-pulse" : 
                              isLowStock ? "appetite-accent scale-105" : 
                              "bg-muted/80 text-primary border border-border"
@@ -332,19 +342,19 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
                     </div>
                     
                     <div className="w-full text-left">
-                      <p className="font-black text-foreground text-base leading-tight mb-1 font-space-grotesk italic tracking-tighter uppercase group-hover:text-primary transition-colors text-glow">
+                      <p className="font-black text-foreground text-[11px] sm:text-base leading-tight mb-1 font-space-grotesk italic tracking-tighter uppercase group-hover:text-primary transition-colors text-glow line-clamp-1 sm:line-clamp-none">
                         {product.name}
                       </p>
                       <div className="flex items-center justify-between">
-                        <p className="font-black text-xl lg:text-2xl text-foreground font-space-grotesk italic">
+                        <p className="font-black text-xs sm:text-xl lg:text-2xl text-foreground font-space-grotesk italic">
                           {formatCOP(product.price)}
                         </p>
                         {!isOutOfStock && (
                           <div className={cn(
-                            "w-10 h-10 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 border border-primary/20 shadow-glow-pro",
+                            "w-6 h-6 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 border border-primary/20 shadow-glow-pro",
                             isLowStock ? "appetite-accent" : "bg-primary text-primary-foreground"
                           )}>
-                            <span className="text-xl font-black">+</span>
+                            <span className="text-sm sm:text-xl font-black">+</span>
                           </div>
                         )}
                       </div>

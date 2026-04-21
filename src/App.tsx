@@ -28,6 +28,7 @@ const Movements = lazy(() => import("./pages/Movements"));
 const Customers = lazy(() => import("./pages/Customers"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const CashRegister = lazy(() => import("./pages/CashRegister"));
+const Expenses = lazy(() => import("./pages/Expenses"));
 const Products = lazy(() => import("./pages/Products"));
 const Users = lazy(() => import("./pages/Users"));
 const Stores = lazy(() => import("./pages/Stores"));
@@ -145,6 +146,16 @@ const App = () => (
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <ErrorBoundary fallbackTitle="Error en Arqueo de Caja">
                       <CashRegister />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/expenses"
+                element={
+                  <ProtectedRoute requiredRole={["admin", "manager", "owner" as any]}>
+                    <ErrorBoundary fallbackTitle="Error en Gastos">
+                      <Expenses />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }

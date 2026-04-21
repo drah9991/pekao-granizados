@@ -22,21 +22,44 @@ export function SalesChartWidget({ data }: { data: any }) {
           <AreaChart data={data.hourlySales}>
             <defs>
               <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#700de7" stopOpacity={0.6}/>
-                <stop offset="95%" stopColor="#700de7" stopOpacity={0}/>
+                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
-            <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 900, fontFamily: 'Space Grotesk' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+            <XAxis 
+              dataKey="hour" 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 900, fontFamily: 'Space Grotesk' }} 
+              dy={10}
+            />
             <YAxis hide />
             <Tooltip 
-              contentStyle={{ backgroundColor: 'rgba(15,17,23,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(112,13,231,0.2)', borderRadius: '24px', padding: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
-              itemStyle={{ color: '#fff', fontWeight: 900, fontSize: '14px', fontFamily: 'Space Grotesk' }}
+              contentStyle={{ 
+                backgroundColor: 'rgba(15,17,23,0.9)', 
+                backdropFilter: 'blur(32px)', 
+                border: '1px solid rgba(255,255,255,0.1)', 
+                borderRadius: '2rem', 
+                padding: '20px', 
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8)' 
+              }}
+              itemStyle={{ color: '#fff', fontWeight: 900, fontSize: '16px', fontFamily: 'Space Grotesk' }}
               formatter={(val: number) => [formatCOP(val), "Ingresos"]}
-              labelStyle={{ color: '#700de7', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px', marginBottom: '8px', letterSpacing: '0.1em' }}
-              cursor={{ stroke: '#700de7', strokeWidth: 2, strokeDasharray: '4 4' }}
+              labelStyle={{ color: 'rgba(255,255,255,0.5)', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px', marginBottom: '8px', letterSpacing: '0.2em' }}
+              cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 2, strokeDasharray: '6 6' }}
             />
-            <Area type="monotone" dataKey="total" stroke="#700de7" strokeWidth={5} fillOpacity={1} fill="url(#colorTotal)" animationDuration={2000} strokeLinecap="round" />
+            <Area 
+              type="monotone" 
+              dataKey="total" 
+              stroke="hsl(var(--primary))" 
+              strokeWidth={4} 
+              fillOpacity={1} 
+              fill="url(#colorTotal)" 
+              animationDuration={2500} 
+              strokeLinecap="round" 
+              activeDot={{ r: 6, fill: 'hsl(var(--primary))', stroke: '#fff', strokeWidth: 2 }}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>

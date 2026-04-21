@@ -1,18 +1,31 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { Palette, Shield, Building2, Receipt, Database } from "lucide-react";
-import BrandingSettings from "@/components/settings/BrandingSettings";
-import RolesSettings from "@/components/settings/RolesSettings";
-import BusinessSettings from "@/components/settings/BusinessSettings";
-import ReceiptTemplateSettings from "@/components/settings/ReceiptTemplateSettings";
-import SizesSettings from "@/components/settings/SizesSettings";
-import SkuAcronymsSettings from "@/components/settings/SkuAcronymsSettings";
-import NotificationSettings from "@/components/settings/NotificationSettings";
-import ProductTypesMaster from "@/components/settings/ProductTypesMaster";
-import { Ruler, Tag, Bell, Box } from "lucide-react";
+import { Palette, Shield, Building2, Receipt, Ruler, Tag, Bell, Box, Loader2 } from "lucide-react";
+
+// Lazy loading components for performance optimization
+const BrandingSettings = lazy(() => import("@/components/settings/BrandingSettings"));
+const RolesSettings = lazy(() => import("@/components/settings/RolesSettings"));
+const BusinessSettings = lazy(() => import("@/components/settings/BusinessSettings"));
+const ReceiptTemplateSettings = lazy(() => import("@/components/settings/ReceiptTemplateSettings"));
+const SizesSettings = lazy(() => import("@/components/settings/SizesSettings"));
+const SkuAcronymsSettings = lazy(() => import("@/components/settings/SkuAcronymsSettings"));
+const NotificationSettings = lazy(() => import("@/components/settings/NotificationSettings"));
+const ProductTypesMaster = lazy(() => import("@/components/settings/ProductTypesMaster"));
+
+const TabLoadingSkeleton = () => (
+    <div className="flex flex-col items-center justify-center py-24 gap-6 animate-pro-in">
+        <div className="relative">
+            <Loader2 className="w-12 h-12 animate-spin text-primary shadow-glow-pro" />
+            <div className="absolute inset-0 bg-primary/20 blur-xl animate-pulse rounded-full" />
+        </div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-primary italic animate-pulse">
+            Sincronizando Módulos de Control...
+        </p>
+    </div>
+);
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,19 +37,13 @@ export default function Settings() {
   const handleTabChange = (value: string) => {
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.set("tab", value);
-    if (
-      value !== "branding" &&
-      value !== "roles" &&
-      value !== "business" &&
-      value !== "receipts" &&
-      value !== "sizes" &&
-      value !== "sku" &&
-      value !== "notifications" &&
-      value !== "product_types"
-    ) {
+    
+    const validTabs = ["branding", "roles", "business", "receipts", "sizes", "sku", "notifications", "product_types"];
+    if (!validTabs.includes(value)) {
       newSearchParams.delete("tab");
     }
-    navigate(`${location.pathname}?${newSearchParams.toString()}`);
+    
+    navigate(`${location.pathname}?${newSearchParams.toString()}`, { replace: true });
   };
 
   return (
@@ -58,101 +65,66 @@ export default function Settings() {
           <Card className="lg:w-80 shrink-0 glass-pro border-white/10 shadow-pro overflow-hidden h-fit lg:sticky lg:top-24">
             <Tabs value={activeTab} onValueChange={handleTabChange} orientation="vertical" className="w-full">
               <TabsList className="flex flex-row lg:flex-col h-auto bg-transparent gap-1 p-2 lg:p-4 overflow-x-auto lg:overflow-visible no-scrollbar">
-                <TabsTrigger
-                  value="branding"
-                  className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro px-4 lg:px-6"
-                >
-                  <Palette className="w-4 h-4" />
-                  Branding
-                </TabsTrigger>
-                <TabsTrigger
-                  value="roles"
-                  className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro px-4 lg:px-6"
-                >
-                  <Shield className="w-4 h-4" />
-                  Roles
-                </TabsTrigger>
-                <TabsTrigger
-                  value="business"
-                  className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro px-4 lg:px-6"
-                >
-                  <Building2 className="w-4 h-4" />
-                  Negocio
-                </TabsTrigger>
-                <TabsTrigger
-                  value="receipts"
-                  className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro px-4 lg:px-6"
-                >
-                  <Receipt className="w-4 h-4" />
-                  Recibos
-                </TabsTrigger>
-                <TabsTrigger
-                  value="sizes"
-                  className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro px-4 lg:px-6"
-                >
-                  <Ruler className="w-4 h-4" />
-                  Tamaños
-                </TabsTrigger>
-                <TabsTrigger
-                  value="sku"
-                  className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro px-4 lg:px-6"
-                >
-                  <Tag className="w-4 h-4" />
-                  Acrónimos
-                </TabsTrigger>
-                <TabsTrigger
-                  value="notifications"
-                  className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro px-4 lg:px-6"
-                >
-                  <Bell className="w-4 h-4" />
-                  Alertas
-                </TabsTrigger>
-                <TabsTrigger
-                  value="product_types"
-                  className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-glow-pro px-4 lg:px-6"
-                >
-                  <Box className="w-4 h-4" />
-                  Master Types
-                </TabsTrigger>
+                {[
+                  { value: "branding", label: "Branding", icon: Palette },
+                  { value: "roles", label: "Roles", icon: Shield },
+                  { value: "business", label: "Negocio", icon: Building2 },
+                  { value: "receipts", label: "Recibos", icon: Receipt },
+                  { value: "sizes", label: "Tamaños", icon: Ruler },
+                  { value: "sku", label: "Acrónimos", icon: Tag },
+                  { value: "notifications", label: "Alertas", icon: Bell },
+                  { value: "product_types", label: "Master Types", icon: Box },
+                ].map((tab) => (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro px-4 lg:px-6"
+                  >
+                    <tab.icon className="w-4 h-4" />
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </Tabs>
           </Card>
 
           <div className="flex-1 min-w-0">
              <Card className="glass-pro border-white/10 shadow-pro overflow-hidden p-4 md:p-8 lg:p-12 min-h-[500px] lg:min-h-[600px]">
-                <Tabs value={activeTab} className="w-full">
-                    <TabsContent value="branding" className="m-0 animate-pro-in">
-                        <BrandingSettings />
-                    </TabsContent>
+                <Suspense fallback={<TabLoadingSkeleton />}>
+                    <Tabs value={activeTab} className="w-full">
+                        <TabsContent value="branding" className="m-0 animate-pro-in">
+                            <BrandingSettings />
+                        </TabsContent>
 
-                    <TabsContent value="roles" className="m-0 animate-pro-in">
-                        <RolesSettings />
-                    </TabsContent>
+                        <TabsContent value="roles" className="m-0 animate-pro-in">
+                            <RolesSettings />
+                        </TabsContent>
 
-                    <TabsContent value="business" className="m-0 animate-pro-in">
-                        <BusinessSettings />
-                    </TabsContent>
+                        <TabsContent value="business" className="m-0 animate-pro-in">
+                            <BusinessSettings />
+                        </TabsContent>
 
-                    <TabsContent value="receipts" className="m-0 animate-pro-in">
-                        <ReceiptTemplateSettings />
-                    </TabsContent>
+                        <TabsContent value="receipts" className="m-0 animate-pro-in">
+                            <ReceiptTemplateSettings />
+                        </TabsContent>
 
-                    <TabsContent value="sizes" className="m-0 animate-pro-in">
-                        <SizesSettings />
-                    </TabsContent>
+                        <TabsContent value="sizes" className="m-0 animate-pro-in">
+                            <SizesSettings />
+                        </TabsContent>
 
-                    <TabsContent value="sku" className="m-0 animate-pro-in">
-                        <SkuAcronymsSettings />
-                    </TabsContent>
+                        <TabsContent value="sku" className="m-0 animate-pro-in">
+                            <SkuAcronymsSettings />
+                        </TabsContent>
 
-                    <TabsContent value="notifications" className="m-0 animate-pro-in">
-                        <NotificationSettings />
-                    </TabsContent>
+                        <TabsContent value="notifications" className="m-0 animate-pro-in">
+                            <NotificationSettings />
+                        </TabsContent>
 
-                    <TabsContent value="product_types" className="m-0 animate-pro-in">
-                        <ProductTypesMaster />
-                    </TabsContent>
-                </Tabs>
+                        <TabsContent value="product_types" className="m-0 animate-pro-in">
+                            <ProductTypesMaster />
+                        </TabsContent>
+                    </Tabs>
+                </Suspense>
              </Card>
           </div>
         </div>

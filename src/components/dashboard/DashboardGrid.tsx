@@ -1,0 +1,79 @@
+import React, { lazy, Suspense } from "react";
+import { DashboardSkeleton, WidgetSkeleton } from "@/components/dashboard/DashboardSkeletons";
+
+const StatCards = lazy(() => import("@/components/dashboard/StatCards").then(m => ({ default: m.StatCards })));
+const SalesChartWidget = lazy(() => import("@/components/dashboard/SalesChartWidget").then(m => ({ default: m.SalesChartWidget })));
+const PaymentMethodsWidget = lazy(() => import("@/components/dashboard/PaymentMethodsWidget").then(m => ({ default: m.PaymentMethodsWidget })));
+const RecentSalesWidget = lazy(() => import("@/components/dashboard/RecentSalesWidget").then(m => ({ default: m.RecentSalesWidget })));
+const PopularProductsWidget = lazy(() => import("@/components/dashboard/PopularProductsWidget").then(m => ({ default: m.PopularProductsWidget })));
+const MixtureStockWidget = lazy(() => import("@/components/dashboard/MixtureStockWidget").then(m => ({ default: m.MixtureStockWidget })));
+
+interface DashboardGridProps {
+  uiConfig: any;
+  dashboardData: any;
+  comparisonLabel: string;
+}
+
+export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel }: DashboardGridProps) {
+  return (
+    <div className="dashboard-grid no-scrollbar pb-10">
+        {uiConfig.showStats && (
+            <div className="area-stats animate-pro-in">
+                <Suspense fallback={<DashboardSkeleton />}>
+                    <StatCards data={dashboardData} label={comparisonLabel} />
+                </Suspense>
+            </div>
+        )}
+
+        {uiConfig.showChart && (
+            <div className="area-chart animate-pro-in delay-100">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                    <Suspense fallback={<WidgetSkeleton />}>
+                        <SalesChartWidget data={dashboardData} />
+                    </Suspense>
+                </div>
+            </div>
+        )}
+
+        {uiConfig.showPaymentMethods && (
+            <div className="area-pie animate-pro-in delay-200">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                    <Suspense fallback={<WidgetSkeleton height="h-[600px]" />}>
+                        <PaymentMethodsWidget data={dashboardData} />
+                    </Suspense>
+                </div>
+            </div>
+        )}
+
+        {uiConfig.showMixtureStock && (
+            <div className="area-stock animate-pro-in delay-300">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                    <Suspense fallback={<WidgetSkeleton height="h-[300px]" />}>
+                        <MixtureStockWidget data={dashboardData} />
+                    </Suspense>
+                </div>
+            </div>
+        )}
+
+        {uiConfig.showPopularProducts && (
+            <div className="area-popular animate-pro-in delay-400">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-border/50 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                    <Suspense fallback={<WidgetSkeleton height="h-[300px]" />}>
+                        <PopularProductsWidget data={dashboardData} />
+                    </Suspense>
+                </div>
+            </div>
+        )}
+
+        {uiConfig.showRecentSales && (
+            <div className="area-recent animate-pro-in delay-500">
+                <div className="h-full glass-pro rounded-[2.5rem] p-1 border-white/5 hover:border-primary/30 transition-all duration-700 overflow-hidden">
+                    <Suspense fallback={<WidgetSkeleton height="h-[400px]" />}>
+                        <RecentSalesWidget data={dashboardData} />
+                    </Suspense>
+                </div>
+            </div>
+        )}
+    </div>
+  );
+}

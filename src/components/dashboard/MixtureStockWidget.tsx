@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Beaker, AlertCircle, Droplets } from "lucide-react";
+import { Beaker, AlertCircle, Droplets, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -71,43 +71,56 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
               const availableSizes = data?.sizes || [];
 
               return (
-                <div key={idx} className="space-y-3 p-5 rounded-2xl bg-muted/50 border border-border/50 hover:border-primary/30 transition-all hover:bg-muted group/item">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                       <div className={cn("w-2 h-2 rounded-full", isLow ? "bg-red-500 shadow-glow animate-pulse" : "bg-primary shadow-glow-pro")} />
-                       <h4 className="font-black text-foreground uppercase text-xs tracking-wider font-space-grotesk">{item.name}</h4>
+                <div key={idx} className="space-y-4 p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:border-primary/30 transition-all hover:bg-white/[0.08] group/item relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/item:opacity-20 transition-opacity">
+                      <Beaker className="w-12 h-12 text-primary" />
+                   </div>
+                   
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-3">
+                       <div className={cn("w-3 h-3 rounded-full shadow-glow-pro", isLow ? "bg-red-500 animate-pulse" : "bg-emerald-500")} />
+                       <h4 className="font-black text-foreground uppercase text-sm tracking-[0.1em] font-space-grotesk italic">{item.name}</h4>
                     </div>
                     <div className="text-right">
-                      <p className={cn("text-xl font-black font-space-grotesk italic", isLow ? "text-red-400" : "text-primary")}>{liters.toFixed(1)}<span className="text-[10px] b-not-italic ml-0.5 opacity-80 text-foreground">L</span></p>
+                      <p className={cn("text-2xl font-black font-space-grotesk tracking-tighter", isLow ? "text-red-400" : "text-white")}>
+                        {liters.toFixed(1)}<span className="text-[10px] b-not-italic ml-1 opacity-40 uppercase tracking-widest font-black">Litros</span>
+                      </p>
                     </div>
                   </div>
 
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className={cn("h-full transition-all duration-1000", isLow ? 'bg-red-500 shadow-glow' : 'bg-primary shadow-glow-pro')} 
-                      style={{ width: `${percentage}%` }}
-                    />
+                  <div className="space-y-2 relative z-10">
+                    <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden p-[2px]">
+                      <div 
+                        className={cn("h-full rounded-full transition-all duration-1000", isLow ? 'bg-gradient-to-r from-red-500 to-red-600 shadow-glow' : 'bg-gradient-to-r from-primary to-primary/60 shadow-glow-pro')} 
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground italic">
+                      <span>Nivel Crítico: {(item.min_stock / 1000).toFixed(1)}L</span>
+                      <span>{Math.round(percentage)}%</span>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 gap-4 relative z-10">
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary" className="bg-muted text-foreground border-none font-black text-[9px] font-space-grotesk uppercase tracking-tighter">
-                        {servings} x {STANDARD_SERVING_OZ}oz
-                      </Badge>
-                      {availableSizes.map((size: any, sIdx: number) => {
+                       <div className="px-3 py-1.5 bg-primary/10 rounded-xl border border-primary/20 flex items-center gap-2">
+                          <ShoppingBag className="w-3 h-3 text-primary" />
+                          <span className="text-[10px] font-black text-primary font-space-grotesk">{servings} <span className="opacity-60">PORCIONES</span> ({STANDARD_SERVING_OZ}oz)</span>
+                       </div>
+                      {availableSizes.slice(0, 2).map((size: any, sIdx: number) => {
                         if (size.multiplier === 1) return null;
                         const sizeServings = Math.floor(item.stock / (STANDARD_SERVING_ML * size.multiplier));
                         return (
-                          <Badge key={sIdx} variant="outline" className="border-border text-foreground font-bold text-[9px] font-dm-sans">
-                            {sizeServings} x {size.name}
-                          </Badge>
+                          <div key={sIdx} className="px-3 py-1.5 bg-white/5 rounded-xl border border-white/5 flex items-center gap-2">
+                            <span className="text-[10px] font-black text-muted-foreground font-space-grotesk">{sizeServings} <span className="opacity-60">{size.name}</span></span>
+                          </div>
                         );
                       })}
                     </div>
                     {isLow && (
-                       <div className="flex items-center gap-1.5 text-[9px] text-red-400 font-black uppercase pt-1 font-space-grotesk italic tracking-widest animate-pulse">
-                          <AlertCircle className="w-3 h-3" />
-                          ALERTA: REPONER SUMINISTRO
+                       <div className="flex items-center gap-2 p-3 bg-red-500/10 rounded-2xl border border-red-500/20 text-[10px] text-red-400 font-black uppercase font-space-grotesk italic tracking-[0.1em] animate-pulse">
+                          <AlertCircle className="w-4 h-4" />
+                          REPOSICIÓN PRIORITARIA REQUERIDA
                        </div>
                     )}
                   </div>

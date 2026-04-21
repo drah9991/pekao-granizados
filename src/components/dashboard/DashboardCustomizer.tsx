@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Settings2, Eye, EyeOff, Layout, Save, RotateCcw } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 export interface DashboardConfig {
   showStats: boolean;

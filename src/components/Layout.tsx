@@ -322,7 +322,7 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-700 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] pt-20 relative z-10",
+        "flex-1 overflow-auto transition-all duration-700 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] pt-16 md:pt-20 relative z-10",
         !isMobile && isSidebarOpen && "pl-64"
       )}>
         <div className="animate-pro-in p-4 md:p-8 perspective-1000">

@@ -26,26 +26,26 @@ export function PopularProductsWidget({ data }: { data: any }) {
             <ShoppingBasket className="w-6 h-6 text-primary" />
         </div>
       </div>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {data.popularProducts.map((p: any, idx: number) => (
-          <div key={idx} className="flex items-center gap-5 group/item">
-            <div className="relative">
-              <span className="absolute -top-1 -left-1 w-6 h-6 bg-primary rounded-lg flex items-center justify-center text-[10px] font-black border border-white/20 z-10 shadow-glow-pro text-primary-foreground">{idx + 1}</span>
-              <div className="text-4xl bg-muted w-16 h-16 rounded-2xl flex items-center justify-center border border-border transition-all group-hover/item:scale-110 group-hover/item:rotate-3 duration-500 shadow-pro">{getEmoji(p.name)}</div>
+          <div key={idx} className="flex items-center gap-5 p-3 rounded-3xl hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/5 group/item">
+            <div className="relative shrink-0">
+              <span className="absolute -top-2 -left-2 w-7 h-7 bg-primary rounded-xl flex items-center justify-center text-[10px] font-black border border-white/20 z-10 shadow-glow-pro text-primary-foreground italic">#{idx + 1}</span>
+              <div className="text-4xl bg-muted/50 w-16 h-16 rounded-[1.5rem] flex items-center justify-center border border-border/50 transition-all group-hover/item:scale-110 group-hover/item:-rotate-3 duration-500 shadow-pro">{getEmoji(p.name)}</div>
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 min-w-0 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-foreground font-space-grotesk truncate pr-2">{p.name}</p>
-                  <p className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase transition-colors group-hover/item:text-primary">Best Seller #{idx + 1}</p>
+                  <p className="text-sm font-black text-foreground font-space-grotesk truncate pr-2 uppercase">{p.name}</p>
+                  <p className="text-[9px] font-black text-muted-foreground tracking-[0.2em] uppercase leading-none mt-1">Suministro Estable</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-black text-foreground font-space-grotesk">{p.sales} <span className="text-[10px] text-muted-foreground uppercase">und</span></p>
-                  <p className="text-[10px] font-bold text-primary">{formatCOP(p.revenue)}</p>
+                  <p className="text-base font-black text-foreground font-space-grotesk">{p.sales} <span className="text-[9px] text-muted-foreground uppercase not-italic">und</span></p>
+                  <p className="text-[9px] font-black text-primary tracking-tighter shadow-glow-pro-text">{formatCOP(p.revenue)}</p>
                 </div>
               </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                 <div className={cn("h-full rounded-full transition-all duration-1000", idx === 0 ? "bg-primary shadow-glow-pro" : (idx === 1 ? "bg-primary/60" : "bg-primary/30"))} style={{ width: `${(p.sales / data.popularProducts[0].sales) * 100}%` }} />
+              <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                 <div className={cn("h-full rounded-full transition-all duration-1000", idx === 0 ? "bg-primary shadow-glow-pro" : "bg-primary/40")} style={{ width: `${(p.sales / data.popularProducts[0].sales) * 100}%` }} />
               </div>
             </div>
           </div>

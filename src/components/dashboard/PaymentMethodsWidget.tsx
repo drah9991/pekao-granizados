@@ -29,31 +29,38 @@ export function PaymentMethodsWidget({ data }: { data: any }) {
                 stroke="rgba(255,255,255,0.05)" strokeWidth={2}
               >
                 {data.pieData.map((entry: any, index: number) => {
-                  const colors = ['#700de7', '#9333ea', '#c084fc'];
+                  const colors = ['hsl(var(--primary))', 'hsl(266, 80%, 60%)', 'hsl(266, 70%, 75%)'];
                   return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="none" className="hover:opacity-80 transition-opacity" />;
                 })}
               </Pie>
               <Tooltip 
-                contentStyle={{ backgroundColor: 'rgba(15,17,23,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(112,13,231,0.2)', borderRadius: '24px', padding: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
-                itemStyle={{ color: '#fff', fontWeight: 900, fontSize: '14px', fontFamily: 'Space Grotesk' }}
+                contentStyle={{ 
+                  backgroundColor: 'rgba(15,17,23,0.9)', 
+                  backdropFilter: 'blur(32px)', 
+                  border: '1px solid rgba(255,255,255,0.1)', 
+                  borderRadius: '2rem', 
+                  padding: '20px', 
+                  boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8)' 
+                }}
+                itemStyle={{ color: '#fff', fontWeight: 900, fontSize: '16px', fontFamily: 'Space Grotesk' }}
                 formatter={(val: number) => [formatCOP(val), "Recaudo"]}
               />
             </PieChart>
           </ResponsiveContainer>
         </div>
       </div>
-      <div className="space-y-4 pt-6 border-t border-white/5 mt-auto">
+      <div className="space-y-3 pt-6 border-t border-white/5 mt-auto">
         {data.pieData.map((item: any, index: number) => {
-          const colors = ['bg-[#700de7]', 'bg-[#9333ea]', 'bg-[#c084fc]'];
+          const colors = ['bg-primary', 'bg-primary/70', 'bg-primary/40'];
           return (
-            <div key={item.name} className="flex items-center justify-between group">
+            <div key={item.name} className="flex items-center justify-between group p-2 rounded-2xl hover:bg-white/5 transition-all">
               <div className="flex items-center gap-3">
-                <div className={cn("w-3 h-3 rounded-full shadow-glow-pro transform group-hover:scale-125 transition-transform", colors[index % colors.length])} />
-                <span className="text-sm font-bold text-white/70 font-dm-sans group-hover:text-white transition-colors">{item.name}</span>
+                <div className={cn("w-2.5 h-2.5 rounded-full shadow-glow-pro transform group-hover:scale-125 transition-transform", colors[index % colors.length])} />
+                <span className="text-xs font-black text-white/50 font-space-grotesk group-hover:text-white transition-colors uppercase tracking-widest italic">{item.name}</span>
               </div>
               <div className="text-right">
                 <p className="text-sm font-black text-white font-space-grotesk">{formatCOP(item.value)}</p>
-                <p className="text-[10px] font-bold text-primary italic uppercase tracking-widest">{item.percentage}%</p>
+                <p className="text-[9px] font-black text-primary italic uppercase tracking-[0.2em]">{item.percentage}%</p>
               </div>
             </div>
           );
