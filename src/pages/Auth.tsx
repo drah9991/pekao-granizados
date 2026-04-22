@@ -7,6 +7,8 @@ import { InteractiveCursor } from "@/components/ui/InteractiveCursor";
 import { useAuthPage } from "@/hooks/useAuthPage";
 import LoginForm from "@/components/auth/LoginForm";
 import SignupForm from "@/components/auth/SignupForm";
+import { MagneticButton } from "@/components/ui/MagneticButton";
+
 
 export default function Auth() {
   const { logoUrl, isLoadingBranding } = useBranding();
@@ -20,7 +22,7 @@ export default function Auth() {
       
       <div className="w-full max-w-xl relative z-10 animate-pro-in perspective-1000">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-32 h-32 rounded-[2.5rem] glass-pro border-border mb-8 shadow-glow-pro group hover:scale-110 transition-transform duration-700">
+          <MagneticButton className="inline-flex items-center justify-center w-32 h-32 rounded-[2.5rem] glass-pro border-border mb-8 shadow-glow-pro group hover:scale-110 transition-transform duration-700 mx-auto">
             {isLoadingBranding ? (
               <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full shadow-glow-pro" />
             ) : logoUrl ? (
@@ -28,14 +30,17 @@ export default function Auth() {
             ) : (
               <IceCream className="w-16 h-16 text-primary drop-shadow-glow" />
             )}
-          </div>
-          <h1 className="text-3xl sm:text-6xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground mb-3">
-            PEKAO <span className="text-primary text-glow">CENTRAL</span>
-          </h1>
+          </MagneticButton>
+          <MagneticButton distance={0.2}>
+            <h1 className="text-3xl sm:text-6xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground mb-3">
+              PEKAO <span className="text-primary text-glow">CENTRAL</span>
+            </h1>
+          </MagneticButton>
           <p className="text-[11px] font-black uppercase tracking-[0.5em] text-primary/60 font-space-grotesk italic">
             Intelligence Design • Access Point
           </p>
         </div>
+
 
         <div className="dim-layering">
           <Card className="glass-pro border-border/50 shadow-pro rounded-[3rem] overflow-hidden p-2">

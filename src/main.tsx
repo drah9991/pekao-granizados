@@ -11,4 +11,18 @@ registerSW({ immediate: true });
 // Initialize Sentry before anything else
 initSentry();
 
+// Global error handler for unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled Promise Rejection:', event.reason);
+});
+
+// Utility to clear corrupted storage if needed (accessible via console)
+(window as any).resetPekaoStorage = () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  indexedDB.deleteDatabase('pekao-offline-db');
+  window.location.reload();
+};
+
 createRoot(document.getElementById("root")!).render(<App />);
+

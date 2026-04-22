@@ -23,27 +23,26 @@ export default function DashboardHeader({
   handleSaveConfig
 }: DashboardHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-4 border-b border-border/50 relative">
-      <div className="absolute -left-10 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-primary/50 to-transparent rounded-full shadow-glow-pro" />
+    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-white/5 relative">
       <div className="animate-pro-in">
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground mb-2">
-          INTELIGENCIA <span className="text-primary text-glow italic">DE NEGOCIO</span>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-dm-sans tracking-tight text-foreground mb-3">
+          Dashboard <span className="text-primary italic">Analítico</span>
         </h1>
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60 font-space-grotesk italic">
-           Sincronización v2.0 • {format(new Date(), "eeee d MMM yyyy", { locale: es })}
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/40 font-dm-sans">
+           Enterprise Sync v2.0 • {format(new Date(), "eeee d MMMM yyyy", { locale: es })}
         </p>
       </div>
 
-      <div className="flex items-center gap-1 p-1.5 glass-pro rounded-[1.5rem] self-start border-border overflow-x-auto no-scrollbar max-w-full shadow-inner">
+      <div className="flex items-center gap-1.5 p-1.5 bg-white/[0.03] border border-white/5 rounded-2xl self-start overflow-x-auto no-scrollbar max-w-full shadow-pro">
         {(['today', 'week', 'month', 'year'] as const).map((p) => (
           <Button
             key={p}
             variant="ghost"
             className={cn(
-              "px-6 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500",
+              "px-5 h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300",
               period === p 
-                ? "bg-primary text-primary-foreground shadow-glow-pro scale-105" 
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                ? "bg-primary text-white shadow-glow" 
+                : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
             )}
             onClick={() => setPeriod(p)}
           >

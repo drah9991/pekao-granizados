@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,7 +41,8 @@ const InventoryManagement = lazy(() => import("./components/settings/InventoryMa
 
 const RecipeManagement = lazy(() => import("./components/settings/RecipeManagement").then(m => ({ default: m.RecipeManagement })));
 
-const queryClient = new QueryClient();
+// El queryClient se inicializa dentro del componente App para asegurar estabilidad con HMR
+
 
 // Loading fallback for Suspense
 const PageLoader = () => (
@@ -54,8 +56,20 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+const App = () => {
+  // Inicialización estable del QueryClient
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 5, // 5 minutos
+        retry: 1,
+      },
+    },
+  }));
+
+  return (
+    <QueryClientProvider client={queryClient}>
+
     <AuthProvider>
       <TurnProvider>
     <ThemeProvider defaultTheme="system" attribute="class">
@@ -254,7 +268,9 @@ const App = () => (
     </ThemeProvider>
     </TurnProvider>
     </AuthProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
+

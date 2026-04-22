@@ -10,56 +10,59 @@
 @layer base {
   :root {
     /* Design Intelligence - Atomic Foundation (HSL Fragments) */
-    --brand-primary-h: 266;
-    --brand-primary-s: 89;
-    --brand-primary-l: 47;
+    --brand-primary-h: 250; /* Cobalt Blue / Electric Violet base */
+    --brand-primary-s: 100;
+    --brand-primary-l: 60;
     
-    --background: var(--brand-primary-h) 40% 98%;
-    --foreground: var(--brand-primary-h) 50% 5%;
+    --background: 222 47% 7%; /* Deep Space / Midnight */
+    --foreground: 210 40% 98%;
     
-    --card: 0 0% 100%;
-    --card-foreground: var(--brand-primary-h) 50% 10%;
+    --card: 222 47% 10%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: var(--brand-primary-h) 50% 10%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
     
     --primary: var(--brand-primary-h) var(--brand-primary-s)% var(--brand-primary-l)%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: var(--brand-primary-h) 15% 90%;
-    --secondary-foreground: var(--brand-primary-h) 50% 10%;
+    --secondary: 222 47% 15%;
+    --secondary-foreground: 210 40% 98%;
 
-    --accent: var(--brand-primary-h) 15% 90%;
-    --accent-foreground: var(--brand-primary-h) 50% 10%;
+    --accent: 250 100% 60%;
+    --accent-foreground: 210 40% 98%;
 
-    --muted: var(--brand-primary-h) 20% 94%;
-    --muted-foreground: var(--brand-primary-h) 15% 40%;
+    --muted: 222 47% 12%;
+    --muted-foreground: 215 20% 65%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: var(--brand-primary-h) 20% 90%;
-    --input: var(--brand-primary-h) 20% 90%;
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
     --ring: var(--brand-primary-h) var(--brand-primary-s)% var(--brand-primary-l)%;
 
-    --radius: 1.5rem;
+    --radius: 1rem; /* 16px */
 
     /* Pro Max Gradients - Atomic Sync v2.1 */
-    --gradient-pro: linear-gradient(135deg, hsla(var(--brand-primary-h), var(--brand-primary-s)%, var(--brand-primary-l)%, 1) 0%, hsla(calc(var(--brand-primary-h) + 40), 90%, 60%, 1) 50%, hsla(calc(var(--brand-primary-h) + 180), 100%, 50%, 1) 100%);
-    --gradient-primary: linear-gradient(135deg, hsla(var(--brand-primary-h), var(--brand-primary-s)%, var(--brand-primary-l)%, 1), hsla(calc(var(--brand-primary-h) + 40), 90%, 60%, 1));
+    --gradient-pro: linear-gradient(135deg, hsla(var(--brand-primary-h), 89%, 47%, 1) 0%, hsla(calc(var(--brand-primary-h) + 40), 90%, 60%, 1) 50%, hsla(calc(var(--brand-primary-h) + 180), 100%, 50%, 1) 100%);
+    --gradient-primary: linear-gradient(135deg, hsla(var(--brand-primary-h), 89%, 47%, 1), hsla(calc(var(--brand-primary-h) + 40), 90%, 60%, 1));
     --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    --gradient-hero: linear-gradient(135deg, hsla(var(--brand-primary-h), var(--brand-primary-s)%, var(--brand-primary-l)%, 1) 0%, hsla(var(--brand-primary-h), var(--brand-primary-s)%, 20%, 1) 100%);
+    --gradient-hero: linear-gradient(135deg, hsla(var(--brand-primary-h), 89%, 47%, 1) 0%, hsla(var(--brand-primary-h), 89%, 20%, 1) 100%);
     --gradient-aurora: radial-gradient(at 0% 0%, var(--aurora-1) 0, transparent 50%), 
                         radial-gradient(at 50% 0%, var(--aurora-2) 0, transparent 50%), 
                         radial-gradient(at 100% 0%, var(--aurora-3) 0, transparent 50%);
 
-    /* Adaptive Aurora Moods - Default */
-    --aurora-1: hsla(var(--brand-primary-h), 80%, 50%, 0.12);
-    --aurora-2: hsla(calc(var(--brand-primary-h) + 180), 100%, 50%, 0.08);
-    --aurora-3: hsla(calc(var(--brand-primary-h) + 40), 90%, 60%, 0.12);
+    /* Adaptive Aurora Moods - Deep Space Edition */
+    --aurora-1: hsla(250, 100%, 60%, 0.15); /* Electric Violet */
+    --aurora-2: hsla(220, 100%, 50%, 0.1);  /* Deep Blue */
+    --aurora-3: hsla(280, 80%, 40%, 0.12);  /* Midnight */
 
-    --shadow-pro: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
-    --shadow-glow: 0 0 50px hsla(var(--brand-primary-h), 80%, 50%, 0.15);
+    --shadow-pro: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    --shadow-glow: 0 0 30px hsla(var(--brand-primary-h), 100%, 60%, 0.25);
+
+    /* Glass Texture Fragment */
+    --glass-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 
     /* Sidebar Light Mode */
     --sidebar-background: 0 0% 100%;
@@ -78,7 +81,7 @@
     --popover: var(--brand-primary-h) 20% 9%;
     --popover-foreground: var(--brand-primary-h) 10% 92%;
 
-    --primary: var(--brand-primary-h) var(--brand-primary-s)% var(--brand-primary-l)%;
+    --primary: var(--brand-primary-h) 89% 47%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: var(--brand-primary-h) 20% 14%;
@@ -92,15 +95,16 @@
 
     --border: var(--brand-primary-h) 20% 18%;
     --input: var(--brand-primary-h) 20% 18%;
-    --ring: var(--brand-primary-h) var(--brand-primary-s)% var(--brand-primary-l)%;
+    --ring: var(--brand-primary-h) 89% 47%;
 
-    --aurora-1: hsla(var(--brand-primary-h), 80%, 50%, 0.12);
-    --aurora-2: hsla(calc(var(--brand-primary-h) + 180), 100%, 50%, 0.08);
-    --aurora-3: hsla(calc(var(--brand-primary-h) + 40), 90%, 60%, 0.12);
+    --aurora-1: hsla(270, 100%, 60%, 0.15);
+    --aurora-2: hsla(230, 100%, 40%, 0.15);
+    --aurora-3: hsla(260, 100%, 50%, 0.15);
     
-    --gradient-hero: linear-gradient(180deg, hsla(var(--brand-primary-h), 30%, 10%, 1) 0%, hsla(var(--brand-primary-h), 25%, 8%, 1) 100%);
-    --shadow-pro: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 60px hsla(var(--brand-primary-h), 80%, 50%, 0.25);
+    --gradient-hero: linear-gradient(180deg, hsla(260, 40%, 4%, 1) 0%, hsla(230, 40%, 2%, 1) 100%);
+    --shadow-pro: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 80px hsla(270, 100%, 50%, 0.2);
+
 
     --sidebar-background: var(--brand-primary-h) 30% 6%;
     --sidebar-foreground: var(--brand-primary-h) 10% 90%;
@@ -135,6 +139,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    letter-spacing: -0.01em;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -153,8 +158,19 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
+    @apply font-black tracking-tighter;
     font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: -0.04em;
+  }
+
+  .font-space-grotesk {
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: -0.04em;
+  }
+
+  .font-dm-sans {
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -165,21 +181,27 @@
     transition: background 2s ease-in-out;
   }
 
-  /* Glass-Pro 2.0: Adaptive Depth & Clarity */
+  /* Glass-Pro 3.0: High-End Enterprise Clarity */
   .glass-pro {
-    @apply backdrop-blur-3xl border shadow-pro transition-all duration-500;
-    background: linear-gradient(135deg, hsla(var(--background), 0.8) 0%, hsla(var(--background), 0.4) 100%);
-    border-color: var(--brand-border-color, hsla(var(--foreground), 0.08));
+    @apply backdrop-blur-[40px] border shadow-pro transition-all duration-700 relative overflow-hidden;
+    background: linear-gradient(135deg, hsla(222, 47%, 10%, 0.7) 0%, hsla(222, 47%, 5%, 0.4) 100%);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-pro::after {
+    content: "";
+    @apply absolute inset-0 opacity-[0.02] pointer-events-none;
+    background-image: var(--glass-noise);
   }
 
   .dark .glass-pro {
-    background: linear-gradient(135deg, hsla(var(--background), 0.4) 0%, hsla(var(--background), 0.1) 100%);
-    border-color: var(--brand-border-color, hsla(var(--foreground), 0.05));
+    background: linear-gradient(135deg, hsla(222, 47%, 5%, 0.6) 0%, hsla(222, 47%, 2%, 0.3) 100%);
+    border-color: rgba(255, 255, 255, 0.05);
   }
 
   /* Pro Max Glass - Enhanced for Light Mode pop */
   .light .glass-pro {
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.12);
   }
 
   .glass-pro-darker {
@@ -254,7 +276,7 @@
   }
 
   .shadow-glow-pro {
-    box-shadow: 0 0 40px -10px hsla(var(--brand-primary-h), var(--brand-primary-s)%, var(--brand-primary-l)%, 0.3);
+    box-shadow: 0 0 40px -10px hsla(var(--brand-primary-h), 89%, 47%, 0.3);
   }
 
   .shadow-elevated {

@@ -58,23 +58,23 @@ export default function DashboardCustomizer({ config, onChange, onSave, isSaving
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="h-11 rounded-xl gap-2 glass-pro border-primary/20 hover:border-primary transition-all">
-          <Settings2 className="w-4 h-4 text-primary" />
-          <span className="text-[10px] font-black uppercase tracking-widest italic">Personalizar</span>
+        <Button variant="outline" className="h-11 rounded-xl gap-2 bg-white/[0.03] border-white/10 hover:border-primary/50 transition-all group font-dm-sans">
+          <Settings2 className="w-4 h-4 text-primary transition-transform group-hover:rotate-90" />
+          <span className="text-[10px] font-bold uppercase tracking-widest">Personalizar</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass-pro border-white/10 sm:max-w-[500px] rounded-[2.5rem] overflow-hidden p-0">
+      <DialogContent className="bg-[#0b0f1a]/95 backdrop-blur-3xl border-white/5 sm:max-w-[500px] rounded-3xl overflow-hidden p-0 shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
         
         <DialogHeader className="p-8 border-b border-white/5 relative z-10">
-          <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center mb-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 border border-primary/10">
             <Settings2 className="w-6 h-6 text-primary" />
           </div>
-          <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter font-space-grotesk">
+          <DialogTitle className="text-2xl font-bold tracking-tight font-dm-sans">
             Configuración Visual
           </DialogTitle>
-          <DialogDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground italic">
-            Parametrización de Inteligencia de Negocio v2.0
+          <DialogDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 font-dm-sans">
+            Parametrización Operativa v2.0
           </DialogDescription>
         </DialogHeader>
 
@@ -108,20 +108,20 @@ export default function DashboardCustomizer({ config, onChange, onSave, isSaving
           })}
         </div>
 
-        <DialogFooter className="p-8 bg-muted/20 border-t border-white/5 relative z-10">
+        <DialogFooter className="p-8 bg-white/[0.02] border-t border-white/5 relative z-10">
            <div className="flex w-full gap-4">
               <Button 
                 variant="ghost" 
                 onClick={() => onChange(defaultDashboardConfig)}
-                className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest gap-2"
+                className="flex-1 h-14 rounded-2xl text-[10px] font-bold uppercase tracking-widest gap-2 font-dm-sans"
               >
                 <RotateCcw className="w-4 h-4" />
-                Reset
+                Restablecer
               </Button>
               <Button 
                 onClick={onSave}
                 disabled={isSaving}
-                className="flex-[2] h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest gap-2 shadow-glow-pro hover:bg-primary/80 transition-all"
+                className="flex-[2] h-14 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest gap-2 shadow-glow hover:bg-primary/90 transition-all font-dm-sans"
               >
                 {isSaving ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

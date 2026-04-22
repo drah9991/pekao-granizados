@@ -205,30 +205,30 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
   }
 
   return (
-    <div className="flex-1 p-3 sm:p-4 lg:p-6 overflow-auto bg-transparent animate-pro-in">
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-xl group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+    <div className="flex-1 p-4 lg:p-8 overflow-auto bg-transparent animate-pro-in">
+      <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative flex-1 max-w-2xl group">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50 group-focus-within:text-primary transition-all duration-300" />
           <Input
             ref={searchRef}
-            placeholder="Buscar producto..."
-            className="pl-12 h-14 lg:h-16 text-base lg:text-lg glass-pro border-border rounded-2xl focus:border-primary/50 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50 shadow-pro font-dm-sans"
+            placeholder="Buscar por nombre o categoría..."
+            className="pl-14 h-14 lg:h-16 text-lg glass-pro !bg-white/[0.03] border-white/5 rounded-2xl focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30 font-dm-sans"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-4">
              {isOfflineMode && (
-               <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 text-amber-500 rounded-lg text-[10px] font-black border border-amber-500/20 animate-pulse">
-                 <WifiOff className="h-3 w-3" />
+               <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-xl text-[10px] font-bold border border-amber-500/20">
+                 <WifiOff className="h-3.5 w-3.5" />
                  OFFLINE
                </div>
              )}
-             <kbd className="hidden sm:inline-flex px-2 py-1 text-[10px] bg-muted border border-border rounded-md text-muted-foreground font-space-grotesk tracking-widest">CMD + K</kbd>
+             <kbd className="hidden sm:inline-flex px-2.5 py-1 text-[10px] bg-white/5 border border-white/10 rounded-lg text-muted-foreground/40 font-medium tracking-tighter">⌘ K</kbd>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar scroll-smooth">
+      <div className="flex gap-2.5 mb-12 overflow-x-auto pb-4 no-scrollbar scroll-smooth">
         {categories.map((cat) => {
           const cfg = cat === "all" ? null : getTypeConfig(cat);
           const isActive = activeCategory === cat;
@@ -238,18 +238,18 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
               variant={isActive ? "default" : "outline"}
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                "h-12 sm:h-14 lg:h-16 px-3 sm:px-4 lg:px-8 gap-2 sm:gap-3 rounded-xl sm:rounded-2xl transition-all border font-space-grotesk shrink-0",
+                "h-12 lg:h-14 px-6 lg:px-8 gap-2.5 rounded-xl transition-all duration-300 border font-dm-sans shrink-0",
                 isActive 
-                  ? "bg-primary text-primary-foreground border-primary shadow-glow-pro scale-105" 
-                  : "bg-muted/40 border-border text-muted-foreground hover:bg-muted/80 hover:border-primary/20 hover:text-foreground"
+                  ? "bg-primary text-white border-primary shadow-glow scale-[1.02]" 
+                  : "bg-white/[0.02] border-white/5 text-muted-foreground hover:bg-white/[0.05] hover:border-white/10 hover:text-foreground"
               )}
             >
-              <span className="text-2xl">{cat === "all" ? "⚡" : cfg?.emoji}</span>
-              <span className="font-black flex items-center gap-2 uppercase tracking-widest text-[10px] lg:text-xs">
-                {cat === "all" ? "Catálogo" : cfg?.label}
-                <Badge className={cn("text-[9px] lg:text-[10px] font-black border-none", isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted-foreground/10 text-muted-foreground")}>
+              <span className="text-xl">{cat === "all" ? "📋" : cfg?.emoji}</span>
+              <span className="font-semibold flex items-center gap-2 text-xs uppercase tracking-tight">
+                {cat === "all" ? "Todos" : cfg?.label}
+                <span className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-bold", isActive ? "bg-white/20 text-white" : "bg-white/5 text-muted-foreground/60")}>
                   {categoryCounts[cat]}
-                </Badge>
+                </span>
               </span>
             </Button>
           );
@@ -287,79 +287,63 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
                     onProductSelect(product);
                   }}
                   className={cn(
-                    "group relative w-full h-36 sm:h-48 lg:h-56 rounded-[1.5rem] sm:rounded-[2.5rem] border overflow-hidden transition-all duration-700",
+                    "group relative w-full h-52 lg:h-64 rounded-2xl border overflow-hidden transition-all duration-500",
                     isOutOfStock 
-                      ? "opacity-40 grayscale border-border cursor-not-allowed bg-muted/40" 
-                      : "glass-pro border-border hover:border-primary/50 hover:shadow-glow-pro active:scale-95"
+                      ? "opacity-30 grayscale cursor-not-allowed bg-white/5 border-white/5" 
+                      : "bg-white/[0.03] border-white/5 hover:border-primary/30 hover:bg-white/[0.06] hover:shadow-glow active:scale-[0.98]"
                   )}
                 >
-                  {!isOutOfStock && (
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent group-hover:via-primary transition-all duration-1000" />
-                  )}
-                  
-                  <div className="relative h-full p-3 sm:p-6 flex flex-col items-start justify-between">
-                    <div className="w-full flex items-start justify-between">
+                  <div className="relative h-full p-5 flex flex-col items-start justify-between z-10">
+                    <div className="w-full flex items-start justify-between mb-4">
                       <div className={cn(
-                        "p-2 sm:p-4 rounded-xl sm:rounded-3xl transition-all duration-700 shadow-pro",
-                        isOutOfStock ? "bg-muted" : "bg-primary/20 border border-primary/20 group-hover:rotate-12 group-hover:scale-110"
+                        "w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center transition-all duration-500 shadow-sm",
+                        isOutOfStock ? "bg-muted" : "bg-white/[0.05] border border-white/5 group-hover:scale-110 group-hover:rotate-3"
                       )}>
-                         <span className="text-2xl sm:text-4xl filter drop-shadow-xl">{emoji}</span>
+                         <span className="text-3xl lg:text-4xl filter drop-shadow-lg">{emoji}</span>
                       </div>
                       
                       {product.stock !== undefined && (
-                        <Badge 
+                        <div 
                            className={cn(
-                             "font-black text-[8px] sm:text-[9px] px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border-none font-space-grotesk tracking-widest uppercase shadow-pro absolute top-2 right-2 sm:relative sm:top-0 sm:right-0",
-                             isOutOfStock ? "bg-rose-500 text-white shadow-glow-pro animate-pulse" : 
-                             isLowStock ? "appetite-accent scale-105" : 
-                             "bg-muted/80 text-primary border border-border"
+                             "font-bold text-[10px] px-2.5 py-1 rounded-lg border-none font-dm-sans tracking-tight uppercase",
+                             isOutOfStock ? "bg-rose-500/20 text-rose-500" : 
+                             isLowStock ? "bg-amber-500/20 text-amber-500" : 
+                             "bg-white/5 text-muted-foreground/60"
                            )}
-                           style={isOutOfStock || isLowStock ? { textShadow: "1px 0 0 rgba(255,0,0,0.5), -1px 0 0 rgba(0,255,255,0.5)" } : {}}
                         >
                           {cfg.track_mixture_inventory ? (
-                            <div className="flex flex-col items-end leading-tight group/stock">
-                               <span className="flex items-center gap-1.5">
-                                 {!isOutOfStock && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
-                                 {(product.mixtureStock! / 1000).toFixed(1)}L
-                               </span>
-                               <div className="flex gap-1 mt-1 opacity-0 group-hover/stock:opacity-100 transition-opacity">
-                                 {(sizes || []).slice(0, 3).map((s, i) => {
-                                   const baseVol = Number(product.base_volume) || 4;
-                                   const availableQty = Math.floor(product.mixtureStock! / (baseVol * (s.multiplier || 1) * 29.57));
-                                   return (
-                                     <span key={i} className="text-[7px] font-black border-l border-white/20 pl-1 first:border-none">
-                                       {s.name?.replace(/[^0-9]/g, '') || '?'}:<span className="text-foreground ml-0.5">{availableQty}</span>
-                                     </span>
-                                   );
-                                 })}
-                               </div>
-                            </div>
+                            <span className="flex items-center gap-1.5">
+                              {(product.mixtureStock! / 1000).toFixed(1)}L
+                            </span>
                           ) : (
                             `Stock: ${qty}`
                           )}
-                        </Badge>
+                        </div>
                       )}
                     </div>
                     
                     <div className="w-full text-left">
-                      <p className="font-black text-foreground text-[11px] sm:text-base leading-tight mb-1 font-space-grotesk italic tracking-tighter uppercase group-hover:text-primary transition-colors text-glow line-clamp-1 sm:line-clamp-none">
+                      <p className="font-bold text-foreground text-sm lg:text-base leading-snug mb-1 font-dm-sans text-wrap line-clamp-2 transition-colors duration-300">
                         {product.name}
                       </p>
-                      <div className="flex items-center justify-between">
-                        <p className="font-black text-xs sm:text-xl lg:text-2xl text-foreground font-space-grotesk italic">
+                      <div className="flex items-end justify-between gap-2 mt-2">
+                        <p className="font-extrabold text-lg lg:text-2xl text-primary font-dm-sans tracking-tight">
                           {formatCOP(product.price)}
                         </p>
                         {!isOutOfStock && (
                           <div className={cn(
-                            "w-6 h-6 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 border border-primary/20 shadow-glow-pro",
-                            isLowStock ? "appetite-accent" : "bg-primary text-primary-foreground"
+                            "w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 border border-primary/20",
+                            isLowStock ? "bg-amber-500 text-white" : "bg-primary text-white"
                           )}>
-                            <span className="text-sm sm:text-xl font-black">+</span>
+                            <span className="text-lg font-bold">+</span>
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
+
+                  {/* Decorative Subtle Gradient Glow */}
+                  <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/5 blur-[40px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                 </button>
               </motion.div>
             );

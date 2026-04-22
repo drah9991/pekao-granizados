@@ -27,14 +27,14 @@ export default function POS() {
   } = usePOSPage();
 
   return (
-    <Layout>
-      <div className="h-full flex flex-col lg:flex-row bg-background relative overflow-hidden">
-        <div className="flex lg:hidden border-b border-border bg-muted/30 sticky top-0 z-20 items-center pr-4">
+    <Layout fullWidth>
+      <div className="h-full flex flex-col lg:flex-row bg-transparent relative overflow-hidden">
+        <div className="flex lg:hidden glass-pro border-b border-white/10 sticky top-0 z-20 items-center pr-4">
           <button
             onClick={() => setViewMode("products")}
             className={cn(
-              "flex-1 py-2.5 flex items-center justify-center gap-2 font-bold transition-all text-sm uppercase tracking-widest italic",
-              viewMode === "products" ? "text-primary border-b-2 border-primary bg-primary/5" : "text-muted-foreground"
+              "flex-1 py-3.5 flex items-center justify-center gap-2 font-black transition-all text-[11px] uppercase tracking-[0.2em] font-space-grotesk",
+              viewMode === "products" ? "text-primary border-b-2 border-primary bg-primary/10" : "text-muted-foreground hover:bg-white/5"
             )}
           >
             <ShoppingBag size={18} /> Catalog
@@ -42,8 +42,8 @@ export default function POS() {
           <button
             onClick={() => setViewMode("cart")}
             className={cn(
-              "flex-1 py-2.5 flex items-center justify-center gap-2 font-bold transition-all relative text-sm uppercase tracking-widest italic",
-              viewMode === "cart" ? "text-primary border-b-2 border-primary bg-primary/5" : "text-muted-foreground"
+              "flex-1 py-3.5 flex items-center justify-center gap-2 font-black transition-all relative text-[11px] uppercase tracking-[0.2em] font-space-grotesk",
+              viewMode === "cart" ? "text-primary border-b-2 border-primary bg-primary/10" : "text-muted-foreground hover:bg-white/5"
             )}
           >
             <ReceiptIcon size={18} /> Checkout
@@ -66,7 +66,7 @@ export default function POS() {
           viewMode !== "products" && "hidden lg:flex"
         )}>
           {!isOnline && (
-            <div className="flex items-center justify-between px-6 py-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-500 text-[10px] font-black uppercase italic tracking-widest shadow-inner">
+            <div className="flex items-center justify-between px-6 py-2 glass-pro bg-amber-500/10 border-b border-amber-500/20 text-amber-500 text-[10px] font-black uppercase italic tracking-widest shadow-inner">
               <div className="flex items-center gap-2">
                 <WifiOff className="h-4 w-4" /> MODO OFFLINE ACTIVO
               </div>

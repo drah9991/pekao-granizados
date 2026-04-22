@@ -1,5 +1,6 @@
-import { ReactNode, useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { ReactNode, useState, useEffect, Suspense } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -29,6 +30,7 @@ import { useRealtimeAlerts } from "@/hooks/useRealtimeAlerts";
 
 interface LayoutProps {
   children: React.ReactNode;
+  fullWidth?: boolean;
 }
 
 import { navConfig } from "@/config/navConfig";
@@ -39,7 +41,7 @@ import { useLowStockCount } from "@/hooks/useLowStockCount";
 import { Badge } from "@/components/ui/badge";
 import { InteractiveCursor } from "./ui/InteractiveCursor";
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
@@ -150,59 +152,61 @@ export default function Layout({ children }: LayoutProps) {
         {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </Button>
 
-      {/* Top Right Actions Area */}
-      <div className="fixed top-4 right-4 z-[60] flex items-center gap-2 p-2 glass-pro rounded-2xl shadow-pro animate-pro-in">
-        <div className="flex items-center gap-3 px-3 py-1.5 border-r border-border/50 mr-1 hidden sm:flex">
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black uppercase tracking-widest text-primary/80 leading-none mb-1 font-space-grotesk">
-              {isLoadingAuth ? 'Cargando...' : 'Sesión Activa'}
-            </span>
-            <span className="text-[12px] font-bold text-foreground/80 leading-none">
-              {userRole ? userRole.replace('_', ' ') : 'Invitado'}
-            </span>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-black text-sm shadow-inner transition-transform hover:scale-105 border border-primary/20">
+      {/* Floating Control Center (Top Left) */}
+      <div className={cn(
+        "fixed top-4 z-[60] flex items-center gap-2 p-1.5 bg-[#0b0f1a]/80 backdrop-blur-2xl border border-white/5 rounded-2xl animate-pro-in transition-all duration-500",
+        isSidebarOpen ? "left-[17rem]" : "left-16"
+      )}>
+        <div className="flex items-center gap-3 px-3 py-1 border-r border-white/5 mr-1 hidden sm:flex">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/10">
             {userRole?.charAt(0).toUpperCase() || '?'}
           </div>
+          <div className="flex flex-col items-start">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-primary/80 leading-none mb-0.5 font-dm-sans">
+              {isLoadingAuth ? '...' : 'Online'}
+            </span>
+            <span className="text-[11px] font-bold text-foreground leading-none font-dm-sans">
+              {userRole ? userRole.replace('_', ' ') : 'Guest'}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-1 pr-1">
+        <div className="flex items-center px-1">
           <NotificationCenter />
         </div>
       </div>
 
       <aside
         className={cn(
-          "w-64 glass-pro border-r border-border/50 flex flex-col shadow-pro",
+          "w-64 bg-background/40 backdrop-blur-3xl border-r border-white/5 flex flex-col",
           "fixed inset-y-0 left-0 z-50 transition-all duration-500 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)]",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="p-6 border-b border-border/50 bg-muted/30 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl gradient-hero flex items-center justify-center shadow-glow-pro transition-smooth hover:rotate-3 hover:scale-110">
+        <div className="p-8 border-b border-white/5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-glow transition-all hover:scale-105">
               {isLoadingBranding ? (
-                <div className="animate-spin w-6 h-6 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
               ) : logoUrl ? (
-                <img src={logoUrl} alt="Business Logo" className="max-w-full max-h-full object-contain p-2" />
+                <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain p-2" />
               ) : (
-                <IceCream className="w-7 h-7 text-primary-foreground drop-shadow-xl" />
+                <IceCream className="w-6 h-6 text-white" />
               )}
             </div>
             <div>
-              <h1 className="text-xl font-black text-sidebar-foreground tracking-tighter font-space-grotesk italic">PEKAO</h1>
-              <p className="text-[10px] text-primary font-black uppercase tracking-widest opacity-80">PRO MAX SYSTEM</p>
+              <h1 className="text-lg font-extrabold text-foreground tracking-tight font-dm-sans">PEKAO</h1>
+              <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Business Pro</p>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 p-5 space-y-6 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
           {visibleGroups.map((group, groupIdx) => (
-            <div key={group.label} className="space-y-3">
-              <div className="flex items-center gap-2 px-4 mb-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk">
+            <div key={group.label} className="space-y-4">
+              <div className="px-4">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/30 font-dm-sans">
                   {group.label}
                 </span>
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
               </div>
               
               <div className="space-y-1">
@@ -216,28 +220,30 @@ export default function Layout({ children }: LayoutProps) {
                     const linkContent = (
                       <div
                         className={cn(
-                          "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-500 text-sm font-bold relative overflow-hidden font-dm-sans",
+                          "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden font-dm-sans",
                             isActive
-                            ? "bg-primary text-primary-foreground shadow-glow-pro border border-primary/50 translate-x-1"
-                            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-muted/50 hover:translate-x-1",
-                          isLocked && "opacity-40 cursor-not-allowed grayscale"
+                            ? "text-primary bg-white/[0.05]"
+                            : "text-muted-foreground/60 hover:text-foreground hover:bg-white/[0.02]",
+                          isLocked && "opacity-30 cursor-not-allowed"
                         )}
                       >
                         {isActive && (
-                          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent animate-pulse" />
+                          <motion.div 
+                            layoutId="sidebar-active-indicator"
+                            className="absolute left-0 w-1 h-5 bg-primary rounded-r-full"
+                            initial={{ scaleY: 0 }}
+                            animate={{ scaleY: 1 }}
+                          />
                         )}
                         <item.icon className={cn(
-                          "w-5 h-5 transition-all duration-300",
+                          "w-4 h-4 transition-all duration-300 relative z-10",
                           isActive
-                            ? "text-primary-foreground drop-shadow-lg scale-110"
-                            : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
+                            ? "text-primary"
+                            : "text-muted-foreground/40 group-hover:text-primary"
                         )} />
                         <span className="relative z-10">{item.label}</span>
-                        {isActive && (
-                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow animate-pulse" />
-                        )}
                         {isLocked && (
-                          <Shield className="ml-auto w-4 h-4 text-rose-500/50" />
+                          <Shield className="ml-auto w-3.5 h-3.5 text-rose-500/30" />
                         )}
                       </div>
                     );
@@ -322,10 +328,13 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-700 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] pt-16 md:pt-20 relative z-10",
+        "flex-1 overflow-auto transition-all duration-700 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] pt-16 md:pt-20 relative z-10 h-full",
         !isMobile && isSidebarOpen && "pl-64"
       )}>
-        <div className="animate-pro-in p-4 md:p-8 perspective-1000">
+        <div className={cn(
+          "animate-pro-in perspective-1000 h-full flex flex-col",
+          fullWidth ? "p-0" : "p-4 md:p-8"
+        )}>
             <AlertManager />
             {children}
         </div>

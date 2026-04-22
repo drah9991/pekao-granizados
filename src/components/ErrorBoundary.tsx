@@ -24,13 +24,17 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("[ErrorBoundary]", error, errorInfo);
-    // Report to Sentry with module context
+    console.error("CRITICAL RUNTIME ERROR:", error);
+    console.error("COMPONENT STACK:", errorInfo.componentStack);
+    
+    // Report to Sentry with detailed context
     captureError(error, {
-      module: this.props.fallbackTitle || "Unknown",
+      module: this.props.fallbackTitle || "Global",
       componentStack: errorInfo.componentStack,
+      errorMessage: error.message,
     });
   }
+
 
   handleReset = () => {
     this.setState({ hasError: false, error: null });
@@ -55,7 +59,13 @@ export default class ErrorBoundary extends Component<Props, State> {
               <p className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em] mb-2">Detalle del error</p>
               <p className="text-xs font-mono text-red-300/70 break-all leading-relaxed">
                 {this.state.error?.message || "Error desconocido"}
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="block mt-2 opacity-50 border-t border-red-500/20 pt-2 text-[8px]">
+                    {this.state.error?.stack?.substring(0, 500)}...
+                  </span>
+                )}
               </p>
+
             </div>
 
             <div className="flex gap-3">
