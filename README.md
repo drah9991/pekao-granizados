@@ -1,73 +1,59 @@
-# Welcome to your Lovable project
+# 🌌 Pekao Granizados - POS & Inventory Management System
 
-## Project info
+A high-performance, enterprise-grade Point of Sale (POS) and Inventory Management system designed specifically for the unique needs of **Pekao Granizados**. Featuring a "Deep Space" aesthetic and a precision dual-inventory engine.
 
-**URL**: https://lovable.dev/projects/791246b1-5805-4f0b-996b-86481e4879c0
+![Brand Header](https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&q=80&w=1200)
 
-## How can I edit this code?
+## 🚀 Key Features
 
-There are several ways of editing your application.
+### 💎 Precision Inventory (Dual-Engine)
+*   **Unit-Based Tracking**: Manage sachets, cups, and physical products with atomic precision.
+*   **Volume-Based Monitoring (ml)**: Real-time calculation of granizado mixtures based on oz-to-ml conversion and portion size multipliers.
+*   **Atomic Transactions**: Database-level RPCs ensure inventory integrity even during simultaneous sales.
 
-**Use Lovable**
+### 🌓 "Deep Space" Interface
+*   **Next-Gen UI/UX**: A dark-mode optimized, distraction-free environment built for speed and visual excellence.
+*   **Real-Time Dashboard**: Monitor sales, mixture levels, and store performance at a glance with sleek data visualizations.
+*   **Dynamic Pricing**: Time-based and category-based rules that apply discounts automatically.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/791246b1-5805-4f0b-996b-86481e4879c0) and start prompting.
+### 📡 High-Reliability Operations
+*   **Offline-First Mode**: Process sales even without internet connectivity; orders sync automatically when back online.
+*   **Mobile Monitoring**: Remote access to sales and inventory levels via the Antigravity mobile integration.
+*   **Sentry Monitoring**: Integrated error tracking and performance profiling for maximum uptime.
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Technology Stack
 
-**Use your preferred IDE**
+*   **Core**: [Vite](https://vitejs.dev/) + [React 18](https://reactjs.org/) + [TypeScript](https://www.typescriptlang.org/)
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) + [Framer Motion](https://www.framer.com/motion/)
+*   **Backend**: [Supabase](https://supabase.com/) (PostgreSQL + Auth + Storage + RPC)
+*   **State Management**: [Zustand](https://docs.pmnd.rs/zustand/) + [TanStack Query (v5)](https://tanstack.com/query/latest)
+*   **Analytics**: [Recharts](https://recharts.org/) + [Sentry](https://sentry.io/)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 💻 Local Development
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1.  **Clone & Install**
+    ```bash
+    git clone <repository-url>
+    cd pekao-granizados
+    npm install
+    ```
 
-Follow these steps:
+2.  **Environment Setup**
+    Create a `.env` file based on `.env.example` with your Supabase credentials.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3.  **Run Development Server**
+    ```bash
+    npm run dev
+    ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 📦 Deployment
 
-# Step 3: Install the necessary dependencies.
-npm i
+Optimized for **Vercel** with automatic analytics and speed insights.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+1.  Push to `main` branch.
+2.  Vercel will trigger a production build.
+3.  Analytics will be available in the Vercel Dashboard.
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/791246b1-5805-4f0b-996b-86481e4879c0) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+*Built with ❤️ for the Pekao Granizados team.*
