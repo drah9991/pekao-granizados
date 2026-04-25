@@ -151,15 +151,15 @@ function OrderRow({ order, isExpanded, onToggle, onView, onCancel, onEdit }: {
         </TableCell>
         <TableCell className="p-6 text-right">
           <div className="flex items-center justify-end gap-2">
-            <Button onClick={onView} size="icon" variant="ghost" className="w-9 h-9 rounded-xl hover:bg-indigo-500/20 hover:text-indigo-400 transition-all shadow-pro border border-transparent hover:border-indigo-500/30">
+            <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onView(); }} size="icon" variant="ghost" className="w-9 h-9 rounded-xl hover:bg-indigo-500/20 hover:text-indigo-400 transition-all shadow-pro border border-transparent hover:border-indigo-500/30">
               <Eye className="w-4 h-4" />
             </Button>
             {order.status !== 'cancelled' && (
               <>
-                <Button onClick={onEdit} size="icon" variant="ghost" className="w-9 h-9 rounded-xl hover:bg-emerald-500/20 hover:text-emerald-400 transition-all shadow-pro border border-transparent hover:border-emerald-500/30">
+                <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }} size="icon" variant="ghost" className="w-9 h-9 rounded-xl hover:bg-emerald-500/20 hover:text-emerald-400 transition-all shadow-pro border border-transparent hover:border-emerald-500/30">
                   <Edit2 className="w-4 h-4" />
                 </Button>
-                <Button onClick={onCancel} size="icon" variant="ghost" className="w-9 h-9 rounded-xl hover:bg-red-500/20 hover:text-red-400 transition-all shadow-pro border border-transparent hover:border-red-500/30">
+                <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(); }} size="icon" variant="ghost" className="w-9 h-9 rounded-xl hover:bg-red-500/20 hover:text-red-400 transition-all shadow-pro border border-transparent hover:border-red-500/30">
                   <Ban className="w-4 h-4" />
                 </Button>
               </>
@@ -200,7 +200,19 @@ function OrderRow({ order, isExpanded, onToggle, onView, onCancel, onEdit }: {
                         <span>Tipo de Orden</span>
                         <span className="text-foreground">{order.order_type?.toUpperCase() || "MOSTRADOR"}</span>
                       </div>
-                      {order.delivery_fee && (
+                      {order.subtotal > 0 && order.subtotal !== order.total && (
+                        <div className="flex justify-between items-center text-[9px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] italic">
+                          <span>Subtotal</span>
+                          <span className="text-foreground">{formatCOP(order.subtotal)}</span>
+                        </div>
+                      )}
+                      {order.subtotal + (order.delivery_fee || 0) + (order.tip_amount || 0) > order.total && (
+                        <div className="flex justify-between items-center text-[9px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] italic">
+                          <span>Descuento</span>
+                          <span className="text-emerald-500">-{formatCOP(order.subtotal + (order.delivery_fee || 0) + (order.tip_amount || 0) - order.total)}</span>
+                        </div>
+                      )}
+                      {order.delivery_fee > 0 && (
                         <div className="flex justify-between items-center text-[9px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] italic">
                           <span>Envío</span>
                           <span className="text-emerald-500">{formatCOP(order.delivery_fee)}</span>

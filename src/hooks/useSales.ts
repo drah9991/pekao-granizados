@@ -44,6 +44,7 @@ export function useSales() {
         .from("orders")
         .select(`
           *,
+          items:order_items(*),
           creator_profile:profiles!orders_created_by_fkey(name),
           customer_details:customers!orders_customer_id_fkey(name, document_id, email, phone)
         `)
@@ -156,16 +157,19 @@ export function useSales() {
   };
 
   const handleViewDetails = (order: OrderWithDetails) => {
+    toast("Abriendo detalles de orden: " + order.id);
     setSelectedOrder(order);
     setIsDetailsOpen(true);
   };
 
   const handleEdit = (order: OrderWithDetails) => {
+    toast("Abriendo edición de orden: " + order.id);
     setSelectedOrder(order);
     setIsEditOpen(true);
   };
 
   const handleCancelClick = (order: OrderWithDetails) => {
+    toast("Abriendo cancelación de orden: " + order.id);
     setSelectedOrder(order);
     setIsCancelOpen(true);
   };

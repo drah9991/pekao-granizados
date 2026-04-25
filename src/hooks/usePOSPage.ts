@@ -80,11 +80,22 @@ export function usePOSPage() {
     deliveryData?: any,
     splitDetails?: any
   ) => {
-    const orderData = await processSale(method, amountReceived, deliveryData, splitDetails);
+    const orderData = await processSale(
+      cart,
+      total,
+      subtotal,
+      discountAmount,
+      selectedCustomer,
+      method, 
+      amountReceived, 
+      deliveryData, 
+      splitDetails
+    );
     if (orderData) {
       setLastOrder(orderData);
       setPaymentDialogIsOpen(false);
       setReceiptDialogIsOpen(true);
+      resetCart();
     }
   };
 

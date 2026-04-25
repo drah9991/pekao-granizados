@@ -47,7 +47,7 @@ export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, 
     try {
       // 1. Record the preparation in history
       const { error: prepError } = await supabase
-        .from("mix_preparations")
+        .from("mix_preparations" as any)
         .insert({
           inventory_item_id: selectedMixId,
           store_id: storeId,
@@ -56,16 +56,16 @@ export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, 
           expected_cups: expectedCups,
           notes: notes,
           created_by: (await supabase.auth.getUser()).data.user?.id
-        });
+        } as any);
 
       if (prepError) throw prepError;
 
       // 2. Atomic increment of stock via RPC
-      const { error: rpcError } = await supabase.rpc("increment_inventory_stock", {
+      const { error: rpcError } = await supabase.rpc("increment_inventory_stock" as any, {
         p_item_id: selectedMixId,
         p_store_id: storeId,
         p_amount: mlConverted
-      });
+      } as any);
 
       if (rpcError) throw rpcError;
 
@@ -89,7 +89,7 @@ export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md glass-pro border-white/20 shadow-pro overflow-hidden p-0 rounded-[2.5rem] animate-pro-in">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/20 shadow-pro overflow-hidden p-0 rounded-[2.5rem]">
         {/* Header with Background Accent */}
         <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-8 border-b border-white/10 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5">

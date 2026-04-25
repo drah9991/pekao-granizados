@@ -45,7 +45,7 @@ export default function ProductDetailsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/20 shadow-pro p-0 rounded-[3rem] animate-pro-in">
+      <DialogContent className="sm:max-w-3xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/20 shadow-pro p-0 rounded-[3rem]">
         {/* Header with Visual Impact */}
         <div className="bg-gradient-to-br from-primary/30 to-primary/5 p-10 border-b border-white/10 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5">

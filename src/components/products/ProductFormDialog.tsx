@@ -37,6 +37,7 @@ interface ProductFormDialogProps {
     stock: string;
     base_volume: string | number;
     unit_measure: string;
+    recipe?: any;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     name: string;
@@ -53,6 +54,7 @@ interface ProductFormDialogProps {
     stock: string;
     base_volume: string | number;
     unit_measure: string;
+    recipe?: any;
   }>>;
   onSave: () => void;
   isProcessing: boolean;
@@ -87,7 +89,7 @@ export default function ProductFormDialog({
         setSizes(data || []);
       };
       const fetchTypes = async () => {
-        const { data } = await supabase.from('product_types_config').select('*').eq('active', true);
+        const { data } = await supabase.from('product_types_config' as any).select('*').eq('active', true);
         setProductTypesConfig(data || []);
       };
       fetchSizes();
@@ -106,7 +108,7 @@ export default function ProductFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/20 shadow-pro p-0 rounded-[2.5rem] animate-pro-in">
+      <DialogContent className="sm:max-w-2xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/20 shadow-pro p-0 rounded-[2.5rem]">
         {/* Header with Background Accent */}
         <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-8 border-b border-white/10 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5">
@@ -436,8 +438,8 @@ export default function ProductFormDialog({
 
           <div className="pt-8 border-t border-white/5">
             <RecipeManager 
-              recipe={(formData.recipe as any) || []} 
-              onChange={(newRecipe) => setFormData({ ...formData, recipe: newRecipe as any })}
+              recipe={formData.recipe || []} 
+              onChange={(newRecipe) => setFormData({ ...formData, recipe: newRecipe })}
               storeId={storeId}
             />
           </div>

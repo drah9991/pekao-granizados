@@ -66,7 +66,7 @@ export default function ProductImportExportButtons({
 
       {/* Import Products Dialog */}
       <Dialog open={importDialogIsOpen} onOpenChange={setImportDialogIsOpen}>
-        <DialogContent className="sm:max-w-md glass-pro border-white/20 shadow-pro overflow-hidden p-0 rounded-[2.5rem] animate-pro-in">
+        <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/20 shadow-pro overflow-hidden p-0 rounded-[2.5rem]">
           <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-8 border-b border-white/10 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-5">
               <Upload className="w-32 h-32 -rotate-12 translate-x-6 -translate-y-6 text-primary" />

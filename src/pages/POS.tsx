@@ -112,17 +112,14 @@ export default function POS() {
         </div>
       </div>
 
-      <Suspense fallback={null}>
-        {customizeDialogIsOpen && (
+        <Suspense fallback={null}>
           <ProductCustomizationDialog
             isOpen={customizeDialogIsOpen}
             onClose={() => setCustomizeDialogIsOpen(false)}
             product={selectedProduct}
             onAddToCart={handleAddToCartFromDialog}
           />
-        )}
 
-        {paymentDialogIsOpen && (
           <PaymentDialog
             isOpen={paymentDialogIsOpen}
             onClose={() => setPaymentDialogIsOpen(false)}
@@ -131,9 +128,7 @@ export default function POS() {
             isProcessing={isProcessing}
             defaultMethod={defaultPaymentMethod}
           />
-        )}
 
-        {receiptDialogIsOpen && (
           <ReceiptDialog
             isOpen={receiptDialogIsOpen}
             onClose={() => {
@@ -142,8 +137,7 @@ export default function POS() {
             }}
             lastOrder={lastOrder}
           />
-        )}
-      </Suspense>
+        </Suspense>
     </Layout>
   );
 }

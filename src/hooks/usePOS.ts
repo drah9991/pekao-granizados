@@ -9,7 +9,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { PaymentMethod } from "@/components/pos/PaymentDialog";
 
 export function usePOS() {
-  const { cart, total, subtotal, resetCart, selectedCustomer } = useCart();
   const { user, storeId } = useAuth();
   const queryClient = useQueryClient();
   const { activeTurn } = useTurn();
@@ -40,6 +39,11 @@ export function usePOS() {
   };
 
   const processSale = async (
+    cart: any[],
+    saleTotal: number,
+    saleSubtotal: number,
+    saleDiscountAmount: number,
+    saleCustomer: any,
     method: PaymentMethod, 
     amountReceived: number, 
     deliveryData?: {
@@ -62,7 +66,7 @@ export function usePOS() {
       }
 
       const mappedItems = cart.flatMap(item => {
-        const toppingsPrice = item.toppings?.reduce((sum, t) => sum + t.price, 0) || 0;
+        const toppingsPrice = item.toppings?.reduce((sum: number, t: any) => sum + t.price, 0) || 0;
         const baseItemPrice = item.price - toppingsPrice;
 
         const mainItem = {
@@ -75,7 +79,7 @@ export function usePOS() {
           base_volume: item.baseVolume || 4
         };
 
-        const toppings = (item.toppings || []).map(topping => ({
+        const toppings = (item.toppings || []).map((topping: any) => ({
           product_id: topping.id,
           quantity: item.quantity,
           price: topping.price,
@@ -90,13 +94,13 @@ export function usePOS() {
       const salePayload = {
         store_id: storeId,
         employee_id: user.id,
-        customer_id: selectedCustomer?.id === 'generic' ? null : selectedCustomer?.id,
-        subtotal: subtotal,
+        customer_id: saleCustomer?.id === 'generic' ? null : saleCustomer?.id,
+        subtotal: saleSubtotal,
         delivery_fee: deliveryData?.fee || 0,
         order_type: deliveryData?.type || 'pickup',
         delivery_address: deliveryData?.address || null,
         delivery_phone: deliveryData?.phone || null,
-        total: total + (deliveryData?.fee || 0),
+        total: saleTotal + (deliveryData?.fee || 0),
         payment: method === 'split' ? { 
           method: 'split',
           details: splitDetails
@@ -122,19 +126,19 @@ export function usePOS() {
 
       const orderData = {
         id: orderId,
-        total: total + (deliveryData?.fee || 0),
-        subtotal: total,
+        total: saleTotal + (deliveryData?.fee || 0),
+        subtotal: saleSubtotal,
+        discountAmount: saleDiscountAmount,
         created_at: new Date().toISOString(),
         items: [...cart],
-        change: method === "cash" ? Math.max(0, amountReceived - (total + (deliveryData?.fee || 0))) : 0,
-        customer: selectedCustomer,
+        change: method === "cash" ? Math.max(0, amountReceived - (saleTotal + (deliveryData?.fee || 0))) : 0,
+        customer: saleCustomer,
         deliveryData,
         paymentMethod: method,
         splitDetails
       };
 
       notifyInfo("¡Venta procesada exitosamente!");
-      resetCart();
       queryClient.invalidateQueries({ queryKey: ['products-grid'] });
       
       return orderData;

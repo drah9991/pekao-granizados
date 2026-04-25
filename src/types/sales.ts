@@ -15,6 +15,7 @@ export interface OrderWithDetails extends Order {
   delivery_fee?: number;
   delivery_address?: string | null;
   delivery_phone?: string | null;
+  items?: OrderItem[];
 }
 
 export interface OrderItem {

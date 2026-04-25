@@ -18,6 +18,7 @@ interface ReceiptDialogProps {
     customer?: Customer | null;
     paymentMethod?: string;
     splitDetails?: { cash: number; transfer: number };
+    discountAmount?: number;
     deliveryData?: {
       type: 'pickup' | 'delivery';
       fee: number;
@@ -30,7 +31,7 @@ interface ReceiptDialogProps {
 export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">¡Venta Exitosa! 🎉</DialogTitle>
           <DialogDescription className="sr-only">Comprobante de venta exitosa detallando los productos adquiridos.</DialogDescription>
@@ -41,7 +42,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
             <div className="text-center p-6 bg-muted/50 rounded-lg">
               {/* Retirado sección de propina */}
               <p className="text-sm text-foreground font-semibold mb-1">Total Pagado</p>
-              <p className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+              <p className="text-4xl font-bold text-primary mb-2">
                 {formatCOP(lastOrder.total)}
               </p>
               
@@ -80,6 +81,20 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
                 </div>
               )}
             </div>
+
+            {/* Discount and Subtotal Info */}
+            {(lastOrder.discountAmount ?? 0) > 0 && (
+              <div className="bg-muted p-3 rounded-lg border border-border text-sm flex justify-between items-center text-muted-foreground">
+                <div className="flex flex-col">
+                  <span className="font-semibold">Subtotal</span>
+                  <span className="font-semibold text-emerald-500">Descuento</span>
+                </div>
+                <div className="flex flex-col text-right">
+                  <span className="font-medium">{formatCOP(lastOrder.subtotal ?? 0)}</span>
+                  <span className="font-medium text-emerald-500">-{formatCOP(lastOrder.discountAmount!)}</span>
+                </div>
+              </div>
+            )}
 
             {/* Delivery Info */}
             {lastOrder.deliveryData?.type === 'delivery' && (
