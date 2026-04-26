@@ -16,32 +16,43 @@ export function useDashboard(storeId: string | null) {
   useEffect(() => {
     if (!storeId) return;
 
+    console.log("Iniciando suscripción Realtime para Dashboard. StoreId:", storeId);
+
     const channel = supabase
       .channel('dashboard-sync')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
-        () => {
+        (payload) => {
+          console.log("Evento recibido: orders", payload);
           queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw", storeId] });
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'inventory_items', filter: `store_id=eq.${storeId}` },
-        () => {
+        (payload) => {
+          console.log("Evento recibido: inventory_items", payload);
           queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw", storeId] });
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'expenses', filter: `store_id=eq.${storeId}` },
-        () => {
+        (payload) => {
+          console.log("Evento recibido: expenses", payload);
           queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw", storeId] });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Estado suscripción Dashboard:", status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error("Error en el canal de Dashboard Realtime. Verifique configuración de Supabase.");
+        }
+      });
 
     return () => {
+      console.log("Limpiando suscripción Dashboard");
       supabase.removeChannel(channel);
     };
   }, [storeId, queryClient]);
