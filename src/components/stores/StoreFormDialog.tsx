@@ -66,7 +66,7 @@ export default function StoreFormDialog({ isOpen, onClose, editingStore, onSave,
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl glass-pro border-border rounded-[3rem] text-foreground shadow-pro">
+      <DialogContent className="sm:max-w-xl bg-background border-border rounded-[3rem] text-foreground shadow-pro">
         <DialogHeader className="mb-6">
            <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary"><StoreIcon className="w-6 h-6" /></div>

@@ -142,7 +142,8 @@ export const useCart = () => {
     product: Product,
     selectedSizeId: string,
     selectedToppingIds: string[],
-    customized: boolean = false
+    customized: boolean = false,
+    quantity: number = 1
   ) => {
     const typeCfg = productTypes.find(t => t.code === product.type);
     const trackMixture = typeCfg?.track_mixture_inventory || product.type === 'granizado' || product.category === 'Granizado';
@@ -156,18 +157,18 @@ export const useCart = () => {
     const OZ_TO_ML = 29.57;
 
     if (trackMixture && product.mixtureStock !== undefined && product.mixtureStock > 0) {
-      const requestedMl = baseVol * itemMultiplier * OZ_TO_ML;
+      const requestedMl = baseVol * itemMultiplier * OZ_TO_ML * quantity;
       const currentMlInCart = cart
         .filter(i => i.productId === product.id)
         .reduce((sum, i) => sum + (i.quantity * (i.baseVolume || 4) * (i.sizeMultiplier || 1) * OZ_TO_ML), 0);
 
       if (currentMlInCart + requestedMl > product.mixtureStock) {
-        notifyCritical(`No hay suficiente mezcla de ${product.name} disponible.`);
+        notifyCritical(`No hay suficiente mezcla de ${product.name} disponible para ${quantity} porciones.`);
         return;
       }
     } else if (!trackMixture && product.stock !== undefined) {
       const currentQty = cart.reduce((sum, i) => i.productId === product.id ? sum + i.quantity : sum, 0);
-      if ((currentQty + 1) > product.stock) {
+      if ((currentQty + quantity) > product.stock) {
         notifyCritical(`Stock insuficiente de ${product.name}`);
         return;
       }
@@ -240,7 +241,7 @@ export const useCart = () => {
       name: product.name,
       productId: product.id,
       price: finalPrice,
-      quantity: 1,
+      quantity: quantity,
       size: size?.name,
       sizeMultiplier: size?.multiplier || 1, 
       toppings: validToppings.length > 0 ? validToppings : undefined,

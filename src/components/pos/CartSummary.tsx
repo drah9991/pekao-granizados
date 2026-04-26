@@ -67,9 +67,9 @@ export default function CartSummary({
     }
   };
 
-  return (    <div className="w-full lg:w-[30rem] glass-pro border-t lg:border-t-0 lg:border-l border-white/5 p-6 md:p-10 flex flex-col h-full relative z-10 animate-pro-in">
+  return (    <div className="w-full lg:w-[30rem] glass-pro border-t lg:border-t-0 lg:border-l border-white/5 p-4 md:p-8 flex flex-col h-full relative z-10 animate-pro-in">
       {/* Header Cart */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex items-center justify-between mb-6 md:mb-10">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-primary/10 rounded-xl text-primary border border-primary/20">
             <Receipt className="w-6 h-6" />
@@ -92,7 +92,7 @@ export default function CartSummary({
       </div>
 
       {/* Customer Area */}
-      <div className="mb-10">
+      <div className="mb-6 md:mb-10">
         <div className="flex gap-3 items-center">
           <div className="flex-1">
              <CustomerSelection
@@ -118,10 +118,10 @@ export default function CartSummary({
       </div>
 
       {/* Items List */}
-      <div className="flex-1 overflow-auto -mx-2 px-2 mb-10 no-scrollbar space-y-3">
+      <div className="flex-1 overflow-auto -mx-2 px-2 mb-6 md:mb-10 no-scrollbar space-y-3">
         {cart.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center opacity-30 select-none py-10">
-              <div className="p-12 border border-dashed border-white/10 rounded-3xl flex flex-col items-center text-center">
+              <div className="p-8 md:p-12 border border-dashed border-white/10 rounded-3xl flex flex-col items-center text-center">
                 <Receipt className="w-12 h-12 text-muted-foreground/30 mb-4" />
                 <p className="text-sm font-semibold text-foreground mb-1 font-dm-sans uppercase tracking-widest">Selecciona productos</p>
                 <p className="text-[10px] text-muted-foreground/60 uppercase font-medium tracking-tight">El carrito está esperando tu próxima venta</p>
@@ -129,48 +129,60 @@ export default function CartSummary({
           </div>
         ) : (
           cart.map((item) => (
-            <div key={item.id} className="group relative bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:bg-white/[0.05] hover:border-primary/20 animate-pro-in">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0 pr-4">
-                  <p className="font-bold text-foreground text-sm truncate mb-1 font-dm-sans pr-2">{item.name}</p>
-                  <div className="flex flex-wrap gap-1.5">
+            <div key={item.id} className="group relative bg-gradient-to-br from-white/[0.06] to-white/[0.01] border border-white/10 rounded-2xl p-4 transition-all duration-300 hover:from-white/[0.08] hover:to-white/[0.02] hover:border-primary/40 hover:shadow-[0_0_20px_rgba(var(--primary),0.1)] animate-pro-in backdrop-blur-md">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1 min-w-0 pr-3">
+                  <p className="font-bold text-white text-base mb-1.5 font-dm-sans leading-tight break-words drop-shadow-sm">{item.name}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
                     {item.size && (
-                      <span className="bg-primary/10 text-primary text-[8px] uppercase font-bold px-1.5 py-0.5 rounded-md border border-primary/10 font-dm-sans">
+                      <span className="bg-primary/20 text-primary-foreground text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-primary/30 font-dm-sans shadow-sm">
                         {item.size}
                       </span>
                     )}
+                    {item.toppings?.map((topping, idx) => (
+                      <span key={idx} className="bg-white/10 text-white/90 text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-white/20 font-dm-sans flex items-center gap-1">
+                        <Plus className="w-2.5 h-2.5" /> {topping.name}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <p className="font-bold text-base text-foreground font-dm-sans">
-                  {formatCOP(item.price * item.quantity)}
-                </p>
+                <div className="text-right whitespace-nowrap pl-2 flex flex-col items-end justify-start">
+                  <p className="font-black text-lg text-white font-dm-sans drop-shadow-sm">
+                    {formatCOP(item.price * item.quantity)}
+                  </p>
+                  {item.quantity > 1 && (
+                    <p className="text-[10px] text-white/50 font-bold font-dm-sans mt-0.5 uppercase tracking-wider">
+                      {formatCOP(item.price)} c/u
+                    </p>
+                  )}
+                </div>
               </div>
               
-              <div className="flex items-center justify-between pt-3 border-t border-white/5 mt-1">
-                <div className="flex items-center bg-black/20 rounded-xl p-1 gap-1 border border-white/5">
+              <div className="flex items-center justify-between pt-3 border-t border-white/10 mt-1">
+                <div className="flex items-center bg-black/40 rounded-xl p-1 gap-1 border border-white/10 shadow-inner">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => updateQuantity(item.id, -1)}
-                    className="h-8 w-8 hover:bg-white/5 hover:text-white rounded-lg transition-all"
+                    className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-all text-white/70"
                   >
-                    <Minus className="w-3.5 h-3.5 text-primary" />
+                    <Minus className="w-4 h-4 text-white" />
                   </Button>
-                  <span className="font-bold text-sm w-8 text-center text-foreground font-dm-sans">{item.quantity}</span>
+                  <span className="font-black text-sm w-8 text-center text-white font-dm-sans">{item.quantity}</span>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => updateQuantity(item.id, 1)}
-                    className="h-8 w-8 hover:bg-white/5 hover:text-white rounded-lg transition-all"
+                    className="h-8 w-8 hover:bg-primary/20 hover:text-primary rounded-lg transition-all text-white/70"
                   >
-                    <Plus className="w-3.5 h-3.5 text-primary" />
+                    <Plus className="w-4 h-4 text-primary drop-shadow-md" />
                   </Button>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => removeItem(item.id)}
-                  className="h-8 w-8 text-muted-foreground/30 hover:text-rose-500 hover:bg-rose-500/5 transition-all rounded-lg"
+                  className="h-9 w-9 text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 transition-all rounded-xl border border-transparent hover:border-rose-500/20"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>

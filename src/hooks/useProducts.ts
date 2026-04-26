@@ -81,7 +81,7 @@ export function useProducts() {
 
     setIsProcessing(true);
     try {
-      const productData: TablesInsert<'products'> = {
+      const productData: any = {
         name: formData.name.toUpperCase(),
         sku: formData.sku || null,
         description: formData.description || null,
@@ -151,7 +151,8 @@ export function useProducts() {
     if (!importFile) return;
     setIsImporting(true);
     try {
-      const results = await importFromCsv(importFile);
+      const text = await importFile.text();
+      const results = importFromCsv<any>(text);
       const productsToInsert = results.map((row: any) => ({
         name: (row.name || "N/A").toUpperCase(),
         sku: row.sku || null,
@@ -201,6 +202,7 @@ export function useProducts() {
       type: "granizado", stock: "", base_volume: "", unit_measure: "oz",
     });
     setProductDialogIsOpen(true);
+    toast.success("Abriendo modal de creación...");
   };
 
   const openEditDialog = (product: Product) => {
@@ -208,12 +210,15 @@ export function useProducts() {
     setFormData({
       name: product.name, sku: product.sku || "", description: product.description || "",
       price: product.price.toString(), cost: product.cost?.toString() || "", active: product.active,
-      category: product.category || "", is_public: product.is_public || true,
-      images: (product.images as string[]) || [], variants: product.variants, recipe: product.recipe,
-      type: product.type as ProductType, stock: "", base_volume: product.base_volume?.toString() || "",
-      unit_measure: product.unit_measure || "oz",
+      category: product.category || "", is_public: product.is_public ?? true,
+      images: (product.images as string[]) || [], 
+      variants: product.variants, 
+      recipe: Array.isArray(product.recipe) ? product.recipe : [],
+      type: product.type as ProductType, stock: "", base_volume: (product as any).base_volume?.toString() || "",
+      unit_measure: (product as any).unit_measure || "oz",
     });
     setProductDialogIsOpen(true);
+    toast.success("Abriendo modal de edición...");
   };
 
   return {

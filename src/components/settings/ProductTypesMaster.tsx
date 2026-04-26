@@ -236,7 +236,7 @@ export default function ProductTypesMaster() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/10 rounded-[3.5rem] text-white shadow-pro">
+        <DialogContent className="sm:max-w-xl max-h-[90dvh] overflow-y-auto custom-scrollbar bg-background border-white/10 rounded-[3.5rem] text-white shadow-pro">
           <DialogHeader className="mb-6">
             <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-glow-pro font-space-grotesk">

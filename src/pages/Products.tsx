@@ -7,10 +7,10 @@ import ProductFormDialog from "@/components/products/ProductFormDialog";
 import ProductDetailsDialog from "@/components/products/ProductDetailsDialog";
 import ProductImportExportButtons from "@/components/products/ProductImportExportButtons";
 import Layout from "@/components/Layout";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { IceCream, Cherry, Wine, Candy, Globe, Zap } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-
+import { supabase } from "@/integrations/supabase/client";
 const productTypeOptions: { value: any; label: string; icon: React.ElementType }[] = [
   { value: "granizado", label: "Granizado", icon: IceCream },
   { value: "topping", label: "Topping", icon: Cherry },
@@ -18,12 +18,12 @@ const productTypeOptions: { value: any; label: string; icon: React.ElementType }
   { value: "sweet", label: "Dulce", icon: Candy },
 ];
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { y: 20, opacity: 0 },
   visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 15 } }
 };
@@ -60,12 +60,13 @@ export default function Products() {
 
   return (
     <Layout>
-      <motion.div 
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="min-h-screen bg-transparent text-foreground p-6 lg:p-10 space-y-10"
-      >
+      <div className="min-h-screen bg-transparent p-6 lg:p-10 space-y-10">
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+          className="space-y-10"
+        >
         <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="flex items-center gap-6">
                 <div className="w-20 h-20 rounded-[2rem] bg-primary/10 border border-primary/20 flex items-center justify-center shadow-glow-pro group-hover:scale-110 transition-all duration-700 overflow-hidden relative">
@@ -136,12 +137,13 @@ export default function Products() {
             openDetailsDialog={async (p) => {
                 setViewingProduct(p);
                 setDetailsDialogIsOpen(true);
-                const { data } = await (window as any).supabase.from('store_stock').select('qty, min_qty, stores(name)').eq('product_id', p.id);
+                const { data } = await supabase.from('store_stock').select('qty, min_qty, stores(name)').eq('product_id', p.id);
                 setProductStock((data || []).map((item: any) => ({ store_name: item.stores.name, qty: item.qty, min_qty: item.min_qty })));
             }}
             handleDeleteProduct={handleDeleteProduct}
             userStoreId={storeId}
           />
+        </motion.div>
         </motion.div>
 
         <ProductFormDialog
@@ -163,7 +165,7 @@ export default function Products() {
           viewingProduct={viewingProduct}
           productStock={productStock}
         />
-      </motion.div>
+      </div>
     </Layout>
   );
 }

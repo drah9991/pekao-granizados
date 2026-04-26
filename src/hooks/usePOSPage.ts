@@ -56,8 +56,8 @@ export function usePOSPage() {
     setCustomizeDialogIsOpen(true);
   };
 
-  const handleAddToCartFromDialog = (product: Product, sizeId: string, toppingIds: string[]) => {
-    addToCart(product, sizeId, toppingIds, true);
+  const handleAddToCartFromDialog = (product: Product, sizeId: string, toppingIds: string[], quantity: number = 1) => {
+    addToCart(product, sizeId, toppingIds, true, quantity);
     setCustomizeDialogIsOpen(false);
   };
 

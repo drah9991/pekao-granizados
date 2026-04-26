@@ -38,7 +38,7 @@ export function InventoryDialogs({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-border rounded-[3rem] text-foreground shadow-pro">
+      <DialogContent className="sm:max-w-xl max-h-[90dvh] overflow-y-auto custom-scrollbar bg-background border-border rounded-[3rem] text-foreground shadow-pro">
         <DialogHeader className="mb-6">
           <div className="flex items-center gap-4">
             <div className={cn(

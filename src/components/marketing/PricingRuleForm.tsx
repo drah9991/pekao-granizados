@@ -100,7 +100,7 @@ export default function PricingRuleForm({ isOpen, onClose, editingRule, onSave, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/10 rounded-[3rem] text-white shadow-pro p-8">
+        <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto custom-scrollbar bg-background border-white/10 rounded-[3rem] text-white shadow-pro p-8">
             <DialogHeader className="mb-8">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-glow-pro">

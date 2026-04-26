@@ -287,7 +287,7 @@ export default function SkuAcronymsSettings() {
 
       {/* Modernized Dialog */}
       <Dialog open={acronymDialogIsOpen} onOpenChange={setAcronymDialogIsOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/10 rounded-[3rem] text-white shadow-pro">
+        <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar bg-background border-white/10 rounded-[3rem] text-white shadow-pro">
           <DialogHeader className="mb-6">
             <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-glow-pro">

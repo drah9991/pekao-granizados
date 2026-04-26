@@ -11,6 +11,8 @@ import {
   Menu,
   X,
   ChevronDown,
+  Minus,
+  Plus,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
   Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3
 } from "lucide-react";
@@ -51,6 +53,15 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const { activeTurn, isLoading: isLoadingTurn } = useTurn();
   const lowStockCount = useLowStockCount();
   const { showCriticalBanner, hideCriticalBanner } = useAlerts();
+
+  const [uiScale, setUiScale] = useState(() => {
+    const saved = localStorage.getItem('pekao_ui_scale');
+    return saved ? parseInt(saved, 10) : 100;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pekao_ui_scale', uiScale.toString());
+  }, [uiScale]);
 
   // Initialize Realtime listeners
   useRealtimeAlerts();
@@ -169,6 +180,15 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               {userRole ? userRole.replace('_', ' ') : 'Guest'}
             </span>
           </div>
+        </div>
+        <div className="flex items-center px-1 gap-1 border-r border-white/5 pr-2 mr-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-white/50 hover:text-white hover:bg-white/10 rounded-lg" onClick={() => setUiScale(s => Math.max(50, s - 10))}>
+            <Minus className="w-3 h-3" />
+          </Button>
+          <span className="text-[10px] font-black w-8 text-center tracking-tighter">{uiScale}%</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-white/50 hover:text-white hover:bg-white/10 rounded-lg" onClick={() => setUiScale(s => Math.min(200, s + 10))}>
+            <Plus className="w-3 h-3" />
+          </Button>
         </div>
         <div className="flex items-center px-1">
           <NotificationCenter />
@@ -334,7 +354,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         <div className={cn(
           "animate-pro-in perspective-1000 h-full flex flex-col",
           fullWidth ? "p-0" : "p-4 md:p-8"
-        )}>
+        )} style={{ zoom: `${uiScale}%` } as any}>
             <AlertManager />
             {children}
         </div>

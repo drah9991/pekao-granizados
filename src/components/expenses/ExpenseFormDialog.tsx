@@ -60,7 +60,7 @@ export default function ExpenseFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="glass-pro border-border/50 rounded-[2.5rem] max-w-lg p-0 overflow-hidden shadow-2xl">
+      <DialogContent className="bg-background border-border/50 rounded-[2.5rem] max-w-lg p-0 overflow-hidden shadow-2xl">
         <div className="bg-primary/5 p-8 border-b border-border/30">
           <DialogHeader>
             <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-4 border border-primary/20 shadow-glow-pro">

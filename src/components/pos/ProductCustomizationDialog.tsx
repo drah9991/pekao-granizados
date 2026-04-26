@@ -13,8 +13,7 @@ import { cn } from "@/lib/utils";
 interface ProductCustomizationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  product: Product | null;
-  onAddToCart: (product: Product, sizeId: string, toppingIds: string[]) => void;
+  onAddToCart: (product: Product, sizeId: string, toppingIds: string[], quantity: number) => void;
 }
 
 type Size = Tables<'sizes'>;
@@ -28,6 +27,7 @@ export default function ProductCustomizationDialog({
 }: ProductCustomizationDialogProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
+  const [quantity, setQuantity] = useState(1);
   const [availableSizes, setAvailableSizes] = useState<Size[]>([]);
   const [availableToppings, setAvailableToppings] = useState<ToppingProduct[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -42,6 +42,7 @@ export default function ProductCustomizationDialog({
       fetchCustomizationData();
       setSelectedSize(null);
       setSelectedToppings([]);
+      setQuantity(1);
     }
   }, [isOpen, userStoreId]);
 
@@ -99,7 +100,7 @@ export default function ProductCustomizationDialog({
   const handleAddToCart = () => {
     const isSachet = product?.type === 'sachet';
     if (product && (selectedSize || isSachet)) {
-      onAddToCart(product, selectedSize || "", selectedToppings);
+      onAddToCart(product, selectedSize || "", selectedToppings, quantity);
       onClose();
     } else {
       toast.error("Por favor, selecciona un tamaño.");
@@ -225,13 +226,34 @@ export default function ProductCustomizationDialog({
           </div>
         )}
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose} className="min-h-[48px]">
-            Cancelar
-          </Button>
-          <Button onClick={handleAddToCart} className="gradient-primary min-h-[48px] text-base" disabled={!selectedSize && product.type !== 'sachet'}>
-            Agregar {formatCOP(finalPrice)}
-          </Button>
+        <DialogFooter className="gap-2 sm:justify-between items-center flex-row">
+          <div className="flex items-center gap-4 bg-muted/30 p-1.5 rounded-2xl border border-border">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setQuantity(q => Math.max(1, q - 1))}
+              className="h-10 w-10 text-muted-foreground hover:bg-white/10 hover:text-foreground rounded-xl"
+            >
+              -
+            </Button>
+            <span className="font-black text-lg w-6 text-center">{quantity}</span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setQuantity(q => q + 1)}
+              className="h-10 w-10 text-primary hover:bg-primary/20 rounded-xl"
+            >
+              +
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={onClose} className="min-h-[48px] rounded-xl">
+              Cancelar
+            </Button>
+            <Button onClick={handleAddToCart} className="gradient-primary min-h-[48px] text-base rounded-xl" disabled={!selectedSize && product.type !== 'sachet'}>
+              Agregar {formatCOP(finalPrice * quantity)}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

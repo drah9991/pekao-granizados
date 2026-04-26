@@ -89,7 +89,7 @@ export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/20 shadow-pro overflow-hidden p-0 rounded-[2.5rem]">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar bg-background border-white/20 shadow-pro overflow-hidden p-0 rounded-[2.5rem]">
         {/* Header with Background Accent */}
         <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-8 border-b border-white/10 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5">

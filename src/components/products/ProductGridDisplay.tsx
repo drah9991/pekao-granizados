@@ -6,7 +6,7 @@ import { formatCOP } from "@/lib/currency";
 import { Tables, Enums } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 type Product = Tables<'products'>;
 type ProductType = Enums<'product_type'>;
@@ -90,9 +90,9 @@ export default function ProductGridDisplay({
     );
   }
 
-  const container = {
+  const container: Variants = {
     hidden: { opacity: 0 },
-    show: {
+    visible: {
       opacity: 1,
       transition: {
         staggerChildren: 0.1
@@ -100,16 +100,16 @@ export default function ProductGridDisplay({
     }
   };
 
-  const item = {
+  const item: Variants = {
     hidden: { opacity: 0, y: 30, scale: 0.95 },
-    show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } }
   };
 
   return (
     <motion.div 
       variants={container}
       initial="hidden"
-      animate="show"
+      animate="visible"
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
     >
       {products.map((product) => {
@@ -145,12 +145,12 @@ export default function ProductGridDisplay({
                       </span>
                     )}
                   </div>
-                  <div className="flex gap-2 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-700">
+                  <div className="flex gap-2 transition-all duration-700">
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       className="h-10 w-10 glass-pro rounded-xl text-white/40 hover:text-primary hover:bg-primary/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90"
-                      onClick={() => openDetailsDialog(product)}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); openDetailsDialog(product); }}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -158,7 +158,7 @@ export default function ProductGridDisplay({
                       variant="ghost" 
                       size="icon" 
                       className="h-10 w-10 glass-pro rounded-xl text-white/40 hover:text-emerald-400 hover:bg-emerald-500/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90"
-                      onClick={() => openEditDialog(product)}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEditDialog(product); }}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -166,7 +166,7 @@ export default function ProductGridDisplay({
                       variant="ghost" 
                       size="icon" 
                       className="h-10 w-10 glass-pro rounded-xl text-white/40 hover:text-white hover:appetite-accent-muted shadow-pro transition-all hover:-translate-y-1 active:scale-90 border-none"
-                      onClick={() => handleDeleteProduct(product)}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProduct(product); }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -212,13 +212,13 @@ export default function ProductGridDisplay({
                     <Badge 
                       className={cn(
                         "font-black text-[10px] uppercase tracking-widest italic border-none bg-white/5 px-3 h-7 shadow-pro",
-                        ((product as any).mixtureStock > 0 || (product.stock !== null && product.stock > 0)) ? "text-emerald-400" : "text-red-500 shadow-glow-pro animate-pulse"
+                        ((product as any).mixtureStock > 0 || ((product as any).stock !== null && (product as any).stock > 0)) ? "text-emerald-400" : "text-red-500 shadow-glow-pro animate-pulse"
                       )}
                     >
                       {(product.type === 'granizado' || product.category === 'Granizado') ? (
                           <span>{((product as any).mixtureStock / 1000).toFixed(1)}L DISP</span>
                       ) : (
-                        `STK: ${product.stock || 0} UNI`
+                        `STK: ${(product as any).stock || 0} UNI`
                       )}
                     </Badge>
                   </div>

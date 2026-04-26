@@ -5,16 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, History, ArrowRightLeft, ShieldCheck, Filter, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useMovements } from "@/hooks/useMovements";
 import MovementCard from "@/components/movements/MovementCard";
 
-const containerVariants = {
+const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
     hidden: { y: 15, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 15 } }
 };

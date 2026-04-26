@@ -212,7 +212,7 @@ export default function RolesSettings() {
               <Plus className="w-5 h-5" /> Indexar Identidad
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar glass-pro border-white/10 rounded-[3rem] text-white shadow-pro">
+          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar bg-background border-white/10 rounded-[3rem] text-white shadow-pro">
             <DialogHeader className="mb-6">
               <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400">
