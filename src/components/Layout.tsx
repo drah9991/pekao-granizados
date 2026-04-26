@@ -55,12 +55,12 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const { showCriticalBanner, hideCriticalBanner } = useAlerts();
 
   const [uiScale, setUiScale] = useState(() => {
-    const saved = localStorage.getItem('pekao_ui_scale');
+    const saved = localStorage.getItem('pekao_ui_scale_v4');
     return saved ? parseInt(saved, 10) : 100;
   });
 
   useEffect(() => {
-    localStorage.setItem('pekao_ui_scale', uiScale.toString());
+    localStorage.setItem('pekao_ui_scale_v4', uiScale.toString());
   }, [uiScale]);
 
   // Initialize Realtime listeners
@@ -354,7 +354,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         <div className={cn(
           "animate-pro-in perspective-1000 h-full flex flex-col",
           fullWidth ? "p-0" : "p-4 md:p-8"
-        )} style={{ zoom: `${uiScale}%` } as any}>
+        )} style={{ zoom: `${uiScale * 0.8}%` } as any}>
             <AlertManager />
             {children}
         </div>
