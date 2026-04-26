@@ -259,6 +259,71 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          id: string
+          store_id: string
+          amount: number
+          expense_date: string
+          description: string | null
+          category: string | null
+          created_at: string | null
+        }
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          id: string
+          store_id: string
+          name: string
+          stock: number
+          min_stock: number | null
+          is_mixture: boolean
+          unit: string | null
+          created_at: string | null
+        }
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      pricing_rules: {
+        Row: {
+          id: string
+          store_id: string
+          name: string
+          active: boolean
+          type: string
+          target_type: string
+          target_id: string | null
+          discount_type: string
+          discount_value: number
+          start_time: string | null
+          end_time: string | null
+          days_of_week: number[] | null
+          created_at: string
+        }
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      product_types_config: {
+        Row: {
+          id: string
+          code: string
+          label: string
+          emoji_icon: string
+          color_theme: string
+          track_mixture_inventory: boolean
+          sales_mode: string
+          active: boolean
+          created_at: string
+        }
+        Insert: any
+        Update: any
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean | null
@@ -594,7 +659,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "manager" | "cashier" | "driver"
+      app_role: "admin" | "manager" | "cashier" | "driver" | "owner" | "store_manager"
       product_type: "granizado" | "topping" | "sachet" | "sweet" | "other"
     }
     CompositeTypes: {
@@ -723,7 +788,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "cashier", "driver"],
+      app_role: ["admin", "manager", "cashier", "driver", "owner", "store_manager"],
       product_type: ["granizado", "topping", "sachet", "sweet", "other"],
     },
   },

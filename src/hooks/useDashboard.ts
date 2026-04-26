@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getDashboardRanges, transformDashboardData } from "@/utils/dashboardUtils";
 import { DashboardConfig, defaultDashboardConfig } from "@/components/dashboard/DashboardCustomizer";
@@ -9,8 +9,42 @@ export function useDashboard(storeId: string | null) {
   const [period, setPeriod] = useState<"today" | "week" | "month" | "year">("today");
   const [uiConfig, setUiConfig] = useState<DashboardConfig>(defaultDashboardConfig);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const queryClient = useQueryClient();
 
   const ranges = useMemo(() => getDashboardRanges(period), [period]);
+
+  useEffect(() => {
+    if (!storeId) return;
+
+    const channel = supabase
+      .channel('dashboard-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw", storeId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'inventory_items', filter: `store_id=eq.${storeId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw", storeId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'expenses', filter: `store_id=eq.${storeId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw", storeId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [storeId, queryClient]);
 
   const { data: rawData, isLoading, error } = useQuery({
     queryKey: ["dashboard-v2-raw", storeId, period],
@@ -22,16 +56,15 @@ export function useDashboard(storeId: string | null) {
         .select('config')
         .eq('id', storeId)
         .single();
-      
-      if (storeData?.config && typeof storeData.config === 'object') {
-          const savedConfig = (storeData.config as any).dashboard_v2;
-          if (savedConfig) setUiConfig(savedConfig);
-      }
+        
+      const savedConfig = storeData?.config && typeof storeData.config === 'object' 
+        ? (storeData.config as any).dashboard_v2 
+        : null;
 
       const [currentRes, comparisonRes, inventoryRes, sizesRes, expensesRes] = await Promise.all([
         supabase.from("orders").select("id, total, subtotal, tip_amount, delivery_fee, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end),
         supabase.from("orders").select("total, status").eq("store_id", storeId).gte("created_at", ranges.comparison.start).lte("created_at", ranges.comparison.end),
-        (supabase as any).from("inventory_items").select("name, stock, min_stock, is_mixture").eq("store_id", storeId),
+        supabase.from("inventory_items").select("name, stock, min_stock, is_mixture").eq("store_id", storeId),
         supabase.from("sizes").select("name, multiplier").eq("store_id", storeId),
         supabase.from("expenses").select("amount, expense_date").eq("store_id", storeId).gte("expense_date", ranges.current.start).lte("expense_date", ranges.current.end)
       ]);
@@ -51,12 +84,20 @@ export function useDashboard(storeId: string | null) {
         comparisonOrders: comparisonRes.data || [],
         inventory: inventoryRes.data || [],
         sizes: sizesRes.data || [],
-        expenses: expensesRes.data || []
+        expenses: expensesRes.data || [],
+        config: savedConfig
       };
     },
     enabled: !!storeId,
-    refetchInterval: 30000,
+    refetchInterval: 1000 * 60 * 5, // Fallback polling every 5 minutes
   });
+
+  // Sincronizar configuración guardada solo cuando cambia el store o carga inicial
+  useEffect(() => {
+    if (rawData?.config) {
+      setUiConfig(rawData.config);
+    }
+  }, [rawData?.config]);
 
   const dashboardData = useMemo(() => {
     if (!rawData) return null;

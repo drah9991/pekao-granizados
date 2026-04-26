@@ -123,7 +123,7 @@ export const useCart = () => {
       setProductTypes(typesData || []);
 
       // Fetch active dynamic pricing rules
-      const { data: rulesData, error: rulesError } = await (supabase as any)
+      const { data: rulesData, error: rulesError } = await supabase
         .from('pricing_rules')
         .select('*')
         .eq('store_id', storeId)
@@ -236,25 +236,38 @@ export const useCart = () => {
 
     const customizationId = customized ? `${product.id}-${Date.now()}` : product.id;
 
-    const newItem: CartItem = {
-      id: customizationId,
-      name: product.name,
-      productId: product.id,
-      price: finalPrice,
-      quantity: quantity,
-      size: size?.name,
-      sizeMultiplier: size?.multiplier || 1, 
-      toppings: validToppings.length > 0 ? validToppings : undefined,
-      customizationId,
-      originalPrice: originalPrice !== basePrice ? originalPrice + toppingsPrice : undefined,
-      discountMessage,
-      maxStock: product.stock,
-      isGranizado: trackMixture,
-      mixtureStock: product.mixtureStock,
-      baseVolume: Number(product.base_volume) || 4
-    };
+    setCart(prevCart => {
+      const existingItemIndex = prevCart.findIndex(item => item.id === customizationId);
+      
+      if (existingItemIndex >= 0 && !customized) {
+        const updatedCart = [...prevCart];
+        updatedCart[existingItemIndex] = {
+          ...updatedCart[existingItemIndex],
+          quantity: updatedCart[existingItemIndex].quantity + quantity
+        };
+        return cleanCartItems(updatedCart);
+      }
 
-    setCart(prevCart => cleanCartItems([...prevCart, newItem]));
+      const newItem: CartItem = {
+        id: customizationId,
+        name: product.name,
+        productId: product.id,
+        price: finalPrice,
+        quantity: quantity,
+        size: size?.name,
+        sizeMultiplier: size?.multiplier || 1, 
+        toppings: validToppings.length > 0 ? validToppings : undefined,
+        customizationId,
+        originalPrice: originalPrice !== basePrice ? originalPrice + toppingsPrice : undefined,
+        discountMessage,
+        maxStock: product.stock,
+        isGranizado: trackMixture,
+        mixtureStock: product.mixtureStock,
+        baseVolume: Number(product.base_volume) || 4
+      };
+
+      return cleanCartItems([...prevCart, newItem]);
+    });
     if (discountMessage) {
       toast.success(`Producto agregado con descuento: ${discountMessage}`);
     } else {

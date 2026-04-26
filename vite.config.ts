@@ -73,7 +73,7 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   build: {
     chunkSizeWarningLimit: 2000,
-    /*rollupOptions: {
+    rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
@@ -83,11 +83,13 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
             if (id.includes('@radix-ui')) return 'vendor-radix';
             if (id.includes('date-fns')) return 'vendor-utils';
+            if (id.includes('framer-motion')) return 'vendor-motion';
+            if (id.includes('jspdf') || id.includes('xlsx')) return 'vendor-exports';
             return 'vendor-core'; 
           }
         }
       }
-    }*/
+    }
   },
   resolve: {
     alias: {

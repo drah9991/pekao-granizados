@@ -169,7 +169,7 @@ const App = () => {
               <Route
                 path="/expenses"
                 element={
-                  <ProtectedRoute requiredRole={["admin", "manager", "owner" as any]}>
+                  <ProtectedRoute requiredRole={["admin", "manager", "owner"]}>
                     <ErrorBoundary fallbackTitle="Error en Gastos">
                       <Expenses />
                     </ErrorBoundary>
@@ -199,7 +199,7 @@ const App = () => {
               <Route
                 path="/inventory"
                 element={
-                  <ProtectedRoute requiredRole={["admin", "manager", "owner" as any, "store_manager" as any]}>
+                  <ProtectedRoute requiredRole={["admin", "manager", "owner", "store_manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Inventario">
                       <Inventory />
                     </ErrorBoundary>
