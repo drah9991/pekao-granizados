@@ -19,36 +19,43 @@ export function useDashboard(storeId: string | null) {
     console.log("Iniciando suscripción Realtime para Dashboard. StoreId:", storeId);
 
     const channel = supabase
-      .channel('dashboard-sync')
+      .channel(`dashboard-sync-${storeId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
         (payload) => {
-          console.log("Evento recibido: orders", payload);
-          queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw", storeId] });
+          console.log("Realtime: Pedido detectado", payload);
+          // Usamos refetchQueries para asegurar que se dispare la recarga inmediata
+          queryClient.refetchQueries({ 
+            queryKey: ["dashboard-v2-raw", storeId],
+            type: 'active'
+          });
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'inventory_items', filter: `store_id=eq.${storeId}` },
         (payload) => {
-          console.log("Evento recibido: inventory_items", payload);
-          queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw", storeId] });
+          console.log("Realtime: Inventario detectado", payload);
+          queryClient.refetchQueries({ 
+            queryKey: ["dashboard-v2-raw", storeId],
+            type: 'active'
+          });
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'expenses', filter: `store_id=eq.${storeId}` },
         (payload) => {
-          console.log("Evento recibido: expenses", payload);
-          queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw", storeId] });
+          console.log("Realtime: Gasto detectado", payload);
+          queryClient.refetchQueries({ 
+            queryKey: ["dashboard-v2-raw", storeId],
+            type: 'active'
+          });
         }
       )
       .subscribe((status) => {
-        console.log("Estado suscripción Dashboard:", status);
-        if (status === 'CHANNEL_ERROR') {
-          console.error("Error en el canal de Dashboard Realtime. Verifique configuración de Supabase.");
-        }
+        console.log(`Estado suscripción Dashboard (${storeId}):`, status);
       });
 
     return () => {
