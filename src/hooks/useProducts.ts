@@ -105,6 +105,24 @@ export function useProducts() {
           .update(productData)
           .eq("id", editingProduct.id);
         if (error) throw error;
+
+        // Si se especificó stock durante la edición, lo actualizamos o insertamos en store_stock
+        if (formData.stock !== "" && !isNaN(parseFloat(formData.stock)) && storeId) {
+            const qty = parseFloat(formData.stock);
+            const { error: stockError } = await supabase
+                .from('store_stock')
+                .upsert({
+                    product_id: editingProduct.id,
+                    store_id: storeId,
+                    qty: qty,
+                    updated_at: new Date().toISOString(),
+                    min_qty: 10
+                }, {
+                    onConflict: 'product_id,store_id'
+                });
+            
+            if (stockError) console.error("Error updating stock during product edit:", stockError);
+        }
       } else {
         const { data: newProd, error: insError } = await supabase
           .from("products")
@@ -205,8 +223,21 @@ export function useProducts() {
     toast.success("Abriendo modal de creación...");
   };
 
-  const openEditDialog = (product: Product) => {
+  const openEditDialog = async (product: Product) => {
     setEditingProduct(product);
+    
+    // Intentamos obtener el stock actual para este producto y tienda
+    let currentStock = "";
+    if (storeId) {
+        const { data } = await supabase
+            .from('store_stock')
+            .select('qty')
+            .eq('product_id', product.id)
+            .eq('store_id', storeId)
+            .maybeSingle();
+        if (data) currentStock = data.qty?.toString() || "0";
+    }
+
     setFormData({
       name: product.name, sku: product.sku || "", description: product.description || "",
       price: product.price.toString(), cost: product.cost?.toString() || "", active: product.active,
@@ -214,11 +245,12 @@ export function useProducts() {
       images: (product.images as string[]) || [], 
       variants: product.variants, 
       recipe: Array.isArray(product.recipe) ? product.recipe : [],
-      type: product.type as ProductType, stock: "", base_volume: (product as any).base_volume?.toString() || "",
+      type: product.type as ProductType, 
+      stock: currentStock, 
+      base_volume: (product as any).base_volume?.toString() || "",
       unit_measure: (product as any).unit_measure || "oz",
     });
     setProductDialogIsOpen(true);
-    toast.success("Abriendo modal de edición...");
   };
 
   return {
