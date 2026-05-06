@@ -24,11 +24,14 @@ const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
     }
     return true;
   }).map(item => {
-    const newItem = { ...item };
-    if (newItem.toppings) {
-      newItem.toppings = newItem.toppings.filter(t => t && typeof t.price === 'number' && t.name);
+    if (!item.toppings) return item;
+
+    // Only recreate if there's actually invalid toppings
+    const validToppings = item.toppings.filter(t => t && typeof t.price === 'number' && t.name);
+    if (validToppings.length !== item.toppings.length) {
+      return { ...item, toppings: validToppings };
     }
-    return newItem;
+    return item;
   });
 };
 
@@ -321,7 +324,7 @@ export const useCart = () => {
   };
 
   const subtotal = useMemo(() => {
-    return cleanCartItems(cart).reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   }, [cart]);
 
   const discountAmount = useMemo(() => {
@@ -348,7 +351,7 @@ export const useCart = () => {
   };
 
   return {
-    cart: cleanCartItems(cart),
+    cart, // ⚡ Bolt: Removed redundant cleanCartItems call on every render, as cart is already clean in state
     setCart,
     addToCart,
     updateQuantity,
