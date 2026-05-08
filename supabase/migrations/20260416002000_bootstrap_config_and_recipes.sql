@@ -27,7 +27,7 @@ BEGIN
     FOR prod IN 
         SELECT p.id, p.name, p.store_id 
         FROM public.products p
-        WHERE (p.type = 'granizado' OR p.category = 'Granizado')
+        WHERE (p.type::text = 'granizado' OR p.category = 'Granizado')
           AND NOT EXISTS (SELECT 1 FROM public.recipes r WHERE r.product_id = p.id)
     LOOP
         RAISE NOTICE '🔧 Creando tanque y receta para: %', prod.name;

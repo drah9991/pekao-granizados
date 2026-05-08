@@ -73,7 +73,7 @@ BEGIN
         SELECT COALESCE(pt.track_mixture_inventory, false)
           INTO v_is_tracked_mixture
           FROM public.products p
-          LEFT JOIN public.product_types_config pt ON p.type = pt.code
+          LEFT JOIN public.product_types_config pt ON p.type::text = pt.code
          WHERE p.id = v_item.product_id;
 
         -- 1. Deducción de PRODUCTO (Stock de Unidades / store_stock)
@@ -133,7 +133,7 @@ BEGIN
     FOR v_item IN SELECT * FROM public.order_items WHERE order_id = v_order_id
     LOOP
         SELECT COALESCE(pt.track_mixture_inventory, false) INTO v_is_tracked_mixture
-        FROM public.products p LEFT JOIN public.product_types_config pt ON p.type = pt.code WHERE p.id = v_item.product_id;
+        FROM public.products p LEFT JOIN public.product_types_config pt ON p.type::text = pt.code WHERE p.id = v_item.product_id;
 
         -- Restaurar Unidades
         UPDATE public.store_stock SET qty = qty + v_item.qty, updated_at = NOW()
@@ -169,7 +169,7 @@ BEGIN
         VALUES (v_order_id, v_item.product_id, v_item.name, v_item.quantity, v_item.price, 0, v_item.size, v_item.size_multiplier);
 
         SELECT COALESCE(pt.track_mixture_inventory, false) INTO v_is_tracked_mixture
-        FROM public.products p LEFT JOIN public.product_types_config pt ON p.type = pt.code WHERE p.id = v_item.product_id;
+        FROM public.products p LEFT JOIN public.product_types_config pt ON p.type::text = pt.code WHERE p.id = v_item.product_id;
 
         -- Descontar Unidades
         UPDATE public.store_stock SET qty = qty - v_item.quantity, updated_at = NOW()
@@ -210,7 +210,7 @@ BEGIN
     FOR item_row IN SELECT * FROM public.order_items WHERE order_id = p_order_id
     LOOP
         SELECT COALESCE(pt.track_mixture_inventory, false) INTO v_is_tracked_mixture
-        FROM public.products p LEFT JOIN public.product_types_config pt ON p.type = pt.code WHERE p.id = item_row.product_id;
+        FROM public.products p LEFT JOIN public.product_types_config pt ON p.type::text = pt.code WHERE p.id = item_row.product_id;
 
         -- Restaurar Unidades
         UPDATE public.store_stock SET qty = qty + item_row.qty, updated_at = NOW()

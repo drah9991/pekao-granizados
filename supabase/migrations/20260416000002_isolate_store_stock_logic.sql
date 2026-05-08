@@ -94,12 +94,12 @@ BEGIN
             SELECT COALESCE(pt.track_mixture_inventory, false)
               INTO is_tracked_mixture
               FROM public.products p
-              LEFT JOIN public.product_types_config pt ON p.type = pt.code
+              LEFT JOIN public.product_types_config pt ON p.type::text = pt.code
              WHERE p.id = v_item.product_id;
             
             -- Fallback legacy
             IF is_tracked_mixture IS NULL THEN
-                SELECT CASE WHEN type = 'granizado' OR category = 'Granizado' THEN true ELSE false END 
+                SELECT CASE WHEN type::text = 'granizado' OR category = 'Granizado' THEN true ELSE false END 
                   INTO is_tracked_mixture
                   FROM public.products WHERE id = v_item.product_id;
             END IF;
@@ -205,7 +205,7 @@ BEGIN
             is_tracked_mixture boolean;
         BEGIN
             SELECT COALESCE(pt.track_mixture_inventory, false) INTO is_tracked_mixture
-            FROM public.products p LEFT JOIN public.product_types_config pt ON p.type = pt.code
+            FROM public.products p LEFT JOIN public.product_types_config pt ON p.type::text = pt.code
             WHERE p.id = item_row.product_id;
             
             IF NOT COALESCE(is_tracked_mixture, false) THEN
@@ -249,7 +249,7 @@ BEGIN
             is_tracked_mixture boolean;
         BEGIN
             SELECT COALESCE(pt.track_mixture_inventory, false) INTO is_tracked_mixture
-            FROM public.products p LEFT JOIN public.product_types_config pt ON p.type = pt.code
+            FROM public.products p LEFT JOIN public.product_types_config pt ON p.type::text = pt.code
             WHERE p.id = item_row.product_id;
             
             IF NOT COALESCE(is_tracked_mixture, false) THEN
@@ -324,7 +324,7 @@ BEGIN
             is_tracked_mixture boolean;
         BEGIN
             SELECT COALESCE(pt.track_mixture_inventory, false) INTO is_tracked_mixture
-            FROM public.products p LEFT JOIN public.product_types_config pt ON p.type = pt.code
+            FROM public.products p LEFT JOIN public.product_types_config pt ON p.type::text = pt.code
             WHERE p.id = item_row.product_id;
 
             IF NOT COALESCE(is_tracked_mixture, false) THEN
