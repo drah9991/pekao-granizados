@@ -94,8 +94,10 @@ export function usePOSPage() {
     if (orderData) {
       setLastOrder(orderData);
       setPaymentDialogIsOpen(false);
-      setReceiptDialogIsOpen(true);
-      resetCart();
+      setTimeout(() => {
+        setReceiptDialogIsOpen(true);
+        resetCart();
+      }, 0);
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import { DashboardSkeleton, WidgetSkeleton } from "@/components/dashboard/DashboardSkeletons";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const StatCards = lazy(() => import("@/components/dashboard/StatCards").then(m => ({ default: m.StatCards })));
 const SalesChartWidget = lazy(() => import("@/components/dashboard/SalesChartWidget").then(m => ({ default: m.SalesChartWidget })));
@@ -19,18 +20,22 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
     <div className="dashboard-grid no-scrollbar pb-10">
         {uiConfig.showStats && (
             <div className="area-stats animate-pro-in">
-                <Suspense fallback={<DashboardSkeleton />}>
-                    <StatCards data={dashboardData} label={comparisonLabel} />
-                </Suspense>
+                <ErrorBoundary fallbackTitle="Estadísticas">
+                    <Suspense fallback={<DashboardSkeleton />}>
+                        <StatCards data={dashboardData} label={comparisonLabel} />
+                    </Suspense>
+                </ErrorBoundary>
             </div>
         )}
 
         {uiConfig.showChart && (
             <div className="area-chart animate-pro-in delay-100">
                 <div className="h-full bg-white/[0.02] border border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-white/[0.04] overflow-hidden">
-                    <Suspense fallback={<WidgetSkeleton />}>
-                        <SalesChartWidget data={dashboardData} />
-                    </Suspense>
+                    <ErrorBoundary fallbackTitle="Gráfico de Ventas">
+                        <Suspense fallback={<WidgetSkeleton />}>
+                            <SalesChartWidget data={dashboardData} />
+                        </Suspense>
+                    </ErrorBoundary>
                 </div>
             </div>
         )}
@@ -38,9 +43,11 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
         {uiConfig.showPaymentMethods && (
             <div className="area-pie animate-pro-in delay-200">
                 <div className="h-full bg-white/[0.02] border border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-white/[0.04] overflow-hidden">
-                    <Suspense fallback={<WidgetSkeleton height="h-[600px]" />}>
-                        <PaymentMethodsWidget data={dashboardData} />
-                    </Suspense>
+                    <ErrorBoundary fallbackTitle="Métodos de Pago">
+                        <Suspense fallback={<WidgetSkeleton height="h-[600px]" />}>
+                            <PaymentMethodsWidget data={dashboardData} />
+                        </Suspense>
+                    </ErrorBoundary>
                 </div>
             </div>
         )}
@@ -48,9 +55,11 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
         {uiConfig.showMixtureStock && (
             <div className="area-stock animate-pro-in delay-300">
                 <div className="h-full bg-white/[0.02] border border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-white/[0.04] overflow-hidden">
-                    <Suspense fallback={<WidgetSkeleton height="h-[300px]" />}>
-                        <MixtureStockWidget data={dashboardData} />
-                    </Suspense>
+                    <ErrorBoundary fallbackTitle="Stock de Mezcla">
+                        <Suspense fallback={<WidgetSkeleton height="h-[300px]" />}>
+                            <MixtureStockWidget data={dashboardData} />
+                        </Suspense>
+                    </ErrorBoundary>
                 </div>
             </div>
         )}
@@ -58,9 +67,11 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
         {uiConfig.showPopularProducts && (
             <div className="area-popular animate-pro-in delay-400">
                 <div className="h-full bg-white/[0.02] border border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-white/[0.04] overflow-hidden">
-                    <Suspense fallback={<WidgetSkeleton height="h-[300px]" />}>
-                        <PopularProductsWidget data={dashboardData} />
-                    </Suspense>
+                    <ErrorBoundary fallbackTitle="Productos Populares">
+                        <Suspense fallback={<WidgetSkeleton height="h-[300px]" />}>
+                            <PopularProductsWidget data={dashboardData} />
+                        </Suspense>
+                    </ErrorBoundary>
                 </div>
             </div>
         )}
@@ -68,9 +79,11 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
         {uiConfig.showRecentSales && (
             <div className="area-recent animate-pro-in delay-500">
                 <div className="h-full bg-white/[0.02] border border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-white/[0.04] overflow-hidden">
-                    <Suspense fallback={<WidgetSkeleton height="h-[400px]" />}>
-                        <RecentSalesWidget data={dashboardData} />
-                    </Suspense>
+                    <ErrorBoundary fallbackTitle="Ventas Recientes">
+                        <Suspense fallback={<WidgetSkeleton height="h-[400px]" />}>
+                            <RecentSalesWidget data={dashboardData} />
+                        </Suspense>
+                    </ErrorBoundary>
                 </div>
             </div>
         )}
