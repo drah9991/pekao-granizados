@@ -7,7 +7,7 @@
  * @returns Cadena de texto en formato CSV.
  */
 export function exportToCsv<T extends Record<string, any>>(data: T[], columns?: string[]): string {
-  if (!data || data.length === 0) {
+  if (!data || !data.length) {
     return '';
   }
 
@@ -62,7 +62,7 @@ export function importFromCsv<T extends Record<string, any>>(csvString: string):
 
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i];
-    if (values.length === 0 || (values.length === 1 && values[0] === '')) continue;
+    if (!values.length || (values.length === 1 && values[0] === '')) continue;
     const row: Record<string, any> = {};
     headers.forEach((header, idx) => {
       const value = idx < values.length ? values[idx] : '';
