@@ -191,8 +191,12 @@ export function useProducts() {
   };
 
   const handleExportProducts = () => {
+    if (!products || products.length === 0) {
+      toast.error("No hay productos para exportar");
+      return;
+    }
     const csvContent = exportToCsv(products.map(p => ({ name: p.name, sku: p.sku, price: p.price })));
-    downloadFile(csvContent, `productos_${new Date().toISOString()}.csv`, 'text/csv');
+    downloadFile(`productos_${new Date().toISOString()}.csv`, csvContent, 'text/csv');
   };
 
   const filteredProducts = products.filter((product) => {
