@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { OrderWithDetails, OrderStatus, orderStatusOptions, OrderItem } from "@/types/sales";
@@ -155,12 +156,23 @@ interface CancelOrderDialogProps {
   order: OrderWithDetails | null;
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (order: OrderWithDetails) => void;
+  onConfirm: (order: OrderWithDetails, reason: string) => void;
 }
 
 export function CancelOrderDialog({ order, isOpen, onClose, onConfirm }: CancelOrderDialogProps) {
+  const [reason, setReason] = useState("");
+
+  const handleConfirm = () => {
+    if (!reason.trim()) return;
+    if (order) onConfirm(order, reason.trim());
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) { setReason(""); onClose(); }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md bg-background border-red-500/20 rounded-[2.5rem] p-10 shadow-pro text-center max-h-[90dvh] overflow-y-auto custom-scrollbar">
         {!order ? (
            <div className="py-10 flex justify-center items-center">
@@ -174,14 +186,28 @@ export function CancelOrderDialog({ order, isOpen, onClose, onConfirm }: CancelO
         <DialogHeader>
           <DialogTitle className="text-2xl font-black font-space-grotesk italic text-foreground tracking-tighter text-center uppercase">Confirmar Cancelación</DialogTitle>
           <DialogDescription className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest italic text-center mt-4">
-            ¿ESTÁS SEGURO DE CANCELAR LA ORDEN <span className="text-red-500 font-black">#{order.id ? order.id.slice(0, 8).toUpperCase() : 'N/A'}</span>? ESTA ACCIÓN NO SE PUEDE DESHACER Y AFECTARÁ LOS REPORTES DE CAJA.
+            ¿ESTÁS SEGURO DE CANCELAR LA ORDEN <span className="text-red-500 font-black">#{order.id ? order.id.slice(0, 8).toUpperCase() : 'N/A'}</span>? ESTA ACCIÓN NO SE PUEDE DESHACER Y AFECTARÁ LOS REPORTES DE CAJA Y EL INVENTARIO.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex items-center justify-center gap-4 mt-10">
-          <Button variant="ghost" onClick={onClose} className="h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest italic font-space-grotesk text-muted-foreground hover:text-foreground">
+        <div className="mt-6">
+          <label className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] italic pl-2 block text-left mb-2">Motivo de Cancelación</label>
+          <Textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Describa el motivo de la cancelación..."
+            className="h-24 rounded-2xl bg-muted/40 border-border text-[11px] font-bold italic placeholder:text-muted-foreground/30 resize-none"
+          />
+        </div>
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <Button variant="ghost" onClick={() => { setReason(""); onClose(); }} className="h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest italic font-space-grotesk text-muted-foreground hover:text-foreground">
             MANTENER ORDEN
           </Button>
-          <Button variant="destructive" onClick={() => onConfirm(order)} className="h-14 px-8 rounded-2xl bg-red-500 hover:bg-red-600 shadow-glow-pro text-[10px] font-black uppercase tracking-widest italic font-space-grotesk">
+          <Button
+            variant="destructive"
+            onClick={handleConfirm}
+            disabled={!reason.trim()}
+            className="h-14 px-8 rounded-2xl bg-red-500 hover:bg-red-600 shadow-glow-pro text-[10px] font-black uppercase tracking-widest italic font-space-grotesk disabled:opacity-40"
+          >
             SÍ, CANCELAR VENTA
           </Button>
         </div>

@@ -104,12 +104,12 @@ export function useSales() {
   }, [filteredOrders]);
 
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: orders.length };
-    orders.forEach(o => {
+    const counts: Record<string, number> = { all: filteredOrders.length };
+    filteredOrders.forEach(o => {
       counts[o.status as string] = (counts[o.status as string] || 0) + 1;
     });
     return counts;
-  }, [orders]);
+  }, [filteredOrders]);
 
   const handleQuickFilterChange = (value: string) => {
     setQuickFilter(value);
@@ -139,23 +139,6 @@ export function useSales() {
     }
   };
 
-  const handleConfirmCancel = async (order: OrderWithDetails) => {
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: "cancelled" })
-        .eq("id", order.id);
-
-      if (error) throw error;
-      toast.success("Venta cancelada correctamente");
-      setIsCancelOpen(false);
-      fetchOrders();
-      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-    } catch (error: any) {
-      toast.error("Error al cancelar: " + error.message);
-    }
-  };
-
   const handleViewDetails = (order: OrderWithDetails) => {
     toast("Abriendo detalles de orden: " + order.id);
     setSelectedOrder(order);
@@ -172,6 +155,23 @@ export function useSales() {
     toast("Abriendo cancelación de orden: " + order.id);
     setSelectedOrder(order);
     setIsCancelOpen(true);
+  };
+
+  const handleConfirmCancelWithReason = async (order: OrderWithDetails, reason: string) => {
+    try {
+      const { error } = await supabase.rpc('cancel_sale_with_stock_restore', {
+        p_order_id: order.id,
+        p_reason: reason
+      });
+      if (error) throw error;
+      toast.success("Venta cancelada y stock restaurado correctamente");
+      setIsCancelOpen(false);
+      setSelectedOrder(null);
+      fetchOrders();
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    } catch (error: any) {
+      toast.error("Error al cancelar: " + error.message);
+    }
   };
 
   return {
@@ -201,7 +201,7 @@ export function useSales() {
       handleEdit,
       handleCancelClick,
       handleUpdateOrder,
-      handleConfirmCancel
+      handleConfirmCancel: handleConfirmCancelWithReason
     }
   };
 }
