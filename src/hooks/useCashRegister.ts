@@ -31,7 +31,6 @@ export function useCashRegister(storeId: string | null) {
 
   const fetchDailyArqueo = async () => {
     if (!storeId || turnsHistory.length === 0) return;
-    setLoading(true);
     try {
       let turnToAudit = null;
       if (selectedTurnId === "active") {

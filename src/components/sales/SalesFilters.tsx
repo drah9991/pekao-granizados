@@ -40,7 +40,7 @@ export function SalesFilters({
 
       <div className="flex flex-wrap items-center gap-3">
         <Select value={quickFilter} onValueChange={handleQuickFilterChange}>
-          <SelectTrigger className="w-[180px] h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk shadow-pro backdrop-blur-xl">
+          <SelectTrigger className="w-[180px] h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk shadow-pro">
             <SelectValue placeholder="PERIODO" />
           </SelectTrigger>
           <SelectContent className="glass-pro border-border rounded-[1.5rem]">

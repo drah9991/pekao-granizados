@@ -5,6 +5,7 @@ import { CashLiquidityCard } from "@/components/cash/CashLiquidityCard";
 import { CashTransactionTable } from "@/components/cash/CashTransactionTable";
 import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
+import { useTransition } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,6 +43,10 @@ export default function CashRegister() {
     peakHour,
     refreshArqueo
   } = useCashRegister(storeId);
+  const [, startTransition] = useTransition();
+  const handleTurnChange = (value: string) => {
+    startTransition(() => setSelectedTurnId(value));
+  };
 
   return (
     <Layout>
@@ -63,8 +68,8 @@ export default function CashRegister() {
           </div>
 
           <div className="flex items-center gap-3 self-start">
-            <Select value={selectedTurnId} onValueChange={setSelectedTurnId}>
-              <SelectTrigger className="w-[300px] h-14 bg-white/5 border border-white/10 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk shadow-pro backdrop-blur-xl">
+            <Select value={selectedTurnId} onValueChange={handleTurnChange}>
+              <SelectTrigger className="w-[300px] h-14 bg-white/5 border border-white/10 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk shadow-pro">
                 <SelectValue placeholder="Seleccionar turno..." />
               </SelectTrigger>
               <SelectContent className="glass-pro border-white/10 rounded-[1.5rem]">
