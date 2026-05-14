@@ -64,7 +64,7 @@ export function useCashRegister(storeId: string | null) {
       const records = (data as any) || [];
       setOrders(records);
 
-      let totals = { cash: 0, transfer: 0, card: 0, qr: 0, total: 0 };
+      const totals = { cash: 0, transfer: 0, card: 0, qr: 0, total: 0 };
       records.forEach((order: any) => {
         const amount = Number(order.total) || 0;
         totals.total += amount;

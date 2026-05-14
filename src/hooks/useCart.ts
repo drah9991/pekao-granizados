@@ -178,7 +178,7 @@ export const useCart = () => {
     const validToppings = availableToppings.filter(t => selectedToppingIds.includes(t.id));
 
     let basePrice = product.price * (size?.multiplier || 1);
-    let originalPrice = basePrice;
+    const originalPrice = basePrice;
     let discountMessage = undefined;
 
     // Apply Dynamic Pricing Rules

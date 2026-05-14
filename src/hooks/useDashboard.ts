@@ -16,15 +16,12 @@ export function useDashboard(storeId: string | null) {
   useEffect(() => {
     if (!storeId) return;
 
-    console.log("Iniciando suscripción Realtime para Dashboard. StoreId:", storeId);
-
     const channel = supabase
       .channel(`dashboard-sync-${storeId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
-        (payload) => {
-          console.log("Realtime: Pedido detectado", payload);
+        () => {
           // Usamos refetchQueries para asegurar que se dispare la recarga inmediata
           queryClient.refetchQueries({ 
             queryKey: ["dashboard-v2-raw", storeId],
@@ -35,8 +32,7 @@ export function useDashboard(storeId: string | null) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'inventory_items', filter: `store_id=eq.${storeId}` },
-        (payload) => {
-          console.log("Realtime: Inventario detectado", payload);
+        () => {
           queryClient.refetchQueries({ 
             queryKey: ["dashboard-v2-raw", storeId],
             type: 'active'
@@ -46,20 +42,16 @@ export function useDashboard(storeId: string | null) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'expenses', filter: `store_id=eq.${storeId}` },
-        (payload) => {
-          console.log("Realtime: Gasto detectado", payload);
+        () => {
           queryClient.refetchQueries({ 
             queryKey: ["dashboard-v2-raw", storeId],
             type: 'active'
           });
         }
       )
-      .subscribe((status) => {
-        console.log(`Estado suscripción Dashboard (${storeId}):`, status);
-      });
+      .subscribe();
 
     return () => {
-      console.log("Limpiando suscripción Dashboard");
       supabase.removeChannel(channel);
     };
   }, [storeId, queryClient]);

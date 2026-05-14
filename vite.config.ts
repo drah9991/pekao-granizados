@@ -4,14 +4,13 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
   },
   plugins: [
-    react(), 
+    react(),
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -52,7 +51,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: 'supabase-images',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 Days
+                maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -64,14 +63,37 @@ export default defineConfig(({ mode }) => ({
     })
   ].filter(Boolean),
   build: {
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('@sentry')) return 'vendor-core';
+            if (id.includes('react-router') || id.includes('@tanstack') || id.includes('@vercel')) return 'vendor-core';
+            if (id.includes('/react/') || id.includes('react-dom') || id.includes('scheduler')) return 'vendor-core';
+            if (id.includes('@supabase')) return 'vendor-core';
+
+            if (id.includes('lucide-react')) return 'vendor-icons';
+
             if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
+
             if (id.includes('framer-motion')) return 'vendor-motion';
-            if (id.includes('jspdf') || id.includes('xlsx')) return 'vendor-exports';
+
+            if (id.includes('@radix-ui')) return 'vendor-radix';
+
+            if (id.includes('jspdf') || id.includes('xlsx') || id.includes('codepage') || id.includes('adler-32') || id.includes('crc-32') || id.includes('cfb') || id.includes('ssf') || id.includes('frac')) return 'vendor-exports';
+
+            if (id.includes('date-fns')) return 'vendor-date';
+
+            if (id.includes('cmdk') || id.includes('vaul') || id.includes('embla') || id.includes('input-otp') || id.includes('react-resizable-panels')) return 'vendor-ui';
+
+            if (id.includes('react-day-picker')) return 'vendor-date';
+
+            if (id.includes('react-hook-form')) return 'vendor-forms';
+
+            if (id.includes('sonner') || id.includes('zustand') || id.includes('next-themes') || id.includes('idb') || id.includes('tailwind-merge') || id.includes('clsx') || id.includes('class-variance-authority')) return 'vendor-state';
+
+            return 'vendor-other';
           }
         }
       }

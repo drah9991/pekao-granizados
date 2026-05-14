@@ -117,7 +117,7 @@ export const InventoryManagement = () => {
         saveMutation.mutate({
             name,
             sku: sku || null,
-            // @ts-ignore
+            // @ts-expect-error - The real column in the DB is 'unit' not 'unit_of_measure'
             unit: unitOfMeasure,
             stock,
             min_stock: minStock,

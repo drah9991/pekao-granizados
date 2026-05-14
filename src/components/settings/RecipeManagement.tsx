@@ -62,7 +62,7 @@ export const RecipeManagement = () => {
             if (!storeId) return [];
             const { data, error } = await (supabase as any)
                 .from('inventory_items')
-                // @ts-ignore - The real column in the DB is 'unit'
+                // @ts-expect-error - The real column in the DB is 'unit'
                 .select('id, name, unit')
                 .eq('store_id', storeId)
                 .order('name');
