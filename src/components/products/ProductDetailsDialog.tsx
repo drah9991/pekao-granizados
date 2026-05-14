@@ -171,7 +171,7 @@ export default function ProductDetailsDialog({
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {productStock.map((stock, index) => (
-                    <Card key={index} className="glass-pro border-white/5 hover:border-primary/30 transition-all duration-500 group overflow-hidden">
+                    <Card key={stock.store_name} className="glass-pro border-white/5 hover:border-primary/30 transition-all duration-500 group overflow-hidden">
                       <CardContent className="p-6 relative">
                         <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-125 transition-transform duration-700">
                             <Warehouse className="w-20 h-20 text-primary" />

@@ -41,6 +41,7 @@ export default function RecipeManager({ recipe, onChange, storeId }: RecipeManag
     if (storeId) {
       fetchInventoryItems();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const fetchInventoryItems = async () => {

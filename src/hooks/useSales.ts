@@ -78,6 +78,7 @@ export function useSales() {
 
   useEffect(() => {
     fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, selectedStatusFilter, dateRange]);
 
   const filteredOrders = useMemo(() => {

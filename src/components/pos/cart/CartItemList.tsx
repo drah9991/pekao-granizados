@@ -47,7 +47,7 @@ export function CartItemList({ cart, updateQuantity, removeItem }: CartItemListP
                       </span>
                     )}
                     {item.toppings?.map((topping, idx) => (
-                      <span key={idx} className="bg-white/10 text-white/90 text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-white/20 font-dm-sans flex items-center gap-1">
+                      <span key={topping.name} className="bg-white/10 text-white/90 text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-white/20 font-dm-sans flex items-center gap-1">
                         <Plus className="w-2.5 h-2.5" /> {topping.name}
                       </span>
                     ))}

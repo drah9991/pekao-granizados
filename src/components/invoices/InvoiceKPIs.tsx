@@ -26,7 +26,7 @@ export default function InvoiceKPIs({ invoices }: InvoiceKPIsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {kpis.map((kpi, i) => (
-        <Card key={i} className="bg-muted border border-border rounded-[2.5rem] shadow-pro glass-pro group hover:scale-[1.02] transition-all duration-500 overflow-hidden">
+        <Card key={kpi.label} className="bg-muted border border-border rounded-[2.5rem] shadow-pro glass-pro group hover:scale-[1.02] transition-all duration-500 overflow-hidden">
           <CardContent className="p-8">
             <div className="flex items-center justify-between mb-6">
               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic font-space-grotesk">{kpi.label}</span>

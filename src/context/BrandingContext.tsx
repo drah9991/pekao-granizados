@@ -130,6 +130,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
     if (!isLoadingAuth) {
       fetchBrandingSettings();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey, user, isLoadingAuth]);
 
   const refreshBranding = () => {

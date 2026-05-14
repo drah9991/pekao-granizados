@@ -28,7 +28,7 @@ export function PopularProductsWidget({ data }: { data: any }) {
       </div>
       <div className="space-y-4">
         {data.popularProducts.map((p: any, idx: number) => (
-          <div key={idx} className="flex items-center gap-5 p-3 rounded-3xl hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/5 group/item">
+          <div key={p.name} className="flex items-center gap-5 p-3 rounded-3xl hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/5 group/item">
             <div className="relative shrink-0">
               <span className="absolute -top-2 -left-2 w-7 h-7 bg-primary rounded-xl flex items-center justify-center text-[10px] font-black border border-white/20 z-10 shadow-glow-pro text-primary-foreground italic">#{idx + 1}</span>
               <div className="text-4xl bg-muted/50 w-16 h-16 rounded-[1.5rem] flex items-center justify-center border border-border/50 transition-all group-hover/item:scale-110 group-hover/item:-rotate-3 duration-500 shadow-pro">{getEmoji(p.name)}</div>

@@ -54,6 +54,7 @@ export const useCart = () => {
     // Clean cart on initial load to ensure data consistency
     setCart(prevCart => cleanCartItems(prevCart));
     fetchUserStoreIdAndData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const restoreLastCart = () => {

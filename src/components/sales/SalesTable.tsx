@@ -178,7 +178,7 @@ function OrderRow({ order, isExpanded, onToggle, onView, onCancel, onEdit }: {
                     <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic font-space-grotesk">Detalle de Productos</h4>
                     <div className="space-y-3">
                       {items.map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center p-4 bg-muted/40 rounded-2xl border border-border/30 hover:border-primary/20 transition-all shadow-pro">
+                        <div key={item.name} className="flex justify-between items-center p-4 bg-muted/40 rounded-2xl border border-border/30 hover:border-primary/20 transition-all shadow-pro">
                           <div className="flex flex-col">
                             <span className="text-[11px] font-black font-space-grotesk uppercase italic text-foreground tracking-tight">{item.qty}x {item.name}</span>
                             <span className="text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest italic">{item.size || "Original"} — {formatCOP(item.price)}/u</span>

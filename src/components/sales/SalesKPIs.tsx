@@ -30,7 +30,7 @@ export function SalesKPIs({ stats }: SalesKPIsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {kpis.map((kpi, i) => (
-        <motion.div key={i} variants={itemVariants}>
+        <motion.div key={kpi.label} variants={itemVariants}>
           <Card className="bg-muted border border-border rounded-[2.5rem] shadow-pro glass-pro group hover:scale-[1.02] transition-all duration-500 overflow-hidden">
             <CardContent className="p-8">
               <div className="flex items-center justify-between mb-6">

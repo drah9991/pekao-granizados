@@ -71,7 +71,7 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
               const availableSizes = data?.sizes || [];
 
               return (
-                <div key={idx} className="space-y-4 p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:border-primary/30 transition-all hover:bg-white/[0.08] group/item relative overflow-hidden">
+                <div key={item.id || item.name} className="space-y-4 p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:border-primary/30 transition-all hover:bg-white/[0.08] group/item relative overflow-hidden">
                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/item:opacity-20 transition-opacity">
                       <Beaker className="w-12 h-12 text-primary" />
                    </div>

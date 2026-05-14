@@ -90,6 +90,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const openTurn = async (amount: number) => {

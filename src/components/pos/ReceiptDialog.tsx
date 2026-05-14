@@ -134,7 +134,7 @@ export default function ReceiptDialog({ isOpen, onClose, lastOrder }: ReceiptDia
               {lastOrder.items && Array.isArray(lastOrder.items) && lastOrder.items
                 .filter((item: CartItem) => item && typeof item.price === 'number' && typeof item.quantity === 'number')
                 .map((item: CartItem, index: number) => (
-                  <div key={index} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
+                  <div key={item.name} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
                     <div className="flex flex-col">
                       <span className="font-medium">{item.quantity}x {item.name} {item.size && <span className="text-muted-foreground font-normal">({item.size})</span>}</span>
                       {item.toppings && item.toppings.length > 0 && (

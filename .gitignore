@@ -25,3 +25,6 @@ dist-ssr
 .vercel
 .env
 .env*.local
+
+# One-off scripts
+src/fix_tanks.ts

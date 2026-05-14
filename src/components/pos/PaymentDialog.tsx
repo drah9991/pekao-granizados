@@ -75,7 +75,7 @@ export default function PaymentDialog({
       setSplitTransfer("");
       setHasTypedAmount(false);
     }
-  }, [isOpen, subtotal]);
+  }, [isOpen, subtotal, defaultMethod]);
 
   // Update amount received automatically when total changes and we are on cash (and haven't typed yet)
   useEffect(() => {

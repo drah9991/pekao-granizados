@@ -115,7 +115,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
             </div>
             <div className="space-y-3">
               {items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center p-6 bg-muted/40 rounded-[1.5rem] border border-border/20 hover:border-primary/30 transition-all shadow-pro group">
+                <div key={item.name} className="flex justify-between items-center p-6 bg-muted/40 rounded-[1.5rem] border border-border/20 hover:border-primary/30 transition-all shadow-pro group">
                   <div className="flex items-center gap-6">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-[14px] font-black font-space-grotesk italic text-primary group-hover:scale-110 transition-transform">
                       {item.qty}x

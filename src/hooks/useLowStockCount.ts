@@ -37,6 +37,7 @@ export function useLowStockCount() {
     // Refresh every 5 minutes as requested
     const interval = setInterval(fetchLowStock, 5 * 60 * 1000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   return count;

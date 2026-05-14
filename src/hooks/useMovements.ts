@@ -22,6 +22,7 @@ export function useMovements(storeId: string | null) {
     if (storeId) {
       fetchMovements();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const fetchMovements = async () => {

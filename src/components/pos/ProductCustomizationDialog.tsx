@@ -44,7 +44,7 @@ export default function ProductCustomizationDialog({
       setSelectedToppings([]);
       setQuantity(1);
     }
-  }, [isOpen, userStoreId]);
+  }, [isOpen, userStoreId, fetchCustomizationData]);
 
   const fetchUserStoreId = async () => {
     try {

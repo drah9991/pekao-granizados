@@ -36,7 +36,7 @@ export function CashKPIs({ summary, stats, orderCount }: CashKPIsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {kpis.map((item, i) => (
-        <motion.div key={i} variants={itemVariants}>
+        <motion.div key={item.label} variants={itemVariants}>
           <Card className="bg-[#1C1F26] border border-white/5 rounded-[2.5rem] shadow-pro glass-pro group hover:scale-[1.02] transition-all duration-500 overflow-hidden">
             <CardContent className="p-8">
               <div className="flex items-center justify-between mb-6">

@@ -91,10 +91,12 @@ export function useCashRegister(storeId: string | null) {
 
   useEffect(() => {
     if (storeId) fetchTurnsHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   useEffect(() => {
     fetchDailyArqueo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turnsHistory, selectedTurnId]);
 
   const stats = useMemo(() => {

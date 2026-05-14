@@ -54,6 +54,7 @@ export function usePreparation() {
     if (storeId) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   useEffect(() => {
@@ -66,6 +67,7 @@ export function usePreparation() {
       setCurrentMixtureName(null);
       fetchRecentLogs();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProductId, storeId]);
 
   const fetchData = async () => {

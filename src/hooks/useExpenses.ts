@@ -15,6 +15,7 @@ export function useExpenses(storeId: string | null) {
     if (storeId) {
       fetchExpenses();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const fetchExpenses = async () => {

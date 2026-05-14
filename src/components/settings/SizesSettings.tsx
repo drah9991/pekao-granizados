@@ -38,6 +38,7 @@ export default function SizesSettings() {
     if (userStoreId) {
       fetchSizes();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userStoreId]);
 
   const fetchUserStoreId = async () => {

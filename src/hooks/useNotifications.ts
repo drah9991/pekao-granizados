@@ -29,6 +29,7 @@ export const useNotifications = () => {
             fetchNotifications();
             subscribeToNotifications();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [storeId]);
 
     const fetchUserStore = async () => {

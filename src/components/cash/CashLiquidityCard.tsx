@@ -68,7 +68,7 @@ export function CashLiquidityCard({ summary, stats, orderCount, peakHour }: Cash
                 { label: "Digital (Transf/QR)", color: "bg-cyan-500", val: summary.transfer + summary.qr, pct: stats.transferPercentage },
                 { label: "Tarjetas", color: "bg-violet-500", val: summary.card, pct: stats.cardPercentage }
               ].map((item, idx) => (
-                <div key={idx} className="space-y-2">
+                <div key={item.label} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className={cn("w-2 h-2 rounded-full", item.color)} />

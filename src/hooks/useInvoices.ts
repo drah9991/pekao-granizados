@@ -123,7 +123,8 @@ export function useInvoices() {
     printWindow.print();
   };
 
-  useEffect(() => { fetchInvoices(); }, [storeId]);
+  useEffect(() => { fetchInvoices(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId]);
 
   const filteredInvoices = invoices.filter(inv =>
     !searchQuery || 

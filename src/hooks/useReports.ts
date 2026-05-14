@@ -26,33 +26,6 @@ export function useReports(storeId: string | null) {
   const [groupBy, setGroupBy] = useState<string>("none");
   const [summary, setSummary] = useState<ReportSummary | null>(null);
 
-  const columnsByType: Record<ReportType, { header: string; dataKey: string }[]> = {
-    sales: [
-      { header: "ID", dataKey: "ID" },
-      { header: "Fecha", dataKey: "Fecha" },
-      { header: "Cliente", dataKey: "Cliente" },
-      { header: "Empleado", dataKey: "Empleado" },
-      { header: "Metodo", dataKey: "Metodo_Pago" },
-      { header: "Total", dataKey: "Total" }
-    ],
-    inventory: [
-      { header: "Nombre", dataKey: "Nombre" },
-      { header: "SKU", dataKey: "SKU" },
-      { header: "Unidad", dataKey: "Unidad" },
-      { header: "Stock", dataKey: "Stock_Actual" },
-      { header: "Mínimo", dataKey: "Stock_Minimo" },
-      { header: "Estado", dataKey: "Estado" }
-    ],
-    movements: [
-      { header: "Fecha", dataKey: "Fecha" },
-      { header: "Producto", dataKey: "Producto" },
-      { header: "Tipo", dataKey: "Tipo" },
-      { header: "Cant.", dataKey: "Cantidad" },
-      { header: "Motivo", dataKey: "Motivo" },
-      { header: "Usuario", dataKey: "Usuario" }
-    ]
-  };
-
   useEffect(() => {
     setSelectedColumns(columnsByType[reportType].map(c => c.dataKey));
     setPreviewData([]);
