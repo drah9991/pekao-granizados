@@ -80,18 +80,19 @@ const App = () => {
         <Analytics />
         <BrandingProvider>
           <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
 
-              {/* Protected Routes — each wrapped in ErrorBoundary */}
+              {/* Protected Routes — each with its own Suspense + ErrorBoundary */}
               <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <ErrorBoundary fallbackTitle="Error en Dashboard">
-                      <Dashboard />
+                      <Suspense fallback={<PageLoader />}>
+                        <Dashboard />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -101,7 +102,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <ErrorBoundary fallbackTitle="Error en Punto de Venta">
-                      <POS />
+                      <Suspense fallback={<PageLoader />}>
+                        <POS />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -111,7 +114,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <ErrorBoundary fallbackTitle="Error en Ventas">
-                      <Sales />
+                      <Suspense fallback={<PageLoader />}>
+                        <Sales />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -121,7 +126,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <ErrorBoundary fallbackTitle="Error en Facturas">
-                      <Invoices />
+                      <Suspense fallback={<PageLoader />}>
+                        <Invoices />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -131,7 +138,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Movimientos">
-                      <Movements />
+                      <Suspense fallback={<PageLoader />}>
+                        <Movements />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -141,7 +150,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <ErrorBoundary fallbackTitle="Error en Clientes">
-                      <Customers />
+                      <Suspense fallback={<PageLoader />}>
+                        <Customers />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -151,7 +162,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Marketing">
-                      <Marketing />
+                      <Suspense fallback={<PageLoader />}>
+                        <Marketing />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -161,7 +174,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <ErrorBoundary fallbackTitle="Error en Arqueo de Caja">
-                      <CashRegister />
+                      <Suspense fallback={<PageLoader />}>
+                        <CashRegister />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -171,7 +186,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "owner"]}>
                     <ErrorBoundary fallbackTitle="Error en Gastos">
-                      <Expenses />
+                      <Suspense fallback={<PageLoader />}>
+                        <Expenses />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -181,7 +198,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Configuración">
-                      <Settings />
+                      <Suspense fallback={<PageLoader />}>
+                        <Settings />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -191,7 +210,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <ErrorBoundary fallbackTitle="Error en Productos">
-                      <Products />
+                      <Suspense fallback={<PageLoader />}>
+                        <Products />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -201,7 +222,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "owner", "store_manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Inventario">
-                      <Inventory />
+                      <Suspense fallback={<PageLoader />}>
+                        <Inventory />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -211,7 +234,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Recetas">
-                      <RecipeManagement />
+                      <Suspense fallback={<PageLoader />}>
+                        <RecipeManagement />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -221,7 +246,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Usuarios">
-                      <Users />
+                      <Suspense fallback={<PageLoader />}>
+                        <Users />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -231,7 +258,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Tiendas">
-                      <Stores />
+                      <Suspense fallback={<PageLoader />}>
+                        <Stores />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -241,7 +270,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager"]}>
                     <ErrorBoundary fallbackTitle="Error en Reportes">
-                      <Reports />
+                      <Suspense fallback={<PageLoader />}>
+                        <Reports />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -252,7 +283,9 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
                     <ErrorBoundary fallbackTitle="Error en Preparación">
-                      <Preparation />
+                      <Suspense fallback={<PageLoader />}>
+                        <Preparation />
+                      </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -261,7 +294,6 @@ const App = () => {
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-            </Suspense>
           </BrowserRouter>
         </BrandingProvider>
       </TooltipProvider>

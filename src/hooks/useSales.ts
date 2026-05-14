@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { OrderWithDetails, OrderStatus, OrderItem } from "@/types/sales";
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from "date-fns";
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { DateRange } from "react-day-picker";
 
 export function useSales() {
@@ -55,6 +55,17 @@ export function useSales() {
         query = query.eq("status", selectedStatusFilter);
       }
 
+      if (dateRange?.from) {
+        query = query.gte('created_at', startOfDay(dateRange.from).toISOString());
+        if (dateRange.to) {
+          query = query.lte('created_at', endOfDay(dateRange.to).toISOString());
+        } else {
+          query = query.lte('created_at', endOfDay(dateRange.from).toISOString());
+        }
+      }
+
+      query = query.limit(100);
+
       const { data, error } = await query;
       if (error) throw error;
       setOrders((data as unknown as OrderWithDetails[]) || []);
@@ -67,7 +78,7 @@ export function useSales() {
 
   useEffect(() => {
     fetchOrders();
-  }, [storeId, selectedStatusFilter]);
+  }, [storeId, selectedStatusFilter, dateRange]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
@@ -76,18 +87,9 @@ export function useSales() {
         order.creator_profile?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customer_details?.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      let matchesDate = true;
-      if (dateRange?.from) {
-        const orderDate = new Date(order.created_at!);
-        if (dateRange.to) {
-          matchesDate = isWithinInterval(orderDate, { start: startOfDay(dateRange.from), end: endOfDay(dateRange.to) });
-        } else {
-          matchesDate = isWithinInterval(orderDate, { start: startOfDay(dateRange.from), end: endOfDay(dateRange.from) });
-        }
-      }
-      return matchesSearch && matchesDate;
+      return matchesSearch;
     });
-  }, [orders, searchQuery, dateRange]);
+  }, [orders, searchQuery]);
 
   const stats = useMemo(() => {
     const filtered = filteredOrders.filter(o => o.status === 'completed');
