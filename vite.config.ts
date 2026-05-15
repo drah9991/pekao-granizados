@@ -65,11 +65,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('jspdf') || id.includes('xlsx') || id.includes('codepage')) return 'vendor-exports';
-          }
-        }
+        manualChunks: {}
       }
     }
   },
