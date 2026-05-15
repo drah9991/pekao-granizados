@@ -1,4 +1,4 @@
-import { CartItem } from "@/lib/pos-types";
+import type { CartItem } from "@/lib/pos-types";
 import { formatCOP } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash2, Receipt } from "lucide-react";

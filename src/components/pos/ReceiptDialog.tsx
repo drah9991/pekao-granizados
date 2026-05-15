@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CartItem } from "@/lib/pos-types";
+import type { CartItem } from "@/lib/pos-types";
 import { formatCOP } from "@/lib/currency"; // Import the formatter
 import type { Customer } from "@/components/pos/CustomerSelection";
 

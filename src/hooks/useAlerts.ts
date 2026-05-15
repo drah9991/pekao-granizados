@@ -1,4 +1,5 @@
-import { useAlertStore, AlertSeverity } from '@/store/useAlertStore';
+import { useAlertStore } from '@/store/useAlertStore';
+import type { AlertSeverity } from '@/store/useAlertStore';
 import { toast as sonnerToast } from 'sonner';
 
 export const useAlerts = () => {

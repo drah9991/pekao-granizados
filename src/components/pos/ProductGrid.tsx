@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Product } from "@/lib/pos-types";
+import type { Product } from "@/lib/pos-types";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

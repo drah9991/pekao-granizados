@@ -1,4 +1,4 @@
-import { CartItem, Product } from "@/lib/pos-types";
+import type { CartItem, Product } from "@/lib/pos-types";
 import CustomerSelection from "@/components/pos/CustomerSelection";
 import type { Customer } from "@/components/pos/CustomerSelection";
 import { Card, CardContent } from "@/components/ui/card";

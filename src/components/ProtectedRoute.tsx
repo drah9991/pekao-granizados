@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Enums } from '@/integrations/supabase/types';
+import type { Enums } from '@/integrations/supabase/types';
 import { Loader2 } from 'lucide-react';
 
 type AppRole = Enums<'app_role'>;

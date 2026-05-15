@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { CartItem, Product, Size } from "@/lib/pos-types"; // Topping interface removed
+import type { CartItem, Product, Size } from "@/lib/pos-types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import type { Tables } from "@/integrations/supabase/types";
 import type { Customer } from "@/components/pos/CustomerSelection";
 import { useAlerts } from "@/hooks/useAlerts";
 

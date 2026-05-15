@@ -1,4 +1,4 @@
-import { Enums } from "@/integrations/supabase/types";
+import type { Enums } from "@/integrations/supabase/types";
 import type { Json } from "@/integrations/supabase/types";
 
 export interface CartItem {
