@@ -69,15 +69,16 @@ export default function ProductCustomizationDialog({
       const { data: toppingsData, error: toppingsError } = await supabase
         .from('products')
         .select('*')
-        .eq('type', 'toppings')
         .eq('store_id', userStoreId!)
+        .eq('type', 'topping')
+        .eq('active', true)
         .order('name', { ascending: true });
 
       if (toppingsError) throw toppingsError;
-      setAvailableToppings(toppingsData || []);
+      setAvailableToppings(toppingsData as ToppingProduct[] || []);
     } catch (error: any) {
-      console.error("Error loading customization data:", error);
-      toast.error("Error al cargar personalización");
+      console.error("Error fetching customization data:", error);
+      toast.error("Error al cargar opciones: " + error.message);
     } finally {
       setLoadingData(false);
     }
