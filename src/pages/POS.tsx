@@ -7,7 +7,7 @@ import { ShoppingBag, Receipt as ReceiptIcon, WifiOff, CloudUpload } from "lucid
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { usePOSPage } from "@/hooks/usePOSPage";
-import { PaymentMethod } from "@/components/pos/PaymentDialog";
+import type { PaymentMethod } from "@/components/pos/PaymentDialog";
 
 const ProductCustomizationDialog = lazy(() => import("@/components/pos/ProductCustomizationDialog"));
 const PaymentDialog = lazy(() => import("@/components/pos/PaymentDialog"));

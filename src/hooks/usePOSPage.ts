@@ -6,7 +6,7 @@ import { usePOSShortcuts } from "@/hooks/usePOSShortcuts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAlerts } from "@/hooks/useAlerts";
 import { Product } from "@/lib/pos-types";
-import { PaymentMethod } from "@/components/pos/PaymentDialog";
+import type { PaymentMethod } from "@/components/pos/PaymentDialog";
 
 export function usePOSPage() {
   const {

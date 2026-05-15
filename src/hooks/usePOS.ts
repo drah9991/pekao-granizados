@@ -6,7 +6,7 @@ import { useTurn } from "@/hooks/useTurn";
 import { offlineService } from "@/lib/OfflineService";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useQueryClient } from "@tanstack/react-query";
-import { PaymentMethod } from "@/components/pos/PaymentDialog";
+import type { PaymentMethod } from "@/components/pos/PaymentDialog";
 
 export function usePOS() {
   const { user, storeId } = useAuth();

@@ -1,5 +1,6 @@
 import { CartItem, Product } from "@/lib/pos-types";
-import CustomerSelection, { Customer } from "@/components/pos/CustomerSelection";
+import CustomerSelection from "@/components/pos/CustomerSelection";
+import type { Customer } from "@/components/pos/CustomerSelection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

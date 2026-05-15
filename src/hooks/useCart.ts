@@ -3,7 +3,7 @@ import { CartItem, Product, Size } from "@/lib/pos-types"; // Topping interface 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { Customer } from "@/components/pos/CustomerSelection";
+import type { Customer } from "@/components/pos/CustomerSelection";
 import { useAlerts } from "@/hooks/useAlerts";
 
 // Utility function to ensure cart items are valid and clean them up

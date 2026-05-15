@@ -1,4 +1,5 @@
-import CustomerSelection, { Customer } from "@/components/pos/CustomerSelection";
+import CustomerSelection from "@/components/pos/CustomerSelection";
+import type { Customer } from "@/components/pos/CustomerSelection";
 import { Button } from "@/components/ui/button";
 import { User as UserIcon, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";

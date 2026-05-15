@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { CartItem } from "@/lib/pos-types";
 import { formatCOP } from "@/lib/currency"; // Import the formatter
-import { Customer } from "@/components/pos/CustomerSelection";
+import type { Customer } from "@/components/pos/CustomerSelection";
 
 interface ReceiptDialogProps {
   isOpen: boolean;
