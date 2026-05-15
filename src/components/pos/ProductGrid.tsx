@@ -161,6 +161,22 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
     }
   }, [storeId]);
 
+  const categories = useMemo(() => {
+    const prodTypes = new Set((products || []).map(p => p.type || "other"));
+    const knownOrder = types.map(t => t.code);
+    const sorted = Array.from(prodTypes).sort(
+      (a, b) => {
+        const ia = knownOrder.indexOf(a);
+        const ib = knownOrder.indexOf(b);
+        if (ia === -1 && ib === -1) return a.localeCompare(b);
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      }
+    );
+    return ["all", ...sorted];
+  }, [products, types]);
+
   useEffect(() => {
     if (activeCategoryIndex !== undefined) {
       const cats = categories;
@@ -255,22 +271,6 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
     if (t) return { label: t.label, emoji: t.emoji_icon, color: t.color_theme, track_mixture_inventory: t.track_mixture_inventory, sales_mode: t.sales_mode };
     return { label: typeCode.charAt(0).toUpperCase() + typeCode.slice(1), emoji: "📦", color: "bg-slate-600", track_mixture_inventory: false, sales_mode: "unit" };
   }, [types]);
-
-  const categories = useMemo(() => {
-    const prodTypes = new Set((products || []).map(p => p.type || "other"));
-    const knownOrder = types.map(t => t.code);
-    const sorted = Array.from(prodTypes).sort(
-      (a, b) => {
-        const ia = knownOrder.indexOf(a);
-        const ib = knownOrder.indexOf(b);
-        if (ia === -1 && ib === -1) return a.localeCompare(b);
-        if (ia === -1) return 1;
-        if (ib === -1) return -1;
-        return ia - ib;
-      }
-    );
-    return ["all", ...sorted];
-  }, [products, types]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: products.length };

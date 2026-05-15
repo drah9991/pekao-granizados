@@ -33,19 +33,6 @@ export default function ProductCustomizationDialog({
   const [loadingData, setLoadingData] = useState(true);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchUserStoreId();
-  }, []);
-
-  useEffect(() => {
-    if (isOpen && userStoreId) {
-      fetchCustomizationData();
-      setSelectedSize(null);
-      setSelectedToppings([]);
-      setQuantity(1);
-    }
-  }, [isOpen, userStoreId, fetchCustomizationData]);
-
   const fetchUserStoreId = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -82,20 +69,32 @@ export default function ProductCustomizationDialog({
       const { data: toppingsData, error: toppingsError } = await supabase
         .from('products')
         .select('*')
+        .eq('type', 'toppings')
         .eq('store_id', userStoreId!)
-        .eq('type', 'topping')
-        .eq('active', true)
         .order('name', { ascending: true });
 
       if (toppingsError) throw toppingsError;
-      setAvailableToppings(toppingsData as ToppingProduct[] || []);
+      setAvailableToppings(toppingsData || []);
     } catch (error: any) {
-      console.error("Error fetching customization data:", error);
-      toast.error("Error al cargar opciones: " + error.message);
+      console.error("Error loading customization data:", error);
+      toast.error("Error al cargar personalización");
     } finally {
       setLoadingData(false);
     }
   };
+
+  useEffect(() => {
+    fetchUserStoreId();
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && userStoreId) {
+      fetchCustomizationData();
+      setSelectedSize(null);
+      setSelectedToppings([]);
+      setQuantity(1);
+    }
+  }, [isOpen, userStoreId, fetchCustomizationData]);
 
   const handleAddToCart = () => {
     const isSachet = product?.type === 'sachet';
