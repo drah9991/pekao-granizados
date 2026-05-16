@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -51,7 +51,7 @@ export default function ProductCustomizationDialog({
     }
   };
 
-  const fetchCustomizationData = async () => {
+  const fetchCustomizationData = useCallback(async () => {
     setLoadingData(true);
     try {
       const { data: sizesData, error: sizesError } = await supabase
@@ -82,7 +82,7 @@ export default function ProductCustomizationDialog({
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [userStoreId]);
 
   useEffect(() => {
     fetchUserStoreId();
