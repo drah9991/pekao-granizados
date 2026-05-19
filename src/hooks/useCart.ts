@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CartItem, Product, Size } from "@/lib/pos-types"; // Topping interface removed
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Customer } from "@/components/pos/CustomerSelection";
 import { useAlerts } from "@/hooks/useAlerts";
+import { useAuth } from "@/context/AuthContext";
 
 // Utility function to ensure cart items are valid and clean them up
 const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
@@ -34,14 +36,10 @@ const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
 
 export const useCart = () => {
   const { notifyCritical } = useAlerts();
+  const { storeId } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
-  const [availableSizes, setAvailableSizes] = useState<Tables<'sizes'>[]>([]);
-  const [availableToppings, setAvailableToppings] = useState<Product[]>([]);
-  const [productTypes, setProductTypes] = useState<any[]>([]);
-  const [pricingRules, setPricingRules] = useState<any[]>([]);
-  const [userStoreId, setUserStoreId] = useState<string | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [lastRemovedCart, setLastRemovedCart] = useState<{
     items: CartItem[];
@@ -50,10 +48,72 @@ export const useCart = () => {
     customer: Customer | null;
   } | null>(null);
 
+  const { data: availableSizes = [] } = useQuery({
+    queryKey: ["sizes", storeId],
+    queryFn: async () => {
+      if (!storeId) return [];
+      const { data, error } = await supabase
+        .from('sizes')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('multiplier', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data: availableToppings = [] } = useQuery({
+    queryKey: ["toppings", storeId],
+    queryFn: async () => {
+      if (!storeId) return [];
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('type', 'topping')
+        .eq('active', true)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data as Product[] || [];
+    },
+    enabled: !!storeId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data: productTypes = [] } = useQuery({
+    queryKey: ["product_types_config"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('product_types_config')
+        .select('*')
+        .eq('active', true);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data: pricingRules = [] } = useQuery({
+    queryKey: ["pricing_rules", storeId],
+    queryFn: async () => {
+      if (!storeId) return [];
+      const { data, error } = await supabase
+        .from('pricing_rules')
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('active', true);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
   useEffect(() => {
     // Clean cart on initial load to ensure data consistency
     setCart(prevCart => cleanCartItems(prevCart));
-    fetchUserStoreIdAndData();
   }, []);
 
   const restoreLastCart = () => {
@@ -64,77 +124,6 @@ export const useCart = () => {
       setSelectedCustomer(lastRemovedCart.customer);
       setLastRemovedCart(null);
       toast.success("Carrito restaurado");
-    }
-  };
-
-  const fetchUserStoreIdAndData = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Usuario no autenticado.");
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('store_id')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      if (profile?.store_id) {
-        setUserStoreId(profile.store_id);
-        fetchDynamicData(profile.store_id);
-      } else {
-        toast.warning("No se encontró un ID de tienda para el usuario. Algunas funcionalidades podrían no estar disponibles.");
-      }
-    } catch (error: any) {
-      console.error("Error fetching user's store ID:", error);
-      toast.error("Error al obtener ID de tienda: " + error.message);
-    }
-  };
-
-  const fetchDynamicData = async (storeId: string) => {
-    try {
-      // Fetch sizes
-      const { data: sizesData, error: sizesError } = await supabase
-        .from('sizes')
-        .select('*')
-        .eq('store_id', storeId)
-        .order('multiplier', { ascending: true });
-
-      if (sizesError) throw sizesError;
-      setAvailableSizes(sizesData || []);
-
-      // Fetch toppings (products of type 'topping')
-      const { data: toppingsData, error: toppingsError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('store_id', storeId)
-        .eq('type', 'topping')
-        .eq('active', true)
-        .order('name', { ascending: true });
-
-      if (toppingsError) throw toppingsError;
-      setAvailableToppings(toppingsData as Product[] || []);
-
-      // Fetch product types config
-      const { data: typesData } = await supabase.from('product_types_config').select('*').eq('active', true);
-      setProductTypes(typesData || []);
-
-      // Fetch active dynamic pricing rules
-      const { data: rulesData, error: rulesError } = await supabase
-        .from('pricing_rules')
-        .select('*')
-        .eq('store_id', storeId)
-        .eq('active', true);
-
-      if (rulesError) throw rulesError;
-      setPricingRules(rulesData || []);
-
-    } catch (error: any) {
-      console.error("Error fetching dynamic data:", error);
-      toast.error("Error al cargar datos dinámicos: " + error.message);
     }
   };
 
