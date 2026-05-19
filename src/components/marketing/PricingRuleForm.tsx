@@ -6,12 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Megaphone, Clock, Target, Percent, DollarSign, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PricingRule } from "@/lib/pos-types";
 
 interface PricingRuleFormProps {
   isOpen: boolean;
   onClose: () => void;
-  editingRule: any | null;
-  onSave: (id: string | undefined, ruleData: any) => Promise<any>;
+  editingRule: PricingRule | null;
+  onSave: (id: string | undefined, ruleData: Partial<PricingRule>) => Promise<any>;
   isProcessing: boolean;
   daysOfWeek: { value: number; label: string }[];
   storeId: string | null;

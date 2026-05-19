@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useMarketing } from "@/hooks/useMarketing";
 import PricingRuleCard from "@/components/marketing/PricingRuleCard";
 import PricingRuleForm from "@/components/marketing/PricingRuleForm";
+import { PricingRule } from "@/lib/pos-types";
 
 const DAYS_OF_WEEK = [
   { value: 1, label: "Lunes" },
@@ -29,7 +30,7 @@ const itemVariants = {
 
 export default function Marketing() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingRule, setEditingRule] = useState<any | null>(null);
+  const [editingRule, setEditingRule] = useState<PricingRule | null>(null);
   
   const { 
     rules, 
@@ -45,7 +46,7 @@ export default function Marketing() {
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (rule: any) => {
+  const openEditDialog = (rule: PricingRule) => {
     setEditingRule(rule);
     setIsDialogOpen(true);
   };

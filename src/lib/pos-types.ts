@@ -42,6 +42,23 @@ export interface Product {
   has_recipe?: boolean;
 }
 
+export interface PricingRule {
+  id: string;
+  store_id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  type: string;
+  target_type: string;
+  target_id: string | null;
+  discount_type: string;
+  discount_value: number;
+  start_time: string | null;
+  end_time: string | null;
+  days_of_week: number[] | null;
+  created_at: string;
+}
+
 export interface Size {
   id: string;
   name: string;

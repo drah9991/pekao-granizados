@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { CartItem, Product, Size } from "@/lib/pos-types"; // Topping interface removed
+import { CartItem, Product, Size, PricingRule } from "@/lib/pos-types"; // Topping interface removed
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -40,7 +40,7 @@ export const useCart = () => {
   const [availableSizes, setAvailableSizes] = useState<Tables<'sizes'>[]>([]);
   const [availableToppings, setAvailableToppings] = useState<Product[]>([]);
   const [productTypes, setProductTypes] = useState<any[]>([]);
-  const [pricingRules, setPricingRules] = useState<any[]>([]);
+  const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
   const [userStoreId, setUserStoreId] = useState<string | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [lastRemovedCart, setLastRemovedCart] = useState<{
@@ -130,7 +130,7 @@ export const useCart = () => {
         .eq('active', true);
 
       if (rulesError) throw rulesError;
-      setPricingRules(rulesData || []);
+      setPricingRules((rulesData as PricingRule[]) || []);
 
     } catch (error: any) {
       console.error("Error fetching dynamic data:", error);

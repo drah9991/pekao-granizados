@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { PricingRule } from "@/lib/pos-types";
 
 export function useMarketing() {
   const { storeId } = useAuth();
@@ -12,7 +13,7 @@ export function useMarketing() {
   const { data: rules, isLoading } = useQuery({
     queryKey: ["pricing_rules", storeId],
     queryFn: async () => {
-      if (!storeId) return [];
+      if (!storeId) return [] as PricingRule[];
       const { data, error } = await (supabase as any)
         .from("pricing_rules")
         .select("*")
@@ -20,13 +21,13 @@ export function useMarketing() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as PricingRule[];
     },
     enabled: !!storeId,
   });
 
   const saveRuleMutation = useMutation({
-    mutationFn: async ({ id, ruleData }: { id?: string; ruleData: any }) => {
+    mutationFn: async ({ id, ruleData }: { id?: string; ruleData: Partial<PricingRule> }) => {
         setIsProcessing(true);
         if (id) {
             const { error } = await (supabase as any)

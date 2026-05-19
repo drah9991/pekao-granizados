@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Clock, Zap, Target, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PricingRule } from "@/lib/pos-types";
 
 interface PricingRuleCardProps {
-  rule: any;
-  onEdit: (rule: any) => void;
+  rule: PricingRule;
+  onEdit: (rule: PricingRule) => void;
   onDelete: (id: string) => void;
   daysOfWeek: { value: number; label: string }[];
 }
