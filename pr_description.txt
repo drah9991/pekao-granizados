@@ -1,0 +1,13 @@
+🎯 **What:**
+Se abordó la falta de pruebas unitarias para la función `formatCOP` en `src/lib/currency.ts`. Esta función es crucial para la presentación correcta de los valores monetarios en la aplicación, y asegurar su comportamiento correcto previene errores visuales de formato.
+
+📊 **Coverage:**
+Se implementaron pruebas que cubren:
+- Formateo correcto del número cero (`0`).
+- Formateo de enteros positivos grandes y pequeños (ej., `1000`, `1000000`).
+- Manejo correcto del redondeo de decimales de acuerdo al comportamiento de `Math.round()`.
+- Formateo correcto de números negativos.
+- Se implementó una función auxiliar `normalize` para reemplazar los espacios de no separación (non-breaking spaces) que genera `Intl.NumberFormat`, garantizando que las pruebas pasen consistentemente en diferentes entornos.
+
+✨ **Result:**
+Mejora en la cobertura de pruebas de utilidades fundamentales. Ahora la función `formatCOP` cuenta con una suite completa de pruebas unitarias usando `bun:test`, asegurando su robustez y evitando futuras regresiones cuando se modifiquen las utilidades de formateo.
