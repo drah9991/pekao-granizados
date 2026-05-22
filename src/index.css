@@ -414,4 +414,34 @@
     scrollbar-gutter: stable;
     padding-right: 2px;
   }
+
+  @keyframes border-glow-pulse {
+    0%, 100% {
+      border-color: rgba(245, 158, 11, 0.15);
+      box-shadow: 0 0 4px rgba(245, 158, 11, 0.05);
+    }
+    50% {
+      border-color: rgba(245, 158, 11, 0.65);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.35);
+    }
+  }
+
+  .animate-border-glow-pulse {
+    animation: border-glow-pulse 2s infinite ease-in-out;
+  }
+
+  @keyframes border-glow-pulse-red {
+    0%, 100% {
+      border-color: rgba(239, 68, 68, 0.15);
+      box-shadow: 0 0 4px rgba(239, 68, 68, 0.05);
+    }
+    50% {
+      border-color: rgba(239, 68, 68, 0.65);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.35);
+    }
+  }
+
+  .animate-border-glow-pulse-red {
+    animation: border-glow-pulse-red 2s infinite ease-in-out;
+  }
 }

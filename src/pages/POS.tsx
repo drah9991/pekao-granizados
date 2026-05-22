@@ -23,7 +23,8 @@ export default function POS() {
     receiptDialogIsOpen, setReceiptDialogIsOpen,
     lastOrder, setLastOrder,
     defaultPaymentMethod, activeCategoryIndex, searchInputRef, viewMode, setViewMode,
-    handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, onConfirmSale
+    handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, onConfirmSale,
+    availableSizes, availableToppings, updateItemCustomization
   } = usePOSPage();
 
   return (
@@ -108,6 +109,9 @@ export default function POS() {
             restoreLastCart={restoreLastCart}
             selectedCustomer={selectedCustomer}
             setSelectedCustomer={setSelectedCustomer}
+            availableSizes={availableSizes}
+            availableToppings={availableToppings}
+            updateItemCustomization={updateItemCustomization}
           />
         </div>
       </div>

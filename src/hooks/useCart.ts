@@ -97,44 +97,41 @@ export const useCart = () => {
 
   const fetchDynamicData = async (storeId: string) => {
     try {
-      // Fetch sizes
-      const { data: sizesData, error: sizesError } = await supabase
-        .from('sizes')
-        .select('*')
-        .eq('store_id', storeId)
-        .order('multiplier', { ascending: true });
+      const [sizesResult, toppingsResult, typesResult, rulesResult] = await Promise.all([
+        supabase
+          .from('sizes')
+          .select('*')
+          .eq('store_id', storeId)
+          .order('multiplier', { ascending: true }),
+        supabase
+          .from('products')
+          .select('*')
+          .eq('store_id', storeId)
+          .eq('type', 'topping')
+          .eq('active', true)
+          .order('name', { ascending: true }),
+        supabase
+          .from('product_types_config')
+          .select('*')
+          .eq('active', true),
+        supabase
+          .from('pricing_rules')
+          .select('*')
+          .eq('store_id', storeId)
+          .eq('active', true)
+      ]);
 
-      if (sizesError) throw sizesError;
-      setAvailableSizes(sizesData || []);
+      if (sizesResult.error) throw sizesResult.error;
+      if (toppingsResult.error) throw toppingsResult.error;
+      if (typesResult.error) throw typesResult.error;
+      if (rulesResult.error) throw rulesResult.error;
 
-      // Fetch toppings (products of type 'topping')
-      const { data: toppingsData, error: toppingsError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('store_id', storeId)
-        .eq('type', 'topping')
-        .eq('active', true)
-        .order('name', { ascending: true });
-
-      if (toppingsError) throw toppingsError;
-      setAvailableToppings(toppingsData as Product[] || []);
-
-      // Fetch product types config
-      const { data: typesData } = await supabase.from('product_types_config').select('*').eq('active', true);
-      setProductTypes(typesData || []);
-
-      // Fetch active dynamic pricing rules
-      const { data: rulesData, error: rulesError } = await supabase
-        .from('pricing_rules')
-        .select('*')
-        .eq('store_id', storeId)
-        .eq('active', true);
-
-      if (rulesError) throw rulesError;
-      setPricingRules(rulesData || []);
-
+      setAvailableSizes(sizesResult.data || []);
+      setAvailableToppings(toppingsResult.data as Product[] || []);
+      setProductTypes(typesResult.data || []);
+      setPricingRules(rulesResult.data || []);
     } catch (error: any) {
-      console.error("Error fetching dynamic data:", error);
+      console.error("Error fetching dynamic data in parallel:", error);
       toast.error("Error al cargar datos dinámicos: " + error.message);
     }
   };
@@ -152,8 +149,14 @@ export const useCart = () => {
     // Eliminamos el bloqueo obligatorio por receta para permitir ventas 
     // basadas solo en el stock del producto si así se desea.
 
+    const productNeedsSize = product.type !== 'sachet' && product.type !== 'sweet';
+    let sizeId = selectedSizeId;
+    if (!sizeId && productNeedsSize && availableSizes.length > 0) {
+      sizeId = availableSizes[0].id;
+    }
+
     const baseVol = Number(product.base_volume) || 4;
-    const currentSize = selectedSizeId ? availableSizes.find(s => s.id === selectedSizeId) : null;
+    const currentSize = sizeId ? availableSizes.find(s => s.id === sizeId) : null;
     const itemMultiplier = currentSize?.multiplier || 1;
     const OZ_TO_ML = 29.57;
 
@@ -175,7 +178,7 @@ export const useCart = () => {
       }
     }
 
-    const size = selectedSizeId ? availableSizes.find(s => s.id === selectedSizeId) : null;
+    const size = sizeId ? availableSizes.find(s => s.id === sizeId) : null;
     const validToppings = availableToppings.filter(t => selectedToppingIds.includes(t.id));
 
     let basePrice = product.price * (size?.multiplier || 1);
@@ -264,7 +267,10 @@ export const useCart = () => {
         maxStock: product.stock,
         isGranizado: trackMixture,
         mixtureStock: product.mixtureStock,
-        baseVolume: Number(product.base_volume) || 4
+        baseVolume: Number(product.base_volume) || 4,
+        productPrice: product.price,
+        productType: product.type,
+        productCategory: product.category
       };
 
       return cleanCartItems([...prevCart, newItem]);
@@ -321,6 +327,103 @@ export const useCart = () => {
     setCart(cleanCartItems(cart.filter(item => item.id !== id)));
   };
 
+  const updateItemCustomization = (
+    itemId: string,
+    selectedSizeId: string,
+    selectedToppingIds: string[]
+  ) => {
+    setCart(prevCart => {
+      const updatedCart = prevCart.map(item => {
+        if (item.id !== itemId) return item;
+
+        const productPrice = item.productPrice ?? (item.sizeMultiplier && item.sizeMultiplier > 0 ? item.price / item.sizeMultiplier : item.price);
+        const productType = item.productType || (item.isGranizado ? 'granizado' : 'unit');
+        const productCategory = item.productCategory || null;
+
+        const size = selectedSizeId ? availableSizes.find(s => s.id === selectedSizeId) : null;
+        const validToppings = availableToppings.filter(t => selectedToppingIds.includes(t.id));
+
+        const typeCfg = productTypes.find(t => t.code === productType);
+        const trackMixture = typeCfg?.track_mixture_inventory || productType === 'granizado' || productCategory === 'Granizado';
+        const baseVol = Number(item.baseVolume) || 4;
+        const itemMultiplier = size?.multiplier || 1;
+        const OZ_TO_ML = 29.57;
+
+        if (trackMixture && item.mixtureStock !== undefined && item.mixtureStock > 0) {
+          const requestedMl = baseVol * itemMultiplier * OZ_TO_ML * item.quantity;
+          const currentMlInCart = prevCart
+            .filter(i => i.productId === item.productId && i.id !== itemId)
+            .reduce((sum, i) => sum + (i.quantity * (i.baseVolume || 4) * (i.sizeMultiplier || 1) * OZ_TO_ML), 0);
+
+          if (currentMlInCart + requestedMl > item.mixtureStock) {
+            notifyCritical(`No hay suficiente mezcla disponible para este tamaño.`);
+            return item;
+          }
+        }
+
+        let basePrice = productPrice * (size?.multiplier || 1);
+        const originalPrice = basePrice;
+        let discountMessage = undefined;
+
+        if (pricingRules.length > 0) {
+          const now = new Date();
+          const jsDay = now.getDay();
+          const currentDay = jsDay === 0 ? 7 : jsDay;
+          const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:00`;
+
+          const applicableRules = pricingRules.filter(rule => {
+            if (rule.days_of_week && rule.days_of_week.length > 0 && !rule.days_of_week.includes(currentDay)) return false;
+            if (rule.type === 'time_based' && rule.start_time && rule.end_time) {
+              if (currentTime < rule.start_time || currentTime > rule.end_time) return false;
+            }
+            if (rule.target_type === 'category' && productCategory !== rule.target_id) return false;
+            if (rule.target_type === 'product' && item.productId !== rule.target_id) return false;
+            return true;
+          });
+
+          if (applicableRules.length > 0) {
+            let bestDiscountedPrice = basePrice;
+            let bestRule = null;
+
+            for (const rule of applicableRules) {
+              let discountedPrice = basePrice;
+              if (rule.discount_type === 'percentage') {
+                discountedPrice = basePrice * (1 - rule.discount_value / 100);
+              } else if (rule.discount_type === 'fixed') {
+                discountedPrice = Math.max(0, basePrice - rule.discount_value);
+              }
+              if (discountedPrice < bestDiscountedPrice) {
+                bestDiscountedPrice = discountedPrice;
+                bestRule = rule;
+              }
+            }
+
+            if (bestRule && bestDiscountedPrice < basePrice) {
+              basePrice = bestDiscountedPrice;
+              discountMessage = bestRule.name;
+            }
+          }
+        }
+
+        const toppingsPrice = validToppings.reduce((sum, t) => sum + t.price, 0);
+        const finalPrice = basePrice + toppingsPrice;
+
+        return {
+          ...item,
+          price: finalPrice,
+          size: size?.name || undefined,
+          sizeMultiplier: size?.multiplier || 1,
+          toppings: validToppings.length > 0 ? validToppings : undefined,
+          originalPrice: originalPrice !== basePrice ? originalPrice + toppingsPrice : undefined,
+          discountMessage
+        };
+      });
+      return cleanCartItems(updatedCart);
+    });
+    
+    toast.success("Personalización actualizada");
+  };
+
   const subtotal = useMemo(() => {
     return cleanCartItems(cart).reduce((sum, item) => sum + (item.price * item.quantity), 0);
   }, [cart]);
@@ -354,6 +457,7 @@ export const useCart = () => {
     addToCart,
     updateQuantity,
     removeItem,
+    updateItemCustomization,
     subtotal,
     discount,
     setDiscount,
@@ -364,6 +468,8 @@ export const useCart = () => {
     resetCart,
     restoreLastCart,
     selectedCustomer,
-    setSelectedCustomer
+    setSelectedCustomer,
+    availableSizes,
+    availableToppings
   };
 };

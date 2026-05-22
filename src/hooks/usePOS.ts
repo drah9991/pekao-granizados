@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { useCart } from "@/hooks/useCart";
 import { useTurn } from "@/hooks/useTurn";
 import { offlineService } from "@/lib/OfflineService";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -138,8 +137,52 @@ export function usePOS() {
         splitDetails
       };
 
+      // Optimistic update for machine tanks
+      try {
+        const cachedGrid: any = queryClient.getQueryData(['products-grid', storeId]);
+        if (cachedGrid?.products) {
+          const queryCache = queryClient.getQueryCache();
+          const tankQueries = queryCache.findAll({ queryKey: ['tank-status', storeId] });
+
+          tankQueries.forEach((q) => {
+            const queryKey = q.queryKey;
+            queryClient.setQueryData(queryKey, (oldTanks: any) => {
+              if (!Array.isArray(oldTanks)) return oldTanks;
+              return oldTanks.map((tank: any) => {
+                let updatedVolume = tank.current_volume_ml;
+                
+                cart.forEach((item: any) => {
+                  const product = cachedGrid.products.find((p: any) => p.id === item.productId);
+                  if (product?.recipes) {
+                    product.recipes.forEach((recipe: any) => {
+                      if (recipe.inventory_item_id === tank.inventory_item_id) {
+                        const deduction = (Number(recipe.quantity_required) || 0) * Number(item.quantity);
+                        updatedVolume = Math.max(0, updatedVolume - deduction);
+                      }
+                    });
+                  }
+                });
+
+                if (updatedVolume !== tank.current_volume_ml) {
+                  const percentage = Math.round((updatedVolume / tank.max_capacity_ml) * 100 * 100) / 100;
+                  return {
+                    ...tank,
+                    current_volume_ml: updatedVolume,
+                    percentage
+                  };
+                }
+                return tank;
+              });
+            });
+          });
+        }
+      } catch (optError) {
+        console.error("Error doing optimistic update of tank status:", optError);
+      }
+
       notifyInfo("¡Venta procesada exitosamente!");
       queryClient.invalidateQueries({ queryKey: ['products-grid'] });
+      queryClient.invalidateQueries({ queryKey: ['tank-status'] });
       
       return orderData;
     } catch (error: any) {
@@ -183,6 +226,8 @@ export function usePOS() {
       await checkPendingOrders();
       if (successCount > 0) {
         notifyInfo(`Sincronización completada: ${successCount} pedidos subidos.`);
+        queryClient.invalidateQueries({ queryKey: ['tank-status'] });
+        queryClient.invalidateQueries({ queryKey: ['products-grid'] });
       }
     } catch (error: any) {
       notifyCritical("Error durante la sincronización: " + error.message);

@@ -26,7 +26,19 @@ export default function Auth() {
             {isLoadingBranding ? (
               <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full shadow-glow-pro" />
             ) : logoUrl ? (
-              <img src={logoUrl} alt="Pekao Logo" className="max-w-[70%] max-h-[70%] object-contain" />
+              <img 
+                src={
+                  logoUrl.includes("supabase.co/storage/v1/object/public/")
+                    ? logoUrl.replace(
+                        "supabase.co/storage/v1/object/public/",
+                        "supabase.co/storage/v1/render/image/public/"
+                      ) + "?width=300&resize=contain&quality=85"
+                    : logoUrl
+                } 
+                alt="Pekao Logo" 
+                className="max-w-[70%] max-h-[70%] object-contain" 
+                loading="eager"
+              />
             ) : (
               <IceCream className="w-16 h-16 text-primary drop-shadow-glow" />
             )}

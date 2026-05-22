@@ -59,10 +59,20 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
   const isOutOfStock = isMixtureTracked
     ? (product.mixtureStock === undefined || product.mixtureStock <= 0)
     : qty <= 0;
-  const isLowStock = !isMixtureTracked && qty > 0 && qty < 10;
+  const isLowStock = isMixtureTracked
+    ? (product.mixtureStock !== undefined && product.mixtureStock > 0 && product.mixtureStock < 2000)
+    : (qty > 0 && qty < 10);
+
+  const prefersReducedMotion = typeof window !== "undefined"
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    : false;
 
   return (
-    <motion.div key={product.id} variants={itemVariants} layout>
+    <motion.div 
+      key={product.id} 
+      variants={itemVariants} 
+      layout={prefersReducedMotion ? false : "position"}
+    >
       <button
         onClick={() => {
           if (isOutOfStock) {
@@ -75,16 +85,18 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
           onProductSelect(product);
         }}
         className={cn(
-          "group relative w-full h-52 lg:h-64 rounded-2xl border overflow-hidden transition-all duration-500",
+          "group relative w-full h-52 lg:h-64 rounded-2xl border overflow-hidden transition-all duration-200",
           isOutOfStock
             ? "opacity-30 grayscale cursor-not-allowed bg-white/5 border-white/5"
+            : isLowStock
+            ? "bg-amber-500/[0.03] border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/[0.06] animate-border-glow-pulse active:scale-[0.98]"
             : "bg-white/[0.03] border-white/5 hover:border-primary/30 hover:bg-white/[0.06] hover:shadow-glow active:scale-[0.98]"
         )}
       >
         <div className="relative h-full p-5 flex flex-col items-start justify-between z-10">
           <div className="w-full flex items-start justify-between mb-4">
             <div className={cn(
-              "w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center transition-all duration-500 shadow-sm",
+              "w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm",
               isOutOfStock ? "bg-muted" : "bg-white/[0.05] border border-white/5 group-hover:scale-110 group-hover:rotate-3"
             )}>
               <span className="text-3xl lg:text-4xl filter drop-shadow-lg">{emoji}</span>
@@ -93,18 +105,23 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
             {product.stock !== undefined && (
               <div
                 className={cn(
-                  "font-bold text-[10px] px-2.5 py-1 rounded-lg border-none font-dm-sans tracking-tight uppercase",
+                  "font-bold text-[10px] px-2.5 py-1 rounded-lg border-none font-dm-sans tracking-tight uppercase flex items-center gap-1.5",
                   isOutOfStock ? "bg-rose-500/20 text-rose-500" :
-                  isLowStock ? "bg-amber-500/20 text-amber-500" :
+                  isLowStock ? "bg-amber-500/20 text-amber-500 animate-pulse" :
                   "bg-white/5 text-muted-foreground/60"
                 )}
               >
+                {isLowStock && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0 shadow-glow-pro" />
+                )}
                 {cfg.track_mixture_inventory ? (
-                  <span className="flex items-center gap-1.5">
+                  <span>
                     {(product.mixtureStock! / 1000).toFixed(1)}L
                   </span>
                 ) : (
-                  `Stock: ${qty}`
+                  <span>
+                    {`Stock: ${qty}`}
+                  </span>
                 )}
               </div>
             )}
@@ -199,6 +216,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
             store_stock ( qty ),
             recipes (
               inventory_item_id,
+              quantity_required,
               inventory_items (
                 id,
                 stock,

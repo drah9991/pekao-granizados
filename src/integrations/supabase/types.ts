@@ -645,9 +645,84 @@ export type Database = {
           },
         ]
       }
+      machine_tanks: {
+        Row: {
+          id: string
+          store_id: string
+          name: string
+          current_volume_ml: number
+          max_capacity_ml: number
+          inventory_item_id: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          store_id: string
+          name: string
+          current_volume_ml?: number
+          max_capacity_ml?: number
+          inventory_item_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          store_id?: string
+          name?: string
+          current_volume_ml?: number
+          max_capacity_ml?: number
+          inventory_item_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_tanks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_tanks_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      vw_tank_percentages: {
+        Row: {
+          id: string
+          store_id: string
+          name: string
+          current_volume_ml: number
+          max_capacity_ml: number
+          percentage: number
+          updated_at: string | null
+          inventory_item_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_tanks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_tanks_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Functions: {
       has_role: {

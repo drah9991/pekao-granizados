@@ -13,7 +13,8 @@ export function usePOSPage() {
     cart, addToCart, updateQuantity, removeItem, subtotal,
     discount, setDiscount, discountType, setDiscountType,
     discountAmount, total, resetCart, restoreLastCart,
-    selectedCustomer, setSelectedCustomer
+    selectedCustomer, setSelectedCustomer,
+    availableSizes, availableToppings, updateItemCustomization
   } = useCart();
 
   const {
@@ -48,12 +49,7 @@ export function usePOSPage() {
   });
 
   const handleProductSelect = (product: Product) => {
-    if (product.type === 'sachet' || product.type === 'sweet') {
-      addToCart(product, "", [], false);
-      return;
-    }
-    setSelectedProduct(product);
-    setCustomizeDialogIsOpen(true);
+    addToCart(product, "", [], false);
   };
 
   const handleAddToCartFromDialog = (product: Product, sizeId: string, toppingIds: string[], quantity: number = 1) => {
@@ -115,6 +111,7 @@ export function usePOSPage() {
     searchInputRef,
     isMobile,
     viewMode, setViewMode,
-    handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, onConfirmSale
+    handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, onConfirmSale,
+    availableSizes, availableToppings, updateItemCustomization
   };
 }

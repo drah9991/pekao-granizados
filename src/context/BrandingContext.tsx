@@ -133,6 +133,19 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey, user, isLoadingAuth]);
 
+  // Actualizar dinámicamente el favicon de la aplicación con la URL del logo de la marca
+  useEffect(() => {
+    const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (link) {
+      link.href = logoUrl || '/favicon.ico';
+    } else {
+      const newLink = document.createElement('link');
+      newLink.rel = 'icon';
+      newLink.href = logoUrl || '/favicon.ico';
+      document.head.appendChild(newLink);
+    }
+  }, [logoUrl]);
+
   const refreshBranding = () => {
     setRefreshKey(prev => prev + 1);
   };

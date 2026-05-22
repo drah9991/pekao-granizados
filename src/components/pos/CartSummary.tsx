@@ -36,6 +36,9 @@ interface CartSummaryProps {
   restoreLastCart?: () => void;
   selectedCustomer: Customer | null;
   setSelectedCustomer: (customer: Customer | null) => void;
+  availableSizes?: any[];
+  availableToppings?: Product[];
+  updateItemCustomization?: (id: string, sizeId: string, toppingIds: string[]) => void;
 }
 
 export default function CartSummary({
@@ -54,6 +57,9 @@ export default function CartSummary({
   onClearCart,
   selectedCustomer,
   setSelectedCustomer,
+  availableSizes = [],
+  availableToppings = [],
+  updateItemCustomization
 }: CartSummaryProps) {
   
 
@@ -76,6 +82,9 @@ export default function CartSummary({
         cart={cart}
         updateQuantity={updateQuantity}
         removeItem={removeItem}
+        availableSizes={availableSizes}
+        availableToppings={availableToppings}
+        updateItemCustomization={updateItemCustomization}
       />
 
       {/* Footer / Summary Area */}

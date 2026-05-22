@@ -17,6 +17,9 @@ export interface CartItem {
   isGranizado?: boolean;
   mixtureStock?: number;
   baseVolume?: number;
+  productPrice?: number;
+  productType?: string;
+  productCategory?: string | null;
 }
 
 export interface Product {
