@@ -218,7 +218,7 @@ export default function ProductGridDisplay({
                       {(product.type === 'granizado' || product.category === 'Granizado') ? (
                           <span>{((product as any).mixtureStock / 1000).toFixed(1)}L DISP</span>
                       ) : (
-                        `STK: ${(product as any).stock || 0} UNI`
+                        `STK: ${(product as any).stock || (product as any).mixtureStock || 0} UNI`
                       )}
                     </Badge>
                   </div>
