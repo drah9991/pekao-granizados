@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { offlineService } from "@/lib/OfflineService";
 import { cn } from "@/lib/utils";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { mapProductStock } from "@/utils/productStockUtils";
 
 interface ProductWithStock extends Product {
   stock?: number;
@@ -58,10 +59,10 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
   const isMixtureTracked = cfg.track_mixture_inventory;
   const isOutOfStock = isMixtureTracked
     ? (product.mixtureStock === undefined || product.mixtureStock <= 0)
-    : qty <= 0;
+    : (qty <= 0 && (product.mixtureStock === undefined || product.mixtureStock <= 0));
   const isLowStock = isMixtureTracked
     ? (product.mixtureStock !== undefined && product.mixtureStock > 0 && product.mixtureStock < 2000)
-    : (qty > 0 && qty < 10);
+    : ((qty > 0 && qty < 10) || (product.mixtureStock !== undefined && product.mixtureStock > 0 && product.mixtureStock < 10));
 
   const prefersReducedMotion = typeof window !== "undefined"
     ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -120,7 +121,7 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
                   </span>
                 ) : (
                   <span>
-                    {`Stock: ${qty}`}
+                    {`Stock: ${qty || product.mixtureStock || 0}`}
                   </span>
                 )}
               </div>
@@ -231,26 +232,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
 
         const { data: typesData } = await supabase.from("product_types_config").select("*").eq('active', true).order("created_at", { ascending: true });
 
-        const productsWithStock = (data || []).map((p: any) => {
-          const stock = p.store_stock?.[0]?.qty ?? 0;
-          let mixtureStock = 0;
-
-          const typeCfg = (typesData || []).find((t: any) => t.code === p.type);
-          const isMixtureTracked = typeCfg?.track_mixture_inventory ?? (p.type === "granizado" || p.category === "Granizado");
-
-          if (isMixtureTracked) {
-            const mixtureRecipe = (p.recipes as any[] || []).find(
-              (r: any) => r.inventory_items?.is_mixture === true
-            );
-            if (mixtureRecipe) {
-              mixtureStock = mixtureRecipe.inventory_items?.stock ?? 0;
-            }
-          }
-
-          const has_recipe = p.recipes && p.recipes.length > 0;
-
-          return { ...p, stock, mixtureStock, has_recipe };
-        });
+        const productsWithStock = (data || []).map((p: any) => mapProductStock(p, typesData || []));
 
         const { data: sizesData } = await supabase.from("sizes").select("name, multiplier, id").eq("store_id", storeId);
 
