@@ -60,7 +60,7 @@ export function useTankStatus(customStoreId?: string | null) {
       }
     },
     enabled: !!storeId,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 2, // 2 seconds cache (highly reactive)
     gcTime: 1000 * 60 * 30,
   });
 
@@ -75,6 +75,31 @@ export function useTankStatus(customStoreId?: string | null) {
       window.removeEventListener('online', handleOnline);
     };
   }, [queryClient]);
+
+  // Real-time subscription for machine_tanks changes to update POS instantly
+  useEffect(() => {
+    if (!storeId) return;
+
+    const tanksChannel = supabase
+      .channel(`machine-tanks-sync-${storeId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'machine_tanks',
+          filter: `store_id=eq.${storeId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['tank-status'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tanksChannel);
+    };
+  }, [storeId, queryClient]);
 
   return query;
 }
