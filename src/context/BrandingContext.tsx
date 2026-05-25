@@ -92,11 +92,29 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
       let finalBorder = "";
       let finalLogo = null;
 
-      if (user && storeId) {
+      let targetStoreId = storeId;
+
+      // If not logged in, try to fetch the first available store to load default branding
+      if (!targetStoreId) {
+        try {
+          const { data: firstStore } = await supabase
+            .from('stores')
+            .select('id')
+            .limit(1)
+            .maybeSingle();
+          if (firstStore) {
+            targetStoreId = firstStore.id;
+          }
+        } catch (err) {
+          console.log("Could not fetch default store for anonymous branding:", err);
+        }
+      }
+
+      if (targetStoreId) {
         const { data: store, error: storeError } = await supabase
           .from('stores')
           .select('config')
-          .eq('id', storeId)
+          .eq('id', targetStoreId)
           .maybeSingle();
 
         if (storeError) throw storeError;
@@ -119,7 +137,6 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (error: any) {
       console.error('Error loading branding settings:', error);
-      toast.error('Error al cargar la configuración de marca');
       applyAtomicPalette("#700de7");
     } finally {
       setIsLoadingBranding(false);
@@ -133,15 +150,17 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey, user, isLoadingAuth]);
 
-  // Actualizar dinámicamente el favicon de la aplicación con la URL del logo de la marca
+  // Actualizar dinámicamente el favicon de la aplicación con la URL del logo de la marca o un emoji 🥤 por defecto
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    const finalFavicon = logoUrl || "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥤</text></svg>";
+    
     if (link) {
-      link.href = logoUrl || '/favicon.ico';
+      link.href = finalFavicon;
     } else {
       const newLink = document.createElement('link');
       newLink.rel = 'icon';
-      newLink.href = logoUrl || '/favicon.ico';
+      newLink.href = finalFavicon;
       document.head.appendChild(newLink);
     }
   }, [logoUrl]);
