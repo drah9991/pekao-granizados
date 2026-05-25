@@ -118,7 +118,7 @@ export default function ProductGridDisplay({
           <motion.div key={product.id} variants={item}>
             <Card 
               className={cn(
-                "glass-pro border-white/5 transition-all duration-700 group relative overflow-hidden shadow-pro dim-layering rounded-[2.5rem] h-full flex flex-col hover:bg-white/10",
+                "glass-pro transition-all duration-700 group relative overflow-hidden shadow-pro dim-layering rounded-[2.5rem] h-full flex flex-col hover:bg-surface-active",
                 !product.active && "opacity-40 grayscale-[0.8]"
               )}
             >
@@ -149,7 +149,7 @@ export default function ProductGridDisplay({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-10 w-10 glass-pro rounded-xl text-white/40 hover:text-primary hover:bg-primary/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90"
+                      className="h-10 w-10 glass-pro rounded-xl text-muted-foreground/60 hover:text-primary hover:bg-primary/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); openDetailsDialog(product); }}
                     >
                       <Eye className="w-4 h-4" />
@@ -157,7 +157,7 @@ export default function ProductGridDisplay({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-10 w-10 glass-pro rounded-xl text-white/40 hover:text-emerald-400 hover:bg-emerald-500/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90"
+                      className="h-10 w-10 glass-pro rounded-xl text-muted-foreground/60 hover:text-emerald-500 hover:bg-emerald-500/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEditDialog(product); }}
                     >
                       <Edit className="w-4 h-4" />
@@ -165,7 +165,7 @@ export default function ProductGridDisplay({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-10 w-10 glass-pro rounded-xl text-white/40 hover:text-white hover:appetite-accent-muted shadow-pro transition-all hover:-translate-y-1 active:scale-90 border-none"
+                      className="h-10 w-10 glass-pro rounded-xl text-muted-foreground/60 hover:text-rose-500 hover:bg-rose-500/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90 border-none"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProduct(product); }}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -186,12 +186,12 @@ export default function ProductGridDisplay({
                 </div>
                 
                 <div className="mt-auto space-y-6">
-                  <div className="flex items-end justify-between py-6 border-y border-white/5 relative overflow-hidden group/price">
+                  <div className="flex items-end justify-between py-6 border-y border-border/50 relative overflow-hidden group/price">
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent scale-x-0 group-hover/price:scale-x-100 transition-transform duration-700" />
                     <div className="flex flex-col">
                         <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary/40 font-space-grotesk italic mb-1">VALOR MAESTRO</span>
                         <div className="flex items-center gap-1.5">
-                            <p className="text-4xl font-black font-space-grotesk italic text-white tracking-tighter drop-shadow-glow-pro text-glow">
+                            <p className="text-4xl font-black font-space-grotesk italic text-foreground tracking-tighter drop-shadow-glow-pro text-glow">
                                 {formatCOP(product.price || 0).replace("$", "")}
                             </p>
                             <span className="text-[10px] font-black text-primary/40 mb-1 font-space-grotesk italic tracking-widest">COP</span>
@@ -204,15 +204,15 @@ export default function ProductGridDisplay({
                         <div className="p-2 bg-primary/10 rounded-xl text-primary border border-primary/20 group-hover:bg-primary/20 transition-colors">
                             <ProductIcon className="w-4 h-4" />
                         </div>
-                        <span className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] italic font-space-grotesk transition-colors group-hover:text-primary">
+                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] italic font-space-grotesk transition-colors group-hover:text-primary">
                             {productTypeOptions.find(opt => opt.value === product.type)?.label}
                         </span>
                     </div>
 
                     <Badge 
                       className={cn(
-                        "font-black text-[10px] uppercase tracking-widest italic border-none bg-white/5 px-3 h-7 shadow-pro",
-                        ((product as any).mixtureStock > 0 || ((product as any).stock !== null && (product as any).stock > 0)) ? "text-emerald-400" : "text-red-500 shadow-glow-pro animate-pulse"
+                        "font-black text-[10px] uppercase tracking-widest italic border-none bg-muted/50 px-3 h-7 shadow-pro",
+                        ((product as any).mixtureStock > 0 || ((product as any).stock !== null && (product as any).stock > 0)) ? "text-emerald-500" : "text-rose-500 shadow-glow-pro animate-pulse"
                       )}
                     >
                       {(product.type === 'granizado' || product.category === 'Granizado') ? (

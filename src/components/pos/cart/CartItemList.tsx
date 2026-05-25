@@ -49,11 +49,11 @@ export function CartItemList({
                 animate={{ opacity: 1, height: "auto", scale: 1 }}
                 exit={{ opacity: 0, height: 0, scale: 0.95, overflow: "hidden" }}
                 transition={{ duration: 0.2, ease: "easeInOut" }}
-                className="group relative bg-gradient-to-br from-white/[0.06] to-white/[0.01] border border-white/10 rounded-2xl p-4 transition-colors duration-300 hover:from-white/[0.08] hover:to-white/[0.02] hover:border-primary/40 hover:shadow-[0_0_20px_rgba(var(--primary),0.1)] backdrop-blur-md"
+                className="group relative bg-surface-subtle border border-border/50 rounded-2xl p-4 transition-colors duration-300 hover:bg-surface-active hover:border-primary/40 hover:shadow-[0_0_20px_rgba(var(--primary),0.1)] backdrop-blur-md"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 min-w-0 pr-3">
-                    <p className="font-bold text-white text-base mb-1.5 font-dm-sans leading-tight break-words drop-shadow-sm">{item.name}</p>
+                    <p className="font-bold text-foreground text-base mb-1.5 font-dm-sans leading-tight break-words drop-shadow-sm">{item.name}</p>
                     
                     {/* Badges/Toppings display row */}
                     <div className="flex flex-wrap gap-1.5 mt-1">
@@ -73,11 +73,11 @@ export function CartItemList({
                             const newToppingIds = item.toppings?.filter(t => t.id !== topping.id).map(t => t.id) || [];
                             updateItemCustomization?.(item.id, sizeId, newToppingIds);
                           }}
-                          className="bg-white/10 hover:bg-rose-500/20 hover:text-rose-300 text-white/90 text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-white/20 hover:border-rose-500/30 transition-all font-dm-sans flex items-center gap-1 group/topping active:scale-95"
+                          className="bg-muted hover:bg-rose-500/20 hover:text-rose-600 dark:hover:text-rose-300 text-foreground/90 text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-border transition-all font-dm-sans flex items-center gap-1 group/topping active:scale-95"
                           title="Click para quitar topping"
                         >
                           <span>{topping.name}</span>
-                          <span className="text-white/40 group-hover/topping:text-rose-400 font-extrabold ml-0.5 text-[8px]">×</span>
+                          <span className="text-muted-foreground group-hover/topping:text-rose-500 font-extrabold ml-0.5 text-[8px]">×</span>
                         </button>
                       ))}
 
@@ -112,7 +112,7 @@ export function CartItemList({
                                       "w-full flex items-center justify-between p-2 rounded-lg text-xs font-semibold font-dm-sans transition-all active:scale-[0.98]",
                                       isSelected
                                         ? "bg-primary/20 text-primary border border-primary/30"
-                                        : "bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-transparent"
+                                        : "bg-muted/50 hover:bg-muted text-foreground/80 hover:text-foreground border border-transparent"
                                     )}
                                   >
                                     <span>{topping.name}</span>
@@ -130,8 +130,8 @@ export function CartItemList({
 
                     {/* Inline Size selection pills */}
                     {showSizeOptions && availableSizes.length > 0 && (
-                      <div className="flex flex-col gap-1 mt-3 pt-2.5 border-t border-white/5">
-                        <span className="text-[9px] uppercase font-bold tracking-wider text-white/40 font-dm-sans">Tamaño</span>
+                      <div className="flex flex-col gap-1 mt-3 pt-2.5 border-t border-border/50">
+                        <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground/60 font-dm-sans">Tamaño</span>
                         <div className="flex flex-wrap gap-1">
                           {availableSizes.map((size) => {
                             const isSelected = item.size === size.name;
@@ -145,7 +145,7 @@ export function CartItemList({
                                   "text-[9px] font-bold px-2 py-0.5 rounded-md border transition-all duration-150 active:scale-95 font-dm-sans",
                                   isSelected
                                     ? "bg-primary/30 text-primary border-primary/50 shadow-[0_0_10px_rgba(var(--primary),0.2)]"
-                                    : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white"
+                                    : "bg-muted text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground"
                                 )}
                               >
                                 {size.name}
@@ -158,33 +158,33 @@ export function CartItemList({
                   </div>
                   
                   <div className="text-right whitespace-nowrap pl-2 flex flex-col items-end justify-start">
-                    <p className="font-black text-lg text-white font-dm-sans drop-shadow-sm tabular-nums">
+                    <p className="font-black text-lg text-foreground font-dm-sans drop-shadow-sm tabular-nums">
                       {formatCOP(item.price * item.quantity)}
                     </p>
                     {item.quantity > 1 && (
-                      <p className="text-[10px] text-white/50 font-bold font-dm-sans mt-0.5 uppercase tracking-wider tabular-nums">
+                      <p className="text-[10px] text-muted-foreground/60 font-bold font-dm-sans mt-0.5 uppercase tracking-wider tabular-nums">
                         {formatCOP(item.price)} c/u
                       </p>
                     )}
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between pt-3 border-t border-white/10 mt-1">
-                  <div className="flex items-center bg-black/40 rounded-xl p-1 gap-1 border border-white/10 shadow-inner">
+                <div className="flex items-center justify-between pt-3 border-t border-border/50 mt-1">
+                  <div className="flex items-center bg-muted/50 rounded-xl p-1 gap-1 border border-border shadow-inner">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => updateQuantity(item.id, -1)}
-                      className="h-8 w-8 hover:bg-white/10 hover:text-white rounded-lg transition-all text-white/70"
+                      className="h-8 w-8 hover:bg-muted/80 hover:text-foreground rounded-lg transition-all text-muted-foreground"
                     >
-                      <Minus className="w-4 h-4 text-white" />
+                      <Minus className="w-4 h-4" />
                     </Button>
-                    <span className="font-black text-sm w-8 text-center text-white font-dm-sans tabular-nums">{item.quantity}</span>
+                    <span className="font-black text-sm w-8 text-center text-foreground font-dm-sans tabular-nums">{item.quantity}</span>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => updateQuantity(item.id, 1)}
-                      className="h-8 w-8 hover:bg-primary/20 hover:text-primary rounded-lg transition-all text-white/70"
+                      className="h-8 w-8 hover:bg-primary/20 hover:text-primary rounded-lg transition-all text-muted-foreground"
                     >
                       <Plus className="w-4 h-4 text-primary drop-shadow-md" />
                     </Button>

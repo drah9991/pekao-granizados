@@ -166,10 +166,10 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
 
       {/* Floating Control Center (Top Left) */}
       <div className={cn(
-        "fixed top-4 z-[60] flex items-center gap-2 p-1.5 bg-[#0b0f1a]/80 backdrop-blur-2xl border border-white/5 rounded-2xl animate-pro-in transition-all duration-500",
+        "fixed top-4 z-[60] flex items-center gap-2 p-1.5 bg-card/80 backdrop-blur-2xl border border-border/50 rounded-2xl animate-pro-in transition-all duration-500",
         isSidebarOpen ? "left-[17rem]" : "left-16"
       )}>
-        <div className="flex items-center gap-3 px-3 py-1 border-r border-white/5 mr-1 hidden sm:flex">
+        <div className="flex items-center gap-3 px-3 py-1 border-r border-border/50 mr-1 hidden sm:flex">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/10">
             {userRole?.charAt(0).toUpperCase() || '?'}
           </div>
@@ -183,11 +183,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
           </div>
         </div>
         <div className="flex items-center px-1 gap-1 border-r border-white/5 pr-2 mr-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-white/50 hover:text-white hover:bg-white/10 rounded-lg" onClick={() => setUiScale(s => Math.max(50, s - 10))}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg" onClick={() => setUiScale(s => Math.max(50, s - 10))}>
             <Minus className="w-3 h-3" />
           </Button>
           <span className="text-[10px] font-black w-8 text-center tracking-tighter">{uiScale}%</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-white/50 hover:text-white hover:bg-white/10 rounded-lg" onClick={() => setUiScale(s => Math.min(200, s + 10))}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg" onClick={() => setUiScale(s => Math.min(200, s + 10))}>
             <Plus className="w-3 h-3" />
           </Button>
         </div>
@@ -198,12 +198,12 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
 
       <aside
         className={cn(
-          "w-64 bg-background/40 backdrop-blur-3xl border-r border-white/5 flex flex-col",
+          "w-64 bg-sidebar-background/60 backdrop-blur-3xl border-r border-sidebar-border flex flex-col",
           "fixed inset-y-0 left-0 z-50 transition-all duration-500 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)]",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="p-8 border-b border-white/5">
+        <div className="p-8 border-b border-sidebar-border">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-glow transition-all hover:scale-105">
               {isLoadingBranding ? (
@@ -255,8 +255,8 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                         className={cn(
                           "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden font-dm-sans",
                             isActive
-                            ? "text-primary bg-white/[0.05]"
-                            : "text-muted-foreground/60 hover:text-foreground hover:bg-white/[0.02]",
+                            ? "text-primary bg-primary/10"
+                            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
                           isLocked && "opacity-30 cursor-not-allowed"
                         )}
                       >

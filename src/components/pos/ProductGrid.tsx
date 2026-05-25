@@ -88,17 +88,17 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
         className={cn(
           "group relative w-full h-52 lg:h-64 rounded-2xl border overflow-hidden transition-all duration-200",
           isOutOfStock
-            ? "opacity-30 grayscale cursor-not-allowed bg-white/5 border-white/5"
+            ? "opacity-30 grayscale cursor-not-allowed bg-surface-subtle border-border/50"
             : isLowStock
             ? "bg-amber-500/[0.03] border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/[0.06] animate-border-glow-pulse active:scale-[0.98]"
-            : "bg-white/[0.03] border-white/5 hover:border-primary/30 hover:bg-white/[0.06] hover:shadow-glow active:scale-[0.98]"
+            : "bg-surface-subtle border-border/50 hover:border-primary/30 hover:bg-surface-active hover:shadow-glow active:scale-[0.98]"
         )}
       >
         <div className="relative h-full p-5 flex flex-col items-start justify-between z-10">
           <div className="w-full flex items-start justify-between mb-4">
             <div className={cn(
               "w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm",
-              isOutOfStock ? "bg-muted" : "bg-white/[0.05] border border-white/5 group-hover:scale-110 group-hover:rotate-3"
+              isOutOfStock ? "bg-muted" : "bg-surface-active border border-border/50 group-hover:scale-110 group-hover:rotate-3"
             )}>
               <span className="text-3xl lg:text-4xl filter drop-shadow-lg">{emoji}</span>
             </div>
@@ -109,7 +109,7 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
                   "font-bold text-[10px] px-2.5 py-1 rounded-lg border-none font-dm-sans tracking-tight uppercase flex items-center gap-1.5",
                   isOutOfStock ? "bg-rose-500/20 text-rose-500" :
                   isLowStock ? "bg-amber-500/20 text-amber-500 animate-pulse" :
-                  "bg-white/5 text-muted-foreground/60"
+                  "bg-muted/50 text-muted-foreground"
                 )}
               >
                 {isLowStock && (
@@ -321,7 +321,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
           <Input
             ref={searchRef}
             placeholder="Buscar por nombre o categoría..."
-            className="pl-14 h-14 lg:h-16 text-lg glass-pro !bg-white/[0.03] border-white/5 rounded-2xl focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30 font-dm-sans"
+            className="pl-14 h-14 lg:h-16 text-lg glass-pro !bg-surface-subtle border-border/50 rounded-2xl focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30 font-dm-sans"
             defaultValue={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
@@ -332,7 +332,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
                  OFFLINE
                </div>
              )}
-             <kbd className="hidden sm:inline-flex px-2.5 py-1 text-[10px] bg-white/5 border border-white/10 rounded-lg text-muted-foreground/40 font-medium tracking-tighter">⌘ K</kbd>
+             <kbd className="hidden sm:inline-flex px-2.5 py-1 text-[10px] bg-muted border border-border rounded-lg text-muted-foreground font-medium tracking-tighter">⌘ K</kbd>
           </div>
         </div>
       </div>
@@ -350,13 +350,13 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
                 "h-12 lg:h-14 px-6 lg:px-8 gap-2.5 rounded-xl transition-all duration-300 border font-dm-sans shrink-0",
                 isActive
                   ? "bg-primary text-white border-primary shadow-glow scale-[1.02]"
-                  : "bg-white/[0.02] border-white/5 text-muted-foreground hover:bg-white/[0.05] hover:border-white/10 hover:text-foreground"
+                  : "bg-surface-subtle border-border/50 text-muted-foreground hover:bg-surface-active hover:border-border hover:text-foreground"
               )}
             >
               <span className="text-xl">{cat === "all" ? "📋" : cfg?.emoji}</span>
               <span className="font-semibold flex items-center gap-2 text-xs uppercase tracking-tight">
                 {cat === "all" ? "Todos" : cfg?.label}
-                <span className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-bold", isActive ? "bg-white/20 text-white" : "bg-white/5 text-muted-foreground/60")}>
+                <span className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-bold", isActive ? "bg-primary-foreground/20 text-white" : "bg-muted text-muted-foreground")}>
                   {categoryCounts[cat]}
                 </span>
               </span>
