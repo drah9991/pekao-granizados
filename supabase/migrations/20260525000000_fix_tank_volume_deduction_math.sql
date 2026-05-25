@@ -73,11 +73,16 @@ BEGIN
         VALUES (new_sale_id, v_item.product_id, v_item.name, v_item.quantity, v_item.price, 0, v_item.size, v_item.size_multiplier);
 
         -- Obtener parametrización del producto
-        SELECT COALESCE(pt.track_mixture_inventory, false), COALESCE(p.base_volume, 4)
-          INTO v_is_tracked_mixture, v_base_vol
+        SELECT COALESCE(pt.track_mixture_inventory, false)
+          INTO v_is_tracked_mixture
           FROM public.products p
             LEFT JOIN public.product_types_config pt ON p.type::text = pt.code
          WHERE p.id = v_item.product_id;
+
+        SELECT COALESCE(base_volume, 4)
+          INTO v_base_vol
+          FROM public.products
+         WHERE id = v_item.product_id;
 
         -- 1. Deducción de PRODUCTO (Stock de Unidades / store_stock)
         UPDATE public.store_stock 
@@ -158,11 +163,16 @@ BEGIN
     -- Restaurar Stock de items viejos
     FOR v_item IN SELECT * FROM public.order_items WHERE order_id = v_order_id
     LOOP
-        SELECT COALESCE(pt.track_mixture_inventory, false), COALESCE(p.base_volume, 4) 
-          INTO v_is_tracked_mixture, v_base_vol
+        SELECT COALESCE(pt.track_mixture_inventory, false)
+          INTO v_is_tracked_mixture
           FROM public.products p 
             LEFT JOIN public.product_types_config pt ON p.type::text = pt.code 
          WHERE p.id = v_item.product_id;
+
+        SELECT COALESCE(base_volume, 4) 
+          INTO v_base_vol
+          FROM public.products
+         WHERE id = v_item.product_id;
 
         -- Restaurar Unidades
         UPDATE public.store_stock SET qty = qty + v_item.qty, updated_at = NOW()
@@ -217,11 +227,16 @@ BEGIN
         INSERT INTO public.order_items (order_id, product_id, name, qty, price, tax, size, size_multiplier)
         VALUES (v_order_id, v_item.product_id, v_item.name, v_item.quantity, v_item.price, 0, v_item.size, v_item.size_multiplier);
 
-        SELECT COALESCE(pt.track_mixture_inventory, false), COALESCE(p.base_volume, 4) 
-          INTO v_is_tracked_mixture, v_base_vol
+        SELECT COALESCE(pt.track_mixture_inventory, false)
+          INTO v_is_tracked_mixture
           FROM public.products p 
             LEFT JOIN public.product_types_config pt ON p.type::text = pt.code 
          WHERE p.id = v_item.product_id;
+
+        SELECT COALESCE(base_volume, 4) 
+          INTO v_base_vol
+          FROM public.products
+         WHERE id = v_item.product_id;
 
         -- Descontar Unidades
         UPDATE public.store_stock SET qty = qty - v_item.quantity, updated_at = NOW()
@@ -284,18 +299,23 @@ BEGIN
 
     IF p_reason IS NULL OR trim(p_reason) = '' THEN
         RAISE EXCEPTION 'El motivo de anulación es obligatorio.';
-    END If;
+    END IF;
 
     SELECT store_id INTO v_store_id FROM public.orders WHERE id = p_order_id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Order not found'; END IF;
 
     FOR item_row IN SELECT * FROM public.order_items WHERE order_id = p_order_id
     LOOP
-        SELECT COALESCE(pt.track_mixture_inventory, false), COALESCE(p.base_volume, 4) 
-          INTO v_is_tracked_mixture, v_base_vol
+        SELECT COALESCE(pt.track_mixture_inventory, false)
+          INTO v_is_tracked_mixture
           FROM public.products p 
             LEFT JOIN public.product_types_config pt ON p.type::text = pt.code 
          WHERE p.id = item_row.product_id;
+
+        SELECT COALESCE(base_volume, 4) 
+          INTO v_base_vol
+          FROM public.products
+         WHERE id = item_row.product_id;
 
         -- Restaurar Unidades
         UPDATE public.store_stock SET qty = qty + item_row.qty, updated_at = NOW()
