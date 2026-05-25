@@ -87,3 +87,55 @@ El sistema implementa un control de caja estricto:
 *   **3. Indicador de Fidelización en Pantalla (Loyalty Badges)**
     *   **Estado:** *Pendiente*
     *   *Sugerencia:* Mostrar en el flujo de pago un mensaje visible para el cliente (o para el cajero al ingresar los datos del cliente) que indique cuántos granizados le faltan para su siguiente recompensa gratuita.
+
+---
+
+## 4. Propuestas de Innovación (Idea to Action)
+
+A continuación, se estructura una propuesta de evolución a nivel de arquitectura y producto para maximizar el valor comercial de la plataforma:
+
+### Phase 1: El Resumen del Fundador
+Pekao Granizados POS requiere evolucionar de un sistema transaccional de punto de venta a un **sistema integrado de automatización operativa y fidelización inteligente**. El objetivo es reducir costos por desperdicio de mezcla líquida y maximizar la retención de clientes mediante gamificación, sin incrementar la carga de hardware en las tiendas físicas.
+
+### Phase 2: Arquitectura del Sistema Propuesto
+
+```mermaid
+graph TD
+    A[POS Client - React] -->|Venta Realizada| B(Supabase Realtime)
+    A -->|Offline Event| C[IndexedDB Queue]
+    B -->|Atomic RPC| D[(Postgres DB)]
+    D -->|Trigger de Stock| E[Machine Tanks Audit]
+    D -->|Cálculo de Consumo| F[Loyalty Ledger]
+    G[Kitchen Monitor - KDS] -->|Audio Cue| H[Web Audio API]
+    I[Cron Job pg_cron] -->|Backup/Limpieza| D
+```
+
+### Phase 3: Plan de Ejecución
+
+#### 1. Pasos de Acción Inmediatos
+- [ ] **Frontend - Audio KDS:** Implementar un sintetizador de audio nativo (Web Audio API) en la pantalla de cocina que alerte sonoramente cada vez que cambie el estado de un pedido.
+- [ ] **Frontend - Widget Offline:** Diseñar un cajón de sincronización (`SyncDrawer`) que permita a los cajeros ver cuántas ventas están encoladas y forzar la sincronización.
+- [ ] **Backend - Historial de Auditoría:** Crear una tabla `security_audit_logs` que registre de forma inmutable todas las operaciones de inicialización o ajuste manual de tanques por parte de administradores.
+- [ ] **Backend - Automatización pg_cron:** Configurar un script de mantenimiento que comprima y depure logs antiguos del POS para mejorar la velocidad de lectura en bases de datos de alta transaccionalidad.
+
+#### 2. Cronograma Estimado
+*   **Día 1:** Prototipo del módulo de fidelización en base de datos (Esquema de puntos y triggers).
+*   **Día 2:** Integración de alertas sonoras en KDS y visualizador de cola offline en frontend.
+*   **Día 3:** Pruebas de resistencia offline, simulación de cortes de red y auditoría de sincronización.
+*   **Día 4:** Despliegue de triggers de mantenimiento de logs y backups automatizados.
+
+#### 3. Análisis de Riesgos
+*   **Riesgo Técnico:** La Web Audio API puede requerir interacción previa del usuario (un clic inicial) en el navegador debido a políticas de autoplay.
+    *   *Mitigación:* Añadir un botón flotante decorativo de activación de audio ("Habilitar Sonido") al entrar a la pantalla del KDS.
+*   **Riesgo de Producto:** El sistema de puntos/fidelización puede ralentizar el cierre de ventas si requiere demasiada interacción del cajero.
+    *   *Mitigación:* Hacer que la lectura del número celular del cliente en la ventana flotante asocie los puntos de forma 100% silenciosa en segundo plano.
+
+---
+
+### Explicación Multinivel (Multilevel Explanations)
+
+#### El Pitch (ELI5 / Inversionista)
+> Imagina una heladería donde los cajeros pueden registrar ventas incluso si se corta la luz o el internet. El sistema sabe cuántos litros de granizado le quedan a cada máquina en tiempo real y hace sonar una alarma en la cocina cada vez que hay una orden nueva. Además, premia a los clientes fieles dándoles puntos automáticamente en su celular. Esto evita desperdicios de helado y hace que la gente regrese siempre por más.
+
+#### Las Especificaciones (Técnicas)
+> El sistema se basa en una arquitectura reactiva cliente-servidor. El estado local del cliente utiliza `TanStack Query` parametrizado con un `staleTime` agresivo de 2 segundos, combinado con suscripciones persistentes mediante canales de WebSockets en `Supabase Realtime`. Si ocurre una desconexión, un service worker almacena las peticiones HTTP en una tienda de objetos transaccionales `IndexedDB`. Las operaciones de base de datos están protegidas mediante procedimientos almacenados con aislamiento `SERIALIZABLE` o bloqueos selectivos `FOR UPDATE` para garantizar la integridad ACID durante accesos simultáneos a las tablas críticas del negocio.
