@@ -34,10 +34,10 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
   // Actually, I'll update Dashboard.tsx query first.
   
   return (
-    <Card className="col-span-1 md:col-span-2 lg:col-span-2 glass-pro border-white/5 rounded-[2.5rem] shadow-pro overflow-hidden relative group animate-pro-in">
+    <Card className="col-span-1 md:col-span-2 lg:col-span-2 glass-pro border-border dark:border-white/5 rounded-[2.5rem] shadow-sm dark:shadow-pro overflow-hidden relative group animate-pro-in">
       <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-700" />
       
-      <CardHeader className="pb-4 border-b border-border/50 bg-muted/30 backdrop-blur-md">
+      <CardHeader className="pb-4 border-b border-border/50 bg-slate-50/50 dark:bg-muted/30 backdrop-blur-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/20 rounded-xl text-primary border border-primary/20 shadow-glow-pro transition-transform group-hover:rotate-6">
@@ -71,27 +71,27 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
               const availableSizes = data?.sizes || [];
 
               return (
-                <div key={item.id || item.name} className="space-y-4 p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:border-primary/30 transition-all hover:bg-white/[0.08] group/item relative overflow-hidden">
+                <div key={item.id || item.name} className="space-y-4 p-6 rounded-[2rem] bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-primary/30 transition-all dark:hover:bg-white/[0.08] group/item relative overflow-hidden">
                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/item:opacity-20 transition-opacity">
                       <Beaker className="w-12 h-12 text-primary" />
                    </div>
                    
                   <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-3">
-                       <div className={cn("w-3 h-3 rounded-full shadow-glow-pro", isLow ? "bg-red-500 animate-pulse" : "bg-emerald-500")} />
+                       <div className={cn("w-3 h-3 rounded-full shadow-glow-pro", isLow ? "bg-rose-500 animate-pulse" : "bg-emerald-500")} />
                        <h4 className="font-black text-foreground uppercase text-sm tracking-[0.1em] font-space-grotesk italic">{item.name}</h4>
                     </div>
                     <div className="text-right">
-                      <p className={cn("text-2xl font-black font-space-grotesk tracking-tighter", isLow ? "text-red-400" : "text-white")}>
+                      <p className={cn("text-2xl font-black font-space-grotesk tracking-tighter", isLow ? "text-rose-600 dark:text-red-400" : "text-foreground dark:text-white")}>
                         {liters.toFixed(1)}<span className="text-[10px] b-not-italic ml-1 opacity-40 uppercase tracking-widest font-black">Litros</span>
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-2 relative z-10">
-                    <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden p-[2px]">
+                    <div className="h-2.5 w-full bg-slate-200 dark:bg-black/20 rounded-full overflow-hidden p-[2px]">
                       <div 
-                        className={cn("h-full rounded-full transition-all duration-1000", isLow ? 'bg-gradient-to-r from-red-500 to-red-600 shadow-glow' : 'bg-gradient-to-r from-primary to-primary/60 shadow-glow-pro')} 
+                        className={cn("h-full rounded-full transition-all duration-1000", isLow ? 'bg-rose-500' : 'bg-primary')}
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -118,7 +118,7 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
                       })}
                     </div>
                     {isLow && (
-                       <div className="flex items-center gap-2 p-3 bg-red-500/10 rounded-2xl border border-red-500/20 text-[10px] text-red-400 font-black uppercase font-space-grotesk italic tracking-[0.1em] animate-pulse">
+                       <div className="flex items-center gap-2 p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-[10px] text-rose-600 dark:text-red-400 font-black uppercase font-space-grotesk italic tracking-[0.1em] animate-pulse">
                           <AlertCircle className="w-4 h-4" />
                           REPOSICIÓN PRIORITARIA REQUERIDA
                        </div>

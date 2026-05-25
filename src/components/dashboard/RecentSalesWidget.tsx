@@ -9,7 +9,7 @@ import { formatCOP } from "@/lib/currency";
 export function RecentSalesWidget({ data }: { data: any }) {
   if (!data) return null;
   return (
-    <Card className="lg:col-span-3 glass-pro border-white/5 rounded-[2.5rem] p-8 shadow-pro overflow-hidden animate-pro-in">
+    <Card className="lg:col-span-3 glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro overflow-hidden animate-pro-in">
       <div className="flex items-center justify-between mb-8">
         <div>
           <CardTitle className="text-2xl font-black tracking-tighter mb-1 text-foreground font-space-grotesk italic">ÚLTIMAS VENTAS</CardTitle>
@@ -29,11 +29,11 @@ export function RecentSalesWidget({ data }: { data: any }) {
               <th className="py-4 text-right font-space-grotesk whitespace-nowrap">Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.03]">
+          <tbody className="divide-y divide-border/40 dark:divide-white/[0.03]">
             {data.recentOrders.map((order: any) => (
-              <tr key={order.id} className="group hover:bg-white/[0.05] transition-all duration-300 cursor-pointer">
+              <tr key={order.id} className="group hover:bg-muted/30 dark:hover:bg-white/[0.05] transition-all duration-300 cursor-pointer">
                 <td className="py-5 text-xs font-black text-muted-foreground group-hover:text-primary transition-colors font-space-grotesk tracking-widest italic">#{order.id.slice(0, 8)}</td>
-                <td className="py-5 text-xs font-bold text-foreground/70 font-dm-sans">{format(new Date(order.created_at), 'HH:mm')}</td>
+                <td className="py-5 text-xs font-bold text-foreground/80 dark:text-foreground/70 font-dm-sans">{format(new Date(order.created_at), 'HH:mm')}</td>
                 <td className="py-5 text-xs font-black text-foreground text-center">
                   <Badge variant="outline" className="border-border/50 text-[10px] rounded-lg group-hover:border-primary/50 transition-colors font-space-grotesk">{order.order_items.reduce((sum: number, i: any) => sum + i.qty, 0)}</Badge>
                 </td>

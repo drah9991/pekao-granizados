@@ -6,13 +6,13 @@ import { formatCOP } from "@/lib/currency";
 export function SalesChartWidget({ data }: { data: any }) {
   if (!data) return null;
   return (
-    <Card className="lg:col-span-2 glass-pro border-white/5 rounded-[2.5rem] p-8 shadow-pro animate-pro-in">
+    <Card className="lg:col-span-2 glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro animate-pro-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <CardTitle className="text-2xl font-black tracking-tighter mb-1 text-white font-space-grotesk italic">INGRESOS POR HORA</CardTitle>
+          <CardTitle className="text-2xl font-black tracking-tighter mb-1 text-foreground font-space-grotesk italic">INGRESOS POR HORA</CardTitle>
           <CardDescription className="text-primary font-black uppercase tracking-[0.2em] text-[10px]">Real-time intelligence</CardDescription>
         </div>
-        <div className="flex items-center gap-2 p-1 px-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest shadow-glow-pro animate-pulse">
+        <div className="flex items-center gap-2 p-1 px-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest dark:shadow-glow-pro animate-pulse">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           En Vivo
         </div>
@@ -26,27 +26,28 @@ export function SalesChartWidget({ data }: { data: any }) {
                 <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-border dark:text-white/5" vertical={false} />
             <XAxis 
               dataKey="hour" 
               axisLine={false} 
               tickLine={false} 
-              tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 900, fontFamily: 'Space Grotesk' }} 
+              tick={{ fill: 'currentColor', fontSize: 10, fontWeight: 900, fontFamily: 'Space Grotesk' }}
+              className="text-muted-foreground/60"
               dy={10}
             />
             <YAxis hide />
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: 'rgba(15,17,23,0.9)', 
+                backgroundColor: 'hsl(var(--card))',
                 backdropFilter: 'blur(32px)', 
-                border: '1px solid rgba(255,255,255,0.1)', 
+                border: '1px solid hsl(var(--border))',
                 borderRadius: '2rem', 
                 padding: '20px', 
-                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8)' 
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)'
               }}
-              itemStyle={{ color: '#fff', fontWeight: 900, fontSize: '16px', fontFamily: 'Space Grotesk' }}
+              itemStyle={{ color: 'hsl(var(--foreground))', fontWeight: 900, fontSize: '16px', fontFamily: 'Space Grotesk' }}
               formatter={(val: number) => [formatCOP(val), "Ingresos"]}
-              labelStyle={{ color: 'rgba(255,255,255,0.5)', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px', marginBottom: '8px', letterSpacing: '0.2em' }}
+              labelStyle={{ color: 'hsl(var(--muted-foreground))', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px', marginBottom: '8px', letterSpacing: '0.2em' }}
               cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 2, strokeDasharray: '6 6' }}
             />
             <Area 
@@ -63,16 +64,16 @@ export function SalesChartWidget({ data }: { data: any }) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-      <div className="grid grid-cols-3 gap-6 pt-8 border-t border-white/5">
+      <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border dark:border-white/5">
         <div className="space-y-1">
-           <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em] mb-2 font-space-grotesk">Hora pico</p>
+           <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em] mb-2 font-space-grotesk italic">Hora pico</p>
            <div className="flex items-center gap-2">
-             <p className="text-xl font-black text-white font-space-grotesk italic">{data.peakHour}</p>
+             <p className="text-xl font-black text-foreground font-space-grotesk italic uppercase">{data.peakHour}</p>
            </div>
         </div>
-        <div className="space-y-1 border-x border-white/5 px-6 text-center">
-           <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em] mb-2 font-space-grotesk">Venta Máxima</p>
-           <p className="text-xl font-black text-white font-space-grotesk">{formatCOP(data.maxSale)}</p>
+        <div className="space-y-1 border-x border-border dark:border-white/5 px-6 text-center">
+           <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em] mb-2 font-space-grotesk italic">Venta Máxima</p>
+           <p className="text-xl font-black text-foreground font-space-grotesk">{formatCOP(data.maxSale)}</p>
         </div>
         <div className="space-y-1 text-right">
            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em] mb-2 font-space-grotesk">Total Ítems</p>
