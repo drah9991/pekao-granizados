@@ -176,8 +176,18 @@
 
 @layer utilities {
   .bg-aurora {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-aurora::before {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    z-index: -10;
     background: var(--gradient-aurora);
-    background-attachment: fixed;
+    background-size: cover;
+    pointer-events: none;
     transition: background 2s ease-in-out;
   }
 
@@ -333,15 +343,14 @@
     perspective: 1000px;
   }
 
-  @keyframes aurora-float {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+  @keyframes aurora-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 
-  .animate-aurora {
-    background-size: 200% 200%;
-    animation: aurora-float 20s ease-in-out infinite;
+  .animate-aurora::before {
+    animation: aurora-rotate 45s linear infinite;
+    will-change: transform;
   }
 
   @keyframes pro-in {

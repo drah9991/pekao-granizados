@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, useSpring, useMotionValue } from "framer-motion";
 
 export const InteractiveCursor: React.FC = () => {
   const [isPointer, setIsPointer] = useState(false);
+  const isPointerRef = useRef(false);
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
 
@@ -16,14 +17,20 @@ export const InteractiveCursor: React.FC = () => {
       cursorY.set(e.clientY);
 
       const target = e.target as HTMLElement;
-      const isClickable = 
+      if (!target) return;
+
+      const isClickable = !!(
         target.closest('button') || 
         target.closest('a') || 
         target.closest('.cursor-pointer') ||
         target.tagName === 'INPUT' ||
-        target.tagName === 'SELECT';
+        target.tagName === 'SELECT'
+      );
       
-      setIsPointer(!!isClickable);
+      if (isPointerRef.current !== isClickable) {
+        isPointerRef.current = isClickable;
+        setIsPointer(isClickable);
+      }
     };
 
     window.addEventListener("mousemove", moveCursor);
