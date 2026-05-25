@@ -5,9 +5,10 @@ import { SalesTable } from "@/components/sales/SalesTable";
 import { OrderDetailsDialog, CancelOrderDialog, EditOrderDialog } from "@/components/sales/SalesDialogs";
 import { printReceipt } from "@/utils/Sales/printUtils";
 import { motion } from "framer-motion";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
+import { cn } from "@/lib/utils";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -32,6 +33,9 @@ const Sales = () => {
     stats,
     statusCounts,
     refreshOrders,
+    isAudioEnabled,
+    toggleAudio,
+    testAudioChime,
     dialogs
   } = useSales();
 
@@ -58,15 +62,53 @@ const Sales = () => {
               </p>
             </div>
             
-            <Button 
-              onClick={refreshOrders} 
-              disabled={loading}
-              variant="outline"
-              className="h-16 px-8 rounded-[1.5rem] bg-muted/40 border-border border-2 text-[10px] font-black uppercase tracking-widest italic font-space-grotesk hover:bg-muted transition-all shadow-pro group"
-            >
-              <RefreshCw className={`mr-3 h-4 w-4 text-primary transition-transform duration-500 ${loading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-              Sincronizar Datos
-            </Button>
+            <div className="flex flex-wrap items-center gap-4">
+              {/* KDS Audio Controls */}
+              <div className="flex items-center bg-muted/20 border border-border/50 rounded-[1.5rem] p-1.5 glass-pro shadow-sm">
+                <Button
+                  onClick={toggleAudio}
+                  variant="ghost"
+                  className={cn(
+                    "h-12 px-5 rounded-[1.1rem] text-[9px] font-black uppercase tracking-widest italic font-space-grotesk transition-all duration-300 gap-2",
+                    isAudioEnabled 
+                      ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20" 
+                      : "text-rose-400 bg-rose-500/10 hover:bg-rose-500/20"
+                  )}
+                  title={isAudioEnabled ? "Silenciar campana de cocina" : "Activar campana de cocina"}
+                >
+                  {isAudioEnabled ? (
+                    <>
+                      <Volume2 className="h-4.5 w-4.5 animate-pulse" />
+                      <span>Audio Cocina: SI</span>
+                    </>
+                  ) : (
+                    <>
+                      <VolumeX className="h-4.5 w-4.5" />
+                      <span>Audio Cocina: NO</span>
+                    </>
+                  )}
+                </Button>
+                
+                <Button
+                  onClick={testAudioChime}
+                  variant="ghost"
+                  className="h-12 px-4 rounded-[1.1rem] text-[9px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-all gap-1.5"
+                  title="Reproducir campana de prueba y activar audio"
+                >
+                  <span>Probar</span>
+                </Button>
+              </div>
+
+              <Button 
+                onClick={refreshOrders} 
+                disabled={loading}
+                variant="outline"
+                className="h-16 px-8 rounded-[1.5rem] bg-muted/40 border-border border-2 text-[10px] font-black uppercase tracking-widest italic font-space-grotesk hover:bg-muted transition-all shadow-pro group"
+              >
+                <RefreshCw className={`mr-3 h-4 w-4 text-primary transition-transform duration-500 ${loading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+                Sincronizar Datos
+              </Button>
+            </div>
           </div>
 
           {/* KPIs Section */}

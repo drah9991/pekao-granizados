@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { OrderWithDetails, OrderStatus, OrderItem } from "@/types/sales";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { playNewOrderSound, forceAudioUnlock } from "@/utils/audio";
 
 export function useSales() {
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
@@ -17,6 +18,15 @@ export function useSales() {
   const [quickFilter, setQuickFilter] = useState<string>("week");
   const [loading, setLoading] = useState(true);
   const [storeId, setStoreId] = useState<string | null>(null);
+
+  // Audio preference state
+  const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("kds_audio_enabled");
+      return saved !== "false";
+    }
+    return true;
+  });
 
   // Dialog State
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null);
@@ -80,6 +90,55 @@ export function useSales() {
     fetchOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, selectedStatusFilter, dateRange]);
+
+  // Realtime subscription for incoming orders to trigger KDS audio notifications
+  useEffect(() => {
+    if (!storeId) return;
+
+    const channel = supabase
+      .channel(`kds-orders-sync-${storeId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
+        (payload) => {
+          const audioSaved = localStorage.getItem('kds_audio_enabled') !== 'false';
+          if (audioSaved) {
+            playNewOrderSound();
+          }
+          // Refresh list immediately in the background
+          fetchOrders();
+          // Notify the user visually
+          toast.success(`Nuevo pedido recibido: #${payload.new.id.slice(0, 8).toUpperCase()}`, {
+            icon: "🔔"
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [storeId]);
+
+  const toggleAudio = () => {
+    setIsAudioEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem("kds_audio_enabled", next ? "true" : "false");
+      toast.info(next ? "Audio de cocina habilitado" : "Audio de cocina silenciado", {
+        icon: next ? "🔊" : "🔇"
+      });
+      return next;
+    });
+  };
+
+  const testAudioChime = async () => {
+    const success = await forceAudioUnlock();
+    if (success) {
+      toast.success("Sonido de prueba reproducido con éxito", { icon: "🔊" });
+    } else {
+      toast.error("El audio está suspendido. Haga clic aquí para interactuar con la página y probar de nuevo.", { icon: "🚫" });
+    }
+  };
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
@@ -192,6 +251,9 @@ export function useSales() {
     stats,
     statusCounts,
     refreshOrders: fetchOrders,
+    isAudioEnabled,
+    toggleAudio,
+    testAudioChime,
     dialogs: {
       selectedOrder,
       isDetailsOpen,
@@ -208,3 +270,4 @@ export function useSales() {
     }
   };
 }
+

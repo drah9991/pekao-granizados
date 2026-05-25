@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useTurn } from "@/hooks/useTurn";
-import { offlineService } from "@/lib/OfflineService";
+import { offlineService, OfflineOrder } from "@/lib/OfflineService";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useQueryClient } from "@tanstack/react-query";
 import type { PaymentMethod } from "@/components/pos/PaymentDialog";
@@ -16,6 +16,7 @@ export function usePOS() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState<OfflineOrder[]>([]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -34,6 +35,7 @@ export function usePOS() {
 
   const checkPendingOrders = async () => {
     const pending = await offlineService.getPendingOrders();
+    setPendingOrders(pending);
     setPendingOrdersCount(pending.length);
   };
 
@@ -240,6 +242,7 @@ export function usePOS() {
     isProcessing,
     isOnline,
     pendingOrdersCount,
+    pendingOrders,
     processSale,
     handleSync,
     checkPendingOrders
