@@ -14,11 +14,11 @@
     --brand-primary-s: 100;
     --brand-primary-l: 60;
     
-    /* True Light Mode - Premium Neutral */
-    --background: 220 33% 98%;
-    --foreground: 222 47% 11%;
+    /* Premium Enterprise Light Mode - Sharp & Clear */
+    --background: 210 20% 98%; /* Soft slate white canvas */
+    --foreground: 222 47% 11%; /* High contrast slate black */
     
-    --card: 0 0% 100%;
+    --card: 0 0% 100%; /* Pure white surface */
     --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
@@ -27,20 +27,20 @@
     --primary: var(--brand-primary-h) var(--brand-primary-s)% var(--brand-primary-l)%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11.2%;
 
     --accent: var(--brand-primary-h) 100% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 10% 40%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 40%; /* WCAG AA Compliant 4.5:1+ */
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
     --ring: var(--brand-primary-h) var(--brand-primary-s)% var(--brand-primary-l)%;
 
     --radius: 1rem; /* 16px */
