@@ -30,9 +30,9 @@ export function CartTotals({
     <div className="space-y-6 pt-6 border-t border-white/5">
       {/* Discount Area - Minimalist */}
       <div className="flex items-center justify-between gap-4 px-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 font-dm-sans">Descuento</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground font-dm-sans">Descuento</span>
           <div className="flex items-center gap-2">
-              <div className="flex items-center bg-white/[0.03] rounded-lg border border-white/5 overflow-hidden">
+              <div className="flex items-center bg-muted/30 rounded-lg border border-border overflow-hidden">
                 <Input
                   type="number"
                   placeholder="0"
@@ -56,7 +56,7 @@ export function CartTotals({
       </div>
 
       {/* Totals Section */}
-      <div className="space-y-3 py-8 px-8 bg-white/[0.02] rounded-2xl border border-white/5 relative overflow-hidden">
+      <div className="space-y-3 py-8 px-8 bg-muted/20 rounded-2xl border border-border relative overflow-hidden">
         <div className="flex justify-between items-center opacity-40">
           <span className="text-[10px] font-bold uppercase tracking-widest font-dm-sans">Subtotal</span>
           <span className="text-sm font-bold text-foreground font-dm-sans tabular-nums">{formatCOP(subtotal)}</span>
@@ -80,7 +80,7 @@ export function CartTotals({
          <Button 
            variant="outline" 
            onClick={() => onQuickPayment('cash')}
-           className="h-20 bg-white/[0.02] border-white/5 rounded-2xl flex flex-col gap-2 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group font-dm-sans"
+           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group font-dm-sans"
          >
             <Wallet size={20} className="text-emerald-500 group-hover:scale-110 transition-transform" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Efectivo</span>
@@ -88,7 +88,7 @@ export function CartTotals({
          <Button 
            variant="outline" 
            onClick={() => onQuickPayment('card')}
-           className="h-20 bg-white/[0.02] border-white/5 rounded-2xl flex flex-col gap-2 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group font-dm-sans"
+           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group font-dm-sans"
          >
             <CreditCard size={20} className="text-blue-500 group-hover:scale-110 transition-transform" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Tarjeta</span>
@@ -96,7 +96,7 @@ export function CartTotals({
          <Button 
            variant="outline" 
            onClick={() => onQuickPayment('transfer')}
-           className="h-20 bg-white/[0.02] border-white/5 rounded-2xl flex flex-col gap-2 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all group font-dm-sans"
+           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all group font-dm-sans"
          >
             <Smartphone size={20} className="text-purple-500 group-hover:scale-110 transition-transform" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Transf.</span>

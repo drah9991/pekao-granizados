@@ -113,8 +113,13 @@ export function useDashboard(storeId: string | null) {
   const dashboardData = useMemo(() => {
     if (!rawData) return null;
     const transformed = transformDashboardData(rawData.orders, rawData.comparisonOrders, rawData.expenses);
+
+    // Improved lowStock logic:
+    // 1. Any mixture is included (for the MixtureStockWidget)
+    // 2. Any non-mixture with stock below critical level
+    // 3. Ensure negative stock is always included as critical
     const lowStock = rawData.inventory.filter((item: any) => 
-      item.stock <= (item.min_stock || 0) || item.is_mixture
+      item.is_mixture || item.stock <= (item.min_stock || 0) || item.stock < 0
     );
 
     return {

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { Tables, TablesInsert, Json, Enums } from "@/integrations/supabase/types";
 import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils";
+import { mapProductStock } from "@/utils/productStockUtils";
 
 type Product = Tables<'products'>;
 type ProductType = Enums<'product_type'>;
@@ -57,10 +58,26 @@ export function useProducts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(`
+          *,
+          store_stock ( qty, min_qty ),
+          recipes (
+            inventory_item_id,
+            quantity_required,
+            inventory_items (
+              id,
+              stock,
+              is_mixture
+            )
+          )
+        `)
         .order("name", { ascending: true });
       if (error) throw error;
-      return data || [];
+
+      // Fetch types config to determine stock tracking
+      const { data: typesData } = await supabase.from("product_types_config").select("*").eq('active', true);
+
+      return (data || []).map((p: any) => mapProductStock(p, typesData || []));
     }
   });
 
