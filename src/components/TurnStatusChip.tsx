@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { useTurn } from '@/hooks/useTurn';
 import { Button } from '@/components/ui/button';
 import { 
@@ -20,7 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAlerts } from '@/hooks/useAlerts';
 
-export function TurnStatusChip() {
+const TurnStatusChipComponent = () => {
   const { activeTurn, isLoading, openTurn, closeTurn, pauseTurn, resumeTurn } = useTurn();
   const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -38,15 +38,15 @@ export function TurnStatusChip() {
     );
   }
 
-  const handleOpenTurn = async () => {
+  const handleOpenTurn = useCallback(async () => {
     try {
       await openTurn(parseFloat(amount) || 0);
       setIsOpening(false);
       setAmount("");
     } catch (e) {}
-  };
+  }, [amount, openTurn]);
 
-  const handleCloseTurn = async () => {
+  const handleCloseTurn = useCallback(async () => {
     try {
       const closingAmount = parseFloat(amount) || 0;
       
@@ -76,7 +76,7 @@ export function TurnStatusChip() {
       setNotes("");
       navigate('/cash-register');
     } catch (e) {}
-  };
+  }, [amount, notes, activeTurn, closeTurn, navigate, showBlockingModal]);
 
   return (
     <div className="px-2 py-4">
@@ -215,4 +215,6 @@ export function TurnStatusChip() {
       )}
     </div>
   );
-}
+};
+
+export const TurnStatusChip = memo(TurnStatusChipComponent);

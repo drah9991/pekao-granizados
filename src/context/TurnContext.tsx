@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
@@ -33,7 +33,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
   const [activeTurn, setActiveTurn] = useState<CashTurn | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchActiveTurn = async () => {
+  const fetchActiveTurn = useCallback(async () => {
     if (!storeId) return;
     
     setIsLoading(true);
@@ -64,7 +64,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [storeId]);
 
   useEffect(() => {
     if (!storeId) return;
@@ -92,7 +92,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     };
   }, [storeId]);
 
-  const openTurn = async (amount: number) => {
+  const openTurn = useCallback(async (amount: number) => {
     if (!user) {
       toast.error("Falta información del usuario.");
       throw new Error("Usuario no encontrado");
@@ -121,9 +121,9 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     await fetchActiveTurn();
     
     toast.success("Turno abierto exitosamente");
-  };
+  }, [user, storeId, fetchActiveTurn]);
 
-  const pauseTurn = async () => {
+  const pauseTurn = useCallback(async () => {
     if (!activeTurn) return;
 
     const { error } = await (supabase as any)
@@ -141,9 +141,9 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     
     await fetchActiveTurn();
     toast.success("Turno pausado");
-  };
+  }, [activeTurn, fetchActiveTurn]);
 
-  const resumeTurn = async () => {
+  const resumeTurn = useCallback(async () => {
     if (!activeTurn) return;
 
     const { error } = await (supabase as any)
@@ -161,9 +161,9 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     
     await fetchActiveTurn();
     toast.success("Turno reanudado");
-  };
+  }, [activeTurn, fetchActiveTurn]);
 
-  const reopenTurn = async (turnId: string) => {
+  const reopenTurn = useCallback(async (turnId: string) => {
     const { error } = await (supabase as any)
       .from('cash_turns')
       .update({
@@ -183,9 +183,9 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     
     await fetchActiveTurn();
     toast.success("Turno reabierto con éxito");
-  };
+  }, [fetchActiveTurn]);
 
-  const closeTurn = async (amount: number, notes?: string) => {
+  const closeTurn = useCallback(async (amount: number, notes?: string) => {
     if (!activeTurn) return;
 
     const { error } = await (supabase as any)
@@ -204,10 +204,20 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     }
     toast.success("Turno cerrado exitosamente");
     setActiveTurn(null);
-  };
+  }, [activeTurn]);
+
+  const value = useMemo(() => ({
+    activeTurn,
+    isLoading,
+    openTurn,
+    closeTurn,
+    pauseTurn,
+    resumeTurn,
+    reopenTurn
+  }), [activeTurn, isLoading, openTurn, closeTurn, pauseTurn, resumeTurn, reopenTurn]);
 
   return (
-    <TurnContext.Provider value={{ activeTurn, isLoading, openTurn, closeTurn, pauseTurn, resumeTurn, reopenTurn }}>
+    <TurnContext.Provider value={value}>
       {children}
     </TurnContext.Provider>
   );
