@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +37,10 @@ export default function RecipeManager({ recipe, onChange, storeId }: RecipeManag
   const [qtyOz, setQtyOz] = useState<string>("");
   const [selectedUnit, setSelectedUnit] = useState<string>("oz");
 
+  const inventoryMap = useMemo(() => {
+    return new Map(inventoryItems.map((item) => [item.id, item]));
+  }, [inventoryItems]);
+
   useEffect(() => {
     if (storeId) {
       fetchInventoryItems();
@@ -68,7 +72,7 @@ export default function RecipeManager({ recipe, onChange, storeId }: RecipeManag
       return;
     }
 
-    const item = inventoryItems.find((i) => i.id === selectedItem);
+    const item = inventoryMap.get(selectedItem);
     if (!item) return;
 
     // Check if already in recipe
@@ -185,7 +189,7 @@ export default function RecipeManager({ recipe, onChange, storeId }: RecipeManag
                     <div className="flex items-center gap-4">
                         <div className="w-1.5 h-10 bg-primary/20 rounded-full group-hover:bg-primary transition-colors shadow-glow-pro" />
                         <div>
-                            <p className="text-sm font-black italic uppercase tracking-tighter text-white font-space-grotesk">{item.name || inventoryItems.find(i => i.id === item.inventory_item_id)?.name || "Insumo"}</p>
+                            <p className="text-sm font-black italic uppercase tracking-tighter text-white font-space-grotesk">{item.name || inventoryMap.get(item.inventory_item_id)?.name || "Insumo"}</p>
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="text-[9px] font-black text-primary uppercase tracking-widest">
                                     CONSUMO ACTIVO: {item.quantity_oz} {item.unit || 'oz'}
