@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useTransition } from "react";
 import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
 import { usePOS } from "@/hooks/usePOS";
@@ -34,7 +34,14 @@ export function usePOSPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   const isMobile = useIsMobile();
-  const [viewMode, setViewMode] = useState<"products" | "cart">("products");
+  const [viewMode, setViewModeInternal] = useState<"products" | "cart">("products");
+  const [, startViewTransition] = useTransition();
+
+  const setViewMode = (mode: "products" | "cart") => {
+    startViewTransition(() => {
+      setViewModeInternal(mode);
+    });
+  };
 
   usePOSShortcuts({
     onSearchFocus: () => searchInputRef.current?.focus(),

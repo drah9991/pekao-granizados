@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, Suspense } from "react";
+import { ReactNode, useState, useEffect, Suspense, useMemo, useTransition } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -47,7 +47,21 @@ import { InteractiveCursor } from "./ui/InteractiveCursor";
 export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const location = useLocation();
   const isMobile = useIsMobile();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
+  const [isSidebarOpen, setIsSidebarOpenInternal] = useState(!isMobile);
+  const [isSidebarPending, startSidebarTransition] = useTransition();
+
+  const toggleSidebar = () => {
+    startSidebarTransition(() => {
+      setIsSidebarOpenInternal(prev => !prev);
+    });
+  };
+
+  const closeSidebar = () => {
+    startSidebarTransition(() => {
+      setIsSidebarOpenInternal(false);
+    });
+  };
+
   const { logoUrl, isLoadingBranding } = useBranding();
   const { userRole, isLoading: isLoadingAuth } = useAuth();
   const { role: currentRole, isLoading: isLoadingRole } = useCurrentRole();
@@ -119,7 +133,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   };
 
   useEffect(() => {
-    setIsSidebarOpen(!isMobile);
+    setIsSidebarOpenInternal(!isMobile);
   }, [isMobile]);
 
   const handleLogout = async () => {
@@ -131,13 +145,15 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
     }
   };
 
-  const visibleGroups = navConfig.filter(group => {
-    if (isLoadingAuth || !effectiveRole) return false;
-    return group.roles.includes(effectiveRole);
-  }).map(group => ({
-    ...group,
-    items: group.items.filter(item => item.roles.includes(effectiveRole))
-  })).filter(group => group.items.length > 0);
+  const visibleGroups = useMemo(() => {
+    if (isLoadingAuth || !effectiveRole) return [];
+    return navConfig.filter(group => {
+      return group.roles.includes(effectiveRole);
+    }).map(group => ({
+      ...group,
+      items: group.items.filter(item => item.roles.includes(effectiveRole))
+    })).filter(group => group.items.length > 0);
+  }, [isLoadingAuth, effectiveRole]);
 
   const getMoodClass = () => {
     const path = location.pathname;
@@ -159,7 +175,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         variant="ghost"
         size="icon"
         className="fixed top-4 left-4 z-[60] bg-card/80 backdrop-blur-sm border border-border/50 shadow-md"
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        onClick={toggleSidebar}
       >
         {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </Button>
@@ -291,7 +307,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                       <Link
                         key={item.label}
                         to={item.href}
-                        onClick={() => isMobile && setIsSidebarOpen(false)}
+                        onClick={() => isMobile && closeSidebar()}
                       >
                         {linkContent}
                       </Link>
@@ -310,7 +326,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                         items={item.children}
                         activeTurn={activeTurn}
                         isMobile={isMobile}
-                        onNavigate={() => setIsSidebarOpen(false)}
+                        onNavigate={closeSidebar}
                         isLinkActive={isLinkActive}
                         defaultOpen={defaultOpen}
                         storageKey={storageKey}
@@ -350,11 +366,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
       </aside>
 
       {isMobile && isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+          <div
+            className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
+            onClick={closeSidebar}
+          />
+        )}
 
       <main className={cn(
         "flex-1 overflow-auto transition-all duration-700 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] pt-16 md:pt-20 relative z-10 h-full",

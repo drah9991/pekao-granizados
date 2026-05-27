@@ -25,18 +25,14 @@ export function useTankStatus(customStoreId?: string | null) {
 
   const queryKey = ['tank-status', storeId, activeTurn?.id, activeTurn?.status];
 
-  console.log("[useTankStatus Hook] Current storeId:", storeId, "activeTurn:", activeTurn?.id, "status:", activeTurn?.status);
-
   const query = useQuery<TankStatus[]>({
     queryKey,
     queryFn: async () => {
       if (!storeId) {
-        console.warn("[useTankStatus Hook] No storeId available, skipping query.");
         return [];
       }
 
       try {
-        console.log("[useTankStatus Hook] Fetching tank status from Supabase for storeId:", storeId);
         const { data, error } = await supabase
           .from('vw_tank_percentages' as unknown as 'inventory_items')
           .select('*')
@@ -52,7 +48,6 @@ export function useTankStatus(customStoreId?: string | null) {
           throw error;
         }
 
-        console.log("[useTankStatus Hook] Successfully fetched tanks:", data);
         return data as TankStatus[];
       } catch (err) {
         console.error("[useTankStatus Hook] Error fetching tank status:", err);

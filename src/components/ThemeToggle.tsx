@@ -1,12 +1,16 @@
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Loader2 } from "lucide-react";
+import { useTransition } from "react";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const [isPending, startTransition] = useTransition();
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    startTransition(() => {
+      setTheme(theme === "dark" ? "light" : "dark");
+    });
   };
 
   return (
@@ -14,9 +18,12 @@ export default function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
+      disabled={isPending}
       className="h-9 w-9 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-300 rounded-xl"
     >
-      {theme === "dark" ? (
+      {isPending ? (
+        <Loader2 className="h-5 w-5 animate-spin" />
+      ) : theme === "dark" ? (
         <Sun className="h-5 w-5 transition-all duration-300 group-hover:scale-110" />
       ) : (
         <Moon className="h-5 w-5 transition-all duration-300 group-hover:scale-110" />

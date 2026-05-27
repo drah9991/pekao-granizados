@@ -3,7 +3,7 @@ import type { Product } from "@/lib/pos-types";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, memo, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatCOP } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
@@ -290,8 +290,12 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
     });
   }, [products, searchQuery, activeCategory]);
 
+  const [isCategoryPending, startCategoryTransition] = useTransition();
+
   const handleSetActiveCategory = useCallback((cat: string) => {
-    setActiveCategory(cat);
+    startCategoryTransition(() => {
+      setActiveCategory(cat);
+    });
   }, []);
 
   if (loading && !products.length) {
