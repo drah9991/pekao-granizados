@@ -62,6 +62,9 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
     });
   };
 
+  const navigate = useNavigate();
+  const [isNavigating, startNavigationTransition] = useTransition();
+
   const { logoUrl, isLoadingBranding } = useBranding();
   const { userRole, isLoading: isLoadingAuth } = useAuth();
   const { role: currentRole, isLoading: isLoadingRole } = useCurrentRole();
@@ -304,13 +307,18 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                     }
 
                     return (
-                      <Link
+                      <div
                         key={item.label}
-                        to={item.href}
-                        onClick={() => isMobile && closeSidebar()}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (isMobile) closeSidebar();
+                          startNavigationTransition(() => {
+                            navigate(item.href);
+                          });
+                        }}
                       >
                         {linkContent}
-                      </Link>
+                      </div>
                     );
                   } else if (item.type === "collapsible" && item.children) {
                     const isMaestros = item.label === "Maestros";

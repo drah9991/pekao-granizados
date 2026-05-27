@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useTransition } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCollapsible } from "@/hooks/useCollapsible";
@@ -36,6 +36,9 @@ export function CollapsibleNavGroup({
     storageKey || `collapsible_${label.toLowerCase()}`,
     defaultOpen
   );
+
+  const navigate = useNavigate();
+  const [isNavigating, startNavigationTransition] = useTransition();
 
   const parentIsActive = items.some(item => isLinkActive(item.href));
 
@@ -134,14 +137,18 @@ export function CollapsibleNavGroup({
           }
 
           return (
-            <Link
+            <div
               key={child.label}
-              to={child.href}
-              className="block"
-              onClick={() => isMobile && onNavigate?.()}
+              className="block cursor-pointer"
+              onClick={() => {
+                if (isMobile) onNavigate?.();
+                startNavigationTransition(() => {
+                  navigate(child.href);
+                });
+              }}
             >
               {linkContent}
-            </Link>
+            </div>
           );
         })}
       </div>
