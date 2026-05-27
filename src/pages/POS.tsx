@@ -59,7 +59,7 @@ export default function POS() {
           </button>
           
           {pendingOrdersCount > 0 && (
-            <Button size="icon" variant="ghost" className="text-amber-500 animate-pulse" onClick={() => setSyncDrawerIsOpen(true)}>
+            <Button size="icon" variant="ghost" className="text-amber-500 animate-pulse" onClick={() => setSyncDrawerIsOpen(true)} aria-label="Ver y sincronizar pedidos locales pendientes">
               <CloudUpload size={20} />
             </Button>
           )}

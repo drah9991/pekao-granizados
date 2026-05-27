@@ -19,6 +19,7 @@ export default function ThemeToggle() {
       size="icon"
       onClick={toggleTheme}
       disabled={isPending}
+      aria-label="Alternar modo de color oscuro"
       className="h-9 w-9 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-300 rounded-xl"
     >
       {isPending ? (

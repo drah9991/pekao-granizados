@@ -46,7 +46,12 @@ export default function NotificationCenter() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative group overflow-visible">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative group overflow-visible"
+          aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : "Notificaciones"}
+        >
           <Bell className={cn(
             "w-5 h-5 transition-transform",
             unreadCount > 0 && "animate-wiggle text-primary"

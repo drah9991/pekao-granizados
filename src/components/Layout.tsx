@@ -179,6 +179,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         size="icon"
         className="fixed top-4 left-4 z-[60] bg-card/80 backdrop-blur-sm border border-border/50 shadow-md"
         onClick={toggleSidebar}
+        aria-label={isSidebarOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
       >
         {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </Button>
@@ -202,11 +203,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
           </div>
         </div>
         <div className="flex items-center px-1 gap-1 border-r border-white/5 pr-2 mr-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg" onClick={() => setUiScale(s => Math.max(50, s - 10))}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg" onClick={() => setUiScale(s => Math.max(50, s - 10))} aria-label="Disminuir escala de interfaz">
             <Minus className="w-3 h-3" />
           </Button>
           <span className="text-[10px] font-black w-8 text-center tracking-tighter">{uiScale}%</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg" onClick={() => setUiScale(s => Math.min(200, s + 10))}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg" onClick={() => setUiScale(s => Math.min(200, s + 10))} aria-label="Aumentar escala de interfaz">
             <Plus className="w-3 h-3" />
           </Button>
         </div>
@@ -239,7 +240,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               )}
             </div>
             <div>
-              <h1 className="text-lg font-extrabold text-foreground tracking-tight font-dm-sans">PEKAO</h1>
+              <span className="text-lg font-extrabold text-foreground tracking-tight font-dm-sans block">PEKAO</span>
               <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Business Pro</p>
             </div>
           </div>

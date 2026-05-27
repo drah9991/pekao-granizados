@@ -143,6 +143,7 @@ export default function CustomerSelection({ onCustomerSelected, selectedCustomer
                     className="pl-9 pr-10"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Buscar cliente por nombre o teléfono"
                 />
                 {searchQuery && (
                     <Button

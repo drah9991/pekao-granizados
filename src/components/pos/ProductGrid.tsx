@@ -328,6 +328,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
             className="pl-14 h-14 lg:h-16 text-lg glass-pro !bg-surface-subtle border-border/50 rounded-2xl focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30 font-dm-sans"
             defaultValue={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
+            aria-label="Buscar productos por nombre o categoría"
           />
           <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-4">
              {isOfflineMode && (
