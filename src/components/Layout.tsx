@@ -210,14 +210,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                 <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
               ) : logoUrl ? (
                 <img 
-                  src={
-                    logoUrl.includes("supabase.co/storage/v1/object/public/")
-                      ? logoUrl.replace(
-                          "supabase.co/storage/v1/object/public/",
-                          "supabase.co/storage/v1/render/image/public/"
-                        ) + "?width=150&resize=contain&quality=85"
-                      : logoUrl
-                  } 
+                  src={logoUrl} 
                   alt="Logo" 
                   className="max-w-full max-h-full object-contain p-2" 
                   loading="eager"
