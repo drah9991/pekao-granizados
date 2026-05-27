@@ -8,11 +8,12 @@ import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { DashboardSkeleton, WidgetSkeleton } from "@/components/dashboard/DashboardSkeletons";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardGrid from "@/components/dashboard/DashboardGrid";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { storeId } = useAuth();
   const {
-    period, setPeriod, uiConfig, setUiConfig, isSavingConfig, isLoading, error,
+    period, setPeriod, uiConfig, setUiConfig, isSavingConfig, isLoading, isPending, error,
     dashboardData, comparisonLabel, handleSaveConfig
   } = useDashboard(storeId);
 
@@ -57,7 +58,10 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="min-h-screen p-2 md:p-4 lg:p-6 space-y-10 animate-pro-in">
+      <div className={cn(
+        "min-h-screen p-2 md:p-4 lg:p-6 space-y-10 animate-pro-in transition-all duration-300",
+        isPending && "opacity-50 pointer-events-none filter blur-[1px]"
+      )}>
         <DashboardHeader 
           period={period}
           setPeriod={setPeriod}

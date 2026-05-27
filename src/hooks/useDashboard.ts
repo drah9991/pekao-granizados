@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getDashboardRanges, transformDashboardData } from "@/utils/dashboardUtils";
@@ -6,10 +6,23 @@ import { DashboardConfig, defaultDashboardConfig } from "@/components/dashboard/
 import { toast } from "sonner";
 
 export function useDashboard(storeId: string | null) {
-  const [period, setPeriod] = useState<"today" | "week" | "month" | "year">("today");
-  const [uiConfig, setUiConfig] = useState<DashboardConfig>(defaultDashboardConfig);
+  const [period, setPeriodInternal] = useState<"today" | "week" | "month" | "year">("today");
+  const [uiConfig, setUiConfigInternal] = useState<DashboardConfig>(defaultDashboardConfig);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
+
+  const setPeriod = (newPeriod: "today" | "week" | "month" | "year") => {
+    startTransition(() => {
+      setPeriodInternal(newPeriod);
+    });
+  };
+
+  const setUiConfig = (newConfig: DashboardConfig) => {
+    startTransition(() => {
+      setUiConfigInternal(newConfig);
+    });
+  };
 
   const ranges = useMemo(() => getDashboardRanges(period), [period]);
 
@@ -106,7 +119,7 @@ export function useDashboard(storeId: string | null) {
   // Sincronizar configuración guardada solo cuando cambia el store o carga inicial
   useEffect(() => {
     if (rawData?.config) {
-      setUiConfig(rawData.config);
+      setUiConfigInternal(rawData.config);
     }
   }, [rawData?.config]);
 
@@ -154,6 +167,7 @@ export function useDashboard(storeId: string | null) {
     setUiConfig,
     isSavingConfig,
     isLoading: isLoading && !dashboardData,
+    isPending,
     error,
     dashboardData,
     comparisonLabel,
