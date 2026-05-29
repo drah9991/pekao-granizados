@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useConfigStore } from "@/store/useConfigStore";
+import { useAuth } from "@/context/AuthContext";
 
 interface Permission {
   id: string;
@@ -43,39 +45,13 @@ const actions = [
 ];
 
 export default function RolesSettings() {
-  const [roles, setRoles] = useState<RoleConfig[]>([]);
-  const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { storeId } = useAuth();
+  const { roles, rolePermissions: permissions, fetchConfig, loading: isLoading } = useConfigStore();
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDescription, setNewRoleDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [rolesData, permsData] = await Promise.all([
-        (supabase as any).from('roles').select('*').order('created_at', { ascending: true }),
-        supabase.from('role_permissions').select('*')
-      ]);
-
-      if (rolesData.error) throw rolesData.error;
-      if (permsData.error) throw permsData.error;
-
-      setRoles(rolesData.data || []);
-      setPermissions(permsData.data || []);
-    } catch (error: any) {
-      console.error('Error loading roles data:', error);
-      toast.error('Fallo en sincronización de permisos: ' + error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAddRole = async () => {
     if (!newRoleName.trim()) {
@@ -104,7 +80,7 @@ export default function RolesSettings() {
         
       if (error) throw error;
       
-      setRoles([...roles, data]);
+      if (storeId) fetchConfig(storeId);
       setNewRoleName("");
       setNewRoleDescription("");
       setIsAddModalOpen(false);
@@ -134,8 +110,7 @@ export default function RolesSettings() {
         
       if (error) throw error;
       
-      setRoles(roles.filter(r => r.id !== roleObj.id));
-      setPermissions(permissions.filter(p => p.role !== roleObj.name));
+      if (storeId) fetchConfig(storeId);
       toast.success('Identidad removida con éxito');
     } catch (error: any) {
       console.error('Error deleting role:', error);
@@ -163,7 +138,7 @@ export default function RolesSettings() {
             .delete()
             .eq('id', permission.id);
           
-          setPermissions(permissions.filter(p => p.id !== permission.id));
+          if (storeId) fetchConfig(storeId);
           toast.success('Acceso revocado');
         }
       } else {
@@ -175,7 +150,7 @@ export default function RolesSettings() {
         
         if (error) throw error;
         if (data) {
-          setPermissions([...permissions, data]);
+          if (storeId) fetchConfig(storeId);
           toast.success('Privilegio concedido ✓');
         }
       }

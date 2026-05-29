@@ -23,7 +23,8 @@ import {
   FileText,
   Users,
   FlaskConical,
-  CreditCard
+  CreditCard,
+  MonitorPlay
 } from "lucide-react";
 import { NavGroup } from "@/types/navigation";
 
@@ -34,6 +35,7 @@ export const navConfig: NavGroup[] = [
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "POS", href: "/pos", icon: ShoppingCart, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
+      { label: "Menú Digital", href: "/digital-menu", icon: MonitorPlay, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Arqueo de Caja", href: "/cash-register", icon: Calculator, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Gastos", href: "/expenses", icon: CreditCard, roles: ["admin", "owner", "manager"] },
       { label: "Ventas", href: "/sales", icon: ReceiptText, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },

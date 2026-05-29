@@ -3,6 +3,7 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { DialogContext } from "./dialog";
 
 const Select = SelectPrimitive.Root;
 
@@ -60,9 +61,21 @@ SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayNam
 
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Portal>
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & {
+    disablePortal?: boolean;
+  }
+>((({ className, children, position = "popper", disablePortal, ...props }, ref) => {
+  const dialogCtx = React.useContext(DialogContext);
+  let dialogElement = dialogCtx?.dialogElement || dialogCtx?.dialogRef?.current;
+  
+  // Fallback to active native dialog in top-layer if context ref is not set
+  if (!dialogElement && typeof document !== "undefined") {
+    dialogElement = document.querySelector("dialog[open]") as HTMLDialogElement | null;
+  }
+  
+  const skipPortal = disablePortal;
+
+  const content = (
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
@@ -86,8 +99,18 @@ const SelectContent = React.forwardRef<
       </SelectPrimitive.Viewport>
       <SelectScrollDownButton />
     </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-));
+  );
+
+  if (skipPortal) {
+    return content;
+  }
+
+  return (
+    <SelectPrimitive.Portal container={dialogElement || undefined}>
+      {content}
+    </SelectPrimitive.Portal>
+  );
+}));
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
 const SelectLabel = React.forwardRef<

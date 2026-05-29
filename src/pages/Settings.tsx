@@ -4,6 +4,8 @@ import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Palette, Shield, Building2, Receipt, Ruler, Tag, Bell, Box, Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useConfigStore } from "@/store/useConfigStore";
 
 // Lazy loading components for performance optimization
 const BrandingSettings = lazy(() => import("@/components/settings/BrandingSettings"));
@@ -28,6 +30,15 @@ const TabLoadingSkeleton = () => (
 );
 
 export default function Settings() {
+  const { storeId } = useAuth();
+  const fetchConfig = useConfigStore((state) => state.fetchConfig);
+
+  useEffect(() => {
+    if (storeId) {
+      fetchConfig(storeId);
+    }
+  }, [storeId, fetchConfig]);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();

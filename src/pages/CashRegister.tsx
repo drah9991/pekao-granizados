@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { TurnStatusChip } from "@/components/TurnStatusChip";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -67,29 +68,36 @@ export default function CashRegister() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 self-start">
-            <Select value={selectedTurnId} onValueChange={handleTurnChange}>
-              <SelectTrigger className="w-[300px] h-14 bg-white/5 border border-white/10 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk shadow-pro">
-                <SelectValue placeholder="Seleccionar turno..." />
-              </SelectTrigger>
-              <SelectContent className="glass-pro border-white/10 rounded-[1.5rem]">
-                <SelectItem value="active" className="text-[10px] font-black uppercase tracking-widest italic">Turno Actual / Más Reciente</SelectItem>
-                {turnsHistory.map(turn => (
-                  <SelectItem key={turn.id} value={turn.id} className="text-[10px] font-black uppercase tracking-widest italic">
-                    {format(new Date(turn.opened_at), "d MMM hh:mm a", { locale: es })} - {(turn.status === 'open' || turn.status === 'paused') ? 'ACTUAL' : 'Cerrado'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col items-end gap-3 self-start">
+            <div className="flex items-center gap-3">
+              <Select value={selectedTurnId} onValueChange={handleTurnChange}>
+                <SelectTrigger className="w-[300px] h-14 bg-white/5 border border-white/10 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk shadow-pro">
+                  <SelectValue placeholder="Seleccionar turno..." />
+                </SelectTrigger>
+                <SelectContent className="glass-pro border-white/10 rounded-[1.5rem]">
+                  <SelectItem value="active" className="text-[10px] font-black uppercase tracking-widest italic">Turno Actual / Más Reciente</SelectItem>
+                  {turnsHistory.map(turn => (
+                    <SelectItem key={turn.id} value={turn.id} className="text-[10px] font-black uppercase tracking-widest italic">
+                      {format(new Date(turn.opened_at), "d MMM hh:mm a", { locale: es })} - {(turn.status === 'open' || turn.status === 'paused') ? 'ACTUAL' : 'Cerrado'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Button
-              onClick={refreshArqueo}
-              variant="ghost"
-              className="h-14 w-14 bg-white/5 border border-white/10 rounded-full hover:bg-primary/20 hover:text-white transition-all shadow-glow-pro p-0"
-              disabled={loading}
-            >
-              <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
-            </Button>
+              <Button
+                onClick={refreshArqueo}
+                variant="ghost"
+                className="h-14 w-14 bg-white/5 border border-white/10 rounded-full hover:bg-primary/20 hover:text-white transition-all shadow-glow-pro p-0"
+                disabled={loading}
+              >
+                <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
+              </Button>
+            </div>
+            
+            {/* Turn Controls specifically placed here for mobile/desktop visibility */}
+            <div className="w-full sm:w-auto max-w-[300px] bg-black/20 rounded-2xl border border-white/5 backdrop-blur-sm mt-2">
+              <TurnStatusChip />
+            </div>
           </div>
         </motion.div>
 

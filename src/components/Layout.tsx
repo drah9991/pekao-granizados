@@ -66,6 +66,23 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const [isNavigating, startNavigationTransition] = useTransition();
 
   const { logoUrl, isLoadingBranding } = useBranding();
+
+  const optimizedLogoUrl = useMemo(() => {
+    if (!logoUrl) return null;
+    try {
+      if (logoUrl.includes('/storage/v1/object/public/')) {
+        const url = new URL(logoUrl);
+        url.searchParams.set('width', '150');
+        url.searchParams.set('format', 'webp');
+        url.searchParams.set('quality', '80');
+        return url.toString();
+      }
+    } catch (e) {
+      return logoUrl;
+    }
+    return logoUrl;
+  }, [logoUrl]);
+
   const { userRole, isLoading: isLoadingAuth } = useAuth();
   const { role: currentRole, isLoading: isLoadingRole } = useCurrentRole();
   const { activeTurn, isLoading: isLoadingTurn } = useTurn();
@@ -228,9 +245,9 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-glow transition-all hover:scale-105">
               {isLoadingBranding ? (
                 <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-              ) : logoUrl ? (
+              ) : optimizedLogoUrl ? (
                 <img 
-                  src={logoUrl} 
+                  src={optimizedLogoUrl} 
                   alt="Logo" 
                   className="max-w-full max-h-full object-contain p-2" 
                   loading="eager"

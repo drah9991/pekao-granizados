@@ -1,4 +1,4 @@
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useCallback } from "react";
 import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
 import { usePOS } from "@/hooks/usePOS";
@@ -55,16 +55,16 @@ export function usePOSPage() {
     }
   });
 
-  const handleProductSelect = (product: Product) => {
+  const handleProductSelect = useCallback((product: Product) => {
     addToCart(product, "", [], false);
-  };
+  }, [addToCart]);
 
-  const handleAddToCartFromDialog = (product: Product, sizeId: string, toppingIds: string[], quantity: number = 1) => {
+  const handleAddToCartFromDialog = useCallback((product: Product, sizeId: string, toppingIds: string[], quantity: number = 1) => {
     addToCart(product, sizeId, toppingIds, true, quantity);
     setCustomizeDialogIsOpen(false);
-  };
+  }, [addToCart]);
 
-  const handleOpenPaymentDialog = (method: PaymentMethod = "cash") => {
+  const handleOpenPaymentDialog = useCallback((method: PaymentMethod = "cash") => {
     if (cart.length === 0) {
       notifyWarning("El carrito está vacío");
       return;
@@ -75,9 +75,9 @@ export function usePOSPage() {
     }
     setDefaultPaymentMethod(method);
     setPaymentDialogIsOpen(true);
-  };
+  }, [cart.length, selectedCustomer, notifyWarning]);
 
-  const onConfirmSale = async (
+  const onConfirmSale = useCallback(async (
     method: PaymentMethod, 
     amountReceived: number, 
     deliveryData?: any,
@@ -102,7 +102,7 @@ export function usePOSPage() {
         resetCart();
       }, 0);
     }
-  };
+  }, [cart, total, subtotal, discountAmount, selectedCustomer, processSale, resetCart]);
 
   return {
     cart, addToCart, updateQuantity, removeItem, subtotal, discount, setDiscount, discountType, setDiscountType,

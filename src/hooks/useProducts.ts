@@ -51,6 +51,10 @@ export function useProducts() {
     stock: "",
     base_volume: "" as string | number,
     unit_measure: "oz",
+    margin_target: "60.0",
+    commission_rate: "0.0",
+    supplier_name: "",
+    is_starred: false,
   });
 
   const { data: products = [], isLoading: isLoadingProducts } = useQuery({
@@ -77,7 +81,17 @@ export function useProducts() {
       // Fetch types config to determine stock tracking
       const { data: typesData } = await supabase.from("product_types_config").select("*").eq('active', true);
 
-      return (data || []).map((p: any) => mapProductStock(p, typesData || []));
+      const mapped = (data || []).map((p: any) => mapProductStock(p, typesData || []));
+      
+      // Sort starred/featured products first, maintaining name alphabetical order
+      return mapped.sort((a: any, b: any) => {
+        const aStarred = a.is_starred ? 1 : 0;
+        const bStarred = b.is_starred ? 1 : 0;
+        if (aStarred !== bStarred) {
+          return bStarred - aStarred;
+        }
+        return (a.name || "").localeCompare(b.name || "");
+      });
     }
   });
 
@@ -114,6 +128,10 @@ export function useProducts() {
         base_volume: formData.base_volume ? parseFloat(formData.base_volume.toString()) : null,
         unit_measure: formData.unit_measure,
         store_id: storeId,
+        margin_target: formData.margin_target ? parseFloat(formData.margin_target) : null,
+        commission_rate: formData.commission_rate ? parseFloat(formData.commission_rate) : null,
+        supplier_name: formData.supplier_name || null,
+        is_starred: formData.is_starred,
       };
 
       if (editingProduct) {
@@ -235,6 +253,7 @@ export function useProducts() {
       name: "", sku: "", description: "", price: "", cost: "", active: true,
       category: "", is_public: true, images: [], variants: null, recipe: null,
       type: "granizado", stock: "", base_volume: "", unit_measure: "oz",
+      margin_target: "60.0", commission_rate: "0.0", supplier_name: "", is_starred: false,
     });
     setProductDialogIsOpen(true);
     toast.success("Abriendo modal de creación...");
@@ -266,6 +285,10 @@ export function useProducts() {
       stock: currentStock, 
       base_volume: (product as any).base_volume?.toString() || "",
       unit_measure: (product as any).unit_measure || "oz",
+      margin_target: product.margin_target?.toString() || "60.0",
+      commission_rate: product.commission_rate?.toString() || "0.0",
+      supplier_name: product.supplier_name || "",
+      is_starred: product.is_starred ?? false,
     });
     setProductDialogIsOpen(true);
   };

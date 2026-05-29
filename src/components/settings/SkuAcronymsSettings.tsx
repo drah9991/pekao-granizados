@@ -13,6 +13,9 @@ import { Tables, Enums } from "@/integrations/supabase/types";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+import { useConfigStore } from "@/store/useConfigStore";
 
 type SkuAcronym = Tables<'sku_acronyms'>;
 type ProductType = Enums<'product_type'>;
@@ -26,10 +29,11 @@ const productTypeOptions: { value: ProductType; label: string }[] = [
 ];
 
 export default function SkuAcronymsSettings() {
-  const { userRole, isLoading: isLoadingAuth } = useAuth();
-  const [acronyms, setAcronyms] = useState<SkuAcronym[]>([]);
+  const { userRole, storeId, isLoading: isLoadingAuth } = useAuth();
+  const acronyms = useConfigStore((state) => state.skuAcronyms);
+  const loading = useConfigStore((state) => state.loading);
+  const fetchConfig = useConfigStore((state) => state.fetchConfig);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
 
   // Dialog states
   const [acronymDialogIsOpen, setAcronymDialogIsOpen] = useState(false);
@@ -39,28 +43,6 @@ export default function SkuAcronymsSettings() {
     code: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    fetchAcronyms();
-  }, []);
-
-  const fetchAcronyms = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("sku_acronyms")
-        .select("*")
-        .order("type", { ascending: true });
-
-      if (error) throw error;
-      setAcronyms(data || []);
-    } catch (error: any) {
-      console.error("Error fetching SKU acronyms:", error);
-      toast.error("Fallo técnico al cargar matriz de acrónimos: " + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const openCreateDialog = () => {
     setEditingAcronym(null);
@@ -108,7 +90,9 @@ export default function SkuAcronymsSettings() {
       }
 
       setAcronymDialogIsOpen(false);
-      fetchAcronyms();
+      if (storeId) {
+        await fetchConfig(storeId);
+      }
     } catch (error: any) {
       console.error("Error saving SKU acronym:", error);
       toast.error("Error en persistencia: " + error.message);
@@ -133,7 +117,9 @@ export default function SkuAcronymsSettings() {
 
       if (error) throw error;
       toast.success("Acrónimo removido de la lógica global");
-      fetchAcronyms();
+      if (storeId) {
+        await fetchConfig(storeId);
+      }
     } catch (error: any) {
       console.error("Error deleting SKU acronym:", error);
       toast.error("Error al eliminar: " + error.message);
@@ -277,8 +263,18 @@ export default function SkuAcronymsSettings() {
         <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 text-primary group-hover:rotate-12 transition-transform duration-500">
             <Info className="w-6 h-6" />
         </div>
-        <div className="relative z-10">
-            <p className="text-[11px] font-black text-white/50 uppercase italic tracking-widest mb-3 leading-none">Protocolo de Nombrado Dinámico</p>
+        <div className="relative z-10 flex-1">
+            <div className="flex items-center gap-2 mb-3">
+                <p className="text-[11px] font-black text-white/50 uppercase italic tracking-widest leading-none">Protocolo de Nombrado Dinámico</p>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="text-primary/60 hover:text-primary transition-colors"><Info className="w-4 h-4" /></button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 bg-[#1C1F26] border-white/10 rounded-2xl shadow-pro p-4">
+                    <p className="text-[10px] font-bold text-white/60 italic uppercase tracking-widest leading-relaxed">Cada vez que se indexa un producto nuevo en esta categoría, el sistema auto-generará un código combinando este prefijo, un delimitador y una secuencia numérica (ej. GRN-001).</p>
+                  </PopoverContent>
+                </Popover>
+            </div>
             <p className="text-[11px] text-white/30 font-bold uppercase italic leading-relaxed tracking-tight max-w-4xl">
               Los acrónimos definidos aquí actúan como los prefijos maestros en la generación automática de <strong className="text-primary/80">SKU Core Identifiers</strong>. Cualquier modificación afectará únicamente a los nuevos productos indexados, manteniendo la integridad histórica de los activos previos.
             </p>
@@ -339,6 +335,20 @@ export default function SkuAcronymsSettings() {
               <p className="text-[9px] text-white/20 font-bold uppercase italic tracking-tighter px-2">
                 Este código se inyectará como prefijo en todos los códigos de barra y referencias internas del sistema.
               </p>
+            </div>
+
+            {/* Dynamic Interactive Preview */}
+            <div className="p-6 bg-white/[0.02] border border-white/5 rounded-[2rem]">
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/40 italic mb-4 text-center">PREVISUALIZACIÓN DE GENERACIÓN</p>
+                <div className="flex justify-center items-center gap-4">
+                    <div className="px-4 py-2 bg-primary/10 border border-primary/20 rounded-xl text-primary font-black font-space-grotesk tracking-widest text-lg shadow-glow-pro transition-all">
+                        {formData.code || "XXX"}
+                    </div>
+                    <span className="text-white/20 font-black">-</span>
+                    <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/40 font-black font-space-grotesk tracking-widest text-lg">
+                        001
+                    </div>
+                </div>
             </div>
 
             <DialogFooter className="gap-4 pt-6">

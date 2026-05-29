@@ -341,6 +341,10 @@ export type Database = {
           store_id: string | null
           type: Database["public"]["Enums"]["product_type"] | null
           variants: Json | null
+          margin_target: number | null
+          commission_rate: number | null
+          supplier_name: string | null
+          is_starred: boolean | null
         }
         Insert: {
           active?: boolean | null
@@ -358,6 +362,10 @@ export type Database = {
           store_id?: string | null
           type?: Database["public"]["Enums"]["product_type"] | null
           variants?: Json | null
+          margin_target?: number | null
+          commission_rate?: number | null
+          supplier_name?: string | null
+          is_starred?: boolean | null
         }
         Update: {
           active?: boolean | null
@@ -375,6 +383,10 @@ export type Database = {
           store_id?: string | null
           type?: Database["public"]["Enums"]["product_type"] | null
           variants?: Json | null
+          margin_target?: number | null
+          commission_rate?: number | null
+          supplier_name?: string | null
+          is_starred?: boolean | null
         }
         Relationships: [
           {

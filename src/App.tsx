@@ -40,6 +40,7 @@ const Inventory = lazy(() => import("./pages/Inventory"));
 const InventoryManagement = lazy(() => import("./components/settings/InventoryManagement").then(m => ({ default: m.InventoryManagement })));
 
 const RecipeManagement = lazy(() => import("./components/settings/RecipeManagement").then(m => ({ default: m.RecipeManagement })));
+const DigitalMenu = lazy(() => import("./pages/DigitalMenu"));
 
 // El queryClient se inicializa dentro del componente App para asegurar estabilidad con HMR
 
@@ -288,6 +289,16 @@ const App = () => {
                       </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/digital-menu"
+                element={
+                  <ErrorBoundary fallbackTitle="Error en Menú Digital">
+                    <Suspense fallback={<PageLoader />}>
+                      <DigitalMenu />
+                    </Suspense>
+                  </ErrorBoundary>
                 }
               />
 

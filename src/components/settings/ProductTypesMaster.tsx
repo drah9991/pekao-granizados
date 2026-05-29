@@ -8,8 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useConfigStore } from "@/store/useConfigStore";
+import { useAuth } from "@/context/AuthContext";
 
 export type ProductTypeConfig = {
   code: string;
@@ -23,6 +26,8 @@ export type ProductTypeConfig = {
   requires_recipe: boolean;
   active: boolean;
   store_id: string | null;
+  tax_rate?: number;
+  alert_threshold?: number;
 };
 
 const COLOR_PRESETS = [
@@ -36,8 +41,11 @@ const COLOR_PRESETS = [
 ];
 
 export default function ProductTypesMaster() {
-  const [types, setTypes] = useState<ProductTypeConfig[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { storeId } = useAuth();
+  const types = useConfigStore((state) => state.productTypes);
+  const loading = useConfigStore((state) => state.loading);
+  const fetchConfig = useConfigStore((state) => state.fetchConfig);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<ProductTypeConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,35 +61,9 @@ export default function ProductTypesMaster() {
     allow_toppings: false,
     requires_recipe: false,
     active: true,
+    tax_rate: 0,
+    alert_threshold: 10,
   });
-
-  useEffect(() => {
-    fetchTypes();
-  }, []);
-
-  const fetchTypes = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("product_types_config")
-        .select("*")
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        if (error.code === '42P01') {
-          toast.error("ERROR: Matriz de Tipos no migrada en el Kernel.");
-        } else {
-          throw error;
-        }
-      }
-      if (data) setTypes(data as ProductTypeConfig[]);
-    } catch (err: any) {
-      console.error("Error fetching product types:", err);
-      toast.error("Fallo técnico en sincronización de tipos.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleOpenDialog = (typeToEdit?: ProductTypeConfig) => {
     if (typeToEdit) {
@@ -100,6 +82,8 @@ export default function ProductTypesMaster() {
         allow_toppings: false,
         requires_recipe: false,
         active: true,
+        tax_rate: 0,
+        alert_threshold: 10,
       });
     }
     setDialogOpen(true);
@@ -113,12 +97,10 @@ export default function ProductTypesMaster() {
 
     setIsSaving(true);
     try {
-      const { data: userStore } = await supabase.from("profiles").select("store_id").eq("id", (await supabase.auth.getUser()).data.user?.id).single();
-
       const payload = {
         ...formData,
         code: formData.code.toLowerCase().replace(/\s+/g, '_'),
-        store_id: editingType ? editingType.store_id : userStore?.store_id || null
+        store_id: editingType ? editingType.store_id : storeId || null
       };
 
       if (editingType) {
@@ -137,7 +119,9 @@ export default function ProductTypesMaster() {
       }
 
       setDialogOpen(false);
-      fetchTypes();
+      if (storeId) {
+        await fetchConfig(storeId);
+      }
     } catch (err: any) {
       console.error("Error saving product type:", err);
       toast.error("Fallo técnico en persistencia: " + err.message);
@@ -316,7 +300,17 @@ export default function ProductTypesMaster() {
               </h4>
 
               <div className="space-y-3">
-                <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">VECTOR DE VENTA (SALES MODE)</Label>
+                <div className="flex items-center gap-2 px-2">
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">VECTOR DE VENTA (SALES MODE)</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button type="button" className="text-white/20 hover:text-indigo-400 transition-colors"><Info className="w-3.5 h-3.5" /></button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 bg-[#1C1F26] border-white/10 rounded-2xl shadow-pro p-4">
+                        <p className="text-[10px] font-bold text-white/60 italic uppercase tracking-widest leading-relaxed">Determina cómo se factura el producto. 'Tamaños' exigirá vaso, 'Unidad' será directo, y 'Peso' abrirá báscula.</p>
+                      </PopoverContent>
+                    </Popover>
+                </div>
                 <Select value={formData.sales_mode} onValueChange={(val: any) => setFormData({...formData, sales_mode: val})}>
                   <SelectTrigger className="h-14 bg-white/5 border-white/10 rounded-2xl text-[10px] font-black uppercase italic tracking-widest font-space-grotesk focus:ring-primary/20">
                     <SelectValue />
@@ -346,7 +340,17 @@ export default function ProductTypesMaster() {
                 ].map((toggle) => (
                     <div key={toggle.key} className="flex items-center justify-between p-5 rounded-[2rem] border border-white/5 bg-white/[0.02]">
                         <div className="space-y-1">
-                            <Label className="text-[10px] font-black uppercase tracking-widest italic text-white/60">{toggle.label}</Label>
+                            <div className="flex items-center gap-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest italic text-white/60">{toggle.label}</Label>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button type="button" className="text-white/20 hover:text-indigo-400 transition-colors"><Info className="w-3 h-3" /></button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-56 bg-[#1C1F26] border-white/10 rounded-2xl shadow-pro p-4">
+                                    <p className="text-[10px] font-bold text-white/60 italic uppercase tracking-widest leading-relaxed">{toggle.desc} (Habilitar para activar lógica extendida en Punto de Venta).</p>
+                                  </PopoverContent>
+                                </Popover>
+                            </div>
                             <p className="text-[8px] text-white/20 font-bold uppercase italic tracking-tighter leading-none">{toggle.desc}</p>
                         </div>
                         <Switch 
@@ -371,6 +375,48 @@ export default function ProductTypesMaster() {
                     <SelectItem value="oz" className="p-4 border-b border-white/5 last:border-0 text-[10px] font-black uppercase italic">Onzas (oz)</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-2">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">TASA IMPUESTO (TAX RATE %)</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="text-white/20 hover:text-indigo-400 transition-colors"><Info className="w-3.5 h-3.5" /></button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 bg-[#1C1F26] border-white/10 rounded-2xl shadow-pro p-4">
+                            <p className="text-[10px] font-bold text-white/60 italic uppercase tracking-widest leading-relaxed">Impuesto agregado a productos de esta categoría. Ejemplo: 19.0 para 19% IVA.</p>
+                          </PopoverContent>
+                        </Popover>
+                    </div>
+                    <Input 
+                      type="number"
+                      value={formData.tax_rate || 0} 
+                      onChange={e => setFormData({...formData, tax_rate: parseFloat(e.target.value) || 0})} 
+                      className="h-14 bg-white/5 border-white/10 rounded-2xl text-[10px] font-black uppercase italic tracking-widest font-space-grotesk focus:ring-primary/20 shadow-pro"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-2">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">UMBRAL ALERTA STOCK</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="text-white/20 hover:text-indigo-400 transition-colors"><Info className="w-3.5 h-3.5" /></button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 bg-[#1C1F26] border-white/10 rounded-2xl shadow-pro p-4">
+                            <p className="text-[10px] font-bold text-white/60 italic uppercase tracking-widest leading-relaxed">Nivel mínimo de inventario para detonar alertas rojas en el sistema central.</p>
+                          </PopoverContent>
+                        </Popover>
+                    </div>
+                    <Input 
+                      type="number"
+                      value={formData.alert_threshold || 0} 
+                      onChange={e => setFormData({...formData, alert_threshold: parseInt(e.target.value) || 0})} 
+                      className="h-14 bg-white/5 border-white/10 rounded-2xl text-[10px] font-black uppercase italic tracking-widest font-space-grotesk focus:ring-primary/20 shadow-pro"
+                    />
+                  </div>
               </div>
             </div>
           </div>

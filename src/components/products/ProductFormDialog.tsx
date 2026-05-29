@@ -38,6 +38,10 @@ interface ProductFormDialogProps {
     base_volume: string | number;
     unit_measure: string;
     recipe?: any;
+    margin_target: string;
+    commission_rate: string;
+    supplier_name: string;
+    is_starred: boolean;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
     name: string;
@@ -55,6 +59,10 @@ interface ProductFormDialogProps {
     base_volume: string | number;
     unit_measure: string;
     recipe?: any;
+    margin_target: string;
+    commission_rate: string;
+    supplier_name: string;
+    is_starred: boolean;
   }>>;
   onSave: () => void;
   isProcessing: boolean;
@@ -271,6 +279,62 @@ export default function ProductFormDialog({
               />
             </div>
 
+            {/* Customization & Analytics Parameters */}
+            <div className="col-span-2 border-t border-white/5 pt-8 mt-4 space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                  <div className="w-1.5 h-6 bg-primary rounded-full shadow-glow-pro" />
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white font-space-grotesk italic">PARÁMETROS DE INTELIGENCIA DE NEGOCIO Y PROVEEDOR</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-3">
+                  <Label htmlFor="margin_target" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 font-space-grotesk italic">META MARGEN (%)</Label>
+                  <div className="relative group">
+                    <Input
+                      id="margin_target"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      placeholder="60.0"
+                      value={formData.margin_target}
+                      onChange={(e) => setFormData({ ...formData, margin_target: e.target.value })}
+                      className="h-14 bg-white/5 border-white/10 rounded-2xl font-black font-space-grotesk italic tracking-tighter text-lg focus:border-primary/50 text-white transition-all shadow-inner pr-10"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-primary font-black italic text-xs">%</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="commission_rate" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 font-space-grotesk italic">COMISIÓN VENDEDOR (%)</Label>
+                  <div className="relative group">
+                    <Input
+                      id="commission_rate"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      placeholder="0.0"
+                      value={formData.commission_rate}
+                      onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
+                      className="h-14 bg-white/5 border-white/10 rounded-2xl font-black font-space-grotesk italic tracking-tighter text-lg focus:border-primary/50 text-white transition-all shadow-inner pr-10"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-primary font-black italic text-xs">%</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="supplier_name" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 font-space-grotesk italic">PROVEEDOR</Label>
+                  <Input
+                    id="supplier_name"
+                    placeholder="EJ: ALQUERÍA, SAS"
+                    value={formData.supplier_name}
+                    onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
+                    className="h-14 bg-white/5 border-white/10 rounded-2xl font-black font-space-grotesk italic tracking-widest text-xs focus:border-primary/50 text-white transition-all shadow-inner"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="col-span-2">
               {(() => {
                 const typeCfg = productTypesConfig.find(t => t.code === formData.type);
@@ -379,9 +443,9 @@ export default function ProductFormDialog({
               })()}
             </div>
             
-            <div className="col-span-2 grid grid-cols-2 gap-6 pt-4">
+            <div className="col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
                 <div className="flex items-center justify-between p-4 glass-pro rounded-2xl border border-white/5 hover:bg-white/5 transition-all">
-                    <Label htmlFor="active" className="cursor-pointer text-xs font-black uppercase tracking-widest text-white italic font-space-grotesk">ACTIVO EN VENTA</Label>
+                    <Label htmlFor="active" className="cursor-pointer text-[10px] font-black uppercase tracking-wider text-white italic font-space-grotesk">ACTIVO EN VENTA</Label>
                     <Switch
                         id="active"
                         checked={formData.active}
@@ -391,11 +455,21 @@ export default function ProductFormDialog({
                 </div>
 
                 <div className="flex items-center justify-between p-4 glass-pro rounded-2xl border border-white/5 hover:bg-white/5 transition-all">
-                    <Label htmlFor="is_public" className="cursor-pointer text-xs font-black uppercase tracking-widest text-white italic font-space-grotesk">CATÁLOGO WEB</Label>
+                    <Label htmlFor="is_public" className="cursor-pointer text-[10px] font-black uppercase tracking-wider text-white italic font-space-grotesk">CATÁLOGO WEB</Label>
                     <Switch
                         id="is_public"
                         checked={formData.is_public}
                         onCheckedChange={(checked) => setFormData({ ...formData, is_public: checked })}
+                        className="data-[state=checked]:bg-primary"
+                    />
+                </div>
+
+                <div className="flex items-center justify-between p-4 glass-pro rounded-2xl border border-white/5 hover:bg-white/5 transition-all">
+                    <Label htmlFor="is_starred" className="cursor-pointer text-[10px] font-black uppercase tracking-wider text-white italic font-space-grotesk">DESTACADO POS</Label>
+                    <Switch
+                        id="is_starred"
+                        checked={formData.is_starred}
+                        onCheckedChange={(checked) => setFormData({ ...formData, is_starred: checked })}
                         className="data-[state=checked]:bg-primary"
                     />
                 </div>
@@ -428,9 +502,27 @@ export default function ProductFormDialog({
                 </div>
                 <div className="text-right">
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 block mb-1 font-space-grotesk italic">PROFIT RATIO</span>
-                    <Badge className="bg-emerald-500 text-white font-black text-xl px-4 py-1 h-12 rounded-2xl italic font-space-grotesk shadow-glow-pro border-none">
-                        {(((parseFloat(formData.price) - parseFloat(formData.cost)) / parseFloat(formData.price)) * 100).toFixed(1)}%
-                    </Badge>
+                    {(() => {
+                      const actualMargin = (((parseFloat(formData.price) - parseFloat(formData.cost)) / parseFloat(formData.price)) * 100);
+                      const targetMarginVal = parseFloat(formData.margin_target || "60");
+                      const meetsTarget = actualMargin >= targetMarginVal;
+                      return (
+                        <>
+                          <Badge className={cn(
+                            "text-white font-black text-xl px-4 py-1 h-12 rounded-2xl italic font-space-grotesk shadow-glow border-none",
+                            meetsTarget ? "bg-emerald-500 shadow-emerald-500/20" : "bg-rose-500 shadow-rose-500/20"
+                          )}>
+                              {actualMargin.toFixed(1)}%
+                          </Badge>
+                          <span className={cn(
+                            "text-[8px] font-black uppercase tracking-widest block mt-1.5 italic",
+                            meetsTarget ? "text-emerald-400" : "text-rose-400"
+                          )}>
+                            {meetsTarget ? "✓ CUMPLE META" : `✗ META: ${targetMarginVal.toFixed(1)}%`}
+                          </span>
+                        </>
+                      );
+                    })()}
                 </div>
               </div>
             </div>

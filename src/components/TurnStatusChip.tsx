@@ -95,10 +95,55 @@ export function TurnStatusChip() {
                 Ventas Bloqueadas Temporalmente
               </p>
             </div>
-            <Button onClick={() => resumeTurn()} size="sm" variant="ghost" className="w-full h-8 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 hover:text-amber-300 text-[10px] font-black uppercase tracking-tighter rounded-lg border border-amber-500/20">
-              <PlayCircle className="w-3 h-3 mr-1.5" />
-              Reanudar Turno
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => resumeTurn()} size="sm" variant="ghost" className="w-full h-8 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 hover:text-amber-300 text-[10px] font-black uppercase tracking-tighter rounded-lg border border-amber-500/20">
+                <PlayCircle className="w-3 h-3 mr-1.5" />
+                Reanudar Turno
+              </Button>
+              
+              <Dialog open={isClosing} onOpenChange={setIsClosing}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="w-full h-8 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 hover:text-rose-300 text-[10px] font-black uppercase tracking-tighter rounded-lg border border-rose-500/20">
+                    <CircleOff className="w-3 h-3 mr-1.5" />
+                    Finalizar Turno
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-background border-border text-foreground max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle>Cierre de Caja</DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
+                      Ingresa el monto contado físicamente en la caja para finalizar el turno.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Monto en Caja ($)</Label>
+                      <Input 
+                        type="number" 
+                        placeholder="0.00" 
+                        value={amount} 
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="bg-muted border-border"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Notas (Opcional)</Label>
+                      <Input 
+                        placeholder="..." 
+                        value={notes} 
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="bg-muted border-border"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleCloseTurn} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white border-none">
+                      Confirmar Cierre de Turno
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         ) : (
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-emerald-500/15 group">

@@ -122,6 +122,12 @@ export default function ProductGridDisplay({
                 !product.active && "opacity-40 grayscale-[0.8]"
               )}
             >
+              {product.is_starred && (
+                <div className="absolute top-4 left-4 p-2 bg-amber-500 text-white rounded-xl shadow-glow border border-amber-400/20 z-20 animate-pulse-subtle flex items-center justify-center">
+                  <span className="text-xs">⭐</span>
+                </div>
+              )}
+
               <div className="absolute -right-10 -top-10 p-14 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-125 transition-all duration-1000 rotate-12">
                   <ProductIcon className="w-40 h-40 text-primary" />
               </div>
@@ -131,7 +137,7 @@ export default function ProductGridDisplay({
               
               <CardContent className="p-8 relative z-10 flex flex-col h-full">
                 {/* Header actions */}
-                <div className="flex items-start justify-between mb-8">
+                <div className={cn("flex items-start justify-between mb-8", product.is_starred && "pl-8")}>
                   <div className="flex flex-col gap-2">
                     <Badge className={cn(
                       "w-fit font-black text-[8px] uppercase tracking-[0.3em] font-space-grotesk italic border-none shadow-glow-pro px-3 h-6",

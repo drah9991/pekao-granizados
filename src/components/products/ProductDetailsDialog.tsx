@@ -110,10 +110,34 @@ export default function ProductDetailsDialog({
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 font-space-grotesk italic mb-2 block">PROVEEDOR</Label>
+                        <Badge className="bg-white/5 text-white/80 border-white/10 font-black text-[9px] uppercase tracking-widest italic px-3 h-7">
+                            {viewingProduct.supplier_name?.toUpperCase() || "N/A"}
+                        </Badge>
+                    </div>
+                    <div>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 font-space-grotesk italic mb-2 block">DESTACADO EN POS</Label>
+                        <Badge className={`${viewingProduct.is_starred ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 shadow-glow-pro' : 'bg-white/5 text-white/40 border-white/10'} font-black text-[9px] uppercase tracking-widest italic px-3 h-7 border`}>
+                            {viewingProduct.is_starred ? "⭐ DESTACADO" : "ESTÁNDAR"}
+                        </Badge>
+                    </div>
+                  </div>
+
+                  {viewingProduct.commission_rate !== null && (
+                    <div className="pt-6 border-t border-white/5">
+                        <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 font-space-grotesk italic mb-2 block">COMISIÓN POR VENTA CAJERO</Label>
+                        <p className="text-lg font-black font-space-grotesk italic text-primary">
+                          {viewingProduct.commission_rate}% <span className="text-[10px] font-bold text-muted-foreground uppercase not-italic">por unidad vendida</span>
+                        </p>
+                    </div>
+                  )}
+
                   <div className="pt-6 border-t border-white/5">
                       <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 font-space-grotesk italic mb-2 block">FECHA SINCRONIZACIÓN</Label>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        {new Date(viewingProduct.created_at).toLocaleString('es', { dateStyle: 'long', timeStyle: 'short' })}
+                        {new Date(viewingProduct.created_at || '').toLocaleString('es', { dateStyle: 'long', timeStyle: 'short' })}
                       </p>
                   </div>
                 </div>
@@ -145,6 +169,32 @@ export default function ProductDetailsDialog({
                                 </p>
                              </div>
                         </div>
+
+                        {viewingProduct.margin_target !== null && (
+                          <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                            <div>
+                              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 font-space-grotesk italic mb-1 block">META DE MARGEN</Label>
+                              <p className="text-lg font-black font-space-grotesk italic text-white/70 tracking-tighter">
+                                {viewingProduct.margin_target.toFixed(1)}%
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              {(() => {
+                                const actualMargin = ((viewingProduct.price - viewingProduct.cost!) / viewingProduct.price) * 100;
+                                const meetsTarget = actualMargin >= viewingProduct.margin_target!;
+                                return (
+                                  <Badge className={cn(
+                                    "font-black text-[9px] uppercase tracking-widest italic px-3 h-7 border",
+                                    meetsTarget ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-glow-pro' : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                                  )}>
+                                    {meetsTarget ? "✓ CUMPLE META" : "✗ POR DEBAJO"}
+                                  </Badge>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="pt-6 border-t border-white/5">
                             <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400/60 font-space-grotesk italic mb-1 block">MARGEN BRUTO</Label>
                             <p className="text-3xl font-black font-space-grotesk italic text-emerald-400 tracking-tighter shadow-glow-pro-text">
