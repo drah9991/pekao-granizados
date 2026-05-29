@@ -98,7 +98,6 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
     <motion.div 
       key={product.id} 
       variants={itemVariants} 
-      layout={prefersReducedMotion ? false : "position"}
       className="product-card-container"
     >
       <button

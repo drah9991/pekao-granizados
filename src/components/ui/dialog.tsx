@@ -111,7 +111,7 @@ const Dialog = ({
         ref={setRef}
         onCancel={handleCancel}
         onClick={handleBackdropClick}
-        className="dialog-native-reset p-0 bg-transparent border-0 outline-none backdrop:bg-black/80 backdrop:backdrop-blur-sm"
+        className="dialog-native-reset p-0 bg-transparent border-0 outline-none backdrop:bg-black/80"
         style={{ margin: "auto" }}
       >
         {open ? children : null}

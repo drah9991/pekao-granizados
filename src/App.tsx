@@ -70,12 +70,11 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-
-    <AuthProvider>
-      <TurnProvider>
-    <ThemeProvider defaultTheme="system" attribute="class">
-      <TooltipProvider>
-        <Toaster />
+      <AuthProvider>
+        <TurnProvider>
+          <ThemeProvider defaultTheme="system" attribute="class">
+            <TooltipProvider>
+              <Toaster />
         <Sonner />
         <SpeedInsights />
         <Analytics />

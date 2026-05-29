@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useCartStore } from "@/store/useCartStore";
 import { useAlerts } from "@/hooks/useAlerts";
 import type { CartItem, Product, Size } from "@/lib/pos-types";
+import { useAuth } from "@/context/AuthContext";
 
 export const useCart = () => {
   const { notifyCritical } = useAlerts();
@@ -31,36 +32,13 @@ export const useCart = () => {
     restoreLastCart
   } = useCartStore();
 
+  const { storeId } = useAuth();
+
   useEffect(() => {
-    fetchUserStoreIdAndData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchUserStoreIdAndData = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Usuario no autenticado.");
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('store_id')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      if (profile?.store_id) {
-        fetchDynamicData(profile.store_id);
-      } else {
-        toast.warning("No se encontró un ID de tienda para el usuario. Algunas funcionalidades podrían no estar disponibles.");
-      }
-    } catch (error: any) {
-      console.error("Error fetching user's store ID:", error);
-      toast.error("Error al obtener ID de tienda: " + error.message);
+    if (storeId) {
+      fetchDynamicData(storeId);
     }
-  };
+  }, [storeId]);
 
   const fetchDynamicData = async (storeId: string) => {
     try {

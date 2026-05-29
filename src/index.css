@@ -658,11 +658,10 @@
     }
   }
 
-  /* Backdrop native animation */
+  /* Backdrop native animation - Optimized for Performance (No Blur Animation) */
   dialog.dialog-native-reset::backdrop {
     background-color: rgba(0, 0, 0, 0);
-    backdrop-filter: blur(0px);
-    transition-property: background-color, backdrop-filter, display, overlay;
+    transition-property: background-color, display, overlay;
     transition-duration: 200ms;
     transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
     transition-behavior: allow-discrete;
@@ -670,13 +669,11 @@
 
   dialog.dialog-native-reset[open]::backdrop {
     background-color: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
   }
 
   @starting-style {
     dialog.dialog-native-reset[open]::backdrop {
       background-color: rgba(0, 0, 0, 0);
-      backdrop-filter: blur(0px);
     }
   }
 }

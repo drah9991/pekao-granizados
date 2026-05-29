@@ -101,13 +101,12 @@ export function TurnStatusChip() {
                 Reanudar Turno
               </Button>
               
+              <Button onClick={() => setIsClosing(true)} size="sm" variant="ghost" className="w-full h-8 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 hover:text-rose-300 text-[10px] font-black uppercase tracking-tighter rounded-lg border border-rose-500/20">
+                <CircleOff className="w-3 h-3 mr-1.5" />
+                Finalizar Turno
+              </Button>
+              
               <Dialog open={isClosing} onOpenChange={setIsClosing}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost" className="w-full h-8 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 hover:text-rose-300 text-[10px] font-black uppercase tracking-tighter rounded-lg border border-rose-500/20">
-                    <CircleOff className="w-3 h-3 mr-1.5" />
-                    Finalizar Turno
-                  </Button>
-                </DialogTrigger>
                 <DialogContent className="bg-background border-border text-foreground max-w-sm">
                   <DialogHeader>
                     <DialogTitle>Cierre de Caja</DialogTitle>
@@ -168,13 +167,11 @@ export function TurnStatusChip() {
               <PauseCircle className="w-3 h-3 mr-1.5" />
               Pausar Turno
             </Button>
+            <Button onClick={() => setIsClosing(true)} size="sm" variant="ghost" className="w-full h-8 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 hover:text-emerald-300 text-[10px] font-black uppercase tracking-tighter rounded-lg border border-emerald-500/20">
+              <CircleOff className="w-3 h-3 mr-1.5" />
+              Finalizar Turno
+            </Button>
             <Dialog open={isClosing} onOpenChange={setIsClosing}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="ghost" className="w-full h-8 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 hover:text-emerald-300 text-[10px] font-black uppercase tracking-tighter rounded-lg border border-emerald-500/20">
-                  <CircleOff className="w-3 h-3 mr-1.5" />
-                  Finalizar Turno
-                </Button>
-              </DialogTrigger>
             <DialogContent className="bg-background border-border text-foreground max-w-sm">
               <DialogHeader>
                 <DialogTitle>Cierre de Caja</DialogTitle>
@@ -223,13 +220,11 @@ export function TurnStatusChip() {
             Debes iniciar un nuevo turno para poder operar el POS.
           </p>
           
+          <Button onClick={() => setIsOpening(true)} size="sm" className="w-full h-8 bg-primary/20 hover:bg-primary/30 text-primary hover:text-primary-foreground text-[10px] font-black uppercase tracking-tighter rounded-lg border border-primary/20">
+            <Play className="w-3 h-3 mr-1.5" />
+            Iniciar Turno
+          </Button>
           <Dialog open={isOpening} onOpenChange={setIsOpening}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="ghost" className="w-full h-8 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 hover:text-rose-300 text-[10px] font-black uppercase tracking-tighter rounded-lg border border-rose-500/20">
-                <Play className="w-3 h-3 mr-1.5" />
-                Iniciar Turno
-              </Button>
-            </DialogTrigger>
             <DialogContent className="bg-background border-border text-foreground max-w-sm">
               <DialogHeader>
                 <DialogTitle>Apertura de Turno</DialogTitle>

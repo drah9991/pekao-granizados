@@ -251,6 +251,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                   alt="Logo" 
                   className="max-w-full max-h-full object-contain p-2" 
                   loading="eager"
+                  fetchPriority="high"
                 />
               ) : (
                 <IceCream className="w-6 h-6 text-white" />
