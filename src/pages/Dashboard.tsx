@@ -8,6 +8,7 @@ import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { DashboardSkeleton, WidgetSkeleton } from "@/components/dashboard/DashboardSkeletons";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardGrid from "@/components/dashboard/DashboardGrid";
+import { FavoritesWidget } from "@/components/dashboard/FavoritesWidget";
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
@@ -70,6 +71,8 @@ export default function Dashboard() {
           isSavingConfig={isSavingConfig}
           handleSaveConfig={handleSaveConfig}
         />
+
+        <FavoritesWidget />
 
         <DashboardGrid 
           uiConfig={uiConfig}

@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { useCollapsible } from "@/hooks/useCollapsible";
 import { NavItem } from "@/types/navigation";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useFavoritesStore } from "@/store/useFavoritesStore";
+import { Star } from "lucide-react";
 
 interface CollapsibleNavGroupProps {
   label: string;
@@ -39,6 +41,7 @@ export function CollapsibleNavGroup({
 
   const navigate = useNavigate();
   const [isNavigating, startNavigationTransition] = useTransition();
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
 
   const parentIsActive = items.some(item => isLinkActive(item.href));
 
@@ -109,7 +112,7 @@ export function CollapsibleNavGroup({
                 "w-4 h-4 transition-all duration-300",
                 childIsActive ? "text-primary" : "text-sidebar-foreground/60 group-hover:text-primary"
               )} />
-              <span className="relative z-10">{child.label}</span>
+              <span className="relative z-10 flex-1">{child.label}</span>
               
               {isInventory && badgeContent && (
                 <div className="ml-auto">
@@ -119,6 +122,25 @@ export function CollapsibleNavGroup({
 
               {isLocked && (
                 <Shield className="ml-auto w-4 h-4 text-rose-500/50" />
+              )}
+              {!isLocked && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(child.href);
+                  }}
+                  className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                  title={isFavorite(child.href) ? "Quitar de favoritos" : "Añadir a favoritos"}
+                >
+                  <Star 
+                    className={cn(
+                      "w-4 h-4 transition-all duration-300",
+                      isFavorite(child.href) 
+                        ? "text-amber-500 fill-amber-500 opacity-100" 
+                        : "text-muted-foreground hover:text-amber-500"
+                    )} 
+                  />
+                </button>
               )}
             </div>
           );

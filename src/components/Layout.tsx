@@ -40,6 +40,8 @@ import { navConfig } from "@/config/navConfig";
 import { NavItem, NavGroup, Role } from "@/types/navigation";
 import { useCurrentRole } from "@/hooks/useCurrentRole";
 import { CollapsibleNavGroup } from "./CollapsibleNavGroup";
+import { useFavoritesStore } from "@/store/useFavoritesStore";
+import { Star } from "lucide-react";
 import { useLowStockCount } from "@/hooks/useLowStockCount";
 import { Badge } from "@/components/ui/badge";
 import { InteractiveCursor } from "./ui/InteractiveCursor";
@@ -48,6 +50,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpenInternal] = useState(!isMobile);
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
   const [isSidebarPending, startSidebarTransition] = useTransition();
 
   const toggleSidebar = () => {
@@ -305,9 +308,28 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                             ? "text-primary"
                             : "text-muted-foreground/40 group-hover:text-primary"
                         )} />
-                        <span className="relative z-10">{item.label}</span>
+                        <span className="relative z-10 flex-1">{item.label}</span>
                         {isLocked && (
                           <Shield className="ml-auto w-3.5 h-3.5 text-rose-500/30" />
+                        )}
+                        {!isLocked && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(item.href);
+                            }}
+                            className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                            title={isFavorite(item.href) ? "Quitar de favoritos" : "Añadir a favoritos"}
+                          >
+                            <Star 
+                              className={cn(
+                                "w-4 h-4 transition-all duration-300",
+                                isFavorite(item.href) 
+                                  ? "text-amber-500 fill-amber-500 opacity-100" 
+                                  : "text-muted-foreground hover:text-amber-500"
+                              )} 
+                            />
+                          </button>
                         )}
                       </div>
                     );
