@@ -50,7 +50,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpenInternal] = useState(!isMobile);
-  const { toggleFavorite, isFavorite } = useFavoritesStore();
+  const { favorites, toggleFavorite, isFavorite } = useFavoritesStore();
   const [isSidebarPending, startSidebarTransition] = useTransition();
 
   const toggleSidebar = () => {
