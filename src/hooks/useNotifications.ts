@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 export interface Notification {
     id: string;
@@ -18,11 +19,7 @@ export const useNotifications = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [storeId, setStoreId] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetchUserStore();
-    }, []);
+    const { storeId } = useAuth();
 
     useEffect(() => {
         if (storeId) {
@@ -31,21 +28,6 @@ export const useNotifications = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [storeId]);
-
-    const fetchUserStore = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('store_id')
-            .eq('id', user.id)
-            .single();
-
-        if (profile?.store_id) {
-            setStoreId(profile.store_id);
-        }
-    };
 
     const fetchNotifications = async () => {
         if (!storeId) return;

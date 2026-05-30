@@ -63,7 +63,7 @@ export default function NotificationCenter() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 p-0 shadow-elevated border-border/50 bg-card/95 backdrop-blur-md" align="end">
+      <DropdownMenuContent className="w-80 p-0 shadow-elevated border-border/50 bg-card" align="end">
         <DropdownMenuLabel className="p-4 flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-sm font-bold">Notificaciones</span>
