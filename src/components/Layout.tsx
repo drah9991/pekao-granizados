@@ -42,6 +42,7 @@ import { useCurrentRole } from "@/hooks/useCurrentRole";
 import { CollapsibleNavGroup } from "./CollapsibleNavGroup";
 import { useFavoritesStore } from "@/store/useFavoritesStore";
 import { Star } from "lucide-react";
+import { FloatingFavorites } from "./FloatingFavorites";
 import { useLowStockCount } from "@/hooks/useLowStockCount";
 import { Badge } from "@/components/ui/badge";
 import { InteractiveCursor } from "./ui/InteractiveCursor";
@@ -252,6 +253,8 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         </div>
       </div>
 
+      <FloatingFavorites isSidebarOpen={isSidebarOpen} />
+
       <aside
         className={cn(
           "w-64 bg-sidebar-background/60 backdrop-blur-3xl border-r border-sidebar-border flex flex-col",
@@ -284,70 +287,6 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         </div>
 
         <nav className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
-          {favoriteItems.length > 0 && (
-            <div className="space-y-4">
-              <div className="px-4">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-500/80 font-dm-sans flex items-center gap-1">
-                  <Star className="w-3 h-3" /> Mis Favoritos
-                </span>
-              </div>
-              <div className="space-y-1">
-                {favoriteItems.map((item, idx) => {
-                  if (!item) return null;
-                  const isActive = isLinkActive(item.href);
-                  const isPOS = item.href === "/pos";
-                  const isLocked = isPOS && !activeTurn;
-                  
-                  return (
-                    <div
-                      key={idx}
-                      className={cn(
-                        "group cursor-pointer flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden font-dm-sans",
-                        isActive
-                          ? "text-primary bg-primary/10"
-                          : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
-                        isLocked && "opacity-30 cursor-not-allowed"
-                      )}
-                      onClick={() => {
-                        if (isLocked) return;
-                        if (isMobile) closeSidebar();
-                        startNavigationTransition(() => navigate(item.href));
-                      }}
-                    >
-                      {isActive && (
-                        <motion.div 
-                          layoutId="sidebar-active-indicator"
-                          className="absolute left-0 w-1 h-5 bg-primary rounded-r-full"
-                          initial={{ scaleY: 0 }}
-                          animate={{ scaleY: 1 }}
-                        />
-                      )}
-                      <item.icon className={cn(
-                        "w-4 h-4 transition-all duration-300 relative z-10",
-                        isActive ? "text-primary" : "text-amber-500/80 group-hover:text-primary"
-                      )} />
-                      <span className="relative z-10 flex-1">{item.label}</span>
-                      
-                      {isLocked && <Shield className="ml-auto w-3.5 h-3.5 text-rose-500/30" />}
-                      {!isLocked && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite(item.href);
-                          }}
-                          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                          title="Quitar de favoritos"
-                        >
-                          <Star className="w-4 h-4 text-amber-500 fill-amber-500 opacity-100 transition-all duration-300" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {visibleGroups.map((group, groupIdx) => (
             <div key={group.label} className="space-y-4">
               <div className="px-4">
