@@ -205,7 +205,8 @@ export const useCartStore = create<CartStoreState>((set, get) => ({
     const toppingsPrice = validToppings.reduce((sum, t) => sum + t.price, 0);
     const finalPrice = basePrice + toppingsPrice;
 
-    const customizationId = customized ? `${product.id}-${Date.now()}` : product.id;
+    const isConfigurable = product.type !== 'sachet' && product.type !== 'sweet';
+    const customizationId = (customized || isConfigurable) ? `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` : product.id;
 
     set(state => {
       const existingItemIndex = state.cart.findIndex(item => item.id === customizationId);
