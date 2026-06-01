@@ -7,11 +7,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Megaphone, Clock, Target, Percent, DollarSign, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface PricingRuleFormData {
+  name: string;
+  description: string;
+  type: string;
+  start_time: string;
+  end_time: string;
+  days_of_week: number[];
+  target_type: string;
+  target_id: string;
+  discount_type: string;
+  discount_value: number;
+  active: boolean;
+}
+
 interface PricingRuleFormProps {
   isOpen: boolean;
   onClose: () => void;
-  editingRule: any | null;
-  onSave: (id: string | undefined, ruleData: any) => Promise<any>;
+  editingRule: Record<string, unknown> | null;
+  onSave: (id: string | undefined, ruleData: PricingRuleFormData) => Promise<unknown>;
   isProcessing: boolean;
   daysOfWeek: { value: number; label: string }[];
   storeId: string | null;

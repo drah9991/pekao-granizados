@@ -71,7 +71,7 @@ export default function CustomerCard({ customer, idx, onEdit, onDelete }: Custom
                 <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 flex items-center justify-between">
                     <div>
                         <p className="text-[9px] font-black text-emerald-500/60 uppercase tracking-widest italic leading-none mb-1">FACTURACIÓN ACUMULADA</p>
-                        <p className="text-lg lg:text-xl font-black italic font-space-grotesk text-emerald-500 shadow-glow-pro-text">{formatCOP((customer as any).total_spent || 0)}</p>
+                        <p className="text-lg lg:text-xl font-black italic font-space-grotesk text-emerald-500 shadow-glow-pro-text">{formatCOP(customer.total_spent || 0)}</p>
                     </div>
                     <div className="text-right">
                         <p className="text-[9px] font-black text-white/20 uppercase tracking-widest italic leading-none mb-1">ÚLTIMA COMPRA</p>

@@ -101,7 +101,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
                   <ReceiptText className="w-7 h-7 text-emerald-400" />
                 </div>
                 <div className="text-center">
-                  <span className="text-[14px] font-black font-space-grotesk uppercase italic text-foreground tracking-tighter">{((order.payment as any)?.method)?.toUpperCase() || "EFECTIVO"}</span>
+                  <span className="text-[14px] font-black font-space-grotesk uppercase italic text-foreground tracking-tighter">{((order.payment as Record<string, unknown>)?.method as string)?.toUpperCase() || "EFECTIVO"}</span>
                   <p className="text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest italic mt-1">Transacción Verificada</p>
                 </div>
               </div>

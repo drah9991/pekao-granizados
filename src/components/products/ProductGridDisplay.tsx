@@ -8,7 +8,12 @@ import { cn } from "@/lib/utils";
 import React from "react";
 import { motion, Variants } from "framer-motion";
 
-type Product = Tables<'products'>;
+interface Product extends Tables<'products'> {
+  stock?: number;
+  mixtureStock?: number;
+  has_recipe?: boolean;
+}
+
 type ProductType = Enums<'product_type'>;
 
 const productTypeOptions: { value: ProductType; label: string; icon: React.ElementType }[] = [
@@ -218,13 +223,13 @@ export default function ProductGridDisplay({
                     <Badge 
                       className={cn(
                         "font-black text-[10px] uppercase tracking-widest italic border-none bg-muted/50 px-3 h-7 shadow-pro",
-                        ((product as any).mixtureStock > 0 || ((product as any).stock !== null && (product as any).stock > 0)) ? "text-emerald-500" : "text-rose-500 shadow-glow-pro animate-pulse"
+                        ((product.mixtureStock ?? 0) > 0 || ((product.stock ?? 0) > 0)) ? "text-emerald-500" : "text-rose-500 shadow-glow-pro animate-pulse"
                       )}
                     >
                       {(product.type === 'granizado' || product.category === 'Granizado') ? (
-                          <span>{((product as any).mixtureStock / 1000).toFixed(1)}L DISP</span>
+                          <span>{((product.mixtureStock ?? 0) / 1000).toFixed(1)}L DISP</span>
                       ) : (
-                        `STK: ${(product as any).stock || (product as any).mixtureStock || 0} UNI`
+                        `STK: ${product.stock ?? product.mixtureStock ?? 0} UNI`
                       )}
                     </Badge>
                   </div>

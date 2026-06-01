@@ -4,8 +4,8 @@ import { Scale } from "lucide-react";
 
 interface YieldProjectionProps {
   liters: string;
-  selectedFlavor: any;
-  sizes: any[];
+  selectedFlavor: Record<string, unknown>;
+  sizes: Record<string, unknown>[];
 }
 
 export default function YieldProjection({ liters, selectedFlavor, sizes }: YieldProjectionProps) {

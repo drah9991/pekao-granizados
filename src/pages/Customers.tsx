@@ -94,7 +94,7 @@ export default function Customers() {
                             <CreditCard className="w-5 h-5 text-emerald-500 shadow-glow-pro" />
                         </div>
                         <div className="text-2xl lg:text-4xl font-black italic font-space-grotesk text-foreground tabular-nums">
-                            {formatCOP(customers.reduce((acc, c) => acc + (c as any).total_spent || 0, 0))}
+                            {formatCOP(customers.reduce((acc, c) => acc + (c.total_spent ?? 0), 0))}
                         </div>
                         <div className="mt-2 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-widest italic">Facturación Acumulada CRM</div>
                     </Card>

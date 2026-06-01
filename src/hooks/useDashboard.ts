@@ -81,7 +81,7 @@ export function useDashboard(storeId: string | null) {
         .single();
         
       const savedConfig = storeData?.config && typeof storeData.config === 'object' 
-        ? (storeData.config as any).dashboard_v2 
+        ? (storeData.config as Record<string, unknown>).dashboard_v2 
         : null;
 
       const [currentRes, comparisonRes, inventoryRes, sizesRes, expensesRes] = await Promise.all([
@@ -96,7 +96,7 @@ export function useDashboard(storeId: string | null) {
         if (currentRes.error.message?.includes("delivery_fee")) {
           const fallback = await supabase.from("orders").select("id, total, subtotal, tip_amount, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end);
           if (fallback.error) throw fallback.error;
-          currentRes.data = fallback.data as any;
+          currentRes.data = fallback.data as typeof currentRes.data;
         } else {
           throw currentRes.error;
         }
@@ -126,8 +126,8 @@ export function useDashboard(storeId: string | null) {
   const dashboardData = useMemo(() => {
     if (!rawData) return null;
     const transformed = transformDashboardData(rawData.orders, rawData.comparisonOrders, rawData.expenses);
-    const lowStock = rawData.inventory.filter((item: any) => 
-      item.stock <= (item.min_stock || 0) || item.is_mixture
+    const lowStock = rawData.inventory.filter((item: Record<string, unknown>) => 
+      Number(item.stock) <= (Number(item.min_stock) || 0) || Boolean(item.is_mixture)
     );
 
     return {
@@ -142,17 +142,19 @@ export function useDashboard(storeId: string | null) {
     setIsSavingConfig(true);
     try {
         const { data: currentStore } = await supabase.from('stores').select('config').eq('id', storeId).single();
+        const currentConfig = (currentStore?.config as Record<string, unknown>) || {};
         const newConfig = {
-            ...(currentStore?.config as any || {}),
+            ...currentConfig,
             dashboard_v2: uiConfig
         };
 
         const { error } = await supabase.from('stores').update({ config: newConfig }).eq('id', storeId);
         if (error) throw error;
         toast.success("Dashboard parametrizado con éxito");
-    } catch (err: any) {
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Error desconocido";
         console.error("Error saving dashboard config:", err);
-        toast.error("Fallo en persistencia: " + err.message);
+        toast.error("Fallo en persistencia: " + msg);
     } finally {
         setIsSavingConfig(false);
     }

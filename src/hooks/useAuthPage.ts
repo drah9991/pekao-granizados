@@ -38,9 +38,10 @@ export function useAuthPage() {
       toast.success("¡Bienvenido a Pekao Granizados!");
       navigate("/dashboard");
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
       console.error("Error logging in:", error);
-      toast.error("Error al iniciar sesión: " + error.message);
+      toast.error("Error al iniciar sesión: " + msg);
       return false;
     } finally {
       setIsLoading(false);
@@ -71,9 +72,10 @@ export function useAuthPage() {
       toast.success("¡Cuenta creada exitosamente!");
       navigate("/dashboard"); 
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
       console.error("Error signing up:", error);
-      toast.error("Error al crear cuenta: " + error.message);
+      toast.error("Error al crear cuenta: " + msg);
       return false;
     } finally {
       setIsLoading(false);

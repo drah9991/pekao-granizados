@@ -5,10 +5,10 @@ import { User, Shield, UserCog, Trash2, Mail, Phone, Store, UserCheck } from "lu
 import { cn } from "@/lib/utils";
 
 interface UserCardProps {
-  user: any;
-  stores: any[];
+  user: Record<string, unknown>;
+  stores: Record<string, unknown>[];
   idx: number;
-  onEdit: (u: any) => void;
+  onEdit: (u: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
   currentUserId?: string;
   canManage: boolean;

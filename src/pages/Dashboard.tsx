@@ -46,7 +46,7 @@ export default function Dashboard() {
               </div>
               <CardTitle className="text-foreground text-2xl font-black mb-2">Error de Sincronización</CardTitle>
               <CardDescription className="text-red-400 font-medium mb-6">
-                {(error as any)?.message || (error as any)?.details || JSON.stringify(error)}
+                {error?.message || (error as Record<string, unknown>)?.details || JSON.stringify(error)}
               </CardDescription>
               <Button className="w-full gradient-primary h-14 rounded-2xl font-black text-lg shadow-glow-primary active:scale-95 transition-all" onClick={() => window.location.reload()}>
                 Reintentar Sincronización

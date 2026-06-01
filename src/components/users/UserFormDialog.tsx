@@ -9,10 +9,10 @@ import { UserCog, Key } from "lucide-react";
 interface UserFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  editingUser: any;
-  stores: any[];
-  roles: any[];
-  onSave: (formData: any, editingUser: any) => void;
+  editingUser: Record<string, unknown> | null;
+  stores: Record<string, unknown>[];
+  roles: Record<string, unknown>[];
+  onSave: (formData: Record<string, unknown>, editingUser: Record<string, unknown> | null) => void;
   isProcessing: boolean;
 }
 

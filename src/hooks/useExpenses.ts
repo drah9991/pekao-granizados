@@ -29,9 +29,10 @@ export function useExpenses(storeId: string | null) {
 
       if (error) throw error;
       setExpenses(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
       console.error("Error fetching expenses:", error);
-      toast.error("Error al cargar gastos: " + error.message);
+      toast.error("Error al cargar gastos: " + msg);
     } finally {
       setLoading(false);
     }
@@ -82,8 +83,9 @@ export function useExpenses(storeId: string | null) {
       toast.success(isEditing ? "Gasto actualizado" : "Gasto registrado");
       fetchExpenses();
       return true;
-    } catch (error: any) {
-      toast.error("Error al guardar gasto: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error al guardar gasto: " + msg);
       return false;
     } finally {
       setIsProcessing(false);
@@ -98,8 +100,9 @@ export function useExpenses(storeId: string | null) {
       if (error) throw error;
       toast.success("Gasto eliminado");
       fetchExpenses();
-    } catch (error: any) {
-      toast.error("Error al eliminar: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error al eliminar: " + msg);
     } finally {
       setIsProcessing(false);
     }

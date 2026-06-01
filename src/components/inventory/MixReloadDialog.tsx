@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Droplets, Calculator, Info, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { typedFrom, supabaseRpc } from "@/integrations/supabase/types-extensions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -46,8 +47,7 @@ export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, 
     setIsProcessing(true);
     try {
       // 1. Record the preparation in history
-      const { error: prepError } = await supabase
-        .from("mix_preparations" as any)
+      const { error: prepError } = await typedFrom.mix_preparations()
         .insert({
           inventory_item_id: selectedMixId,
           store_id: storeId,
@@ -56,16 +56,16 @@ export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, 
           expected_cups: expectedCups,
           notes: notes,
           created_by: (await supabase.auth.getUser()).data.user?.id
-        } as any);
+        } as unknown as Parameters<ReturnType<typeof typedFrom.mix_preparations>['insert']>[0]);
 
       if (prepError) throw prepError;
 
       // 2. Atomic increment of stock via RPC
-      const { error: rpcError } = await supabase.rpc("increment_inventory_stock" as any, {
+      const { error: rpcError } = await supabaseRpc("increment_inventory_stock", {
         p_item_id: selectedMixId,
         p_store_id: storeId,
         p_amount: mlConverted
-      } as any);
+      });
 
       if (rpcError) throw rpcError;
 
@@ -73,9 +73,10 @@ export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, 
       onOpenChange(false);
       resetForm();
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving mix reload:", error);
-      toast.error("Error al registrar preparación: " + error.message);
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error al registrar preparación: " + msg);
     } finally {
       setIsProcessing(false);
     }

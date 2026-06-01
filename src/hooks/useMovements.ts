@@ -43,10 +43,11 @@ export function useMovements(storeId: string | null) {
         .limit(100);
 
       if (error) throw error;
-      setMovements((data as any) || []);
-    } catch (error: any) {
+      setMovements((data as unknown as Movement[]) || []);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
       console.error("Error fetching movements:", error);
-      toast.error("Error al cargar movimientos: " + error.message);
+      toast.error("Error al cargar movimientos: " + msg);
     } finally {
       setLoading(false);
     }

@@ -1,19 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { typedFrom, type NotificationRow, type NotificationType, type NotificationPriority } from "@/integrations/supabase/types-extensions";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
-export interface Notification {
-    id: string;
-    store_id: string;
-    title: string;
-    message: string;
-    type: 'inventory_low' | 'system_event' | 'order_event';
-    priority: 'low' | 'medium' | 'high' | 'urgent';
-    is_read: boolean;
-    metadata: any;
-    created_at: string;
-}
+export type Notification = NotificationRow;
 
 export const useNotifications = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -32,8 +23,7 @@ export const useNotifications = () => {
     const fetchNotifications = async () => {
         if (!storeId) return;
 
-        const { data, error } = await (supabase as any)
-            .from('notifications')
+        const { data, error } = await typedFrom.notifications()
             .select('*')
             .eq('store_id', storeId)
             .order('created_at', { ascending: false })
@@ -44,8 +34,9 @@ export const useNotifications = () => {
             return;
         }
 
-        setNotifications(data as Notification[]);
-        setUnreadCount((data as Notification[]).filter(n => !n.is_read).length);
+        const notifs = (data || []) as unknown as Notification[];
+        setNotifications(notifs);
+        setUnreadCount(notifs.filter(n => !n.is_read).length);
         setLoading(false);
     };
 
@@ -82,8 +73,7 @@ export const useNotifications = () => {
     };
 
     const markAsRead = async (id: string) => {
-        const { error } = await (supabase as any)
-            .from('notifications')
+        const { error } = await typedFrom.notifications()
             .update({ is_read: true })
             .eq('id', id);
 
@@ -96,8 +86,7 @@ export const useNotifications = () => {
     const markAllAsRead = async () => {
         if (!storeId) return;
 
-        const { error } = await (supabase as any)
-            .from('notifications')
+        const { error } = await typedFrom.notifications()
             .update({ is_read: true })
             .eq('store_id', storeId)
             .eq('is_read', false);
@@ -122,12 +111,11 @@ export const createNotification = async (notification: {
     store_id: string;
     title: string;
     message: string;
-    type: Notification['type'];
-    priority: Notification['priority'];
-    metadata?: any;
+    type: NotificationType;
+    priority: NotificationPriority;
+    metadata?: Record<string, unknown>;
 }) => {
-    const { error } = await (supabase as any)
-        .from('notifications')
+    const { error } = await typedFrom.notifications()
         .insert([{
             ...notification,
             is_read: false

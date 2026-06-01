@@ -54,7 +54,7 @@ export default function RecipeManager({ recipe, onChange, storeId }: RecipeManag
 
       if (error) throw error;
       setInventoryItems(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching inventory items:", error);
       toast.error("Error al cargar insumos");
     } finally {

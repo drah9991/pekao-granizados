@@ -11,7 +11,7 @@ import { toast } from "sonner";
 interface StoreFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  editingStore: any;
+  editingStore: Record<string, unknown> | null;
   onSave: () => void;
   isProcessing: boolean;
 }
@@ -22,7 +22,7 @@ export default function StoreFormDialog({ isOpen, onClose, editingStore, onSave,
     address: "",
     currency: "COP",
     tax_rate: "0",
-    config: {} as any,
+    config: {} as Record<string, unknown>,
   });
 
   useEffect(() => {

@@ -8,7 +8,7 @@ import { Beaker, Scale } from "lucide-react";
 import YieldProjection from "./YieldProjection";
 
 interface PreparationFormProps {
-  products: any[];
+  products: Record<string, unknown>[];
   selectedProductId: string;
   onProductChange: (id: string) => void;
   liters: string;
@@ -20,7 +20,7 @@ interface PreparationFormProps {
   onRegister: () => void;
   isProcessing: boolean;
   isEmptying: boolean;
-  sizes: any[];
+  sizes: Record<string, unknown>[];
 }
 
 export default function PreparationForm({

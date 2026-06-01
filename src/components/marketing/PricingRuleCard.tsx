@@ -4,9 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Clock, Zap, Target, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface PricingRule {
+  id: string;
+  name: string;
+  description?: string | null;
+  active: boolean;
+  type: string;
+  discount_type: string;
+  discount_value: number;
+  start_time?: string | null;
+  end_time?: string | null;
+  days_of_week?: number[] | null;
+  target_type: string;
+  target_id?: string | null;
+}
+
 interface PricingRuleCardProps {
-  rule: any;
-  onEdit: (rule: any) => void;
+  rule: PricingRule;
+  onEdit: (rule: PricingRule) => void;
   onDelete: (id: string) => void;
   daysOfWeek: { value: number; label: string }[];
 }

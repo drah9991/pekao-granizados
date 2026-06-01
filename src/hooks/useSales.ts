@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -46,7 +46,7 @@ export function useSales() {
     fetchStoreId();
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!storeId) return;
     setLoading(true);
     try {
@@ -79,17 +79,17 @@ export function useSales() {
       const { data, error } = await query;
       if (error) throw error;
       setOrders((data as unknown as OrderWithDetails[]) || []);
-    } catch (error: any) {
-      toast.error("Error al cargar ventas: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error al cargar ventas: " + msg);
     } finally {
       setLoading(false);
     }
-  };
+  }, [storeId, selectedStatusFilter, dateRange]);
 
   useEffect(() => {
     fetchOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, selectedStatusFilter, dateRange]);
+  }, [storeId, selectedStatusFilter, dateRange, fetchOrders]);
 
   // Realtime subscription for incoming orders to trigger KDS audio notifications
   useEffect(() => {
@@ -118,7 +118,7 @@ export function useSales() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [storeId]);
+  }, [storeId, fetchOrders]);
 
   const toggleAudio = () => {
     setIsAudioEnabled((prev) => {
@@ -196,8 +196,9 @@ export function useSales() {
       toast.success("Orden actualizada correctamente");
       fetchOrders();
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-    } catch (error: any) {
-      toast.error("Error al actualizar: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error al actualizar: " + msg);
     }
   };
 
@@ -231,8 +232,9 @@ export function useSales() {
       setSelectedOrder(null);
       fetchOrders();
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-    } catch (error: any) {
-      toast.error("Error al cancelar: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error al cancelar: " + msg);
     }
   };
 

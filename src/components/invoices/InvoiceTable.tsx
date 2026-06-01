@@ -16,7 +16,7 @@ interface InvoiceTableProps {
   onPrint: (inv: Invoice) => void;
 }
 
-const statusColors = {
+const statusColors: Record<string, { label: string; bgClass: string; textClass: string }> = {
   paid: { label: "LIBERADO", bgClass: "bg-emerald-500/10", textClass: "text-emerald-500" },
   completed: { label: "LIBERADO", bgClass: "bg-emerald-500/10", textClass: "text-emerald-500" },
   pending: { label: "EN TRÁMITE", bgClass: "bg-amber-500/10", textClass: "text-amber-500" },
@@ -47,7 +47,7 @@ export default function InvoiceTable({ invoices, loading, onView, onPrint }: Inv
       ) : (
         <div className="space-y-4">
           {invoices.map((invoice, idx) => {
-            const status = (statusColors as any)[invoice.order.status] || statusColors.pending;
+            const status = statusColors[invoice.order.status ?? ''] || statusColors.pending;
             return (
               <motion.div
                 key={invoice.id}

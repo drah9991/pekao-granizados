@@ -21,7 +21,7 @@ export function useReports(storeId: string | null) {
   });
   const [isExporting, setIsExporting] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<Record<string, unknown>[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [groupBy, setGroupBy] = useState<string>("none");
   const [summary, setSummary] = useState<ReportSummary | null>(null);
@@ -58,7 +58,7 @@ export function useReports(storeId: string | null) {
       Fecha: format(new Date(order.created_at!), 'dd/MM/yyyy HH:mm'),
       Cliente: order.customers?.name || 'GENÉRICO',
       Empleado: order.profiles?.name || 'N/A',
-      Metodo_Pago: (order.payment as any)?.method || 'N/A',
+      Metodo_Pago: ((order.payment as Record<string, unknown>)?.method as string) || 'N/A',
       Subtotal: order.subtotal,
       Total: order.total,
       Estado: order.status
@@ -78,7 +78,7 @@ export function useReports(storeId: string | null) {
     return data.map(item => ({
       Nombre: item.name.toUpperCase(),
       SKU: item.sku || '-',
-      Unidad: (item as any).unit || (item as any).unit_of_measure,
+      Unidad: ((item as Record<string, unknown>).unit as string) || ((item as Record<string, unknown>).unit_of_measure as string) || '',
       Stock_Actual: item.stock,
       Stock_Minimo: item.min_stock || 0,
       Estado: item.stock <= (item.min_stock || 0) ? 'BAJO' : 'OK'
@@ -114,7 +114,7 @@ export function useReports(storeId: string | null) {
     }));
   };
 
-  const calculateSummary = (data: any[]) => {
+  const calculateSummary = (data: Record<string, unknown>[]) => {
     if (reportType === "sales") {
       const total = data.reduce((acc, curr) => acc + (curr.Total || 0), 0);
       setSummary({ total, count: data.length, secondary: `TICKET PROMEDIO: ${formatCOP(total / (data.length || 1))}` });
@@ -135,7 +135,7 @@ export function useReports(storeId: string | null) {
 
     setIsLoadingPreview(true);
     try {
-      let data: any[] = [];
+      let data: Record<string, unknown>[] = [];
       if (reportType === "sales") data = await fetchSalesData();
       else if (reportType === "inventory") data = await fetchInventoryData();
       else if (reportType === "movements") data = await fetchMovementsData();
@@ -143,7 +143,7 @@ export function useReports(storeId: string | null) {
       calculateSummary(data);
 
       if (groupBy !== "none" && reportType === "sales") {
-        const groupedMap: Record<string, any> = {};
+        const groupedMap: Record<string, Record<string, unknown>> = {};
         const dateDisplay = format(dateRange.from, 'dd/MM/yyyy') === format(dateRange.to, 'dd/MM/yyyy')
           ? format(dateRange.from, 'dd/MM/yyyy')
           : `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`;
@@ -169,7 +169,7 @@ export function useReports(storeId: string | null) {
       if (data.length === 0) {
         toast.info("No hay datos para previsualizar");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error loading preview:", error);
       toast.error("Fallo técnico en generación de vista previa");
     } finally {
@@ -207,7 +207,7 @@ export function useReports(storeId: string | null) {
         reportService.exportToPDF(data, config);
       }
       toast.success("Documento generado y exportado");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error exporting report:", error);
       toast.error("Error crítico en exportación de datos");
     } finally {

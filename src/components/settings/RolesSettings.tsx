@@ -68,13 +68,13 @@ export default function RolesSettings() {
 
     setIsSubmitting(true);
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('roles')
         .insert([{
           name: formattedName,
           description: newRoleDescription.trim(),
           is_system: false
-        }])
+        }] as never)
         .select()
         .single();
         
@@ -85,9 +85,10 @@ export default function RolesSettings() {
       setNewRoleDescription("");
       setIsAddModalOpen(false);
       toast.success('Nueva identidad indexada correctamente');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating role:', error);
-      toast.error('Error en creación: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('Error en creación: ' + message);
     } finally {
       setIsSubmitting(false);
     }
@@ -103,7 +104,7 @@ export default function RolesSettings() {
     }
     
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('roles')
         .delete()
         .eq('id', roleObj.id);
@@ -112,9 +113,10 @@ export default function RolesSettings() {
       
       if (storeId) fetchConfig(storeId);
       toast.success('Identidad removida con éxito');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting role:', error);
-      toast.error('Fallo técnico en borrado: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('Fallo técnico en borrado: ' + message);
     }
   };
 
@@ -142,9 +144,9 @@ export default function RolesSettings() {
           toast.success('Acceso revocado');
         }
       } else {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('role_permissions')
-          .insert([{ role: roleName, resource, action }])
+          .insert([{ role: roleName, resource, action }] as never)
           .select()
           .single();
         
@@ -154,7 +156,7 @@ export default function RolesSettings() {
           toast.success('Privilegio concedido ✓');
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error toggling permission:', error);
       toast.error('Conflicto en actualización de privilegios');
     }

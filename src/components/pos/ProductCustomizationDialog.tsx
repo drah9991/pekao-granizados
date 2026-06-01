@@ -46,7 +46,7 @@ export default function ProductCustomizationDialog({
 
       if (error) throw error;
       if (profile?.store_id) setUserStoreId(profile.store_id);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching user's store ID:", error);
     }
   };
@@ -76,9 +76,9 @@ export default function ProductCustomizationDialog({
 
       if (toppingsError) throw toppingsError;
       setAvailableToppings(toppingsData as ToppingProduct[] || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching customization data:", error);
-      toast.error("Error al cargar opciones: " + error.message);
+      toast.error("Error al cargar opciones: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setLoadingData(false);
     }

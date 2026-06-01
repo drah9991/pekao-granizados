@@ -5,9 +5,9 @@ import { Store as StoreIcon, Settings as SettingsIcon, Trash2, MapPin, Percent, 
 import { cn } from "@/lib/utils";
 
 interface StoreCardProps {
-  store: any;
+  store: Record<string, unknown>;
   idx: number;
-  onEdit: (s: any) => void;
+  onEdit: (s: Record<string, unknown>) => void;
   canManage: boolean;
 }
 

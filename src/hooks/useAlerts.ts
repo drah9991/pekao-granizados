@@ -47,7 +47,7 @@ export const useAlerts = () => {
     hideCriticalBanner: hideBanner,
 
     // Modal control
-    showBlockingModal: (title: string, description: string, data?: any) =>
+    showBlockingModal: (title: string, description: string, data?: Record<string, unknown>) =>
       showModal({ title, description, data }),
     hideBlockingModal: hideModal
   };

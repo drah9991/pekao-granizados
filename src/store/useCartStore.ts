@@ -3,6 +3,8 @@ import type { CartItem, Product, Size } from "@/lib/pos-types";
 import type { Customer } from "@/components/pos/CustomerSelection";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { hasEnoughStock, hasEnoughStockForUpdate, applyPricingRules, resolveSize } from "@/lib/pricing";
+import type { PricingRuleRow } from "@/integrations/supabase/types-extensions";
 
 const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
   return cartItems.filter(item => {
@@ -44,11 +46,11 @@ export interface CartStoreState {
   // Dynamic Data caching for logic
   availableSizes: Tables<'sizes'>[];
   availableToppings: Product[];
-  productTypes: any[];
-  pricingRules: any[];
+  productTypes: Record<string, unknown>[];
+  pricingRules: Record<string, unknown>[];
 
   // Setters
-  setDynamicData: (sizes: Tables<'sizes'>[], toppings: Product[], types: any[], rules: any[]) => void;
+  setDynamicData: (sizes: Tables<'sizes'>[], toppings: Product[], types: Record<string, unknown>[], rules: Record<string, unknown>[]) => void;
   setCart: (updater: CartItem[] | ((prev: CartItem[]) => CartItem[])) => void;
   setDiscount: (discount: number) => void;
   setDiscountType: (type: "percent" | "fixed") => void;
@@ -123,87 +125,32 @@ export const useCartStore = create<CartStoreState>((set, get) => ({
     const state = get();
     const cart = state.cart;
     const typeCfg = state.productTypes.find(t => t.code === product.type);
-    const trackMixture = typeCfg?.track_mixture_inventory || product.type === 'granizado' || product.category === 'Granizado';
 
     const productNeedsSize = product.type !== 'sachet' && product.type !== 'sweet';
     let sizeId = selectedSizeId;
     if (!sizeId && productNeedsSize && state.availableSizes.length > 0) {
       sizeId = state.availableSizes[0].id;
     }
+    const size = sizeId ? state.availableSizes.find(s => s.id === sizeId) : null;
+    const itemMultiplier = size?.multiplier || 1;
 
-    const baseVol = Number(product.base_volume) || 4;
-    const currentSize = sizeId ? state.availableSizes.find(s => s.id === sizeId) : null;
-    const itemMultiplier = currentSize?.multiplier || 1;
-    const OZ_TO_ML = 29.57;
-
-    if (trackMixture && product.mixtureStock !== undefined && product.mixtureStock > 0) {
-      const requestedMl = baseVol * itemMultiplier * OZ_TO_ML * quantity;
-      const currentMlInCart = cart
-        .filter(i => i.productId === product.id)
-        .reduce((sum, i) => sum + (i.quantity * (i.baseVolume || 4) * (i.sizeMultiplier || 1) * OZ_TO_ML), 0);
-
-      if (currentMlInCart + requestedMl > product.mixtureStock) {
-        if (notifyCritical) notifyCritical(`No hay suficiente mezcla de ${product.name} disponible para ${quantity} porciones.`);
-        return;
-      }
-    } else if (!trackMixture && product.stock !== undefined) {
-      const currentQty = cart.reduce((sum, i) => i.productId === product.id ? sum + i.quantity : sum, 0);
-      if ((currentQty + quantity) > product.stock) {
-        if (notifyCritical) notifyCritical(`Stock insuficiente de ${product.name}`);
-        return;
-      }
+    // Stock validation using utility
+    if (!hasEnoughStock(product, cart, quantity, itemMultiplier, typeCfg)) {
+      if (notifyCritical) notifyCritical(`No hay suficiente stock de ${product.name} disponible para ${quantity} porciones.`);
+      return;
     }
 
-    const size = sizeId ? state.availableSizes.find(s => s.id === sizeId) : null;
     const validToppings = state.availableToppings.filter(t => selectedToppingIds.includes(t.id));
 
-    let basePrice = product.price * (size?.multiplier || 1);
-    const originalPrice = basePrice;
-    let discountMessage: string | undefined = undefined;
+    const basePrice = product.price * (size?.multiplier || 1);
+    const { discountedPrice, originalPrice: discountedOriginal, discountMessage } = applyPricingRules(
+      basePrice,
+      state.pricingRules as unknown as PricingRuleRow[],
+      { category: product.category, productId: product.id }
+    );
+    const finalPrice = discountedPrice + validToppings.reduce((sum, t) => sum + t.price, 0);
 
-    if (state.pricingRules.length > 0) {
-      const now = new Date();
-      const jsDay = now.getDay();
-      const currentDay = jsDay === 0 ? 7 : jsDay;
-      const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:00`;
-
-      const applicableRules = state.pricingRules.filter(rule => {
-        if (rule.days_of_week && rule.days_of_week.length > 0 && !rule.days_of_week.includes(currentDay)) return false;
-        if (rule.type === 'time_based' && rule.start_time && rule.end_time) {
-          if (currentTime < rule.start_time || currentTime > rule.end_time) return false;
-        }
-        if (rule.target_type === 'category' && product.category !== rule.target_id) return false;
-        if (rule.target_type === 'product' && product.id !== rule.target_id) return false;
-        return true;
-      });
-
-      if (applicableRules.length > 0) {
-        let bestDiscountedPrice = basePrice;
-        let bestRule = null;
-
-        for (const rule of applicableRules) {
-          let discountedPrice = basePrice;
-          if (rule.discount_type === 'percentage') {
-            discountedPrice = basePrice * (1 - rule.discount_value / 100);
-          } else if (rule.discount_type === 'fixed') {
-            discountedPrice = Math.max(0, basePrice - rule.discount_value);
-          }
-
-          if (discountedPrice < bestDiscountedPrice) {
-            bestDiscountedPrice = discountedPrice;
-            bestRule = rule;
-          }
-        }
-
-        if (bestRule && bestDiscountedPrice < basePrice) {
-          basePrice = bestDiscountedPrice;
-          discountMessage = bestRule.name;
-        }
-      }
-    }
-
-    const toppingsPrice = validToppings.reduce((sum, t) => sum + t.price, 0);
-    const finalPrice = basePrice + toppingsPrice;
+    const trackMixture = typeCfg?.track_mixture_inventory || product.type === 'granizado' || product.category === 'Granizado';
 
     const isConfigurable = product.type !== 'sachet' && product.type !== 'sweet';
     const customizationId = (customized || isConfigurable) ? `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` : product.id;
@@ -230,7 +177,7 @@ export const useCartStore = create<CartStoreState>((set, get) => ({
         sizeMultiplier: size?.multiplier || 1, 
         toppings: validToppings.length > 0 ? validToppings : undefined,
         customizationId,
-        originalPrice: originalPrice !== basePrice ? originalPrice + toppingsPrice : undefined,
+        originalPrice: discountedOriginal !== discountedPrice ? discountedOriginal + validToppings.reduce((sum, t) => sum + t.price, 0) : undefined,
         discountMessage,
         maxStock: product.stock,
         isGranizado: trackMixture,
@@ -256,31 +203,14 @@ export const useCartStore = create<CartStoreState>((set, get) => ({
     const cart = state.cart;
     const item = cart.find(i => i.id === id);
     if (item && delta > 0) {
-       const OZ_TO_ML = 29.57;
-       if (item.isGranizado && item.mixtureStock !== undefined && item.mixtureStock > 0) {
-         const requestedNewQty = item.quantity + delta;
-         const currentMlInCartTotal = cart
-           .filter(i => i.productId === item.productId)
-           .reduce((sum, i) => {
-             const qty = i.id === id ? requestedNewQty : i.quantity;
-             return sum + (qty * (i.baseVolume || 4) * (i.sizeMultiplier || 1) * OZ_TO_ML);
-           }, 0);
-
-         if (currentMlInCartTotal > item.mixtureStock) {
-           if (notifyCritical) notifyCritical(`Límite de mezcla alcanzado para este sabor.`);
-           return;
-         }
-       } else if (item.maxStock !== undefined) {
-         const currentTotalWithNew = cart.reduce((sum, i) => {
-           const qty = i.id === id ? i.quantity + delta : i.quantity;
-           return i.productId === item.productId ? sum + qty : sum;
-         }, 0);
-
-         if (currentTotalWithNew > item.maxStock) {
-           if (notifyCritical) notifyCritical(`Límite de stock alcanzado (${item.maxStock})`);
-           return;
-         }
-       }
+      const newQuantity = item.quantity + delta;
+      if (!hasEnoughStockForUpdate(item, cart, newQuantity)) {
+        if (notifyCritical) {
+          const msg = item.isGranizado ? 'Límite de mezcla alcanzado para este sabor.' : `Límite de stock alcanzado (${item.maxStock})`;
+          notifyCritical(msg);
+        }
+        return;
+      }
     }
 
     set(state => {
@@ -312,69 +242,28 @@ export const useCartStore = create<CartStoreState>((set, get) => ({
         const validToppings = state.availableToppings.filter(t => selectedToppingIds.includes(t.id));
 
         const typeCfg = state.productTypes.find(t => t.code === productType);
-        const trackMixture = typeCfg?.track_mixture_inventory || productType === 'granizado' || productCategory === 'Granizado';
-        const baseVol = Number(item.baseVolume) || 4;
-        const itemMultiplier = size?.multiplier || 1;
-        const OZ_TO_ML = 29.57;
 
-        if (trackMixture && item.mixtureStock !== undefined && item.mixtureStock > 0) {
-          const requestedMl = baseVol * itemMultiplier * OZ_TO_ML * item.quantity;
-          const currentMlInCart = state.cart
-            .filter(i => i.productId === item.productId && i.id !== itemId)
-            .reduce((sum, i) => sum + (i.quantity * (i.baseVolume || 4) * (i.sizeMultiplier || 1) * OZ_TO_ML), 0);
-
-          if (currentMlInCart + requestedMl > item.mixtureStock) {
-            if (notifyCritical) notifyCritical(`No hay suficiente mezcla disponible para este tamaño.`);
-            return item;
-          }
+        // Stock validation for customization change
+        if (!hasEnoughStock(
+          { id: item.productId, type: productType, category: productCategory, base_volume: item.baseVolume, mixtureStock: item.mixtureStock, stock: item.maxStock, price: productPrice, name: item.name } as Product,
+          state.cart.filter(i => i.id !== itemId),
+          item.quantity,
+          size?.multiplier || 1,
+          typeCfg
+        )) {
+          if (notifyCritical) notifyCritical(`No hay suficiente mezcla disponible para este tamaño.`);
+          return item;
         }
 
-        let basePrice = productPrice * (size?.multiplier || 1);
-        const originalPrice = basePrice;
-        let discountMessage: string | undefined = undefined;
-
-        if (state.pricingRules.length > 0) {
-          const now = new Date();
-          const jsDay = now.getDay();
-          const currentDay = jsDay === 0 ? 7 : jsDay;
-          const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:00`;
-
-          const applicableRules = state.pricingRules.filter(rule => {
-            if (rule.days_of_week && rule.days_of_week.length > 0 && !rule.days_of_week.includes(currentDay)) return false;
-            if (rule.type === 'time_based' && rule.start_time && rule.end_time) {
-              if (currentTime < rule.start_time || currentTime > rule.end_time) return false;
-            }
-            if (rule.target_type === 'category' && productCategory !== rule.target_id) return false;
-            if (rule.target_type === 'product' && item.productId !== rule.target_id) return false;
-            return true;
-          });
-
-          if (applicableRules.length > 0) {
-            let bestDiscountedPrice = basePrice;
-            let bestRule = null;
-
-            for (const rule of applicableRules) {
-              let discountedPrice = basePrice;
-              if (rule.discount_type === 'percentage') {
-                discountedPrice = basePrice * (1 - rule.discount_value / 100);
-              } else if (rule.discount_type === 'fixed') {
-                discountedPrice = Math.max(0, basePrice - rule.discount_value);
-              }
-              if (discountedPrice < bestDiscountedPrice) {
-                bestDiscountedPrice = discountedPrice;
-                bestRule = rule;
-              }
-            }
-
-            if (bestRule && bestDiscountedPrice < basePrice) {
-              basePrice = bestDiscountedPrice;
-              discountMessage = bestRule.name;
-            }
-          }
-        }
+        const basePrice = productPrice * (size?.multiplier || 1);
+        const { discountedPrice, originalPrice: discountedOriginal, discountMessage } = applyPricingRules(
+          basePrice,
+          state.pricingRules as unknown as PricingRuleRow[],
+          { category: productCategory, productId: item.productId }
+        );
 
         const toppingsPrice = validToppings.reduce((sum, t) => sum + t.price, 0);
-        const finalPrice = basePrice + toppingsPrice;
+        const finalPrice = discountedPrice + toppingsPrice;
 
         return {
           ...item,
@@ -382,7 +271,7 @@ export const useCartStore = create<CartStoreState>((set, get) => ({
           size: size?.name || undefined,
           sizeMultiplier: size?.multiplier || 1,
           toppings: validToppings.length > 0 ? validToppings : undefined,
-          originalPrice: originalPrice !== basePrice ? originalPrice + toppingsPrice : undefined,
+          originalPrice: discountedOriginal !== discountedPrice ? discountedOriginal + toppingsPrice : undefined,
           discountMessage
         };
       });

@@ -57,25 +57,27 @@ export default function BrandingSettings() {
         if (storeError) throw storeError;
 
         if (store?.config) {
-          const config = store.config as any;
-          if (config.branding?.logo_url) {
-            setCurrentLogo(config.branding.logo_url);
-            setLogoPreview(config.branding.logo_url);
+          const config = store.config as Record<string, unknown>;
+          const branding = config.branding as Record<string, unknown> | undefined;
+          if (branding?.logo_url) {
+            setCurrentLogo(branding.logo_url as string);
+            setLogoPreview(branding.logo_url as string);
           }
-          if (config.branding?.primary_color) {
-            setPrimaryColor(config.branding.primary_color);
+          if (branding?.primary_color) {
+            setPrimaryColor(branding.primary_color as string);
           }
-          if (config.branding?.border_color) {
-            setBorderColor(config.branding.border_color);
+          if (branding?.border_color) {
+            setBorderColor(branding.border_color as string);
           }
         }
       } else {
         setHasStore(false);
         setStoreId(null);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading branding:', error);
-      toast.error('Error al cargar la configuración de marca: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('Error al cargar la configuración de marca: ' + message);
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +130,7 @@ export default function BrandingSettings() {
 
       if (fetchStoreError) throw fetchStoreError;
 
-      const currentConfig = (store?.config as any) || {};
+      const currentConfig = (store?.config as Record<string, unknown>) || {};
       
       const { error: updateError } = await supabase
         .from('stores')
@@ -156,9 +158,10 @@ export default function BrandingSettings() {
       }
       refreshBranding();
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving branding:', error);
-      toast.error('Fallo técnico al guardar: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('Fallo técnico al guardar: ' + message);
     } finally {
       setIsLoading(false);
     }
@@ -194,9 +197,10 @@ export default function BrandingSettings() {
       setNewStoreName("");
       await loadBrandingSettings();
       refreshBranding();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating store:', error);
-      toast.error('Error en expansión de red: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('Error en expansión de red: ' + message);
     } finally {
       setIsCreatingStore(false);
     }

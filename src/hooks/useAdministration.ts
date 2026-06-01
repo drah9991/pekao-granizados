@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { typedFrom } from "@/integrations/supabase/types-extensions";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
 export function useAdministration() {
   const { storeId: authStoreId, user } = useAuth();
-  const [users, setUsers] = useState<any[]>([]);
-  const [stores, setStores] = useState<any[]>([]);
-  const [roles, setRoles] = useState<any[]>([]);
+  const [users, setUsers] = useState<Record<string, unknown>[]>([]);
+  const [stores, setStores] = useState<Record<string, unknown>[]>([]);
+  const [roles, setRoles] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -30,11 +31,11 @@ export function useAdministration() {
   };
 
   const fetchRoles = async () => {
-    const { data } = await (supabase as any).from('roles').select('*');
+    const { data } = await typedFrom.roles().select('*');
     setRoles(data || []);
   };
 
-  const handleSaveUser = async (formData: any, editingUser: any) => {
+  const handleSaveUser = async (formData: Record<string, unknown>, editingUser: Record<string, unknown> | null) => {
     setIsProcessing(true);
     try {
       if (editingUser) {
@@ -51,7 +52,7 @@ export function useAdministration() {
         }
 
         await supabase.from("user_roles").delete().eq("user_id", editingUser.id);
-        await (supabase as any).from("user_roles").insert({ user_id: editingUser.id, role: formData.role });
+        await supabase.from("user_roles").insert({ user_id: editingUser.id, role: formData.role as string });
       } else {
         const { data: authData } = await supabase.auth.signUp({
           email: formData.email,
@@ -59,8 +60,8 @@ export function useAdministration() {
           options: { data: { name: formData.name } }
         });
         if (authData.user) {
-            await (supabase as any).from("profiles").update({ store_id: formData.store_id, document_id: formData.document_id, consent_habeas_data: formData.consent_habeas_data }).eq("id", authData.user.id);
-            await (supabase as any).from("user_roles").insert({ user_id: authData.user.id, role: formData.role });
+            await supabase.from("profiles").update({ store_id: formData.store_id as string, document_id: formData.document_id as string, consent_habeas_data: formData.consent_habeas_data as boolean }).eq("id", authData.user.id);
+            await supabase.from("user_roles").insert({ user_id: authData.user.id, role: formData.role as string });
         }
       }
       toast.success("Usuario guardado");

@@ -6,11 +6,19 @@ import { Label } from "@/components/ui/label";
 import { UserPlus } from "lucide-react";
 import { Customer } from "@/hooks/useCustomers";
 
+interface CustomerFormData {
+  name: string;
+  email: string;
+  phone: string;
+  document_id: string;
+  consent_habeas_data: boolean;
+}
+
 interface CustomerFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
   editingCustomer: Customer | null;
-  onSave: (editingCustomer: Customer | null, formData: any) => Promise<boolean>;
+  onSave: (editingCustomer: Customer | null, formData: CustomerFormData) => Promise<boolean>;
   isProcessing: boolean;
 }
 

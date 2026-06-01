@@ -26,5 +26,13 @@ dist-ssr
 .env
 .env*.local
 
+# Generated output / artifacts
+*.txt
+!requirements.txt
+!AGENTS.md
+!features_listed.md
+!help.txt
+tmp/
+
 # One-off scripts
 src/fix_tanks.ts

@@ -129,6 +129,7 @@ export function TankLevelsList() {
       return data || [];
     },
     enabled: isGlobalAdmin && !authStoreId,
+    staleTime: 5 * 60_000, // 5 min — lista de tiendas, casi estática
   });
 
   // Set default selected store for global admins

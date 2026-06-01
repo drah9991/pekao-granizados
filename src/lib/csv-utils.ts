@@ -6,7 +6,7 @@
  * @param columns Opcional: Array de nombres de columnas para incluir y su orden. Si no se proporciona, se usarán todas las claves del primer objeto.
  * @returns Cadena de texto en formato CSV.
  */
-export function exportToCsv<T extends Record<string, any>>(data: T[], columns?: string[]): string {
+export function exportToCsv<T extends Record<string, unknown>>(data: T[], columns?: string[]): string {
   if (!data || data.length === 0) {
     return '';
   }
@@ -14,7 +14,7 @@ export function exportToCsv<T extends Record<string, any>>(data: T[], columns?: 
   const header = columns || Object.keys(data[0]);
 
   const records = data.map(row => {
-    const newRow: Record<string, any> = {};
+    const newRow: Record<string, unknown> = {};
     header.forEach(col => {
       // Manejar valores que son arrays o JSON, convirtiéndolos a string
       if (Array.isArray(row[col])) {
@@ -29,7 +29,7 @@ export function exportToCsv<T extends Record<string, any>>(data: T[], columns?: 
   });
 
   // Build CSV string natively
-  const escapeCsvValue = (val: any): string => {
+  const escapeCsvValue = (val: unknown): string => {
     const str = val === null || val === undefined ? '' : String(val);
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
       return '"' + str.replace(/"/g, '""') + '"';
@@ -49,7 +49,7 @@ export function exportToCsv<T extends Record<string, any>>(data: T[], columns?: 
  * @param csvString Cadena de texto en formato CSV.
  * @returns Array de objetos.
  */
-export function importFromCsv<T extends Record<string, any>>(csvString: string): T[] {
+export function importFromCsv<T extends Record<string, unknown>>(csvString: string): T[] {
   if (!csvString.trim()) {
     return [];
   }
@@ -63,7 +63,7 @@ export function importFromCsv<T extends Record<string, any>>(csvString: string):
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i];
     if (values.length === 0 || (values.length === 1 && values[0] === '')) continue;
-    const row: Record<string, any> = {};
+    const row: Record<string, unknown> = {};
     headers.forEach((header, idx) => {
       const value = idx < values.length ? values[idx] : '';
       row[header] = castValue(value);
@@ -74,7 +74,7 @@ export function importFromCsv<T extends Record<string, any>>(csvString: string):
   return records;
 }
 
-function castValue(value: string): any {
+function castValue(value: string): unknown {
   if (value === '') return value;
   if (!isNaN(Number(value)) && value.trim() !== '') return Number(value);
   if (value.toLowerCase() === 'true') return true;

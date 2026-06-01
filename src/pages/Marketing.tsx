@@ -29,7 +29,7 @@ const itemVariants = {
 
 export default function Marketing() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingRule, setEditingRule] = useState<any | null>(null);
+  const [editingRule, setEditingRule] = useState<Record<string, unknown> | null>(null);
   
   const { 
     rules, 
@@ -45,7 +45,7 @@ export default function Marketing() {
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (rule: any) => {
+  const openEditDialog = (rule: Record<string, unknown>) => {
     setEditingRule(rule);
     setIsDialogOpen(true);
   };

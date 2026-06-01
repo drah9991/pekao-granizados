@@ -43,7 +43,9 @@ export function TurnStatusChip() {
       await openTurn(parseFloat(amount) || 0);
       setIsOpening(false);
       setAmount("");
-    } catch (e) {}
+    } catch (e) {
+      console.error('Error al abrir turno:', e);
+    }
   };
 
   const handleCloseTurn = async () => {
@@ -75,7 +77,9 @@ export function TurnStatusChip() {
       setAmount("");
       setNotes("");
       navigate('/cash-register');
-    } catch (e) {}
+    } catch (e) {
+      console.error('Error al cerrar turno:', e);
+    }
   };
 
   return (

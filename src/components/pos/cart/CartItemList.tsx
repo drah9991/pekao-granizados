@@ -10,7 +10,7 @@ interface CartItemListProps {
   cart: CartItem[];
   updateQuantity: (id: string, delta: number) => void;
   removeItem: (id: string) => void;
-  availableSizes?: any[];
+  availableSizes?: { id: string; name: string; multiplier: number }[];
   availableToppings?: Product[];
   updateItemCustomization?: (id: string, sizeId: string, toppingIds: string[]) => void;
 }

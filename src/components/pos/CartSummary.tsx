@@ -36,7 +36,7 @@ interface CartSummaryProps {
   restoreLastCart?: () => void;
   selectedCustomer: Customer | null;
   setSelectedCustomer: (customer: Customer | null) => void;
-  availableSizes?: any[];
+  availableSizes?: { id: string; name: string; multiplier: number }[];
   availableToppings?: Product[];
   updateItemCustomization?: (id: string, sizeId: string, toppingIds: string[]) => void;
 }

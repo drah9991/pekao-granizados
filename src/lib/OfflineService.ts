@@ -5,7 +5,7 @@ const DB_VERSION = 1;
 
 export interface OfflineOrder {
   id: string;
-  payload: any;
+  payload: Record<string, unknown>;
   timestamp: string;
   synced: boolean;
 }
@@ -28,7 +28,7 @@ class OfflineService {
     });
   }
 
-  async saveProducts(products: any[]) {
+  async saveProducts(products: Record<string, unknown>[]) {
     const db = await this.db;
     const tx = db.transaction('products', 'readwrite');
     await tx.objectStore('products').clear();
@@ -43,7 +43,7 @@ class OfflineService {
     return db.getAll('products');
   }
 
-  async saveOfflineOrder(order: any) {
+  async saveOfflineOrder(order: Record<string, unknown>) {
     const db = await this.db;
     const offlineOrder: OfflineOrder = {
       id: order.id || crypto.randomUUID(),
@@ -63,13 +63,24 @@ class OfflineService {
 
   async markOrderSynced(id: string) {
     const db = await this.db;
-    const order = await db.get('orders', id);
-    if (order) {
-      order.synced = true;
-      await db.put('orders', order);
-      // Optional: Delete after sync to keep DB small
-      // await db.delete('orders', id);
+    // Eliminar la orden sincronizada para evitar crecimiento infinito de IndexedDB
+    await db.delete('orders', id);
+  }
+
+  /**
+   * Cleanup periódico: elimina órdenes con más de 30 días de antigüedad
+   */
+  async cleanOldOrders(maxAgeDays = 30) {
+    const db = await this.db;
+    const all = await db.getAll('orders');
+    const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+    const tx = db.transaction('orders', 'readwrite');
+    for (const order of all) {
+      if (new Date(order.timestamp).getTime() < cutoff) {
+        await tx.objectStore('orders').delete(order.id);
+      }
     }
+    await tx.done;
   }
 }
 

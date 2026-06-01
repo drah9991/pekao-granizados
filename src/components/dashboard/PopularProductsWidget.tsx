@@ -13,7 +13,23 @@ const getEmoji = (name: string) => {
   return "🥤";
 };
 
-export function PopularProductsWidget({ data }: { data: any }) {
+interface PopularProduct {
+  name: string;
+  sales: number;
+  revenue: number;
+}
+
+interface LowStockItem {
+  name: string;
+  stock: number;
+}
+
+interface PopularProductsData {
+  popularProducts: PopularProduct[];
+  lowStock?: LowStockItem[];
+}
+
+export function PopularProductsWidget({ data }: { data: PopularProductsData | null }) {
   if (!data) return null;
   return (
     <Card className="col-span-1 md:col-span-2 lg:col-span-2 glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro group animate-pro-in">
@@ -27,7 +43,7 @@ export function PopularProductsWidget({ data }: { data: any }) {
         </div>
       </div>
       <div className="space-y-4">
-        {data.popularProducts.map((p: any, idx: number) => (
+        {data.popularProducts.map((p, idx: number) => (
           <div key={p.name} className="flex items-center gap-5 p-3 rounded-3xl hover:bg-muted/50 dark:hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-border dark:hover:border-white/5 group/item">
             <div className="relative shrink-0">
               <span className="absolute -top-2 -left-2 w-7 h-7 bg-primary rounded-xl flex items-center justify-center text-[10px] font-black border border-white/20 z-10 shadow-glow-pro text-primary-foreground italic">#{idx + 1}</span>

@@ -197,8 +197,8 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
   const { storeId } = useAuth();
   const queryClient = useQueryClient();
   const [products, setProducts] = useState<ProductWithStock[]>([]);
-  const [sizes, setSizes] = useState<any[]>([]);
-  const [types, setTypes] = useState<any[]>([]);
+  const [sizes, setSizes] = useState<{ id: string; name: string; multiplier: number }[]>([]);
+  const [types, setTypes] = useState<{ code: string; label: string; emoji_icon: string; color_theme: string; track_mixture_inventory: boolean; sales_mode: string }[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -271,20 +271,19 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
 
         const { data: typesData } = await supabase.from("product_types_config").select("*").eq('active', true).order("created_at", { ascending: true });
 
-        const productsWithStock = (data || []).map((p: any) => mapProductStock(p, typesData || []));
+        const productsWithStock = (data || []).map((p: Record<string, unknown>) => mapProductStock(p, typesData || []));
 
-        const { data: sizesData } = await supabase.from("sizes").select("name, multiplier, id").eq("store_id", storeId);
-
-        await offlineService.saveProducts(productsWithStock);
+        const { data: sizesData } = await supabase.from("sizes").select("name, multiplier, id").eq("store_id", storeId);            await offlineService.saveProducts(productsWithStock as Record<string, unknown>[]);
         return { products: productsWithStock, sizes: sizesData || [], types: typesData || [] };
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error fetching products, checking offline:", error);
         const cached = await offlineService.getProducts();
         return { products: cached || [], sizes: [], types: [], isOffline: true };
       }
     },
     enabled: !!storeId,
-    refetchInterval: 60000
+    refetchInterval: 60000,
+    staleTime: 30_000, // 30s — POS grid, ya tiene refetchInterval 60s
   });
 
   useEffect(() => {
@@ -306,7 +305,7 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
   };
 
   const getTypeConfig = useCallback((typeCode: string) => {
-    const t = types.find(t => t.code === typeCode);
+    const t = types.find((t: { code: string }) => t.code === typeCode);
     if (t) return { label: t.label, emoji: t.emoji_icon, color: t.color_theme, track_mixture_inventory: t.track_mixture_inventory, sales_mode: t.sales_mode };
     return { label: typeCode.charAt(0).toUpperCase() + typeCode.slice(1), emoji: "📦", color: "bg-slate-600", track_mixture_inventory: false, sales_mode: "unit" };
   }, [types]);

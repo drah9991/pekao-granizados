@@ -11,6 +11,7 @@ import { Tables, Json, Enums } from "@/integrations/supabase/types";
 import React from "react"; 
 import RecipeManager from "./RecipeManager";
 import { supabase } from "@/integrations/supabase/client";
+import { typedFrom } from "@/integrations/supabase/types-extensions";
 import { Package, Activity, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +38,7 @@ interface ProductFormDialogProps {
     stock: string;
     base_volume: string | number;
     unit_measure: string;
-    recipe?: any;
+    recipe?: Record<string, unknown>;
     margin_target: string;
     commission_rate: string;
     supplier_name: string;
@@ -58,7 +59,7 @@ interface ProductFormDialogProps {
     stock: string;
     base_volume: string | number;
     unit_measure: string;
-    recipe?: any;
+    recipe?: Record<string, unknown>;
     margin_target: string;
     commission_rate: string;
     supplier_name: string;
@@ -83,8 +84,8 @@ export default function ProductFormDialog({
   skuAcronyms, 
   storeId, // Destructure new prop
 }: ProductFormDialogProps) {
-  const [sizes, setSizes] = React.useState<any[]>([]);
-  const [productTypesConfig, setProductTypesConfig] = React.useState<any[]>([]);
+  const [sizes, setSizes] = React.useState<{ name: string; multiplier: number }[]>([]);
+  const [productTypesConfig, setProductTypesConfig] = React.useState<{ code: string; emoji_icon: string; label: string }[]>([]);
 
   React.useEffect(() => {
     if (storeId && isOpen) {
@@ -97,7 +98,7 @@ export default function ProductFormDialog({
         setSizes(data || []);
       };
       const fetchTypes = async () => {
-        const { data } = await supabase.from('product_types_config' as any).select('*').eq('active', true);
+        const { data } = await typedFrom.product_types_config().select('*').eq('active', true);
         setProductTypesConfig(data || []);
       };
       fetchSizes();

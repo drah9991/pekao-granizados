@@ -4,7 +4,19 @@ import { cn } from "@/lib/utils";
 import { formatCOP } from "@/lib/currency";
 import { ResponsiveContainer, LineChart, Line, YAxis } from "recharts";
 
-export function StatCards({ data, label }: { data: any, label: string }) {
+interface MetricsData {
+  revenue: { val: number; delta: number };
+  expenses: { val: number };
+  netProfit: { val: number };
+  orders: { val: number; delta: number };
+}
+
+interface StatCardsData {
+  metrics: MetricsData;
+  hourlySales?: Array<{ total: number; items: number }>;
+}
+
+export function StatCards({ data, label }: { data: StatCardsData | null; label: string }) {
   if (!data) return null;
 
   const sparkData = data.hourlySales || [];

@@ -20,7 +20,7 @@ export interface BlockingModal {
   title: string;
   description: string;
   isVisible: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 interface AlertState {

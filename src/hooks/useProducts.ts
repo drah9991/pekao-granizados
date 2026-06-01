@@ -81,10 +81,10 @@ export function useProducts() {
       // Fetch types config to determine stock tracking
       const { data: typesData } = await supabase.from("product_types_config").select("*").eq('active', true);
 
-      const mapped = (data || []).map((p: any) => mapProductStock(p, typesData || []));
+      const mapped = (data || []).map((p) => mapProductStock(p, typesData || []));
       
       // Sort starred/featured products first, maintaining name alphabetical order
-      return mapped.sort((a: any, b: any) => {
+      return mapped.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
         const aStarred = a.is_starred ? 1 : 0;
         const bStarred = b.is_starred ? 1 : 0;
         if (aStarred !== bStarred) {
@@ -92,8 +92,27 @@ export function useProducts() {
         }
         return (a.name || "").localeCompare(b.name || "");
       });
-    }
+    },
+    staleTime: 30_000, // 30s — panel admin, cambios moderados
   });
+
+  // Realtime subscription for products and stock
+  useEffect(() => {
+    if (!storeId) return;
+    const channel = supabase.channel(`products-sync-${storeId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `store_id=eq.${storeId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["products-admin"] });
+        queryClient.invalidateQueries({ queryKey: ["products-grid"] }); // Also invalidate POS grid
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'store_stock', filter: `store_id=eq.${storeId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["products-admin"] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [storeId, queryClient]);
 
   const { data: skuAcronyms = [] } = useQuery({
     queryKey: ["sku-acronyms"],
@@ -101,7 +120,8 @@ export function useProducts() {
       const { data, error } = await supabase.from("sku_acronyms").select("*");
       if (error) throw error;
       return data || [];
-    }
+    },
+    staleTime: 5 * 60_000, // 5 min — acrónimos SKU, casi nunca cambian
   });
 
   const handleSaveProduct = async () => {
@@ -112,7 +132,7 @@ export function useProducts() {
 
     setIsProcessing(true);
     try {
-      const productData: any = {
+      const productData: Record<string, unknown> = {
         name: formData.name.toUpperCase(),
         sku: formData.sku || null,
         description: formData.description || null,
@@ -180,8 +200,9 @@ export function useProducts() {
       toast.success("Producto guardado exitosamente");
       setProductDialogIsOpen(false);
       queryClient.invalidateQueries({ queryKey: ["products-admin"] });
-    } catch (error: any) {
-      toast.error("Error al guardar: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error al guardar: " + msg);
     } finally {
       setIsProcessing(false);
     }
@@ -195,7 +216,8 @@ export function useProducts() {
       if (error) throw error;
       toast.success("Producto eliminado");
       queryClient.invalidateQueries({ queryKey: ["products-admin"] });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      console.error("Error deleting product:", error);
       toast.error("Error al eliminar");
     }
   };
@@ -205,8 +227,8 @@ export function useProducts() {
     setIsImporting(true);
     try {
       const text = await importFile.text();
-      const results = importFromCsv<any>(text);
-      const productsToInsert = results.map((row: any) => ({
+      const results = importFromCsv<Record<string, string>>(text);
+      const productsToInsert = results.map((row: Record<string, string>) => ({
         name: (row.name || "N/A").toUpperCase(),
         sku: row.sku || null,
         price: parseFloat(row.price) || 0,
@@ -218,8 +240,9 @@ export function useProducts() {
       toast.success("Importación exitosa");
       setImportDialogIsOpen(false);
       queryClient.invalidateQueries({ queryKey: ["products-admin"] });
-    } catch (error: any) {
-      toast.error("Error en importación: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error en importación: " + msg);
     } finally {
       setIsImporting(false);
     }
@@ -278,13 +301,13 @@ export function useProducts() {
       name: product.name, sku: product.sku || "", description: product.description || "",
       price: product.price.toString(), cost: product.cost?.toString() || "", active: product.active,
       category: product.category || "", is_public: product.is_public ?? true,
-      images: (product.images as string[]) || [], 
-      variants: product.variants, 
-      recipe: Array.isArray(product.recipe) ? product.recipe : [],
+      images:    (product.images as string[]) || [], 
+      variants: product.variants as Json | null, 
+      recipe: product.recipe ? (Array.isArray(product.recipe) ? product.recipe : []) : null,
       type: product.type as ProductType, 
       stock: currentStock, 
-      base_volume: (product as any).base_volume?.toString() || "",
-      unit_measure: (product as any).unit_measure || "oz",
+      base_volume: ((product as Record<string, unknown>).base_volume?.toString() as string) || "",
+      unit_measure: ((product as Record<string, unknown>).unit_measure as string) || "oz",
       margin_target: product.margin_target?.toString() || "60.0",
       commission_rate: product.commission_rate?.toString() || "0.0",
       supplier_name: product.supplier_name || "",

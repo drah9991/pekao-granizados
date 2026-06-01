@@ -34,7 +34,7 @@ export function getDashboardRanges(period: "today" | "week" | "month" | "year"):
   return { current, comparison };
 }
 
-export function transformDashboardData(orders: any[], comparisonOrders: any[], expenses: any[] = []) {
+export function transformDashboardData(orders: Record<string, unknown>[], comparisonOrders: Record<string, unknown>[], expenses: Record<string, unknown>[] = []) {
   const completed = orders.filter(o => o.status === 'completed');
   const cancelled = orders.filter(o => o.status === 'cancelled');
 
@@ -65,7 +65,7 @@ export function transformDashboardData(orders: any[], comparisonOrders: any[], e
   completed.forEach(o => {
     const date = new Date(o.created_at);
     const hour = date.getHours();
-    const itemsInOrder = o.order_items?.reduce((sum: number, item: any) => sum + Number(item.qty), 0) || 0;
+    const itemsInOrder = (o.order_items as Record<string, unknown>[] || []).reduce((sum: number, item: Record<string, unknown>) => sum + Number(item.qty), 0) || 0;
     
     hourlySales[hour].total += Number(o.total);
     hourlySales[hour].items += itemsInOrder;
@@ -89,7 +89,7 @@ export function transformDashboardData(orders: any[], comparisonOrders: any[], e
     let splitInfo: { cash: number; transfer: number } | null = null;
     
     if (o.payment && typeof o.payment === 'object') {
-      const p = o.payment as any;
+      const p = o.payment as Record<string, unknown>;
       method = p.method || p.type || 'cash';
       if (method === 'split' && p.details) {
         splitInfo = p.details;
@@ -118,7 +118,7 @@ export function transformDashboardData(orders: any[], comparisonOrders: any[], e
 
   const productMap: Record<string, { sales: number, revenue: number }> = {};
   completed.forEach(o => {
-    o.order_items?.forEach((item: any) => {
+    (o.order_items as Record<string, unknown>[] || []).forEach((item: Record<string, unknown>) => {
       if (!productMap[item.name]) productMap[item.name] = { sales: 0, revenue: 0 };
       productMap[item.name].sales += Number(item.qty);
       productMap[item.name].revenue += Number(item.price) * Number(item.qty);

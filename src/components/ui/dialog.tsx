@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import * as React from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -133,7 +134,7 @@ const DialogTrigger = ({ children, asChild }: DialogTriggerProps) => {
   };
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement<any>, {
+    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
       onClick: (e: React.MouseEvent) => {
         if (children.props.onClick) children.props.onClick(e);
         handleClick(e);
@@ -166,7 +167,7 @@ const DialogClose = ({ children, asChild }: DialogCloseProps) => {
   };
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement<any>, {
+    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
       onClick: (e: React.MouseEvent) => {
         if (children.props.onClick) children.props.onClick(e);
         handleClick(e);

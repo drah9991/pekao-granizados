@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Bell, Package, Info, CheckCircle2, ShieldAlert, Zap, Lock, Eye, Activity, Loader2, Signal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { typedFrom } from "@/integrations/supabase/types-extensions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -68,8 +69,8 @@ export default function NotificationSettings() {
       if (!storeId) throw new Error("Nodo no identificado en el contexto de sesión.");
 
       const [rolesData, settingsData] = await Promise.all([
-        (supabase as any).from('roles').select('*').order('name', { ascending: true }),
-        (supabase as any).from('notification_settings').select('*').eq('store_id', storeId)
+        typedFrom.roles().select('*').order('name', { ascending: true }),
+        typedFrom.notification_settings().select('*').eq('store_id', storeId)
       ]);
 
       if (rolesData.error) throw rolesData.error;
@@ -77,9 +78,10 @@ export default function NotificationSettings() {
 
       setRoles(rolesData.data || []);
       setSettings(settingsData.data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading notification settings:', error);
-      toast.error('Fallo técnico en carga de protocolos: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('Fallo técnico en carga de protocolos: ' + message);
     } finally {
       setIsLoading(false);
     }
@@ -98,16 +100,14 @@ export default function NotificationSettings() {
 
     setIsUpdating(`${type}-${roleName}`);
     try {
-      const { error } = await (supabase as any)
-        .from('notification_settings')
+      const { error } = await typedFrom.notification_settings()
         .update({ allowed_roles: newRoles, updated_at: new Date().toISOString() })
         .eq('id', currentSetting.id);
 
       if (error) throw error;
 
       setSettings(prev => prev.map(s => s.id === currentSetting.id ? { ...s, allowed_roles: newRoles } : s));
-      toast.success(`Visibilidad ${isAllowed ? 'revocada' : 'concedida'} para el vector ${type}`);
-    } catch (error: any) {
+      toast.success(`Visibilidad ${isAllowed ? 'revocada' : 'concedida'} para el vector ${type}`);      } catch (error: unknown) {
       console.error('Error updating notification setting:', error);
       toast.error('Conflicto en actualización de privilegios');
     } finally {

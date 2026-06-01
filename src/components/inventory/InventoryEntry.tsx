@@ -80,7 +80,7 @@ export default function InventoryEntry({ storeId, onSuccess }: InventoryEntryPro
 
       if (error) throw error;
       setProducts(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching products:", error);
       toast.error("Error al cargar catálogo");
     } finally {
@@ -202,14 +202,15 @@ export default function InventoryEntry({ storeId, onSuccess }: InventoryEntryPro
       toast.success("Registro de entrada completado");
       resetForm();
       if (onSuccess) onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Critical Inventory Entry Error:", error);
       
+      const err = error as { code?: string; message?: string };
       let errorMessage = "Fallo en sincronización";
-      if (error.code === '42501' || error.message?.includes('row-level security')) {
+      if (err.code === '42501' || err.message?.includes('row-level security')) {
         errorMessage = `Error de Permisos (RLS): Rol(${userRole || '?'}), Store(${activeStoreId.substring(0,6)}), Product(${selectedProductId.substring(0,6)}) no autorizado.`;
       } else if (error.message) {
-        errorMessage += ": " + error.message;
+        errorMessage += ": " + err.message;
       }
       
       toast.error(errorMessage);
@@ -439,7 +440,7 @@ export default function InventoryEntry({ storeId, onSuccess }: InventoryEntryPro
   );
 }
 
-function RefreshCcw(props: any) {
+function RefreshCcw(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

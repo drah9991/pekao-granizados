@@ -13,7 +13,7 @@ export interface Product {
   id: string;
   name: string;
   type: string;
-  recipe?: any;
+  recipe?: Record<string, unknown> | unknown[];
   base_volume?: number;
   unit_measure?: string;
 }
@@ -70,6 +70,28 @@ export function usePreparation() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProductId, storeId]);
 
+  // Realtime subscription to keep Preparation sync across devices
+  useEffect(() => {
+    if (!storeId) return;
+    const channel = supabase.channel(`preparation-sync-${storeId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items', filter: `store_id=eq.${storeId}` }, () => {
+        fetchMixtures();
+        if (selectedProductId) fetchCurrentMixtureStock();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `store_id=eq.${storeId}` }, () => {
+        fetchProducts();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'movements', filter: `store_id=eq.${storeId}` }, () => {
+        fetchRecentLogs(selectedProductId);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, selectedProductId]);
+
   const fetchData = async () => {
     setLoading(true);
     await Promise.all([
@@ -90,7 +112,7 @@ export function usePreparation() {
         .eq("is_mixture", true);
       if (error) throw error;
       setMixtures(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching mixtures:", error);
     }
   };
@@ -113,7 +135,7 @@ export function usePreparation() {
         .eq("active", true);
       if (error) throw error;
       setProducts(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching products:", error);
     }
   };
@@ -127,7 +149,7 @@ export function usePreparation() {
         .order("multiplier", { ascending: true });
       if (error) throw error;
       setSizes(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching sizes:", error);
     }
   };
@@ -157,8 +179,8 @@ export function usePreparation() {
         .limit(10);
 
       if (error) throw error;
-      setLogs(data as any[] || []);
-    } catch (error: any) {
+      setLogs((data as PreparationLog[]) || []);
+    } catch (error: unknown) {
       console.error("Error fetching logs:", error);
     }
   };
@@ -230,9 +252,10 @@ export function usePreparation() {
       toast.success("¡Tanque vinculado correctamente!");
       fetchCurrentMixtureStock();
       fetchMixtures();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
       console.error("Error linking tank:", error);
-      toast.error("Error al vincular: " + error.message);
+      toast.error("Error al vincular: " + msg);
     } finally {
       setIsProcessing(false);
     }
@@ -284,8 +307,9 @@ export function usePreparation() {
       setCurrentMixtureStock(0);
       fetchMixtures();
       fetchRecentLogs(selectedProductId);
-    } catch (error: any) {
-      toast.error("Error: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error: " + msg);
     } finally {
       setIsEmptying(false);
     }
@@ -333,14 +357,15 @@ export function usePreparation() {
       setLiters("");
       fetchMixtures();
       fetchRecentLogs();
-    } catch (error: any) {
-      toast.error("Error: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error: " + msg);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleDeleteLog = async (log: any) => {
+  const handleDeleteLog = async (log: Record<string, unknown>) => {
     if (!confirm(`¿Eliminar registro de ${(log.qty / 1000)}L?`)) return;
 
     try {
@@ -361,8 +386,9 @@ export function usePreparation() {
         fetchRecentLogs(selectedProductId);
         fetchCurrentMixtureStock();
       }
-    } catch (error: any) {
-      toast.error("Error: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error: " + msg);
     }
   };
 

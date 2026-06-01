@@ -6,7 +6,20 @@ import { format } from "date-fns";
 
 import { formatCOP } from "@/lib/currency";
 
-export function RecentSalesWidget({ data }: { data: any }) {
+interface RecentOrder {
+  id: string;
+  created_at: string;
+  total: number;
+  status: string;
+  payment?: { method?: string };
+  order_items: Array<{ qty: number }>;
+}
+
+interface RecentSalesData {
+  recentOrders: RecentOrder[];
+}
+
+export function RecentSalesWidget({ data }: { data: RecentSalesData | null }) {
   if (!data) return null;
   return (
     <Card className="lg:col-span-3 glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro overflow-hidden animate-pro-in">
@@ -30,12 +43,12 @@ export function RecentSalesWidget({ data }: { data: any }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40 dark:divide-white/[0.03]">
-            {data.recentOrders.map((order: any) => (
+            {data.recentOrders.map((order) => (
               <tr key={order.id} className="group hover:bg-muted/30 dark:hover:bg-white/[0.05] transition-all duration-300 cursor-pointer">
                 <td className="py-5 text-xs font-black text-muted-foreground group-hover:text-primary transition-colors font-space-grotesk tracking-widest italic">#{order.id.slice(0, 8)}</td>
                 <td className="py-5 text-xs font-bold text-foreground/80 dark:text-foreground/70 font-dm-sans">{format(new Date(order.created_at), 'HH:mm')}</td>
                 <td className="py-5 text-xs font-black text-foreground text-center">
-                  <Badge variant="outline" className="border-border/50 text-[10px] rounded-lg group-hover:border-primary/50 transition-colors font-space-grotesk">{order.order_items.reduce((sum: number, i: any) => sum + i.qty, 0)}</Badge>
+                  <Badge variant="outline" className="border-border/50 text-[10px] rounded-lg group-hover:border-primary/50 transition-colors font-space-grotesk">{order.order_items.reduce((sum: number, i) => sum + i.qty, 0)}</Badge>
                 </td>
                 <td className="py-5">
                   <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest bg-muted/50 px-2 py-1 rounded-md border border-border/50 group-hover:border-primary/30 group-hover:text-primary transition-all">{order.payment?.method === 'cash' ? 'Efectivo' : (order.payment?.method === 'card' ? 'Tarjeta' : (order.payment?.method === 'transfer' ? 'Nequi' : 'Efectivo'))}</span>

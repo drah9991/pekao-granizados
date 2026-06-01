@@ -38,6 +38,7 @@ export const useCart = () => {
     if (storeId) {
       fetchDynamicData(storeId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const fetchDynamicData = async (storeId: string) => {
@@ -77,9 +78,10 @@ export const useCart = () => {
         typesResult.data || [],
         rulesResult.data || []
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
       console.error("Error fetching dynamic data in parallel:", error);
-      toast.error("Error al cargar datos dinámicos: " + error.message);
+      toast.error("Error al cargar datos dinámicos: " + msg);
     }
   };
 

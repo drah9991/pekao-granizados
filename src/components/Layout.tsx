@@ -37,8 +37,6 @@ interface LayoutProps {
 }
 
 import { navConfig } from "@/config/navConfig";
-import { NavItem, NavGroup, Role } from "@/types/navigation";
-import { useCurrentRole } from "@/hooks/useCurrentRole";
 import { CollapsibleNavGroup } from "./CollapsibleNavGroup";
 import { useFavoritesStore } from "@/store/useFavoritesStore";
 import { Star } from "lucide-react";
@@ -61,7 +59,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   };
 
   const allNavItems = navConfig.flatMap(group => {
-    const items: any[] = [];
+    const items: { href?: string; icon?: React.ElementType; label?: string; type?: string; children?: { href?: string; icon?: React.ElementType; label?: string }[] }[] = [];
     group.items.forEach(item => {
       if (item.type === 'collapsible' && item.children) {
         items.push(...item.children);
@@ -104,7 +102,6 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   }, [logoUrl]);
 
   const { userRole, isLoading: isLoadingAuth } = useAuth();
-  const { role: currentRole, isLoading: isLoadingRole } = useCurrentRole();
   const { activeTurn, isLoading: isLoadingTurn } = useTurn();
   const lowStockCount = useLowStockCount();
   const { showCriticalBanner, hideCriticalBanner } = useAlerts();
@@ -137,8 +134,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
     }
   }, [activeTurn, isLoadingTurn, location.pathname, showCriticalBanner, hideCriticalBanner]);
 
-  // Usamos el rol de AuthContext preferentemente, o el del hook si no está disponible
-  const effectiveRole = (userRole as Role) || currentRole;
+  const effectiveRole = userRole as Role | null;
 
   const isLinkActive = (href: string) => {
     if (href === "#") return false;
@@ -447,7 +443,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         <div className={cn(
           "animate-pro-in perspective-1000 h-full flex flex-col",
           fullWidth ? "p-0" : "p-4 md:p-8"
-        )} style={{ zoom: `${uiScale * 0.8}%` } as any}>
+        )} style={{ zoom: `${uiScale * 0.8}%` } as React.CSSProperties}>
             <AlertManager />
             {children}
         </div>

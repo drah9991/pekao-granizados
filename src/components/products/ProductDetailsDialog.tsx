@@ -10,7 +10,7 @@ import { Tables, Enums } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import React from "react";
 
-type Product = Tables<'products'>;
+type Product = Tables<'products'> & { unit_measure?: string | null };
 type ProductType = Enums<'product_type'>;
 
 interface StockInfo {
@@ -230,7 +230,7 @@ export default function ProductDetailsDialog({
                           <div className="space-y-1">
                             <p className="text-xs font-black font-space-grotesk italic uppercase tracking-widest text-white leading-tight group-hover:text-primary transition-colors">{stock.store_name}</p>
                             <p className="text-[9px] font-black text-muted-foreground uppercase tracking-tighter opacity-40">
-                              LÍMITE CRÍTICO: {stock.min_qty} {(viewingProduct as any).unit_measure || 'UNI'}
+                              LÍMITE CRÍTICO: {stock.min_qty} {viewingProduct.unit_measure || 'UNI'}
                             </p>
                           </div>
                           <div className="text-right">
@@ -251,7 +251,7 @@ export default function ProductDetailsDialog({
                                     {stock.qty}
                                 </p>
                                 <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">
-                                    {(viewingProduct as any).unit_measure || 'unidades'} EN PUNTO
+                                    {viewingProduct.unit_measure || 'unidades'} EN PUNTO
                                 </p>
                             </div>
                         </div>

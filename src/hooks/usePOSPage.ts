@@ -27,7 +27,7 @@ export function usePOSPage() {
   const [customizeDialogIsOpen, setCustomizeDialogIsOpen] = useState(false);
   const [paymentDialogIsOpen, setPaymentDialogIsOpen] = useState(false);
   const [receiptDialogIsOpen, setReceiptDialogIsOpen] = useState(false);
-  const [lastOrder, setLastOrder] = useState<any>(null);
+  const [lastOrder, setLastOrder] = useState<Record<string, unknown> | null>(null);
   const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<PaymentMethod>("cash");
 
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
@@ -80,8 +80,8 @@ export function usePOSPage() {
   const onConfirmSale = useCallback(async (
     method: PaymentMethod, 
     amountReceived: number, 
-    deliveryData?: any,
-    splitDetails?: any
+    deliveryData?: Record<string, unknown>,
+    splitDetails?: Record<string, unknown>
   ) => {
     const orderData = await processSale(
       cart,

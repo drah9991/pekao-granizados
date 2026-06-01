@@ -10,7 +10,7 @@ export interface OrderRecord {
   id: string;
   total: number;
   created_at: string;
-  payment: any;
+  payment: Record<string, unknown>;
   user: { name: string | null } | null;
 }
 

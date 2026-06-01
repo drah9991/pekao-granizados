@@ -26,7 +26,7 @@ export default function Users() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
   const [userDialogIsOpen, setUserDialogIsOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<Record<string, unknown> | null>(null);
 
   const filteredUsers = users.filter(u => {
     const matchesSearch = !searchQuery || (u.name || "").toLowerCase().includes(searchQuery.toLowerCase());

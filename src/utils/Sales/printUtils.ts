@@ -67,7 +67,7 @@ export const printReceipt = (order: OrderWithDetails) => {
         </div>
         <div class="border-bottom"></div>
         <div>CLIENTE: ${order.customer_details?.name || "VENTA MOSTRADOR"}</div>
-        <div>PAGO: ${((order as any).payment_method || (order.payment as any)?.method || "EFECTIVO").toUpperCase()}</div>
+        <div>PAGO: ${((order as Record<string, unknown>).payment_method || ((order as Record<string, unknown>).payment as Record<string, unknown>)?.method || "EFECTIVO").toString().toUpperCase()}</div>
         <div class="border-bottom"></div>
         <div class="text-center bold">¡GRACIAS POR SU COMPRA!</div>
         <script>

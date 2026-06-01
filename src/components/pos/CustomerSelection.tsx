@@ -42,7 +42,7 @@ export default function CustomerSelection({ onCustomerSelected, selectedCustomer
 
             setIsSearching(true);
             try {
-                const { data, error } = await (supabase as any)
+                const { data, error } = await supabase
                     .from("customers")
                     .select("id, name, phone, email, document_id")
                     .or(`name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%,document_id.ilike.%${searchQuery}%`)
@@ -72,7 +72,7 @@ export default function CustomerSelection({ onCustomerSelected, selectedCustomer
 
         setIsCreating(true);
         try {
-            const { data, error } = await (supabase as any)
+            const { data, error } = await supabase
                 .from("customers")
                 .insert([{
                     name: newName.trim(),
@@ -93,9 +93,9 @@ export default function CustomerSelection({ onCustomerSelected, selectedCustomer
             setNewEmail("");
             setNewDocumentId("");
             setSearchQuery("");
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error creating customer:", error);
-            toast.error("Error al crear cliente: " + error.message);
+            toast.error("Error al crear cliente: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setIsCreating(false);
         }

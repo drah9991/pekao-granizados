@@ -122,9 +122,10 @@ export default function ProductTypesMaster() {
       if (storeId) {
         await fetchConfig(storeId);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error saving product type:", err);
-      toast.error("Fallo técnico en persistencia: " + err.message);
+      const message = err instanceof Error ? err.message : 'Error desconocido';
+      toast.error("Fallo técnico en persistencia: " + message);
     } finally {
       setIsSaving(false);
     }
@@ -311,7 +312,7 @@ export default function ProductTypesMaster() {
                       </PopoverContent>
                     </Popover>
                 </div>
-                <Select value={formData.sales_mode} onValueChange={(val: any) => setFormData({...formData, sales_mode: val})}>
+                <Select value={formData.sales_mode} onValueChange={(val: string) => setFormData({...formData, sales_mode: val as ProductTypeConfig['sales_mode']})}>
                   <SelectTrigger className="h-14 bg-white/5 border-white/10 rounded-2xl text-[10px] font-black uppercase italic tracking-widest font-space-grotesk focus:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>

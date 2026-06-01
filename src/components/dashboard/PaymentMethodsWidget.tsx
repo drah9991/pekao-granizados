@@ -4,7 +4,18 @@ import { cn } from "@/lib/utils";
 
 import { formatCOP } from "@/lib/currency";
 
-export function PaymentMethodsWidget({ data }: { data: any }) {
+interface PieDataItem {
+  name: string;
+  value: number;
+  percentage: number;
+}
+
+interface PaymentMethodsData {
+  metrics: { orders: { val: number } };
+  pieData: PieDataItem[];
+}
+
+export function PaymentMethodsWidget({ data }: { data: PaymentMethodsData | null }) {
   if (!data) return null;
   return (
     <Card className="glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro flex flex-col animate-pro-in">
@@ -28,7 +39,7 @@ export function PaymentMethodsWidget({ data }: { data: any }) {
                 dataKey="value" animationBegin={0} animationDuration={1500}
                 stroke="rgba(255,255,255,0.05)" strokeWidth={2}
               >
-                {data.pieData.map((entry: any, index: number) => {
+                {data.pieData.map((entry, index: number) => {
                   const colors = ['hsl(var(--primary))', 'hsl(266, 80%, 60%)', 'hsl(266, 70%, 75%)'];
                   return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="none" className="hover:opacity-80 transition-opacity" />;
                 })}
@@ -50,7 +61,7 @@ export function PaymentMethodsWidget({ data }: { data: any }) {
         </div>
       </div>
       <div className="space-y-3 pt-6 border-t border-border dark:border-white/5 mt-auto">
-        {data.pieData.map((item: any, index: number) => {
+        {data.pieData.map((item, index: number) => {
           const colors = ['bg-primary', 'bg-primary/70', 'bg-primary/40'];
           return (
             <div key={item.name} className="flex items-center justify-between group p-2 rounded-2xl hover:bg-muted/50 dark:hover:bg-white/5 transition-all">

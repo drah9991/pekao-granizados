@@ -22,7 +22,7 @@ export function useInvoices() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [availableOrders, setAvailableOrders] = useState<any[]>([]);
+  const [availableOrders, setAvailableOrders] = useState<Record<string, unknown>[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
@@ -46,11 +46,12 @@ export function useInvoices() {
         .eq('order.store_id', storeId);
 
       if (error) throw error;
-      const sorted = (data as any || []).sort((a: any, b: any) => 
+      const sorted = (data || []).sort((a: Invoice, b: Invoice) => 
         new Date(b.order?.created_at || 0).getTime() - new Date(a.order?.created_at || 0).getTime()
       );
       setInvoices(sorted);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      console.error("Error fetching invoices:", error);
       toast.error("Error al cargar facturas");
     } finally {
       setLoading(false);
@@ -74,7 +75,7 @@ export function useInvoices() {
         id: o.id,
         total: o.total,
         created_at: o.created_at,
-        customer_name: (o.customer_details as any)?.name || 'Cliente General'
+        customer_name: o.customer_details?.name || 'Cliente General'
       })) || [];
 
       setAvailableOrders(available);
@@ -92,12 +93,13 @@ export function useInvoices() {
         order_id: selectedOrderId,
         issue_date: new Date().toISOString(),
         total_amount: selectedOrder?.total || 0
-      } as any);
+      });
       if (error) throw error;
       toast.success("Factura generada");
       setIsModalOpen(false);
       fetchInvoices();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      console.error("Error creating invoice:", error);
       toast.error("Error al generar factura");
     } finally {
       setIsSubmitting(false);

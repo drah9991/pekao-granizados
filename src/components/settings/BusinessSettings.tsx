@@ -56,14 +56,16 @@ export default function BusinessSettings() {
         setTaxRate(store.tax_rate?.toString() || "0");
         setCurrency(store.currency || "COP");
         
-        const config = store.config as any;
-        if (config?.business) {
-          setPhone(config.business.phone || "");
-          setEmail(config.business.email || "");
+        const config = store.config as Record<string, unknown>;
+        const business = config?.business as Record<string, unknown> | undefined;
+        if (business) {
+          setPhone((business.phone as string) || "");
+          setEmail((business.email as string) || "");
+          const socialMediaConfig = business.social_media as Record<string, string> | undefined;
           setSocialMedia({
-            instagram: config.business.social_media?.instagram || "",
-            facebook: config.business.social_media?.facebook || "",
-            whatsapp: config.business.social_media?.whatsapp || ""
+            instagram: socialMediaConfig?.instagram || "",
+            facebook: socialMediaConfig?.facebook || "",
+            whatsapp: socialMediaConfig?.whatsapp || ""
           });
         }
       }
@@ -83,7 +85,7 @@ export default function BusinessSettings() {
         .eq('id', storeId)
         .single();
 
-      const currentConfig = (store?.config as any) || {};
+      const currentConfig = (store?.config as Record<string, unknown>) || {};
 
       const { error } = await supabase
         .from('stores')
@@ -106,9 +108,10 @@ export default function BusinessSettings() {
       if (error) throw error;
 
       toast.success('Configuración de sucursal sincronizada correctamente');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving business settings:', error);
-      toast.error('Fallo en persistencia: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('Fallo en persistencia: ' + message);
     } finally {
       setIsLoading(false);
     }

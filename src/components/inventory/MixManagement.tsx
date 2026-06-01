@@ -41,6 +41,7 @@ export default function MixManagement({ storeId }: { storeId: string }) {
       fetchMixes();
       fetchHistory();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const fetchMixes = async () => {
@@ -54,8 +55,9 @@ export default function MixManagement({ storeId }: { storeId: string }) {
 
       if (error) throw error;
       setMixes(data || []);
-    } catch (error: any) {
-      toast.error("Error al cargar mezclas: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error al cargar mezclas: " + msg);
     }
   };
 
@@ -70,7 +72,7 @@ export default function MixManagement({ storeId }: { storeId: string }) {
 
       if (error) throw error;
       setHistory(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching history:", error);
     } finally {
       setLoading(false);

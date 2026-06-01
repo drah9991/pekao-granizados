@@ -18,7 +18,7 @@ export const InventoryManagement = () => {
     const { storeId } = useAuth();
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<any>(null);
+    const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(null);
 
     // Form State
     const [name, setName] = useState("");
@@ -34,7 +34,7 @@ export const InventoryManagement = () => {
         queryKey: ['inventory_items', storeId],
         queryFn: async () => {
             if (!storeId) return [];
-            const { data, error } = await (supabase as any)
+            const { data, error } = await supabase
                 .from('inventory_items')
                 .select('*')
                 .eq('store_id', storeId)
@@ -43,19 +43,20 @@ export const InventoryManagement = () => {
             if (error) throw error;
             return data;
         },
-        enabled: !!storeId
+        enabled: !!storeId,
+        staleTime: 30_000, // 30s — panel admin
     });
 
     const saveMutation = useMutation({
-        mutationFn: async (item: any) => {
+        mutationFn: async (item: Record<string, unknown>) => {
             if (editingItem) {
-                const { error } = await (supabase as any)
+                const { error } = await supabase
                     .from('inventory_items')
                     .update(item)
                     .eq('id', editingItem.id);
                 if (error) throw error;
             } else {
-                const { error } = await (supabase as any)
+                const { error } = await supabase
                     .from('inventory_items')
                     .insert([{ ...item, store_id: storeId }]);
                 if (error) throw error;
@@ -66,14 +67,15 @@ export const InventoryManagement = () => {
             toast.success("Insumo guardado correctamente.");
             handleClose();
         },
-        onError: (error: any) => {
-            toast.error("Error: " + error.message);
+        onError: (error: unknown) => {
+            const message = error instanceof Error ? error.message : 'Error desconocido';
+            toast.error("Error: " + message);
         }
     });
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await (supabase as any)
+            const { error } = await supabase
                 .from('inventory_items')
                 .delete()
                 .eq('id', id);
@@ -85,15 +87,15 @@ export const InventoryManagement = () => {
         }
     });
 
-    const handleOpenEdit = (item: any) => {
+    const handleOpenEdit = (item: Record<string, unknown>) => {
         setEditingItem(item);
         setName(item.name);
         setSku(item.sku || "");
-        setUnitOfMeasure((item as any).unit || "");
-        setStock(item.stock);
-        setMinStock(item.min_stock || 0);
-        setCostPerUnit(item.cost_per_unit || 0);
-        setIsMixture(item.is_mixture || false);
+        setUnitOfMeasure((item.unit as string) || "");
+        setStock(item.stock as number);
+        setMinStock((item.min_stock as number) || 0);
+        setCostPerUnit((item.cost_per_unit as number) || 0);
+        setIsMixture((item.is_mixture as boolean) || false);
         setIsOpen(true);
     };
 
@@ -242,7 +244,7 @@ export const InventoryManagement = () => {
                             ) : (
                                 filteredItems?.map((item) => {
                                     const isLow = item.stock <= (item.min_stock || 0);
-                                    const unit = (item as any).unit || "";
+                                    const unit = (item as { unit?: string }).unit || "";
                                     const displayStock = (item.is_mixture && unit === 'ml') 
                                         ? `${(item.stock / 1000).toFixed(1)} L` 
                                         : `${item.stock} ${unit}`;

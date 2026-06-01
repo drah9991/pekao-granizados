@@ -10,8 +10,8 @@ const PopularProductsWidget = lazy(() => import("@/components/dashboard/PopularP
 const MixtureStockWidget = lazy(() => import("@/components/dashboard/MixtureStockWidget").then(m => ({ default: m.MixtureStockWidget })));
 
 interface DashboardGridProps {
-  uiConfig: any;
-  dashboardData: any;
+  uiConfig: Record<string, boolean | unknown>;
+  dashboardData: Record<string, unknown>;
   comparisonLabel: string;
 }
 

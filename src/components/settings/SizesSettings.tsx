@@ -105,7 +105,7 @@ export default function SizesSettings() {
       if (userStoreId) {
         await fetchConfig(userStoreId);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving size:", error);
       toast.error("Fallo técnico en persistencia de dimensiones");
     } finally {
@@ -128,7 +128,7 @@ export default function SizesSettings() {
       if (userStoreId) {
         await fetchConfig(userStoreId);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting size:", error);
       toast.error("Error al eliminar dimensión estructural");
     } finally {

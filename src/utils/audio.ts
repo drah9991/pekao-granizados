@@ -5,13 +5,25 @@
 
 let audioCtx: AudioContext | null = null;
 
+/**
+ * Verifica si Web Audio API está disponible en el navegador.
+ * Útil para navegadores antiguos o entornos sin soporte de audio.
+ */
+export function isAudioSupported(): boolean {
+  if (typeof window === "undefined") return false;
+  return !!(window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+}
+
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   
   if (!audioCtx) {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (AudioContextClass) {
       audioCtx = new AudioContextClass();
+    } else {
+      console.warn("[Audio] Web Audio API no está soportada en este navegador.");
+      return null;
     }
   }
   return audioCtx;

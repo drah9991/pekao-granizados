@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -120,12 +121,12 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         if (storeError) throw storeError;
 
         if (store?.config) {
-          const config = store.config as any;
-          const brandingConfig = config.branding;
+          const config = store.config as Record<string, unknown>;
+          const brandingConfig = config.branding as Record<string, unknown> | undefined;
           if (brandingConfig) {
-            finalHex = brandingConfig.primary_color || "#700de7";
-            finalBorder = brandingConfig.border_color || "";
-            finalLogo = brandingConfig.logo_url || null;
+            finalHex = (brandingConfig.primary_color as string) || "#700de7";
+            finalBorder = (brandingConfig.border_color as string) || "";
+            finalLogo = (brandingConfig.logo_url as string) || null;
           }
         }
       }
@@ -135,7 +136,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
       setBorderColor(finalBorder);
       applyAtomicPalette(finalHex, finalBorder);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading branding settings:', error);
       applyAtomicPalette("#700de7");
     } finally {

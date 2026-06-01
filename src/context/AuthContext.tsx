@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Enums, Tables } from '@/integrations/supabase/types';
@@ -8,7 +9,7 @@ type Profile = Tables<'profiles'>;
 
 interface AuthContextType {
   user: Profile | null;
-  session: any | null;
+  session: import('@supabase/supabase-js').Session | null;
   isLoading: boolean;
   userRole: AppRole | null;
   storeId: string | null;

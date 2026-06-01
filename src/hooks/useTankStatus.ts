@@ -33,8 +33,8 @@ export function useTankStatus(customStoreId?: string | null) {
       }
 
       try {
-        const { data, error } = await supabase
-          .from('vw_tank_percentages' as unknown as 'inventory_items')
+        const { data, error } = await (supabase
+          .from('vw_tank_percentages') as ReturnType<typeof supabase.from<'inventory_items'>>)
           .select('*')
           .eq('store_id', storeId)
           .order('name', { ascending: true });
@@ -82,7 +82,7 @@ export function useTankStatus(customStoreId?: string | null) {
         {
           event: '*',
           schema: 'public',
-          table: 'machine_tanks',
+          table: 'inventory_items',
           filter: `store_id=eq.${storeId}`
         },
         () => {
@@ -119,9 +119,10 @@ export function useInitializeTanks(customStoreId?: string | null) {
       queryClient.invalidateQueries({ queryKey: ['tank-status'] });
       toast.success(`Se inicializaron ${count} tanques de mezcla para esta sucursal.`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("Error initializing tanks:", error);
-      toast.error(`Error al inicializar tanques: ${error.message || 'Error desconocido'}`);
+      const msg = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error al inicializar tanques: ${msg}`);
     }
   });
 }

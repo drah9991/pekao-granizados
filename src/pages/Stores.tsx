@@ -25,7 +25,7 @@ export default function Stores() {
   const { role: currentUserRole } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [storeDialogIsOpen, setStoreDialogIsOpen] = useState(false);
-  const [editingStore, setEditingStore] = useState<any>(null);
+  const [editingStore, setEditingStore] = useState<Record<string, unknown> | null>(null);
 
   const filteredStores = stores.filter(s =>
     (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||

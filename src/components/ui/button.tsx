@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -59,8 +60,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", stiffness: 400, damping: 10 }}
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref as any}
-        {...(props as any)}
+        ref={ref as React.Ref<HTMLButtonElement>}
+        {...(props as React.Attributes & React.HTMLAttributes<HTMLElement>)}
       />
     );
   },

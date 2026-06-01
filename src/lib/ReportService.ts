@@ -15,7 +15,7 @@ class ReportService {
   /**
    * Export JSON data to Excel
    */
-  exportToExcel(data: any[], config: ReportConfig) {
+  exportToExcel(data: Record<string, unknown>[], config: ReportConfig) {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, config.title.slice(0, 31));
@@ -26,7 +26,7 @@ class ReportService {
   /**
    * Export JSON data to PDF
    */
-  exportToPDF(data: any[], config: ReportConfig) {
+  exportToPDF(data: Record<string, unknown>[], config: ReportConfig) {
     const doc = new jsPDF();
     
     // Header

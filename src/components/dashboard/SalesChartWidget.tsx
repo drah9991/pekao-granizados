@@ -3,7 +3,19 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 import { formatCOP } from "@/lib/currency";
 
-export function SalesChartWidget({ data }: { data: any }) {
+interface HourlySale {
+  hour: string;
+  total: number;
+}
+
+interface SalesChartData {
+  hourlySales: HourlySale[];
+  peakHour: string;
+  maxSale: number;
+  totalItems: number;
+}
+
+export function SalesChartWidget({ data }: { data: SalesChartData | null }) {
   if (!data) return null;
   return (
     <Card className="lg:col-span-2 glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro animate-pro-in">

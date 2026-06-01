@@ -19,6 +19,13 @@ export function initSentry() {
         blockAllMedia: false,
       }),
     ],
+    ignoreErrors: [
+      "Failed to execute 'selectNode' on 'Range'",
+      "is not a valid JavaScript MIME type",
+      "Failed to fetch dynamically imported module",
+      "ChunkLoadError",
+      "favorites is not defined"
+    ],
     // Performance monitoring
     tracesSampleRate: 0.3,  // 30% of transactions
     // Session Replay
@@ -34,7 +41,7 @@ export function initSentry() {
 }
 
 // Helper to capture errors manually
-export function captureError(error: Error, context?: Record<string, any>) {
+export function captureError(error: Error, context?: Record<string, unknown>) {
   if (import.meta.env.PROD) {
     Sentry.captureException(error, {
       extra: context,

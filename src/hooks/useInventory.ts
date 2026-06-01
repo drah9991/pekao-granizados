@@ -73,7 +73,8 @@ export function useInventory() {
       }));
 
       setStockItems(formattedData as StockItem[]);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      console.error("Error fetching stock:", error);
       toast.error("Error al cargar inventario");
     } finally {
       setLoading(false);
@@ -83,6 +84,18 @@ export function useInventory() {
   useEffect(() => {
     fetchStores();
     fetchStockData();
+    
+    // Realtime subscription to keep Inventory synchronized across screens
+    const channel = supabase.channel(`inventory-sync`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'store_stock' }, () => {
+        fetchStockData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAdjustStock = async () => {
@@ -122,8 +135,9 @@ export function useInventory() {
       toast.success("Métrica sincronizada correctamente");
       setAdjustDialog(false);
       fetchStockData();
-    } catch (error: any) {
-      toast.error("Fallo en sincronización: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Fallo en sincronización: " + msg);
     } finally {
       setIsProcessing(false);
     }

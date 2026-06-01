@@ -35,7 +35,8 @@ export const RecipeManagement = () => {
                 .order('code');
             if (error) throw error;
             return data;
-        }
+        },
+        staleTime: 5 * 60_000, // 5 min — tipos de producto, rara vez cambian
     });
 
     // Fetch all products for this store
@@ -52,7 +53,8 @@ export const RecipeManagement = () => {
             if (error) throw error;
             return data;
         },
-        enabled: !!storeId
+        enabled: !!storeId,
+        staleTime: 30_000, // 30s — panel admin, cambios moderados
     });
 
     // Fetch inventory available
@@ -60,7 +62,7 @@ export const RecipeManagement = () => {
         queryKey: ['inventory_items', storeId],
         queryFn: async () => {
             if (!storeId) return [];
-            const { data, error } = await (supabase as any)
+            const { data, error } = await supabase
                 .from('inventory_items')
                 // @ts-expect-error - The real column in the DB is 'unit'
                 .select('id, name, unit')
@@ -69,7 +71,8 @@ export const RecipeManagement = () => {
             if (error) throw error;
             return data;
         },
-        enabled: !!storeId
+        enabled: !!storeId,
+        staleTime: 30_000, // 30s — panel admin
     });
 
     // Fetch recipes for the selected product
@@ -78,7 +81,7 @@ export const RecipeManagement = () => {
         queryFn: async () => {
             if (!selectedProduct) return [];
             // we need to join with inventory_items to get the ingredient name
-            const { data, error } = await (supabase as any)
+            const { data, error } = await supabase
                 .from('recipes')
                 .select(`
           id, 
@@ -91,12 +94,13 @@ export const RecipeManagement = () => {
             if (error) throw error;
             return data;
         },
-        enabled: !!selectedProduct
+        enabled: !!selectedProduct,
+        staleTime: 30_000, // 30s — panel admin
     });
 
     const addIngredientMutation = useMutation({
         mutationFn: async (payload: { product_id: string, inventory_item_id: string, quantity_required: number }) => {
-            const { error } = await (supabase as any)
+            const { error } = await supabase
                 .from('recipes')
                 .insert([payload]);
             if (error) {
@@ -118,7 +122,7 @@ export const RecipeManagement = () => {
 
     const removeIngredientMutation = useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await (supabase as any)
+            const { error } = await supabase
                 .from('recipes')
                 .delete()
                 .eq('id', id);
@@ -174,11 +178,11 @@ export const RecipeManagement = () => {
                                     <SelectValue placeholder="Ej. Granizado, Topping..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {productTypes?.map((t: any) => (
-                                        <SelectItem key={t.code} value={t.code}>
+                                    {productTypes?.map((t: Record<string, unknown>) => (
+                                        <SelectItem key={t.code as string} value={t.code as string}>
                                             <div className="flex items-center gap-2">
-                                                <span>{t.emoji_icon}</span>
-                                                {t.label}
+                                                <span>{t.emoji_icon as string}</span>
+                                                {t.label as string}
                                             </div>
                                         </SelectItem>
                                     ))}
@@ -252,7 +256,7 @@ export const RecipeManagement = () => {
                                                 <SelectContent>
                                                     {inventoryItems?.map(inv => (
                                                         <SelectItem key={inv.id} value={inv.id}>
-                                                            {inv.name} ({(inv as any).unit || ""})
+                                                            {inv.name} ({inv.unit || ""})
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -297,13 +301,13 @@ export const RecipeManagement = () => {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    recipes?.map((row: any) => (
+                                    recipes?.map((row: Record<string, unknown>) => (
                                         <TableRow key={row.id}>
                                             <TableCell className="font-bold text-foreground">
-                                                {row.inventory_items?.name || "Desconocido"}
+                                                {((row.inventory_items as Record<string, unknown>)?.name as string) || "Desconocido"}
                                             </TableCell>
                                             <TableCell className="font-medium text-foreground/80">
-                                                {row.quantity_required} {(row.inventory_items as any)?.unit || ""}
+                                                {row.quantity_required as number} {((row.inventory_items as Record<string, unknown>)?.unit as string) || ""}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" onClick={() => removeIngredientMutation.mutate(row.id)}>

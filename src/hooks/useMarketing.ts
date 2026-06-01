@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { typedFrom } from "@/integrations/supabase/types-extensions";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
@@ -13,8 +14,7 @@ export function useMarketing() {
     queryKey: ["pricing_rules", storeId],
     queryFn: async () => {
       if (!storeId) return [];
-      const { data, error } = await (supabase as any)
-        .from("pricing_rules")
+      const { data, error } = await typedFrom.pricing_rules()
         .select("*")
         .eq("store_id", storeId)
         .order("created_at", { ascending: false });
@@ -23,21 +23,20 @@ export function useMarketing() {
       return data;
     },
     enabled: !!storeId,
+    staleTime: 30_000, // 30s — reglas de precios, cambios moderados
   });
 
   const saveRuleMutation = useMutation({
-    mutationFn: async ({ id, ruleData }: { id?: string; ruleData: any }) => {
+    mutationFn: async ({ id, ruleData }: { id?: string; ruleData: Record<string, unknown> }) => {
         setIsProcessing(true);
         if (id) {
-            const { error } = await (supabase as any)
-                .from("pricing_rules")
-                .update(ruleData)
+            const { error } = await typedFrom.pricing_rules()
+                .update(ruleData as Parameters<ReturnType<typeof typedFrom.pricing_rules>['update']>[0])
                 .eq("id", id);
             if (error) throw error;
         } else {
-            const { error } = await (supabase as any)
-                .from("pricing_rules")
-                .insert([ruleData]);
+            const { error } = await typedFrom.pricing_rules()
+                .insert(ruleData as Parameters<ReturnType<typeof typedFrom.pricing_rules>['insert']>[0])
             if (error) throw error;
         }
     },
@@ -45,16 +44,16 @@ export function useMarketing() {
         queryClient.invalidateQueries({ queryKey: ["pricing_rules"] });
         toast.success("Operación exitosa.");
     },
-    onError: (error: any) => {
-        toast.error("Error: " + error.message);
+    onError: (error: unknown) => {
+        const msg = error instanceof Error ? error.message : "Error desconocido";
+        toast.error("Error: " + msg);
     },
     onSettled: () => setIsProcessing(false)
   });
 
   const deleteRuleMutation = useMutation({
     mutationFn: async (id: string) => {
-        const { error } = await (supabase as any)
-            .from("pricing_rules")
+        const { error } = await typedFrom.pricing_rules()
             .delete()
             .eq("id", id);
         if (error) throw error;
@@ -63,8 +62,9 @@ export function useMarketing() {
         queryClient.invalidateQueries({ queryKey: ["pricing_rules"] });
         toast.success("Regla eliminada.");
     },
-    onError: (error: any) => {
-        toast.error("Error al eliminar: " + error.message);
+    onError: (error: unknown) => {
+        const msg = error instanceof Error ? error.message : "Error desconocido";
+        toast.error("Error al eliminar: " + msg);
     }
   });
 

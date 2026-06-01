@@ -9,7 +9,7 @@ export function FavoritesWidget() {
 
   // Aplanar todos los items del navConfig para poder buscarlos fácilmente
   const allNavItems = navConfig.flatMap(group => {
-    const items: any[] = [];
+    const items: { href?: string; icon?: React.ElementType; label?: string; type?: string; children?: unknown[] }[] = [];
     group.items.forEach(item => {
       if (item.type === 'collapsible' && item.children) {
         items.push(...item.children);

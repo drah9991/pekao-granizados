@@ -63,7 +63,7 @@ serve(async (req) => {
       });
     }
 
-    const updateParams: any = {};
+    const updateParams: Record<string, string> = {};
     if (email) updateParams.email = email;
     if (password) updateParams.password = password;
 
@@ -93,7 +93,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Edge Function error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,

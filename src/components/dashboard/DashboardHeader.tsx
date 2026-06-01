@@ -8,8 +8,8 @@ import DashboardCustomizer from "@/components/dashboard/DashboardCustomizer";
 interface DashboardHeaderProps {
   period: string;
   setPeriod: (period: "today" | "week" | "month" | "year") => void;
-  uiConfig: any;
-  setUiConfig: (config: any) => void;
+  uiConfig: Record<string, unknown>;
+  setUiConfig: (config: Record<string, unknown>) => void;
   isSavingConfig: boolean;
   handleSaveConfig: () => void;
 }

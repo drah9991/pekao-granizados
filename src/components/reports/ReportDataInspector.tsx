@@ -9,7 +9,7 @@ import { formatCOP } from "@/lib/currency";
 import { ReportType } from "@/hooks/useReports";
 
 interface ReportDataInspectorProps {
-  previewData: any[];
+  previewData: Record<string, unknown>[];
   reportType: ReportType;
   columns: { header: string; dataKey: string }[];
   selectedColumns: string[];

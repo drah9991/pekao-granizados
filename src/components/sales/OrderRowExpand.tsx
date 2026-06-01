@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 import { differenceInMinutes } from "date-fns";
 
 interface OrderRowExpandProps {
-  order: any;
+  order: Record<string, unknown>;
   isOpen: boolean;
-  onAnular: (order: any) => void;
-  onVerFactura: (order: any) => void;
+  onAnular: (order: Record<string, unknown>) => void;
+  onVerFactura: (order: Record<string, unknown>) => void;
 }
 
 export function OrderRowExpand({ order, isOpen, onAnular, onVerFactura }: OrderRowExpandProps) {
@@ -53,14 +53,14 @@ export function OrderRowExpand({ order, isOpen, onAnular, onVerFactura }: OrderR
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.03]">
-                    {items?.map((item: any) => (
+                    {items?.map((item: Record<string, unknown>) => (
                       <tr key={item.id} className="group/item">
                         <td className="py-3 px-2">
                           <span className="text-xs font-bold text-slate-300 group-hover/item:text-white transition-colors">{item.name}</span>
                         </td>
                         <td className="py-3">
                           <span className="text-[10px] font-black uppercase text-slate-500 bg-white/5 px-2 py-0.5 rounded-md">
-                            {(item.product as any)?.category || 'General'}
+                            {(item.product as Record<string, unknown>)?.category as string || 'General'}
                           </span>
                         </td>
                         <td className="py-3 text-center">

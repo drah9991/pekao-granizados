@@ -60,11 +60,11 @@ export function useCashRegister(storeId: string | null) {
 
       if (error) throw error;
 
-      const records = (data as any) || [];
-      setOrders(records);
+      const records = (data || []) as Record<string, unknown>[];
+      setOrders(records as OrderRecord[]);
 
       const totals = { cash: 0, transfer: 0, card: 0, qr: 0, total: 0 };
-      records.forEach((order: any) => {
+      records.forEach((order: Record<string, unknown>) => {
         const amount = Number(order.total) || 0;
         totals.total += amount;
         const payment = order.payment && typeof order.payment === 'object' ? order.payment : { method: 'cash' };
@@ -81,8 +81,9 @@ export function useCashRegister(storeId: string | null) {
       });
 
       setSummary(totals);
-    } catch (error: any) {
-      toast.error("Error al calcular el arqueo: " + error.message);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      toast.error("Error al calcular el arqueo: " + msg);
     } finally {
       setLoading(false);
     }

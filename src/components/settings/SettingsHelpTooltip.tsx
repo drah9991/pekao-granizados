@@ -62,7 +62,7 @@ export default function SettingsHelpTooltip({ content, className }: SettingsHelp
       <div
         ref={popoverRef}
         id={popoverId}
-        // @ts-ignore
+        // @ts-expect-error - popover="auto" is an experimental HTML attribute for the Popover API, not yet in TS types
         popover="auto"
         className="glass-pro border border-white/10 rounded-2xl p-4 text-[10px] text-white/90 max-w-[240px] font-bold uppercase italic tracking-wider leading-relaxed shadow-glow-pro backdrop-blur-md outline-none popover-native-tooltip"
         style={{

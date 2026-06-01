@@ -13,8 +13,9 @@ interface Mixture {
 
 interface MixtureStockWidgetProps {
   data: {
-    mixtures: Mixture[];
-  } | any;
+    lowStock: Array<{ id: string; name: string; stock: number; min_stock: number; is_mixture?: boolean }>;
+    sizes?: Array<{ id: string; name: string; multiplier: number }>;
+  } | null;
 }
 
 const OZ_TO_ML = 29.57;
@@ -23,7 +24,7 @@ const STANDARD_SERVING_ML = STANDARD_SERVING_OZ * OZ_TO_ML;
 
 export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
   // If no data or empty mixtures, don't show much
-  const mixtures = data?.lowStock?.filter((m: any) => m.is_mixture) || [];
+  const mixtures = data?.lowStock?.filter((m) => m.is_mixture) || [];
   
   // NOTE: If the flag is_mixture is new, we might need a better way to filter.
   // For now, let's assume the dashboard query is updated to include it.
@@ -62,7 +63,7 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {data.lowStock.map((item: any, idx: number) => {
+            {data.lowStock.map((item, idx: number) => {
               const liters = item.stock / 1000;
               const servings = Math.floor(item.stock / STANDARD_SERVING_ML);
               const isLow = item.stock <= (item.min_stock || 0);
@@ -107,7 +108,7 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
                           <ShoppingBag className="w-3 h-3 text-primary" />
                           <span className="text-[10px] font-black text-primary font-space-grotesk">{servings} <span className="opacity-60">PORCIONES</span> ({STANDARD_SERVING_OZ}oz)</span>
                        </div>
-                      {availableSizes.slice(0, 2).map((size: any, sIdx: number) => {
+                      {availableSizes.slice(0, 2).map((size, sIdx: number) => {
                         if (size.multiplier === 1) return null;
                         const sizeServings = Math.floor(item.stock / (STANDARD_SERVING_ML * size.multiplier));
                         return (

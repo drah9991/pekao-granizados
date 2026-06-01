@@ -88,7 +88,7 @@ export default function ReceiptTemplateSettings() {
 
       if (template) {
         setTemplateId(template.id);
-        setTemplateData(template.template_data as unknown as TemplateData);
+        setTemplateData(template.template_data as TemplateData);
       }
     } catch (error) {
       console.error('Error loading template:', error);
@@ -103,7 +103,7 @@ export default function ReceiptTemplateSettings() {
       if (templateId) {
         const { error } = await supabase
           .from('receipt_templates')
-          .update({ template_data: templateData as any, updated_at: new Date().toISOString() })
+          .update({ template_data: templateData, updated_at: new Date().toISOString() })
           .eq('id', templateId);
 
         if (error) throw error;
@@ -113,7 +113,7 @@ export default function ReceiptTemplateSettings() {
           .insert([{
             store_id: storeId,
             name: 'Plantilla Principal',
-            template_data: templateData as any,
+            template_data: templateData,
             is_default: true,
           }]);
 
@@ -122,15 +122,16 @@ export default function ReceiptTemplateSettings() {
 
       toast.success('Arquitectura de recibo sincronizada ✓');
       loadTemplate();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving template:', error);
-      toast.error('Fallo técnico en persistencia: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('Fallo técnico en persistencia: ' + message);
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const updateTemplateSection = (section: 'header' | 'body' | 'footer', field: string, value: any) => {
+  const updateTemplateSection = (section: 'header' | 'body' | 'footer', field: string, value: boolean | string) => {
     setTemplateData({
       ...templateData,
       [section]: {

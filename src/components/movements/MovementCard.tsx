@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Movement } from "@/hooks/useMovements";
 
-const typeMapping: Record<string, { label: string; icon: any; bg: string; text: string; glow: string }> = {
+const typeMapping: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; bg: string; text: string; glow: string }> = {
     entry: { label: "INYECCIÓN", icon: TrendingUp, bg: "bg-emerald-500/10", text: "text-emerald-500", glow: "shadow-emerald-500/20" },
     in: { label: "INYECCIÓN", icon: TrendingUp, bg: "bg-emerald-500/10", text: "text-emerald-500", glow: "shadow-emerald-500/20" },
     exit: { label: "EXTRACCIÓN", icon: TrendingDown, bg: "bg-rose-500/10", text: "text-rose-500", glow: "shadow-rose-500/20" },

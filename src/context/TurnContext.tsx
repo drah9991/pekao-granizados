@@ -1,5 +1,7 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { typedFrom } from '@/integrations/supabase/types-extensions';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 
@@ -38,8 +40,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(true);
     try {
-      const { data, error } = await (supabase as any)
-        .from('cash_turns')
+      const { data, error } = await typedFrom.cash_turns()
         .select(`
           *,
           profiles:cashier_id (name)
@@ -51,12 +52,14 @@ export function TurnProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        process.env.NODE_ENV === 'development' && console.error('Error fetching turn:', error);
+        if (process.env.NODE_ENV === 'development') console.error('Error fetching turn:', error);
         toast.error("Error al cargar el turno actual: " + error.message);
       } else if (data) {
+        const dataRecord = data as Record<string, unknown>;
+        const profile = dataRecord.profiles as Record<string, unknown> | undefined;
         setActiveTurn({
           ...data,
-          cashier_name: (data as any).profiles?.name
+          cashier_name: profile?.name as string | undefined
         } as CashTurn);
       } else {
         setActiveTurn(null);
@@ -71,7 +74,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
     fetchActiveTurn();
 
     // Suscripción Realtime
-    const channel = (supabase as any)
+    const channel = supabase
       .channel('cash_turns_changes')
       .on(
         'postgres_changes',
@@ -103,8 +106,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
       throw new Error("Tienda no asignada");
     }
 
-    const { error } = await (supabase as any)
-      .from('cash_turns')
+    const { error } = await typedFrom.cash_turns()
       .insert({
         store_id: storeId,
         cashier_id: user.id,
@@ -127,8 +129,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
   const pauseTurn = async () => {
     if (!activeTurn) return;
 
-    const { error } = await (supabase as any)
-      .from('cash_turns')
+    const { error } = await typedFrom.cash_turns()
       .update({
         status: 'paused',
         notes: (activeTurn.notes ? activeTurn.notes + '\n' : '') + `[Pausado el ${new Date().toLocaleString('es-CO')}]`
@@ -147,8 +148,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
   const resumeTurn = async () => {
     if (!activeTurn) return;
 
-    const { error } = await (supabase as any)
-      .from('cash_turns')
+    const { error } = await typedFrom.cash_turns()
       .update({
         status: 'open',
         notes: (activeTurn.notes ? activeTurn.notes + '\n' : '') + `[Reanudado el ${new Date().toLocaleString('es-CO')}]`
@@ -165,8 +165,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
   };
 
   const reopenTurn = async (turnId: string) => {
-    const { error } = await (supabase as any)
-      .from('cash_turns')
+    const { error } = await typedFrom.cash_turns()
       .update({
         status: 'open',
         notes: '[Reabierto históricamente el ' + new Date().toLocaleString('es-CO') + ']'
@@ -189,8 +188,7 @@ export function TurnProvider({ children }: { children: ReactNode }) {
   const closeTurn = async (amount: number, notes?: string) => {
     if (!activeTurn) return;
 
-    const { error } = await (supabase as any)
-      .from('cash_turns')
+    const { error } = await typedFrom.cash_turns()
       .update({
         status: 'closed',
         closed_at: new Date().toISOString(),

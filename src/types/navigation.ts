@@ -1,9 +1,11 @@
+import type React from "react";
+
 export type Role = 'admin' | 'cashier' | 'owner' | 'manager' | 'store_manager' | 'driver' | 'customer';
 
 export interface NavItem {
   label: string;
   href: string;
-  icon: any;
+  icon: React.ElementType;
   badge?: string;
   roles: Role[];
   children?: NavItem[];

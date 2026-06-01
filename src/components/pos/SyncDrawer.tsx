@@ -43,6 +43,7 @@ export default function SyncDrawer({
     if (isOpen) {
       checkPendingOrders();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const formatDate = (dateStr: string) => {
@@ -155,7 +156,7 @@ export default function SyncDrawer({
 
                         {/* Order Items */}
                         <div className="space-y-1.5 mb-3.5">
-                          {items.map((item: any, itemIdx: number) => (
+                          {items.map((item: Record<string, unknown>, itemIdx: number) => (
                             <div key={itemIdx} className="flex justify-between items-start text-xs font-dm-sans">
                               <span className="text-muted-foreground/80 font-medium leading-tight text-wrap max-w-[70%]">
                                 <span className="text-foreground/90 font-bold mr-1.5">{item.quantity}x</span>

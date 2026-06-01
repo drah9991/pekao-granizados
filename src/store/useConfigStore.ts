@@ -4,26 +4,26 @@ import { toast } from "sonner";
 
 export interface ConfigStoreState {
   loading: boolean;
-  storeConfig: any | null;
-  roles: any[];
-  rolePermissions: any[];
-  receiptTemplate: any | null;
-  sizes: any[];
-  skuAcronyms: any[];
-  notificationSettings: any[];
-  productTypes: any[];
+  storeConfig: Record<string, unknown> | null;
+  roles: Record<string, unknown>[];
+  rolePermissions: Record<string, unknown>[];
+  receiptTemplate: Record<string, unknown> | null;
+  sizes: Record<string, unknown>[];
+  skuAcronyms: Record<string, unknown>[];
+  notificationSettings: Record<string, unknown>[];
+  productTypes: Record<string, unknown>[];
   
   fetchConfig: (storeId: string) => Promise<void>;
   setLoading: (loading: boolean) => void;
   
-  updateStoreConfig: (storeId: string, updates: any) => Promise<void>;
-  updateReceiptTemplate: (storeId: string, template: any) => Promise<void>;
-  updateSizes: (sizes: any[]) => void;
-  updateSkuAcronyms: (acronyms: any[]) => void;
-  updateNotificationSettings: (settings: any[]) => void;
-  updateProductTypes: (types: any[]) => void;
-  setRoles: (roles: any[]) => void;
-  setRolePermissions: (permissions: any[]) => void;
+  updateStoreConfig: (storeId: string, updates: Record<string, unknown>) => Promise<void>;
+  updateReceiptTemplate: (storeId: string, template: Record<string, unknown>) => Promise<void>;
+  updateSizes: (sizes: Record<string, unknown>[]) => void;
+  updateSkuAcronyms: (acronyms: Record<string, unknown>[]) => void;
+  updateNotificationSettings: (settings: Record<string, unknown>[]) => void;
+  updateProductTypes: (types: Record<string, unknown>[]) => void;
+  setRoles: (roles: Record<string, unknown>[]) => void;
+  setRolePermissions: (permissions: Record<string, unknown>[]) => void;
 }
 
 export const useConfigStore = create<ConfigStoreState>((set) => ({
@@ -84,7 +84,7 @@ export const useConfigStore = create<ConfigStoreState>((set) => ({
         productTypes: productTypesRes.data || [],
         loading: false
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Critical error batch caching config store:", err);
       toast.error("Fallo de sincronización en caché global.");
       set({ loading: false });
@@ -99,7 +99,7 @@ export const useConfigStore = create<ConfigStoreState>((set) => ({
         .eq("id", storeId);
       if (error) throw error;
       set({ storeConfig: updates });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error updating store config:", err);
       toast.error("Error al actualizar la configuración de tienda.");
       throw err;
@@ -114,7 +114,7 @@ export const useConfigStore = create<ConfigStoreState>((set) => ({
         .eq("store_id", storeId);
       if (error) throw error;
       set({ receiptTemplate: template });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error updating receipt template:", err);
       toast.error("Error al guardar la plantilla de recibo.");
       throw err;

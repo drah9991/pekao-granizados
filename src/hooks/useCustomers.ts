@@ -18,22 +18,23 @@ export function useCustomers() {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("customers")
         .select("*")
         .order("name", { ascending: true, nullsFirst: false });
 
       if (error) throw error;
       setCustomers(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
       console.error("Error fetching customers:", error);
-      toast.error("Error al cargar clientes: " + error.message);
+      toast.error("Error al cargar clientes: " + msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveCustomer = async (editingCustomer: Customer | null, formData: any) => {
+  const handleSaveCustomer = async (editingCustomer: Customer | null, formData: Record<string, unknown>) => {
     if (!formData.name || !formData.document_id) {
         toast.error("El nombre y documento del cliente son obligatorios.");
         return false;
@@ -44,13 +45,17 @@ export function useCustomers() {
     }
 
     setIsProcessing(true);
-    try {
-        const customerData = {
-            name: formData.name.trim(),
-            email: formData.email.trim() || null,
-            phone: formData.phone.trim() || null,
-            document_id: formData.document_id.trim() || null,
-            consent_habeas_data: formData.consent_habeas_data,
+    try {            const name = typeof formData.name === 'string' ? formData.name.trim() : '';
+            const email = typeof formData.email === 'string' ? formData.email.trim() : '';
+            const phone = typeof formData.phone === 'string' ? formData.phone.trim() : '';
+            const document_id = typeof formData.document_id === 'string' ? formData.document_id.trim() : '';
+            const consent_habeas_data = Boolean(formData.consent_habeas_data);
+            const customerData = {
+            name,
+            email: email || null,
+            phone: phone || null,
+            document_id: document_id || null,
+            consent_habeas_data,
         };
 
         if (editingCustomer) {
@@ -72,9 +77,10 @@ export function useCustomers() {
 
         fetchCustomers();
         return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : "Error desconocido";
         console.error("Error saving customer:", error);
-        toast.error("Error en la operación: " + error.message);
+        toast.error("Error en la operación: " + msg);
         return false;
     } finally {
         setIsProcessing(false);
@@ -98,9 +104,10 @@ export function useCustomers() {
         toast.success("Entidad eliminada.");
         fetchCustomers();
         return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : "Error desconocido";
         console.error("Error deleting customer:", error);
-        toast.error(error.message);
+        toast.error(msg);
         return false;
     } finally {
         setIsProcessing(false);

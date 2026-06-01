@@ -11,7 +11,7 @@ import { motion, Variants } from "framer-motion";
 import { IceCream, Cherry, Wine, Candy, Globe, Zap } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-const productTypeOptions: { value: any; label: string; icon: React.ElementType }[] = [
+const productTypeOptions: { value: string; label: string; icon: React.ElementType }[] = [
   { value: "granizado", label: "Granizado", icon: IceCream },
   { value: "topping", label: "Topping", icon: Cherry },
   { value: "sachet", label: "Sachet", icon: Wine },
@@ -138,7 +138,7 @@ export default function Products() {
                 setViewingProduct(p);
                 setDetailsDialogIsOpen(true);
                 const { data } = await supabase.from('store_stock').select('qty, min_qty, stores(name)').eq('product_id', p.id);
-                setProductStock((data || []).map((item: any) => ({ store_name: item.stores.name, qty: item.qty, min_qty: item.min_qty })));
+                setProductStock((data || []).map((item: Record<string, unknown>) => ({ store_name: (item.stores as Record<string, unknown>).name as string, qty: item.qty as number, min_qty: item.min_qty as number })));
             }}
             handleDeleteProduct={handleDeleteProduct}
             userStoreId={storeId}

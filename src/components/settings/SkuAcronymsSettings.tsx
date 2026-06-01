@@ -93,9 +93,10 @@ export default function SkuAcronymsSettings() {
       if (storeId) {
         await fetchConfig(storeId);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving SKU acronym:", error);
-      toast.error("Error en persistencia: " + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error("Error en persistencia: " + message);
     } finally {
       setIsProcessing(false);
     }
@@ -120,9 +121,10 @@ export default function SkuAcronymsSettings() {
       if (storeId) {
         await fetchConfig(storeId);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting SKU acronym:", error);
-      toast.error("Error al eliminar: " + error.message);
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error("Error al eliminar: " + message);
     } finally {
       setIsProcessing(false);
     }

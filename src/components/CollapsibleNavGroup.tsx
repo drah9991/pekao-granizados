@@ -10,9 +10,9 @@ import { Star } from "lucide-react";
 
 interface CollapsibleNavGroupProps {
   label: string;
-  icon: any;
+  icon: React.ElementType;
   items: NavItem[];
-  activeTurn?: any;
+  activeTurn?: unknown;
   isMobile?: boolean;
   onNavigate?: () => void;
   isLinkActive: (href: string) => boolean;
