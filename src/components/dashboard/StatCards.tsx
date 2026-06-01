@@ -42,9 +42,10 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
                 {formatCOP(data.metrics.revenue.val)}
               </div>
               <div className="flex items-center gap-2 mt-2">
-                <div className={cn("flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold", data.metrics.revenue.delta >= 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400")}>
+                <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold", data.metrics.revenue.delta >= 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400")}>
                   {data.metrics.revenue.delta >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                  {Math.abs(Math.round(data.metrics.revenue.delta))}%
+                  <span>{data.metrics.revenue.rawDelta >= 0 ? '+' : ''}{formatCOP(data.metrics.revenue.rawDelta)}</span>
+                  <span className="opacity-80">({Math.abs(Math.round(data.metrics.revenue.delta))}%)</span>
                 </div>
                 <span className="text-[9px] font-bold text-muted-foreground tracking-tight">vs {formatCOP(data.metrics.revenue.compVal)}</span>
               </div>
@@ -155,9 +156,10 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
                 {data.metrics.orders.val}
               </div>
               <div className="flex items-center gap-2 mt-2">
-                 <div className={cn("flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold", data.metrics.orders.delta >= 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400")}>
+                 <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold", data.metrics.orders.delta >= 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400")}>
                   {data.metrics.orders.delta >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                  {Math.abs(Math.round(data.metrics.orders.delta))}%
+                  <span>{data.metrics.orders.rawDelta >= 0 ? '+' : ''}{data.metrics.orders.rawDelta}</span>
+                  <span className="opacity-80">({Math.abs(Math.round(data.metrics.orders.delta))}%)</span>
                 </div>
                 <span className="text-[9px] font-bold text-muted-foreground tracking-tight">vs {data.metrics.orders.compVal}</span>
               </div>
