@@ -5,10 +5,10 @@ import { formatCOP } from "@/lib/currency";
 import { ResponsiveContainer, LineChart, Line, YAxis } from "recharts";
 
 interface MetricsData {
-  revenue: { val: number; delta: number; rawDelta: number };
+  revenue: { val: number; delta: number; rawDelta: number; compVal: number };
   expenses: { val: number };
   netProfit: { val: number };
-  orders: { val: number; delta: number; rawDelta: number };
+  orders: { val: number; delta: number; rawDelta: number; compVal: number };
 }
 
 interface StatCardsData {
@@ -44,9 +44,9 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
               <div className="flex items-center gap-2 mt-2">
                 <div className={cn("flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold", data.metrics.revenue.delta >= 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400")}>
                   {data.metrics.revenue.delta >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                  {data.metrics.revenue.rawDelta >= 0 ? '+' : ''}{formatCOP(data.metrics.revenue.rawDelta)}
+                  {Math.abs(Math.round(data.metrics.revenue.delta))}%
                 </div>
-                <span className="text-[9px] font-bold text-muted-foreground tracking-tight">({Math.abs(Math.round(data.metrics.revenue.delta))}%)</span>
+                <span className="text-[9px] font-bold text-muted-foreground tracking-tight">vs {formatCOP(data.metrics.revenue.compVal)}</span>
               </div>
             </div>
 
@@ -157,9 +157,9 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
               <div className="flex items-center gap-2 mt-2">
                  <div className={cn("flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold", data.metrics.orders.delta >= 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400")}>
                   {data.metrics.orders.delta >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                  {data.metrics.orders.rawDelta >= 0 ? '+' : ''}{data.metrics.orders.rawDelta}
+                  {Math.abs(Math.round(data.metrics.orders.delta))}%
                 </div>
-                <span className="text-[9px] font-bold text-muted-foreground tracking-tight">({Math.abs(Math.round(data.metrics.orders.delta))}%)</span>
+                <span className="text-[9px] font-bold text-muted-foreground tracking-tight">vs {data.metrics.orders.compVal}</span>
               </div>
             </div>
 

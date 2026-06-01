@@ -137,11 +137,11 @@ export function transformDashboardData(orders: Record<string, unknown>[], compar
 
   return {
     metrics: {
-      revenue: { val: totalRevenue, delta: revenueDeltaPct, rawDelta: revenueDeltaVal },
+      revenue: { val: totalRevenue, delta: revenueDeltaPct, rawDelta: revenueDeltaVal, compVal: compRevenue },
       expenses: { val: totalExpenses },
       netProfit: { val: netProfit },
-      orders: { val: ordersCount, delta: countDeltaPct, rawDelta: countDeltaVal },
-      avgTicket: { val: avgTicket, delta: avgDeltaPct, rawDelta: avgDeltaVal },
+      orders: { val: ordersCount, delta: countDeltaPct, rawDelta: countDeltaVal, compVal: compCount },
+      avgTicket: { val: avgTicket, delta: avgDeltaPct, rawDelta: avgDeltaVal, compVal: compAvg },
       cancelled: { val: cancelledCount, comp: compCancelled }
     },
     recentOrders: orders.slice(0, 5),
