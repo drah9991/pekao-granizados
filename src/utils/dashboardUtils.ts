@@ -52,9 +52,14 @@ export function transformDashboardData(orders: Record<string, unknown>[], compar
   const compAvg = compCount > 0 ? Math.round(compRevenue / compCount) : 0;
   const compCancelled = (comparisonOrders || []).filter(o => o.status === 'cancelled').length;
 
-  const revenueDelta = compRevenue > 0 ? ((totalRevenue - compRevenue) / compRevenue) * 100 : 0;
-  const countDelta = ordersCount - compCount;
-  const avgDelta = compAvg > 0 ? ((avgTicket - compAvg) / compAvg) * 100 : 0;
+  const revenueDeltaPct = compRevenue > 0 ? ((totalRevenue - compRevenue) / compRevenue) * 100 : 0;
+  const revenueDeltaVal = totalRevenue - compRevenue;
+
+  const countDeltaVal = ordersCount - compCount;
+  const countDeltaPct = compCount > 0 ? ((ordersCount - compCount) / compCount) * 100 : 0;
+
+  const avgDeltaPct = compAvg > 0 ? ((avgTicket - compAvg) / compAvg) * 100 : 0;
+  const avgDeltaVal = avgTicket - compAvg;
 
   const hourlySales = Array.from({ length: 24 }, (_, i) => ({ hour: `${i}h`, total: 0, items: 0 }));
   let peakHour = 0;
@@ -132,11 +137,11 @@ export function transformDashboardData(orders: Record<string, unknown>[], compar
 
   return {
     metrics: {
-      revenue: { val: totalRevenue, delta: revenueDelta },
+      revenue: { val: totalRevenue, delta: revenueDeltaPct, rawDelta: revenueDeltaVal },
       expenses: { val: totalExpenses },
       netProfit: { val: netProfit },
-      orders: { val: ordersCount, delta: countDelta },
-      avgTicket: { val: avgTicket, delta: avgDelta },
+      orders: { val: ordersCount, delta: countDeltaPct, rawDelta: countDeltaVal },
+      avgTicket: { val: avgTicket, delta: avgDeltaPct, rawDelta: avgDeltaVal },
       cancelled: { val: cancelledCount, comp: compCancelled }
     },
     recentOrders: orders.slice(0, 5),

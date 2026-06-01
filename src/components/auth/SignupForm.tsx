@@ -54,6 +54,7 @@ export default function SignupForm({ isLoading, onSignup }: SignupFormProps) {
                 <Input
                     id="signup-password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     placeholder="••••••••"
                     required
                     disabled={isLoading}

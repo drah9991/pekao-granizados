@@ -43,6 +43,7 @@ export default function LoginForm({ isLoading, onLogin, rememberMe, onRememberMe
                 <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     required
                     disabled={isLoading}
