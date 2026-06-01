@@ -14,6 +14,8 @@ import { offlineService } from "@/lib/OfflineService";
 import { cn } from "@/lib/utils";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import { mapProductStock } from "@/utils/productStockUtils";
+import { BoneyardSkeleton } from "@/components/ui/BoneyardSkeleton";
+import { useBoneyardLoad } from "@/hooks/useBoneyardLoad";
 
 interface ProductWithStock extends Product {
   stock?: number;
@@ -340,108 +342,93 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
     });
   }, []);
 
-  if (loading && !products.length) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-20 bg-background/50 backdrop-blur-xl rounded-[3rem] border border-white/5 shadow-pro animate-pulse">
-        <div className="relative mb-8">
-           <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin shadow-glow-primary" />
-           <div className="absolute inset-0 flex items-center justify-center">
-              <span className="w-2 h-2 bg-primary rounded-full animate-ping" />
-           </div>
-        </div>
-        <h3 className="text-xl font-black font-space-grotesk italic uppercase tracking-tighter text-foreground mb-1">
-          Sincronizando <span className="text-primary text-glow">Menú</span>
-        </h3>
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 font-space-grotesk italic">
-           Data Stream Pipeline Active • v2.0
-        </p>
-      </div>
-    );
-  }
+  const isBoneyardLoading = useBoneyardLoad(loading && !products.length);
 
   return (
-    <div className="flex-1 p-4 lg:p-8 overflow-auto bg-transparent animate-pro-in products-panel">
-      <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="relative flex-1 max-w-2xl group">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50 group-focus-within:text-primary transition-all duration-300" />
-          <Input
-            ref={searchRef}
-            placeholder="Buscar por nombre o categoría..."
-            className="pl-14 h-14 lg:h-16 text-lg glass-pro !bg-surface-subtle border-border/50 rounded-2xl focus:border-primary/30 focus:ring-0 transition-all placeholder:text-muted-foreground/30 font-dm-sans"
-            defaultValue={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            aria-label="Buscar productos por nombre o categoría"
-          />
-          {/* Material-style sliding underline indicator */}
-          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-primary transition-all duration-300 group-focus-within:w-[calc(100%-2.5rem)] rounded-full z-10" />
-          <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-4">
-             {isOfflineMode && (
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-xl text-[10px] font-bold border border-amber-500/20">
-                 <WifiOff className="h-3.5 w-3.5" />
-                 OFFLINE
-               </div>
-             )}
-             <kbd className="hidden sm:inline-flex px-2.5 py-1 text-[10px] bg-muted border border-border rounded-lg text-muted-foreground font-medium tracking-tighter">⌘ K</kbd>
+    <BoneyardSkeleton name="pekao-pos-grid" isLoading={isBoneyardLoading} className="h-full flex-1 w-full" animate="wave">
+      <div className="flex-1 p-4 lg:p-8 overflow-auto bg-transparent animate-pro-in products-panel">
+        <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="relative flex-1 max-w-2xl group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50 group-focus-within:text-primary transition-all duration-300" />
+            <Input
+              ref={searchRef}
+              placeholder="Buscar por nombre o categoría..."
+              className="pl-14 h-14 lg:h-16 text-lg glass-pro !bg-surface-subtle border-border/50 rounded-2xl focus:border-primary/30 focus:ring-0 transition-all placeholder:text-muted-foreground/30 font-dm-sans"
+              defaultValue={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              aria-label="Buscar productos por nombre o categoría"
+            />
+            {/* Material-style sliding underline indicator */}
+            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-primary transition-all duration-300 group-focus-within:w-[calc(100%-2.5rem)] rounded-full z-10" />
+            <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-4">
+               {isOfflineMode && (
+                 <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-xl text-[10px] font-bold border border-amber-500/20">
+                   <WifiOff className="h-3.5 w-3.5" />
+                   OFFLINE
+                 </div>
+               )}
+               <kbd className="hidden sm:inline-flex px-2.5 py-1 text-[10px] bg-muted border border-border rounded-lg text-muted-foreground font-medium tracking-tighter">⌘ K</kbd>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex gap-2.5 mb-12 overflow-x-auto pb-4 no-scrollbar scroll-smooth">
-        {categories.map((cat) => {
-          const cfg = cat === "all" ? null : getTypeConfig(cat);
-          const isActive = activeCategory === cat;
-          return (
-            <Button
-              key={cat}
-              variant={isActive ? "default" : "outline"}
-              onClick={() => handleSetActiveCategory(cat)}
-              className={cn(
-                "h-12 lg:h-14 px-6 lg:px-8 gap-2.5 rounded-xl transition-all duration-300 border font-dm-sans shrink-0",
-                isActive
-                  ? "bg-primary text-white border-primary shadow-glow scale-[1.02]"
-                  : "bg-surface-subtle border-border/50 text-muted-foreground hover:bg-surface-active hover:border-border hover:text-foreground"
-              )}
-            >
-              <span className="text-xl">{cat === "all" ? "📋" : cfg?.emoji}</span>
-              <span className="font-semibold flex items-center gap-2 text-xs uppercase tracking-tight">
-                {cat === "all" ? "Todos" : cfg?.label}
-                <span className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-bold", isActive ? "bg-primary-foreground/20 text-white" : "bg-muted text-muted-foreground")}>
-                  {categoryCounts[cat]}
+        <div className="flex gap-2.5 mb-12 overflow-x-auto pb-4 no-scrollbar scroll-smooth">
+          {categories.map((cat) => {
+            const cfg = cat === "all" ? null : getTypeConfig(cat);
+            const isActive = activeCategory === cat;
+            return (
+              <Button
+                key={cat}
+                variant={isActive ? "default" : "outline"}
+                onClick={() => handleSetActiveCategory(cat)}
+                className={cn(
+                  "h-12 lg:h-14 px-6 lg:px-8 gap-2.5 rounded-xl transition-all duration-300 border font-dm-sans shrink-0",
+                  isActive
+                    ? "bg-primary text-white border-primary shadow-glow scale-[1.02]"
+                    : "bg-surface-subtle border-border/50 text-muted-foreground hover:bg-surface-active hover:border-border hover:text-foreground"
+                )}
+              >
+                <span className="text-xl">{cat === "all" ? "📋" : cfg?.emoji}</span>
+                <span className="font-semibold flex items-center gap-2 text-xs uppercase tracking-tight">
+                  {cat === "all" ? "Todos" : cfg?.label}
+                  <span className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-bold", isActive ? "bg-primary-foreground/20 text-white" : "bg-muted text-muted-foreground")}>
+                    {categoryCounts[cat]}
+                  </span>
                 </span>
-              </span>
-            </Button>
-          );
-        })}
-      </div>
-
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-        className="products-grid"
-      >
-        <AnimatePresence mode="popLayout">
-          {(filteredProducts || []).map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onProductSelect={onProductSelect}
-              getTypeConfig={getTypeConfig}
-            />
-          ))}
-        </AnimatePresence>
-      </motion.div>
-
-      {filteredProducts.length === 0 && !loading && (
-        <div className="text-center py-20 bg-muted/40 rounded-[3rem] border border-dashed border-border">
-          <div className="text-7xl mb-4 opacity-50">🛒✨</div>
-          <h3 className="text-xl font-bold text-foreground mb-2">¿Buscas algo especial?</h3>
-          <p className="text-muted-foreground">No encontramos productos con "{searchQuery}"</p>
-          <Button variant="link" onClick={handleClearSearch} className="mt-2 text-primary">
-            Ver todo el catálogo
-          </Button>
+              </Button>
+            );
+          })}
         </div>
-      )}
-    </div>
+
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="products-grid"
+        >
+          <AnimatePresence mode="popLayout">
+            {(filteredProducts || []).map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onProductSelect={onProductSelect}
+                getTypeConfig={getTypeConfig}
+              />
+            ))}
+          </AnimatePresence>
+        </motion.div>
+
+        {filteredProducts.length === 0 && !loading && (
+          <div className="text-center py-20 bg-muted/40 rounded-[3rem] border border-dashed border-border">
+            <div className="text-7xl mb-4 opacity-50">🛒✨</div>
+            <h3 className="text-xl font-bold text-foreground mb-2">¿Buscas algo especial?</h3>
+            <p className="text-muted-foreground">No encontramos productos con "{searchQuery}"</p>
+            <Button variant="link" onClick={handleClearSearch} className="mt-2 text-primary">
+              Ver todo el catálogo
+            </Button>
+          </div>
+        )}
+      </div>
+    </BoneyardSkeleton>
   );
 }

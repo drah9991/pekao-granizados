@@ -18,7 +18,7 @@ interface PaymentMethodsData {
 export function PaymentMethodsWidget({ data }: { data: PaymentMethodsData | null }) {
   if (!data) return null;
   return (
-    <Card className="glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro flex flex-col animate-pro-in">
+    <Card className="h-full w-full flex flex-col glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro animate-pro-in hover:bg-muted/30 dark:hover:bg-white/[0.04] transition-all duration-500">
       <div className="mb-8">
         <CardTitle className="text-2xl font-black tracking-tighter mb-1 text-foreground font-space-grotesk italic uppercase">CAJA HOY</CardTitle>
         <CardDescription className="text-primary font-black uppercase tracking-[0.2em] text-[10px]">Payment Intelligence</CardDescription>
@@ -30,7 +30,7 @@ export function PaymentMethodsWidget({ data }: { data: PaymentMethodsData | null
             <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em]">VENTAS</p>
           </div>
         </div>
-        <div className="h-[240px] w-full">
+        <div className="flex-1 min-h-[200px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

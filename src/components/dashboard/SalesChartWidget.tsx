@@ -18,7 +18,7 @@ interface SalesChartData {
 export function SalesChartWidget({ data }: { data: SalesChartData | null }) {
   if (!data) return null;
   return (
-    <Card className="lg:col-span-2 glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro animate-pro-in">
+    <Card className="h-full w-full flex flex-col glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro animate-pro-in hover:bg-muted/30 dark:hover:bg-white/[0.04] transition-all duration-500">
       <div className="flex items-center justify-between mb-8">
         <div>
           <CardTitle className="text-2xl font-black tracking-tighter mb-1 text-foreground font-space-grotesk italic">INGRESOS POR HORA</CardTitle>
@@ -29,7 +29,7 @@ export function SalesChartWidget({ data }: { data: SalesChartData | null }) {
           En Vivo
         </div>
       </div>
-      <div className="h-[280px] w-full mb-8">
+      <div className="flex-1 w-full min-h-[250px] mb-8">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data.hourlySales}>
             <defs>

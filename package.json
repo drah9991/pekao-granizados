@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "bones:capture": "boneyard-js build --routes ./src/routes.ts --output ./src/bones",
+    "bones:watch": "boneyard-js watch --output ./src/bones",
+    "build": "npm run bones:capture && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -43,6 +45,7 @@
     "@tanstack/react-query": "^5.83.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "boneyard-js": "^1.8.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

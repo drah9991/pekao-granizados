@@ -44,6 +44,7 @@ import { FloatingFavorites } from "./FloatingFavorites";
 import { useLowStockCount } from "@/hooks/useLowStockCount";
 import { Badge } from "@/components/ui/badge";
 import { InteractiveCursor } from "./ui/InteractiveCursor";
+import { BoneyardSkeleton } from "./ui/BoneyardSkeleton";
 
 export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const location = useLocation();
@@ -253,8 +254,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
 
       <aside
         className={cn(
-          "w-64 bg-sidebar-background/60 backdrop-blur-3xl border-r border-sidebar-border flex flex-col",
-          "fixed inset-y-0 left-0 z-50 transition-all duration-500 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)]",
+          "w-64 fixed inset-y-0 left-0 z-50 bg-sidebar-background/60 backdrop-blur-3xl border-r border-sidebar-border flex flex-col transition-all duration-500",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

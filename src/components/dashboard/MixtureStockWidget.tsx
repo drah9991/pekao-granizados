@@ -35,7 +35,7 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
   // Actually, I'll update Dashboard.tsx query first.
   
   return (
-    <Card className="col-span-1 md:col-span-2 lg:col-span-2 glass-pro border-border dark:border-white/5 rounded-[2.5rem] shadow-sm dark:shadow-pro overflow-hidden relative group animate-pro-in">
+    <Card className="h-full w-full flex flex-col glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro animate-pro-in hover:bg-muted/30 dark:hover:bg-white/[0.04] transition-all duration-500">
       <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-700" />
       
       <CardHeader className="pb-4 border-b border-border/50 bg-slate-50/50 dark:bg-muted/30 backdrop-blur-md">
@@ -62,7 +62,7 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
              <p className="text-xs font-black uppercase tracking-widest">Sistemas en nivel óptimo</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex-1 space-y-4">
             {data.lowStock.map((item, idx: number) => {
               const liters = item.stock / 1000;
               const servings = Math.floor(item.stock / STANDARD_SERVING_ML);

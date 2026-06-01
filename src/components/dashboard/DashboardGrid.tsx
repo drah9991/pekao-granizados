@@ -30,7 +30,7 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
 
         {uiConfig.showChart && (
             <div className="area-chart animate-pro-in delay-100">
-                <div className="h-full bg-card dark:bg-white/[0.02] border border-border dark:border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-muted/30 dark:hover:bg-white/[0.04] overflow-hidden">
+                <div className="h-full w-full overflow-hidden">
                     <ErrorBoundary fallbackTitle="Gráfico de Ventas">
                         <Suspense fallback={<WidgetSkeleton />}>
                             <SalesChartWidget data={dashboardData} />
@@ -42,7 +42,7 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
 
         {uiConfig.showPaymentMethods && (
             <div className="area-pie animate-pro-in delay-200">
-                <div className="h-full bg-card dark:bg-white/[0.02] border border-border dark:border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-muted/30 dark:hover:bg-white/[0.04] overflow-hidden">
+                <div className="h-full w-full overflow-hidden">
                     <ErrorBoundary fallbackTitle="Métodos de Pago">
                         <Suspense fallback={<WidgetSkeleton height="h-[600px]" />}>
                             <PaymentMethodsWidget data={dashboardData} />
@@ -54,7 +54,7 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
 
         {uiConfig.showMixtureStock && (
             <div className="area-stock animate-pro-in delay-300">
-                <div className="h-full bg-card dark:bg-white/[0.02] border border-border dark:border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-muted/30 dark:hover:bg-white/[0.04] overflow-hidden">
+                <div className="h-full w-full overflow-hidden">
                     <ErrorBoundary fallbackTitle="Stock de Mezcla">
                         <Suspense fallback={<WidgetSkeleton height="h-[300px]" />}>
                             <MixtureStockWidget data={dashboardData} />
@@ -66,7 +66,7 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
 
         {uiConfig.showPopularProducts && (
             <div className="area-popular animate-pro-in delay-400">
-                <div className="h-full bg-card dark:bg-white/[0.02] border border-border dark:border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-muted/30 dark:hover:bg-white/[0.04] overflow-hidden">
+                <div className="h-full w-full overflow-hidden">
                     <ErrorBoundary fallbackTitle="Productos Populares">
                         <Suspense fallback={<WidgetSkeleton height="h-[300px]" />}>
                             <PopularProductsWidget data={dashboardData} />
@@ -78,7 +78,7 @@ export default function DashboardGrid({ uiConfig, dashboardData, comparisonLabel
 
         {uiConfig.showRecentSales && (
             <div className="area-recent animate-pro-in delay-500">
-                <div className="h-full bg-card dark:bg-white/[0.02] border border-border dark:border-white/5 rounded-3xl p-1 transition-all duration-500 hover:bg-muted/30 dark:hover:bg-white/[0.04] overflow-hidden">
+                <div className="h-full w-full overflow-hidden">
                     <ErrorBoundary fallbackTitle="Ventas Recientes">
                         <Suspense fallback={<WidgetSkeleton height="h-[400px]" />}>
                             <RecentSalesWidget data={dashboardData} />

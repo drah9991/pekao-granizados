@@ -32,7 +32,7 @@ interface PopularProductsData {
 export function PopularProductsWidget({ data }: { data: PopularProductsData | null }) {
   if (!data) return null;
   return (
-    <Card className="col-span-1 md:col-span-2 lg:col-span-2 glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro group animate-pro-in">
+    <Card className="h-full w-full flex flex-col glass-pro border-border dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm dark:shadow-pro animate-pro-in hover:bg-muted/30 dark:hover:bg-white/[0.04] transition-all duration-500">
       <div className="flex items-center justify-between mb-8">
         <div>
           <CardTitle className="text-2xl font-black tracking-tight mb-1 text-foreground font-space-grotesk italic">TOP VENTAS</CardTitle>
@@ -42,7 +42,7 @@ export function PopularProductsWidget({ data }: { data: PopularProductsData | nu
             <ShoppingBasket className="w-6 h-6 text-primary" />
         </div>
       </div>
-      <div className="space-y-4">
+      <div className="flex-1 space-y-4">
         {data.popularProducts.map((p, idx: number) => (
           <div key={p.name} className="flex items-center gap-5 p-3 rounded-3xl hover:bg-muted/50 dark:hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-border dark:hover:border-white/5 group/item">
             <div className="relative shrink-0">

@@ -10,6 +10,8 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardGrid from "@/components/dashboard/DashboardGrid";
 import { FavoritesWidget } from "@/components/dashboard/FavoritesWidget";
 import { cn } from "@/lib/utils";
+import { BoneyardSkeleton } from "@/components/ui/BoneyardSkeleton";
+import { useBoneyardLoad } from "@/hooks/useBoneyardLoad";
 
 export default function Dashboard() {
   const { storeId } = useAuth();
@@ -18,24 +20,9 @@ export default function Dashboard() {
     dashboardData, comparisonLabel, handleSaveConfig
   } = useDashboard(storeId);
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="min-h-screen p-2 md:p-4 lg:p-6 space-y-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-4 border-b border-border/50">
-             <div className="animate-pulse h-12 w-64 bg-muted/40 rounded-xl" />
-             <div className="h-12 w-48 bg-muted/20 rounded-xl" />
-          </div>
-          <DashboardSkeleton />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-             <WidgetSkeleton className="lg:col-span-2" />
-             <WidgetSkeleton />
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  const isBoneyardLoading = useBoneyardLoad(isLoading);
 
+  // Ya no usamos el esqueleto manual, dejamos que boneyard actúe.
   if (error) {
     return (
       <Layout>
@@ -74,11 +61,15 @@ export default function Dashboard() {
 
         <FavoritesWidget />
 
-        <DashboardGrid 
-          uiConfig={uiConfig}
-          dashboardData={dashboardData}
-          comparisonLabel={comparisonLabel}
-        />
+        <BoneyardSkeleton name="pekao-dashboard-grid" isLoading={isBoneyardLoading} animate="wave">
+          {dashboardData && (
+            <DashboardGrid 
+              uiConfig={uiConfig}
+              dashboardData={dashboardData}
+              comparisonLabel={comparisonLabel}
+            />
+          )}
+        </BoneyardSkeleton>
       </div>
     </Layout>
   );
