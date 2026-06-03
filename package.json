@@ -7,7 +7,7 @@
     "dev": "vite",
     "bones:capture": "boneyard-js build --routes src/routes.ts --output src/bones",
     "bones:watch": "boneyard-js watch --output src/bones",
-    "build": "npm run bones:capture && vite build",
+    "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
