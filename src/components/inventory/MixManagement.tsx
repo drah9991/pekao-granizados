@@ -28,7 +28,7 @@ interface PreparationHistory {
   created_by: string;
 }
 
-const CUP_YIELD_BASE_ML = 300;
+import { mlToLiters, mlToCups } from "@/utils/volume";
 
 export default function MixManagement({ storeId }: { storeId: string }) {
   const [mixes, setMixes] = useState<InventoryItem[]>([]);
@@ -118,7 +118,7 @@ export default function MixManagement({ storeId }: { storeId: string }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {mixes.map((mix) => {
-          const liters = mix.stock / 1000;
+          const liters = mlToLiters(mix.stock);
           const minLiters = mix.min_stock / 1000;
           const percentage = Math.min(100, (liters / (minLiters * 3 || 20)) * 100);
           const isCritical = liters <= minLiters;
@@ -172,7 +172,7 @@ export default function MixManagement({ storeId }: { storeId: string }) {
                         />
                     </div>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-40 text-right tracking-tighter">
-                        Capacidad: ~{Math.floor(mix.stock / CUP_YIELD_BASE_ML)} vasos standard
+                        Capacidad: ~{mlToCups(mix.stock)} vasos standard
                     </p>
                 </div>
               </CardContent>

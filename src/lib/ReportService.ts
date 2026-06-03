@@ -1,9 +1,3 @@
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-
 export interface ReportConfig {
   title: string;
   subtitle?: string;
@@ -15,7 +9,10 @@ class ReportService {
   /**
    * Export JSON data to Excel
    */
-  exportToExcel(data: Record<string, unknown>[], config: ReportConfig) {
+  async exportToExcel(data: Record<string, unknown>[], config: ReportConfig) {
+    const XLSX = await import('xlsx');
+    const { format } = await import('date-fns');
+
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, config.title.slice(0, 31));
@@ -26,7 +23,12 @@ class ReportService {
   /**
    * Export JSON data to PDF
    */
-  exportToPDF(data: Record<string, unknown>[], config: ReportConfig) {
+  async exportToPDF(data: Record<string, unknown>[], config: ReportConfig) {
+    const { jsPDF } = await import('jspdf');
+    const autoTable = (await import('jspdf-autotable')).default;
+    const { format } = await import('date-fns');
+    const { es } = await import('date-fns/locale');
+
     const doc = new jsPDF();
     
     // Header

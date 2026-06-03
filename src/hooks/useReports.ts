@@ -202,9 +202,9 @@ export function useReports(storeId: string | null) {
       };
 
       if (formatType === "excel") {
-        reportService.exportToExcel(data, config);
+        await reportService.exportToExcel(data, config);
       } else {
-        reportService.exportToPDF(data, config);
+        await reportService.exportToPDF(data, config);
       }
       toast.success("Documento generado y exportado");
     } catch (error: unknown) {

@@ -26,7 +26,7 @@ interface MixReloadDialogProps {
   onSuccess: () => void;
 }
 
-const CUP_YIELD_BASE_ML = 300; // Standard 12oz cup base for Peako
+import { litersToMl, mlToCups } from "@/utils/volume";
 
 export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, onSuccess }: MixReloadDialogProps) {
   const [selectedMixId, setSelectedMixId] = useState<string>("");
@@ -35,8 +35,8 @@ export default function MixReloadDialog({ isOpen, onOpenChange, mixes, storeId, 
   const [isProcessing, setIsProcessing] = useState(false);
 
   const selectedMix = mixes.find(m => m.id === selectedMixId);
-  const mlConverted = (parseFloat(liters) || 0) * 1000;
-  const expectedCups = Math.floor(mlConverted / CUP_YIELD_BASE_ML);
+  const mlConverted = litersToMl(parseFloat(liters) || 0);
+  const expectedCups = mlToCups(mlConverted);
 
   const handleSave = async () => {
     if (!selectedMixId || !liters || parseFloat(liters) <= 0) {

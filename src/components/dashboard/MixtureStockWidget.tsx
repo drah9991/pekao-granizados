@@ -18,9 +18,7 @@ interface MixtureStockWidgetProps {
   } | null;
 }
 
-const OZ_TO_ML = 29.57;
-const STANDARD_SERVING_OZ = 4;
-const STANDARD_SERVING_ML = STANDARD_SERVING_OZ * OZ_TO_ML;
+import { mlToLiters, mlToServings, STANDARD_SERVING_ML, STANDARD_SERVING_OZ } from "@/utils/volume";
 
 export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
   // If no data or empty mixtures, don't show much
@@ -64,8 +62,8 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
         ) : (
           <div className="flex-1 space-y-4">
             {data.lowStock.map((item, idx: number) => {
-              const liters = item.stock / 1000;
-              const servings = Math.floor(item.stock / STANDARD_SERVING_ML);
+              const liters = mlToLiters(item.stock);
+              const servings = mlToServings(item.stock);
               const isLow = item.stock <= (item.min_stock || 0);
               const percentage = Math.min(100, (item.stock / (item.min_stock * 3 || 5000)) * 100);
               

@@ -162,7 +162,8 @@ export function usePOS() {
                   if (recipes.length > 0) {
                     recipes.forEach((recipe: Record<string, unknown>) => {
                       if (recipe.inventory_item_id === tank.inventory_item_id) {
-                        const deduction = (Number(recipe.quantity_required) || 0) * Number(item.quantity);
+                        const multiplier = (item.sizeMultiplier as number) || 1;
+                        const deduction = (Number(recipe.quantity_required) || 0) * Number(item.quantity) * multiplier;
                         updatedVolume = Math.max(0, updatedVolume - deduction);
                       }
                     });
@@ -187,8 +188,10 @@ export function usePOS() {
       }
 
       notifyInfo("¡Venta procesada exitosamente!");
-      queryClient.invalidateQueries({ queryKey: ['products-grid'] });
-      queryClient.invalidateQueries({ queryKey: ['tank-status'] });
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['products-grid'] }),
+        queryClient.invalidateQueries({ queryKey: ['tank-status'] })
+      ]);
       
       return orderData;
     } catch (error: unknown) {
@@ -233,8 +236,10 @@ export function usePOS() {
       await checkPendingOrders();
       if (successCount > 0) {
         notifyInfo(`Sincronización completada: ${successCount} pedidos subidos.`);
-        queryClient.invalidateQueries({ queryKey: ['tank-status'] });
-        queryClient.invalidateQueries({ queryKey: ['products-grid'] });
+        Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['tank-status'] }),
+          queryClient.invalidateQueries({ queryKey: ['products-grid'] })
+        ]);
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error desconocido";
