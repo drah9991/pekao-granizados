@@ -353,10 +353,11 @@ export function usePreparation() {
       });
 
       toast.success(`Se han añadido ${liters}L a ${product?.name}`);
-      setSelectedProductId("");
+      // No reiniciamos el producto para que el usuario vea su stock actualizado
       setLiters("");
       fetchMixtures();
-      fetchRecentLogs();
+      fetchCurrentMixtureStock();
+      fetchRecentLogs(selectedProductId);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error desconocido";
       toast.error("Error: " + msg);

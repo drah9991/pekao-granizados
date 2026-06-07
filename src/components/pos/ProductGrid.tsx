@@ -345,8 +345,8 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
   const isBoneyardLoading = useBoneyardLoad(loading && !products.length);
 
   return (
-    <BoneyardSkeleton name="pekao-pos-grid" isLoading={isBoneyardLoading} className="h-full flex-1 w-full" animate="wave">
-      <div className="flex-1 p-4 lg:p-8 overflow-auto bg-transparent animate-pro-in products-panel">
+    <BoneyardSkeleton name="pekao-pos-grid" isLoading={isBoneyardLoading} className="flex-1 w-full flex flex-col min-h-0" animate="wave">
+      <div className="flex-1 p-4 lg:p-8 overflow-y-auto bg-transparent animate-pro-in products-panel custom-scrollbar">
         <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="relative flex-1 max-w-2xl group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50 group-focus-within:text-primary transition-all duration-300" />
