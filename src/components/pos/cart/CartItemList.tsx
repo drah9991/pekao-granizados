@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { calculateItemPrice } from "@/lib/pricing";
+import { startTransition } from "react";
 
 interface CartItemListProps {
   cart: CartItem[];
@@ -72,7 +73,9 @@ export function CartItemList({
                             const currentSizeObj = availableSizes.find(s => s.name === item.size);
                             const sizeId = currentSizeObj?.id || "";
                             const newToppingIds = item.toppings?.filter(t => t.id !== topping.id).map(t => t.id) || [];
-                            updateItemCustomization?.(item.id, sizeId, newToppingIds);
+                            startTransition(() => {
+                              updateItemCustomization?.(item.id, sizeId, newToppingIds);
+                            });
                           }}
                           className="bg-muted hover:bg-rose-500/20 hover:text-rose-600 dark:hover:text-rose-300 text-foreground/90 text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-border transition-all font-dm-sans flex items-center gap-1 group/topping active:scale-95"
                           title="Click para quitar topping"
@@ -107,7 +110,9 @@ export function CartItemList({
                                       } else {
                                         newToppingIds = [...newToppingIds, topping.id];
                                       }
-                                      updateItemCustomization?.(item.id, sizeId, newToppingIds);
+                                      startTransition(() => {
+                                        updateItemCustomization?.(item.id, sizeId, newToppingIds);
+                                      });
                                     }}
                                     className={cn(
                                       "w-full flex items-center justify-between p-2 rounded-lg text-xs font-semibold font-dm-sans transition-all active:scale-[0.98]",
@@ -153,7 +158,9 @@ export function CartItemList({
                               <button
                                 key={size.id}
                                 onClick={() => {
-                                  updateItemCustomization?.(item.id, size.id, item.toppings?.map(t => t.id) || []);
+                                  startTransition(() => {
+                                    updateItemCustomization?.(item.id, size.id, item.toppings?.map(t => t.id) || []);
+                                  });
                                 }}
                                 className={cn(
                                   "text-[9px] font-bold px-2 py-0.5 rounded-md border transition-all duration-150 active:scale-95 font-dm-sans",
@@ -188,7 +195,11 @@ export function CartItemList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => updateQuantity(item.id, -1)}
+                      onClick={() => {
+                        startTransition(() => {
+                          updateQuantity(item.id, -1);
+                        });
+                      }}
                       className="h-8 w-8 hover:bg-muted/80 hover:text-foreground rounded-lg transition-all text-muted-foreground"
                     >
                       <Minus className="w-4 h-4" />
@@ -197,7 +208,11 @@ export function CartItemList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => updateQuantity(item.id, 1)}
+                      onClick={() => {
+                        startTransition(() => {
+                          updateQuantity(item.id, 1);
+                        });
+                      }}
                       className="h-8 w-8 hover:bg-primary/20 hover:text-primary rounded-lg transition-all text-muted-foreground"
                     >
                       <Plus className="w-4 h-4 text-primary drop-shadow-md" />
@@ -206,7 +221,11 @@ export function CartItemList({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => {
+                      startTransition(() => {
+                        removeItem(item.id);
+                      });
+                    }}
                     className="h-9 w-9 text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 transition-all rounded-xl border border-transparent hover:border-rose-500/20"
                   >
                     <Trash2 className="w-4 h-4" />

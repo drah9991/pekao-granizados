@@ -195,7 +195,7 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
   );
 });
 
-export default function ProductGrid({ onProductSelect, searchRef, activeCategoryIndex }: ProductGridProps) {
+const ProductGrid = memo(function ProductGrid({ onProductSelect, searchRef, activeCategoryIndex }: ProductGridProps) {
   const { storeId } = useAuth();
   const queryClient = useQueryClient();
   const [products, setProducts] = useState<ProductWithStock[]>([]);
@@ -432,4 +432,6 @@ export default function ProductGrid({ onProductSelect, searchRef, activeCategory
       </div>
     </>
   );
-}
+})
+
+export default ProductGrid;
