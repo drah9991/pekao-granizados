@@ -32,7 +32,7 @@ export default function POS() {
 
   return (
     <Layout fullWidth>
-      <div className="h-full flex flex-col lg:flex-row bg-transparent relative overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row bg-transparent relative h-full overflow-hidden">
         <div className="flex lg:hidden glass-pro border-b border-white/10 sticky top-0 z-20 items-center pr-4">
           <button
             onClick={() => setViewMode("products")}
@@ -66,7 +66,7 @@ export default function POS() {
         </div>
 
         <div className={cn(
-          "flex-1 h-full overflow-hidden flex flex-col",
+          "flex-1 min-h-0 flex flex-col",
           viewMode !== "products" && "hidden lg:flex"
         )}>
           {!isOnline && (
@@ -99,7 +99,8 @@ export default function POS() {
         </div>
 
         <div className={cn(
-          "h-full overflow-hidden flex flex-col",
+          "w-full lg:w-[420px] xl:w-[480px] 2xl:w-[500px] flex flex-col min-h-0 border-l border-white/5",
+          "lg:h-full lg:overflow-hidden",
           viewMode !== "cart" && "hidden lg:flex"
         )}>
           <CartSummary

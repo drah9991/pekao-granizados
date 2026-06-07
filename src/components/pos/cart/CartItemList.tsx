@@ -5,6 +5,7 @@ import { Minus, Plus, Trash2, Receipt } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { calculateItemPrice } from "@/lib/pricing";
 
 interface CartItemListProps {
   cart: CartItem[];
@@ -135,6 +136,19 @@ export function CartItemList({
                         <div className="flex flex-wrap gap-1">
                           {availableSizes.map((size) => {
                             const isSelected = item.size === size.name;
+                            
+                            // Check if this size is enabled for this product/item
+                            const mockProductForSize: Product = {
+                              id: item.productId,
+                              price: item.productPrice ?? item.price,
+                              category: item.productCategory || null,
+                              type: (item.productType || 'granizado') as any,
+                              variants: item.variants || null,
+                            } as Product;
+                            
+                            const sizePricing = calculateItemPrice(mockProductForSize, size as any, [], []);
+                            if (sizePricing.enabled === false) return null;
+
                             return (
                               <button
                                 key={size.id}

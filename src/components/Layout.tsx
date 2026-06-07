@@ -437,12 +437,12 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         )}
 
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-700 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] pt-16 md:pt-20 relative z-10 h-full",
+        "flex-1 min-h-0 flex flex-col transition-all duration-700 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] pt-16 md:pt-20 relative z-10 h-full",
         !isMobile && isSidebarOpen && "pl-64"
       )}>
         <div className={cn(
-          "animate-pro-in perspective-1000 h-full flex flex-col",
-          fullWidth ? "p-0" : "p-4 md:p-8"
+          "animate-pro-in perspective-1000 flex-1 min-h-0 flex flex-col overflow-x-hidden",
+          fullWidth ? "p-0 overflow-hidden h-full" : "p-4 md:p-8 overflow-y-auto"
         )} style={{ zoom: `${uiScale * 0.8}%` } as React.CSSProperties}>
             <AlertManager />
             {children}

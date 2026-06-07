@@ -20,6 +20,7 @@ export interface CartItem {
   productPrice?: number;
   productType?: string;
   productCategory?: string | null;
+  variants?: any;
 }
 
 export interface Product {

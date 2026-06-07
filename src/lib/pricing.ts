@@ -188,3 +188,67 @@ export function resolveSize(
   }
   return sizes.length > 0 ? sizes[0] : null;
 }
+
+export interface CalculatedPrice {
+  finalPrice: number;
+  basePrice: number;
+  discountedPrice: number;
+  originalPrice: number;
+  discountMessage?: string;
+  enabled?: boolean;
+}
+
+/**
+ * Calculates the final, base, and original prices for a product, taking into account
+ * custom size-specific pricing (variants JSON), standard size multipliers, toppings,
+ * and active pricing rules (discounts).
+ */
+export function calculateItemPrice(
+  product: Product,
+  size: Tables<"sizes"> | null | undefined,
+  toppings: Product[],
+  pricingRules: PricingRuleRow[],
+): CalculatedPrice {
+  let enabled = true;
+  // 1. Determine base price of the item (supports specific override prices in variants JSON)
+  let basePrice = product.price * (size?.multiplier || 1);
+
+  if (product.variants && Array.isArray(product.variants) && size) {
+    const customVariant = (product.variants as any[]).find(
+      (v) => v.size_id === size.id || v.size === size.name || v.id === size.id
+    );
+    if (customVariant) {
+      if (customVariant.enabled === false) {
+        enabled = false;
+      }
+      if (typeof customVariant.price === 'number') {
+        basePrice = customVariant.price;
+      }
+    } else {
+      // If custom pricing is active but this size is not in the JSON list, it is disabled
+      enabled = false;
+    }
+  }
+
+  // 2. Apply active pricing rules (discounts)
+  const { discountedPrice, originalPrice: discountedOriginal, discountMessage } = applyPricingRules(
+    basePrice,
+    pricingRules,
+    { category: product.category || null, productId: product.id }
+  );
+
+  // 3. Sum toppings
+  const toppingsPrice = toppings.reduce((sum, t) => sum + t.price, 0);
+  const finalPrice = discountedPrice + toppingsPrice;
+  const originalPrice = discountedOriginal + toppingsPrice;
+
+  return {
+    finalPrice,
+    basePrice,
+    discountedPrice,
+    originalPrice,
+    discountMessage,
+    enabled,
+  };
+}
+

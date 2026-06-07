@@ -11,6 +11,7 @@ import {
   applyPricingRules,
   resolveSize,
   itemVolumeMl,
+  calculateItemPrice,
 } from "./pricing";
 import type { Product, CartItem } from "./pos-types";
 import type { PricingRuleRow } from "@/integrations/supabase/types-extensions";
@@ -640,3 +641,125 @@ describe("itemVolumeMl", () => {
     expect(result).toBe(0);
   });
 });
+
+// ============================================================
+// calculateItemPrice
+// ============================================================
+
+describe("calculateItemPrice", () => {
+  const sizePeque = { id: "size-peque", name: "Pequeño", multiplier: 1.0 } as any;
+  const sizeGrande = { id: "size-grande", name: "Grande", multiplier: 1.5 } as any;
+
+  const rules: PricingRuleRow[] = [
+    {
+      id: "rule-10",
+      store_id: "store-1",
+      name: "10% OFF",
+      type: "general",
+      discount_type: "percentage",
+      discount_value: 10,
+      target_type: "category",
+      target_id: "Granizado",
+      days_of_week: null,
+      start_time: null,
+      end_time: null,
+      active: true,
+      created_at: null,
+    },
+  ];
+
+  it("calculates price correctly with standard size multipliers (no variants/toppings/discounts)", () => {
+    const product = makeProduct({ price: 5000 });
+    const result = calculateItemPrice(product, sizeGrande, [], []);
+
+    // basePrice = 5000 * 1.5 = 7500
+    // finalPrice = 7500
+    expect(result.basePrice).toBe(7500);
+    expect(result.finalPrice).toBe(7500);
+    expect(result.originalPrice).toBe(7500);
+    expect(result.discountedPrice).toBe(7500);
+    expect(result.discountMessage).toBeUndefined();
+  });
+
+  it("calculates price correctly with custom size price overrides (variants JSON)", () => {
+    const product = makeProduct({
+      price: 5000,
+      variants: [
+        { size_id: "size-peque", price: 6000 },
+        { size_id: "size-grande", price: 9000 },
+      ] as any
+    });
+
+    // Override should be matched by size_id
+    const result = calculateItemPrice(product, sizeGrande, [], []);
+    expect(result.basePrice).toBe(9000);
+    expect(result.finalPrice).toBe(9000);
+  });
+
+  it("marks size as disabled and reverts to standard pricing when size is not in variants JSON", () => {
+    const product = makeProduct({
+      price: 5000,
+      variants: [
+        { size_id: "size-peque", price: 6000, enabled: true },
+      ] as any
+    });
+
+    const result = calculateItemPrice(product, sizeGrande, [], []);
+    // sizeGrande is not in variants, so standard pricing applies, but it's marked as disabled
+    expect(result.basePrice).toBe(7500);
+    expect(result.finalPrice).toBe(7500);
+    expect(result.enabled).toBe(false);
+  });
+
+  it("marks size as disabled when explicitly set to enabled: false in variants JSON", () => {
+    const product = makeProduct({
+      price: 5000,
+      variants: [
+        { size_id: "size-peque", price: 6000, enabled: true },
+        { size_id: "size-grande", price: 9000, enabled: false },
+      ] as any
+    });
+
+    const result = calculateItemPrice(product, sizeGrande, [], []);
+    expect(result.basePrice).toBe(9000);
+    expect(result.finalPrice).toBe(9000);
+    expect(result.enabled).toBe(false);
+  });
+
+  it("applies active pricing rules (discounts) to custom override prices", () => {
+    const product = makeProduct({
+      price: 5000,
+      category: "Granizado",
+      variants: [
+        { size_id: "size-grande", price: 10000, enabled: true },
+      ] as any
+    });
+
+    const result = calculateItemPrice(product, sizeGrande, [], rules);
+    // basePrice = 10000 (from variants)
+    // discounted = 10000 * 0.9 = 9000 (10% off)
+    expect(result.basePrice).toBe(10000);
+    expect(result.discountedPrice).toBe(9000);
+    expect(result.finalPrice).toBe(9000);
+    expect(result.originalPrice).toBe(10000);
+    expect(result.discountMessage).toBe("10% OFF");
+    expect(result.enabled).toBe(true);
+  });
+
+  it("sums toppings correctly", () => {
+    const product = makeProduct({ price: 5000 });
+    const toppings = [
+      makeProduct({ id: "top-1", name: "Cereza", price: 1000, type: "topping" }),
+      makeProduct({ id: "top-2", name: "Gomitas", price: 1500, type: "topping" }),
+    ];
+
+    const result = calculateItemPrice(product, sizePeque, toppings, []);
+    // basePrice = 5000
+    // toppings = 1000 + 1500 = 2500
+    // finalPrice = 5000 + 2500 = 7500
+    expect(result.basePrice).toBe(5000);
+    expect(result.finalPrice).toBe(7500);
+    expect(result.enabled).toBe(true);
+  });
+});
+

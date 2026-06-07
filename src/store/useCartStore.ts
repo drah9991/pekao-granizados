@@ -4,7 +4,7 @@ import type { CartItem, Product, Size } from "@/lib/pos-types";
 import type { Customer } from "@/components/pos/CustomerSelection";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
-import { hasEnoughStock, hasEnoughStockForUpdate, applyPricingRules, resolveSize } from "@/lib/pricing";
+import { hasEnoughStock, hasEnoughStockForUpdate, applyPricingRules, resolveSize, calculateItemPrice } from "@/lib/pricing";
 import type { PricingRuleRow } from "@/integrations/supabase/types-extensions";
 
 const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
@@ -145,13 +145,12 @@ export const useCartStore = create<CartStoreState>()(
 
         const validToppings = state.availableToppings.filter(t => selectedToppingIds.includes(t.id));
 
-        const basePrice = product.price * (size?.multiplier || 1);
-        const { discountedPrice, originalPrice: discountedOriginal, discountMessage } = applyPricingRules(
-          basePrice,
-          state.pricingRules as unknown as PricingRuleRow[],
-          { category: product.category, productId: product.id }
+        const pricingResult = calculateItemPrice(
+          product,
+          size,
+          validToppings,
+          state.pricingRules as unknown as PricingRuleRow[]
         );
-        const finalPrice = discountedPrice + validToppings.reduce((sum, t) => sum + t.price, 0);
 
         const trackMixture = typeCfg?.track_mixture_inventory || product.type === 'granizado' || product.category === 'Granizado';
 
@@ -174,21 +173,22 @@ export const useCartStore = create<CartStoreState>()(
             id: customizationId,
             name: product.name,
             productId: product.id,
-            price: finalPrice,
+            price: pricingResult.finalPrice,
             quantity: quantity,
             size: size?.name,
             sizeMultiplier: size?.multiplier || 1, 
             toppings: validToppings.length > 0 ? validToppings : undefined,
             customizationId,
-            originalPrice: discountedOriginal !== discountedPrice ? discountedOriginal + validToppings.reduce((sum, t) => sum + t.price, 0) : undefined,
-            discountMessage,
+            originalPrice: pricingResult.originalPrice !== pricingResult.finalPrice ? pricingResult.originalPrice : undefined,
+            discountMessage: pricingResult.discountMessage,
             maxStock: product.stock,
             isGranizado: trackMixture,
             mixtureStock: product.mixtureStock,
             baseVolume: Number(product.base_volume) || 4,
-            productPrice: product.price,
+            productPrice: pricingResult.basePrice,
             productType: product.type,
-            productCategory: product.category
+            productCategory: product.category,
+            variants: product.variants
           };
 
           return { cart: cleanCartItems([...state.cart, newItem]) };
@@ -246,9 +246,21 @@ export const useCartStore = create<CartStoreState>()(
 
             const typeCfg = state.productTypes.find(t => t.code === productType);
 
+            const mockProduct: Product = {
+              id: item.productId,
+              type: productType as any,
+              category: productCategory,
+              base_volume: item.baseVolume,
+              mixtureStock: item.mixtureStock,
+              stock: item.maxStock,
+              price: productPrice,
+              name: item.name,
+              variants: item.variants || null
+            } as Product;
+
             // Stock validation for customization change
             if (!hasEnoughStock(
-              { id: item.productId, type: productType, category: productCategory, base_volume: item.baseVolume, mixtureStock: item.mixtureStock, stock: item.maxStock, price: productPrice, name: item.name } as Product,
+              mockProduct,
               state.cart.filter(i => i.id !== itemId),
               item.quantity,
               size?.multiplier || 1,
@@ -258,24 +270,21 @@ export const useCartStore = create<CartStoreState>()(
               return item;
             }
 
-            const basePrice = productPrice * (size?.multiplier || 1);
-            const { discountedPrice, originalPrice: discountedOriginal, discountMessage } = applyPricingRules(
-              basePrice,
-              state.pricingRules as unknown as PricingRuleRow[],
-              { category: productCategory, productId: item.productId }
+            const pricingResult = calculateItemPrice(
+              mockProduct,
+              size,
+              validToppings,
+              state.pricingRules as unknown as PricingRuleRow[]
             );
-
-            const toppingsPrice = validToppings.reduce((sum, t) => sum + t.price, 0);
-            const finalPrice = discountedPrice + toppingsPrice;
 
             return {
               ...item,
-              price: finalPrice,
+              price: pricingResult.finalPrice,
               size: size?.name || undefined,
               sizeMultiplier: size?.multiplier || 1,
               toppings: validToppings.length > 0 ? validToppings : undefined,
-              originalPrice: discountedOriginal !== discountedPrice ? discountedOriginal + toppingsPrice : undefined,
-              discountMessage
+              originalPrice: pricingResult.originalPrice !== pricingResult.finalPrice ? pricingResult.originalPrice : undefined,
+              discountMessage: pricingResult.discountMessage
             };
           });
           return { cart: cleanCartItems(updatedCart) };

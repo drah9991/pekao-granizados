@@ -7,8 +7,11 @@ import { formatCOP } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import type { PricingRuleRow } from "@/integrations/supabase/types-extensions";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCartStore } from "@/store/useCartStore";
+import { calculateItemPrice } from "@/lib/pricing";
 
 interface ProductCustomizationDialogProps {
   isOpen: boolean;
@@ -62,8 +65,13 @@ export default function ProductCustomizationDialog({
 
       if (sizesError) throw sizesError;
       setAvailableSizes(sizesData || []);
-      if (sizesData && sizesData.length > 0) {
-        setSelectedSize(sizesData[0].id);
+      if (sizesData && sizesData.length > 0 && product) {
+        const rules = useCartStore.getState().pricingRules as unknown as PricingRuleRow[];
+        const firstEnabledSize = sizesData.find(size => {
+          const pricing = calculateItemPrice(product, size, [], rules);
+          return pricing.enabled !== false;
+        });
+        setSelectedSize(firstEnabledSize ? firstEnabledSize.id : null);
       }
 
       const { data: toppingsData, error: toppingsError } = await supabase
@@ -82,7 +90,7 @@ export default function ProductCustomizationDialog({
     } finally {
       setLoadingData(false);
     }
-  }, [userStoreId]);
+  }, [userStoreId, product]);
 
   useEffect(() => {
     fetchUserStoreId();
@@ -115,19 +123,33 @@ export default function ProductCustomizationDialog({
 
   if (!product) return null;
 
+  const pricingRules = useCartStore((state) => state.pricingRules) as unknown as PricingRuleRow[];
+
   const currentSize = availableSizes.find(s => s.id === selectedSize);
-  const basePrice = product.price * (currentSize?.multiplier || 1);
-  const selectedToppingsPrice = availableToppings
-    .filter(t => selectedToppings.includes(t.id))
-    .reduce((sum, t) => sum + t.price, 0);
-  const finalPrice = basePrice + selectedToppingsPrice;
+  const selectedToppingsList = availableToppings.filter(t => selectedToppings.includes(t.id));
+
+  const pricingResult = calculateItemPrice(
+    product,
+    currentSize,
+    selectedToppingsList,
+    pricingRules
+  );
+
+  const finalPrice = pricingResult.finalPrice;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar">
         <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center gap-2">
-            🥤 Personalizar {product.name}
+          <DialogTitle className="text-2xl flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2">
+              🥤 Personalizar {product.name}
+            </span>
+            {pricingResult.discountMessage && (
+              <span className="text-[10px] bg-red-500/10 text-red-500 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider animate-pulse">
+                🔥 {pricingResult.discountMessage}
+              </span>
+            )}
           </DialogTitle>
           <DialogDescription>
             Selecciona el tamaño y agrega toppings
@@ -151,6 +173,9 @@ export default function ProductCustomizationDialog({
                       const sizeVolumeMl = baseVol * size.multiplier * unitFactor;
                       const remainingServings = product.mixtureStock ? Math.floor(product.mixtureStock / sizeVolumeMl) : null;
                       
+                      const sizePricing = calculateItemPrice(product, size, [], pricingRules);
+                      if (sizePricing.enabled === false) return null;
+                      
                       return (
                         <button
                           key={size.id}
@@ -171,7 +196,14 @@ export default function ProductCustomizationDialog({
                             )}
                           </span>
                           <span className="text-xs font-black mt-1">
-                            {formatCOP(product.price * size.multiplier)}
+                            {sizePricing.originalPrice !== sizePricing.finalPrice ? (
+                              <span className="flex items-center justify-center gap-1.5">
+                                <span className="line-through opacity-50 text-[10px]">{formatCOP(sizePricing.originalPrice)}</span>
+                                <span className="text-primary">{formatCOP(sizePricing.finalPrice)}</span>
+                              </span>
+                            ) : (
+                              formatCOP(sizePricing.finalPrice)
+                            )}
                           </span>
                           
                           {(product.type === 'granizado' || product.category === 'Granizado') && remainingServings !== null && (
@@ -251,7 +283,15 @@ export default function ProductCustomizationDialog({
               Cancelar
             </Button>
             <Button onClick={handleAddToCart} className="gradient-primary min-h-[48px] text-base rounded-xl" disabled={!selectedSize && product.type !== 'sachet'}>
-              Agregar {formatCOP(finalPrice * quantity)}
+              {pricingResult.originalPrice !== pricingResult.finalPrice ? (
+                <span className="flex items-center gap-2">
+                  <span>Agregar</span>
+                  <span className="line-through opacity-60 text-xs">{formatCOP(pricingResult.originalPrice * quantity)}</span>
+                  <span>{formatCOP(finalPrice * quantity)}</span>
+                </span>
+              ) : (
+                `Agregar ${formatCOP(finalPrice * quantity)}`
+              )}
             </Button>
           </div>
         </DialogFooter>

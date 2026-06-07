@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { formatCOP } from "@/lib/currency";
 import { Tables, Json, Enums } from "@/integrations/supabase/types";
 import React from "react"; 
-import RecipeManager from "./RecipeManager";
 import { supabase } from "@/integrations/supabase/client";
 import { typedFrom } from "@/integrations/supabase/types-extensions";
 import { Package, Activity, Calculator } from "lucide-react";
@@ -84,7 +83,7 @@ export default function ProductFormDialog({
   skuAcronyms, 
   storeId, // Destructure new prop
 }: ProductFormDialogProps) {
-  const [sizes, setSizes] = React.useState<{ name: string; multiplier: number }[]>([]);
+  const [sizes, setSizes] = React.useState<{ id: string; name: string; multiplier: number }[]>([]);
   const [productTypesConfig, setProductTypesConfig] = React.useState<{ code: string; emoji_icon: string; label: string }[]>([]);
 
   React.useEffect(() => {
@@ -92,7 +91,7 @@ export default function ProductFormDialog({
       const fetchSizes = async () => {
         const { data } = await supabase
           .from("sizes")
-          .select("name, multiplier")
+          .select("id, name, multiplier")
           .eq("store_id", storeId)
           .order("multiplier", { ascending: true });
         setSizes(data || []);
@@ -113,6 +112,51 @@ export default function ProductFormDialog({
       return `${typeAcronym}-${namePart}`;
     }
     return '';
+  };
+
+  const getVariantPrice = (sizeId: string, variants: any): string => {
+    if (!variants || !Array.isArray(variants)) return "";
+    const found = variants.find((v: any) => v.size_id === sizeId || v.id === sizeId);
+    return found && typeof found.price === 'number' ? found.price.toString() : "";
+  };
+
+  const handleVariantPriceChange = (sizeId: string, priceStr: string) => {
+    const currentVariants = Array.isArray(formData.variants) ? [...formData.variants] : [];
+    const priceVal = parseFloat(priceStr);
+    const index = currentVariants.findIndex((v: any) => v.size_id === sizeId || v.id === sizeId);
+
+    if (priceStr.trim() === "" || isNaN(priceVal) || priceVal < 0) {
+      if (index >= 0) {
+        currentVariants.splice(index, 1);
+      }
+    } else {
+      if (index >= 0) {
+        currentVariants[index] = { ...currentVariants[index], price: priceVal, size_id: sizeId };
+      } else {
+        currentVariants.push({ size_id: sizeId, price: priceVal });
+      }
+    }
+    setFormData({ ...formData, variants: currentVariants.length > 0 ? currentVariants : null });
+  };
+
+  const isVariantEnabled = (sizeId: string, variants: any): boolean => {
+    if (!variants || !Array.isArray(variants)) return true;
+    const found = variants.find((v: any) => v.size_id === sizeId || v.id === sizeId);
+    return found ? found.enabled !== false : false;
+  };
+
+  const handleVariantEnabledChange = (sizeId: string, isEnabled: boolean) => {
+    const currentVariants = Array.isArray(formData.variants) ? [...formData.variants] : [];
+    const index = currentVariants.findIndex((v: any) => v.size_id === sizeId || v.id === sizeId);
+
+    if (index >= 0) {
+      currentVariants[index] = { ...currentVariants[index], enabled: isEnabled };
+    } else {
+      const sizeObj = sizes.find(s => s.id === sizeId);
+      const defaultPrice = Math.round((parseFloat(formData.price) || 0) * (sizeObj?.multiplier || 1));
+      currentVariants.push({ size_id: sizeId, price: defaultPrice, enabled: isEnabled });
+    }
+    setFormData({ ...formData, variants: currentVariants.length > 0 ? currentVariants : null });
   };
 
   return (
@@ -266,6 +310,83 @@ export default function ProductFormDialog({
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-black italic text-xs opacity-50">COP</span>
               </div>
             </div>
+
+            {/* Custom pricing per size toggle and inputs */}
+            {(formData.type === 'granizado' || formData.category === 'Granizado') && sizes.length > 0 && (
+              <div className="col-span-2 space-y-4 border-t border-white/5 pt-6 mt-2">
+                <div className="flex items-center justify-between p-4 glass-pro rounded-2xl border border-white/5 hover:bg-white/5 transition-all">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="custom-pricing-toggle" className="cursor-pointer text-[10px] font-black uppercase tracking-wider text-white italic font-space-grotesk">
+                      PRECIOS PERSONALIZADOS POR TAMAÑO
+                    </Label>
+                    <p className="text-[8px] text-muted-foreground uppercase tracking-widest font-medium">
+                      Permite precios independientes por tamaño sin usar multiplicadores generales.
+                    </p>
+                  </div>
+                  <Switch
+                    id="custom-pricing-toggle"
+                    checked={Array.isArray(formData.variants) && formData.variants.length > 0}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        const initialVariants = sizes.map(s => ({
+                          size_id: s.id,
+                          price: Math.round((parseFloat(formData.price) || 0) * s.multiplier),
+                          enabled: true
+                        }));
+                        setFormData({ ...formData, variants: initialVariants });
+                      } else {
+                        setFormData({ ...formData, variants: null });
+                      }
+                    }}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                </div>
+
+                {Array.isArray(formData.variants) && formData.variants.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6 glass-pro rounded-[2rem] border border-primary/20 shadow-glow-pro animate-pro-in">
+                    {sizes.map((size) => {
+                      const vPrice = getVariantPrice(size.id, formData.variants);
+                      const isEnabled = isVariantEnabled(size.id, formData.variants);
+                      return (
+                        <div key={size.id} className="space-y-2 p-4 bg-white/5 rounded-2xl border border-white/5">
+                          <div className="flex items-center justify-between mb-1">
+                            <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground font-space-grotesk italic">
+                              {size.name}
+                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                id={`size-toggle-${size.id}`}
+                                checked={isEnabled}
+                                onCheckedChange={(checked) => handleVariantEnabledChange(size.id, checked)}
+                                className="scale-75 data-[state=checked]:bg-primary"
+                              />
+                              <Label htmlFor={`size-toggle-${size.id}`} className="text-[8px] font-black uppercase tracking-widest text-white/50 italic cursor-pointer">
+                                {isEnabled ? "HABILITADO" : "OCULTO"}
+                              </Label>
+                            </div>
+                          </div>
+                          
+                          <div className="relative group">
+                            <Input
+                              type="number"
+                              step="1000"
+                              min="0"
+                              placeholder={`Ej: ${Math.round((parseFloat(formData.price) || 0) * size.multiplier)}`}
+                              value={vPrice}
+                              onChange={(e) => handleVariantPriceChange(size.id, e.target.value)}
+                              disabled={!isEnabled}
+                              className="h-10 bg-white/5 border-white/10 rounded-xl font-black font-space-grotesk italic tracking-tighter text-sm focus:border-primary/50 text-white transition-all shadow-inner pr-12 disabled:opacity-30 disabled:cursor-not-allowed"
+                              required={isEnabled}
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-primary font-black italic text-[9px]">COP</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="col-span-2 space-y-3">
               <Label htmlFor="stock" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 font-space-grotesk italic">INVENTARIO INICIAL (PUNTO)</Label>
@@ -529,13 +650,7 @@ export default function ProductFormDialog({
             </div>
           )}
 
-          <div className="pt-8 border-t border-white/5">
-            <RecipeManager 
-              recipe={formData.recipe || []} 
-              onChange={(newRecipe) => setFormData({ ...formData, recipe: newRecipe })}
-              storeId={storeId}
-            />
-          </div>
+          {/* RecipeManager removed from products form as per user request */}
         </form>
 
         <DialogFooter className="p-8 pt-0 flex gap-4">
