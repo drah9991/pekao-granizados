@@ -14,7 +14,7 @@ import {
   Minus,
   Plus,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
-  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3
+  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -46,7 +46,10 @@ import { Badge } from "@/components/ui/badge";
 import { InteractiveCursor } from "./ui/InteractiveCursor";
 import { BoneyardSkeleton } from "./ui/BoneyardSkeleton";
 
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+
 export default function Layout({ children, fullWidth = false }: LayoutProps) {
+  const { isInstallable, installApp } = usePWAInstall();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpenInternal] = useState(!isMobile);
@@ -418,6 +421,16 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             <span className="text-sm font-medium text-sidebar-foreground/60">Modo Oscuro</span>
             <ThemeToggle />
           </div>
+          {isInstallable && (
+            <Button
+              variant="outline"
+              onClick={installApp}
+              className="w-full justify-start border-primary/30 text-[#00F3FF] hover:text-[#00F3FF]/80 hover:bg-primary/10 transition-all duration-300 rounded-xl py-3 mb-2 shadow-glow-pro gap-3 font-space-grotesk italic font-bold uppercase tracking-wider text-[10px]"
+            >
+              <Download className="w-4 h-4 text-[#00F3FF]" />
+              <span>Instalar POS</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-300 rounded-xl py-3 group"

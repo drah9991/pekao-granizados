@@ -1,5 +1,14 @@
 import { createRoot } from "react-dom/client";
 import { Buffer } from "buffer";
+import "@fontsource/plus-jakarta-sans/400.css";
+import "@fontsource/plus-jakarta-sans/500.css";
+import "@fontsource/plus-jakarta-sans/700.css";
+import "@fontsource/plus-jakarta-sans/800.css";
+import "@fontsource/orbitron/700.css";
+import "@fontsource/orbitron/900.css";
+import "@fontsource/caveat/400.css";
+import "@fontsource/caveat/700.css";
+import "@fontsource/permanent-marker/400.css";
 import { initSentry } from "./lib/sentry";
 import { initPostHog } from "./lib/posthog";
 import App from "./App.tsx";

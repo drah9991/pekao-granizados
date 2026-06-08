@@ -57,7 +57,7 @@ const Sales = () => {
                   Historial de <span className="text-primary">Ventas</span>
                 </h1>
               </div>
-              <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.4em] italic pl-6">
+              <p className="text-[10px] font-black text-white/85 uppercase tracking-[0.4em] italic pl-6">
                 Gestión Avanzada • {stats.totalCount} Órdenes Registradas
               </p>
             </div>
@@ -92,7 +92,7 @@ const Sales = () => {
                 <Button
                   onClick={testAudioChime}
                   variant="ghost"
-                  className="h-12 px-4 rounded-[1.1rem] text-[9px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-all gap-1.5"
+                  className="h-12 px-4 rounded-[1.1rem] text-[9px] font-extrabold uppercase tracking-wider text-[#00F3FF] hover:text-[#00F3FF]/80 transition-all gap-1.5"
                   title="Reproducir campana de prueba y activar audio"
                 >
                   <span>Probar</span>
@@ -131,7 +131,7 @@ const Sales = () => {
                 <Loader2 className="w-16 h-16 text-primary animate-spin" />
                 <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground italic">Procesando Base de Datos...</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#00F3FF] italic">Procesando Base de Datos...</span>
             </div>
           ) : (
             <SalesTable 

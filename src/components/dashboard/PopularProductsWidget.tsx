@@ -53,14 +53,14 @@ export function PopularProductsWidget({ data }: { data: PopularProductsData | nu
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-black text-foreground font-space-grotesk truncate pr-2 uppercase">{p.name}</p>
-                  <p className="text-[9px] font-black text-muted-foreground tracking-[0.2em] uppercase leading-none mt-1">Suministro Estable</p>
+                  <p className="text-[9px] font-black text-zinc-400 tracking-[0.2em] uppercase leading-none mt-1">Suministro Estable</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-base font-black text-foreground font-space-grotesk">{p.sales} <span className="text-[9px] text-muted-foreground uppercase not-italic">und</span></p>
+                  <p className="text-base font-black text-foreground font-space-grotesk">{p.sales} <span className="text-[9px] text-zinc-400 uppercase not-italic">und</span></p>
                   <p className="text-[9px] font-black text-primary tracking-tighter shadow-glow-pro-text">{formatCOP(p.revenue)}</p>
                 </div>
               </div>
-              <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                  <div className={cn("h-full rounded-full transition-all duration-1000", idx === 0 ? "bg-primary shadow-glow-pro" : "bg-primary/40")} style={{ width: `${(p.sales / data.popularProducts[0].sales) * 100}%` }} />
               </div>
             </div>

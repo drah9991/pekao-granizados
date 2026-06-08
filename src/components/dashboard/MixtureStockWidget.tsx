@@ -88,13 +88,13 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
                   </div>
 
                   <div className="space-y-2 relative z-10">
-                    <div className="h-2.5 w-full bg-slate-200 dark:bg-black/20 rounded-full overflow-hidden p-[2px]">
+                    <div className="h-2.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden p-[2px]">
                       <div 
                         className={cn("h-full rounded-full transition-all duration-1000", isLow ? 'bg-rose-500' : 'bg-primary')}
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground italic">
+                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-zinc-400 italic">
                       <span>Nivel Crítico: {(item.min_stock / 1000).toFixed(1)}L</span>
                       <span>{Math.round(percentage)}%</span>
                     </div>
@@ -111,7 +111,7 @@ export function MixtureStockWidget({ data }: MixtureStockWidgetProps) {
                         const sizeServings = Math.floor(item.stock / (STANDARD_SERVING_ML * size.multiplier));
                         return (
                           <div key={sIdx} className="px-3 py-1.5 bg-white/5 rounded-xl border border-white/5 flex items-center gap-2">
-                            <span className="text-[10px] font-black text-muted-foreground font-space-grotesk">{sizeServings} <span className="opacity-60">{size.name}</span></span>
+                            <span className="text-[10px] font-black text-zinc-400 font-space-grotesk">{sizeServings} <span className="opacity-60">{size.name}</span></span>
                           </div>
                         );
                       })}

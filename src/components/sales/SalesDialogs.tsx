@@ -27,7 +27,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
       <DialogContent className="max-w-2xl bg-background border-border/40 rounded-[3rem] p-0 overflow-hidden shadow-pro">
         {!order ? (
            <div className="p-10 flex justify-center items-center min-h-[400px]">
-             <span className="text-muted-foreground animate-pulse">Cargando detalles...</span>
+             <span className="text-white animate-pulse">Cargando detalles...</span>
            </div>
         ) : (
           <div className="w-full flex flex-col">
@@ -43,7 +43,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
             <h2 className="text-4xl font-black font-space-grotesk italic tracking-tighter text-foreground">#{order.id ? order.id.slice(0, 8).toUpperCase() : 'N/A'}</h2>
             <div className="flex items-center gap-4 mt-2">
             <div className="flex items-center gap-4 mt-2">
-              <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest italic">{order.created_at ? format(new Date(order.created_at), "PPP p", { locale: es }) : ''}</span>
+              <span className="text-[10px] font-extrabold text-[#00F3FF] uppercase tracking-widest italic">{order.created_at ? format(new Date(order.created_at), "PPP p", { locale: es }) : ''}</span>
             </div>
             </div>
           </div>
@@ -62,7 +62,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
                     <User className="w-5 h-5 text-indigo-400" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest italic">Nombre</span>
+                    <span className="text-[9px] font-extrabold text-[#00F3FF]/80 uppercase tracking-widest italic">Nombre</span>
                     <span className="text-[12px] font-black font-space-grotesk uppercase italic text-foreground">{order.customer_details?.name || "Venta Mostrador"}</span>
                   </div>
                 </div>
@@ -72,7 +72,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
                       <Phone className="w-5 h-5 text-teal-400" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest italic">Teléfono</span>
+                      <span className="text-[9px] font-extrabold text-[#00F3FF]/80 uppercase tracking-widest italic">Teléfono</span>
                       <span className="text-[12px] font-black font-space-grotesk uppercase italic text-foreground">{order.customer_details.phone}</span>
                     </div>
                   </div>
@@ -83,7 +83,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
                       <MapPin className="w-5 h-5 text-amber-400" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest italic">Dirección de Envío</span>
+                      <span className="text-[9px] font-extrabold text-[#00F3FF]/80 uppercase tracking-widest italic">Dirección de Envío</span>
                       <span className="text-[12px] font-black font-space-grotesk uppercase italic text-foreground">{order.delivery_address}</span>
                     </div>
                   </div>
@@ -102,7 +102,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
                 </div>
                 <div className="text-center">
                   <span className="text-[14px] font-black font-space-grotesk uppercase italic text-foreground tracking-tighter">{((order.payment as Record<string, unknown>)?.method as string)?.toUpperCase() || "EFECTIVO"}</span>
-                  <p className="text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest italic mt-1">Transacción Verificada</p>
+                  <p className="text-[9px] font-extrabold text-[#00F3FF]/80 uppercase tracking-widest italic mt-1">Transacción Verificada</p>
                 </div>
               </div>
             </div>
@@ -122,7 +122,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[13px] font-black font-space-grotesk uppercase italic text-foreground tracking-tight">{item.name}</span>
-                      <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest italic">{item.size || "Original"} — {formatCOP(item.price)}/u</span>
+                      <span className="text-[9px] font-extrabold text-[#00F3FF]/80 uppercase tracking-widest italic">{item.size || "Original"} — {formatCOP(item.price)}/u</span>
                     </div>
                   </div>
                   <span className="text-[14px] font-black font-space-grotesk italic text-foreground tracking-tighter">{formatCOP(item.qty * item.price)}</span>
@@ -134,7 +134,7 @@ export function OrderDetailsDialog({ order, isOpen, onClose, onPrint }: OrderDet
 
         <div className="p-10 border-t border-border/30 bg-muted/40 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] italic">Total Recaudado</span>
+            <span className="text-[9px] font-black text-[#00F3FF] uppercase tracking-[0.3em] italic">Total Recaudado</span>
             <span className="text-3xl font-black font-space-grotesk italic text-foreground tracking-tighter">{formatCOP(order.total)}</span>
             {order.subtotal + (order.delivery_fee || 0) > order.total && (
               <span className="text-[10px] font-bold text-emerald-500 uppercase mt-1">Ahorro: {formatCOP(order.subtotal + (order.delivery_fee || 0) - order.total)}</span>
@@ -176,7 +176,7 @@ export function CancelOrderDialog({ order, isOpen, onClose, onConfirm }: CancelO
       <DialogContent className="max-w-md bg-background border-red-500/20 rounded-[2.5rem] p-10 shadow-pro text-center max-h-[90dvh] overflow-y-auto custom-scrollbar">
         {!order ? (
            <div className="py-10 flex justify-center items-center">
-             <span className="text-muted-foreground animate-pulse">Cargando...</span>
+             <span className="text-[#00F3FF] animate-pulse">Cargando...</span>
            </div>
         ) : (
           <div className="w-full flex flex-col">
@@ -185,21 +185,21 @@ export function CancelOrderDialog({ order, isOpen, onClose, onConfirm }: CancelO
         </div>
         <DialogHeader>
           <DialogTitle className="text-2xl font-black font-space-grotesk italic text-foreground tracking-tighter text-center uppercase">Confirmar Cancelación</DialogTitle>
-          <DialogDescription className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest italic text-center mt-4">
+          <DialogDescription className="text-[11px] font-bold text-white uppercase tracking-widest italic text-center mt-4">
             ¿ESTÁS SEGURO DE CANCELAR LA ORDEN <span className="text-red-500 font-black">#{order.id ? order.id.slice(0, 8).toUpperCase() : 'N/A'}</span>? ESTA ACCIÓN NO SE PUEDE DESHACER Y AFECTARÁ LOS REPORTES DE CAJA Y EL INVENTARIO.
           </DialogDescription>
         </DialogHeader>
         <div className="mt-6">
-          <label className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] italic pl-2 block text-left mb-2">Motivo de Cancelación</label>
+          <label className="text-[9px] font-black text-[#00F3FF] uppercase tracking-[0.3em] italic pl-2 block text-left mb-2">Motivo de Cancelación</label>
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Describa el motivo de la cancelación..."
-            className="h-24 rounded-2xl bg-muted/40 border-border text-[11px] font-bold italic placeholder:text-muted-foreground/30 resize-none"
+            className="h-24 rounded-2xl bg-muted/40 border-border text-[11px] font-bold italic placeholder:text-white/30 text-white resize-none"
           />
         </div>
         <div className="flex items-center justify-center gap-4 mt-6">
-          <Button variant="ghost" onClick={() => { setReason(""); onClose(); }} className="h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest italic font-space-grotesk text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" onClick={() => { setReason(""); onClose(); }} className="h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest italic font-space-grotesk text-white/80 hover:text-white">
             MANTENER ORDEN
           </Button>
           <Button
@@ -231,18 +231,18 @@ export function EditOrderDialog({ order, isOpen, onClose, onSave }: EditOrderDia
       <DialogContent className="max-w-md bg-background border-border/40 rounded-[2.5rem] p-10 shadow-pro max-h-[90dvh] overflow-y-auto custom-scrollbar">
         {!order ? (
            <div className="py-10 flex justify-center items-center">
-             <span className="text-muted-foreground animate-pulse">Cargando...</span>
+             <span className="text-[#00F3FF] animate-pulse">Cargando...</span>
            </div>
         ) : (
           <div className="w-full flex flex-col">
         <DialogHeader className="mb-8">
           <DialogTitle className="text-2xl font-black font-space-grotesk italic text-foreground tracking-tighter uppercase">Gestionar Orden</DialogTitle>
-          <DialogDescription className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest italic">Actualice el estado o información de entrega</DialogDescription>
+          <DialogDescription className="text-[10px] font-bold text-white/90 uppercase tracking-widest italic">Actualice el estado o información de entrega</DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">
           <div className="space-y-3">
-            <label className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] italic pl-2">Estado de la Orden</label>
+            <label className="text-[9px] font-black text-[#00F3FF] uppercase tracking-[0.3em] italic pl-2">Estado de la Orden</label>
             <Select 
               defaultValue={order.status} 
               onValueChange={(val: OrderStatus) => onSave(order.id, { status: val })}

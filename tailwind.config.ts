@@ -14,10 +14,12 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'system-ui', '-apple-system', 'sans-serif'],
-        poppins: ['Poppins', 'sans-serif'],
-        caveat: ['Caveat', 'cursive'],
-        marker: ['"Permanent Marker"', 'cursive'],
+        "dashboard-title": ["Orbitron", "sans-serif"],
+        "dashboard-body": ["Plus Jakarta Sans", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "system-ui", "-apple-system", "sans-serif"],
+        poppins: ["Poppins", "sans-serif"],
+        caveat: ["Caveat", "cursive"],
+        marker: ["'Permanent Marker'", "cursive"],
       },
       colors: {
         border: "oklch(var(--border) / <alpha-value>)",

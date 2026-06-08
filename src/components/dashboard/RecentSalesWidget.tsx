@@ -31,9 +31,17 @@ export function RecentSalesWidget({ data }: { data: RecentSalesData | null }) {
         <Button variant="ghost" className="text-primary font-black text-xs uppercase tracking-widest hover:bg-primary/20 rounded-xl px-6 transition-all font-space-grotesk">Ver Historial</Button>
       </div>
       <div className="table-container-pro">
-        <table className="w-full text-left">
+        <table className="w-full text-left table-fixed">
+          <colgroup>
+            <col className="w-[20%]" />
+            <col className="w-[12%]" />
+            <col className="w-[10%]" />
+            <col className="w-[18%]" />
+            <col className="w-[20%]" />
+            <col className="w-[20%]" />
+          </colgroup>
           <thead className="sticky-header-pro">
-            <tr className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em]">
+            <tr className="text-zinc-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-border/20">
               <th className="py-4 font-space-grotesk whitespace-nowrap">ID Pedido</th>
               <th className="py-4 font-space-grotesk whitespace-nowrap">Hora</th>
               <th className="py-4 text-center font-space-grotesk whitespace-nowrap">Ítems</th>
@@ -45,13 +53,15 @@ export function RecentSalesWidget({ data }: { data: RecentSalesData | null }) {
           <tbody className="divide-y divide-border/40 dark:divide-white/[0.03]">
             {data.recentOrders.map((order) => (
               <tr key={order.id} className="group hover:bg-muted/30 dark:hover:bg-white/[0.05] transition-all duration-300 cursor-pointer">
-                <td className="py-5 text-xs font-black text-muted-foreground group-hover:text-primary transition-colors font-space-grotesk tracking-widest italic">#{order.id.slice(0, 8)}</td>
-                <td className="py-5 text-xs font-bold text-foreground/80 dark:text-foreground/70 font-dm-sans">{format(new Date(order.created_at), 'HH:mm')}</td>
+                <td className="py-5 text-xs font-black text-zinc-400 group-hover:text-primary transition-colors font-space-grotesk tracking-widest italic truncate">#{order.id.slice(0, 8)}</td>
+                <td className="py-5 text-xs font-bold text-foreground/80 dark:text-foreground/70 font-dm-sans">
+                  {format(new Date(order.created_at), 'HH:mm')}
+                </td>
                 <td className="py-5 text-xs font-black text-foreground text-center">
                   <Badge variant="outline" className="border-border/50 text-[10px] rounded-lg group-hover:border-primary/50 transition-colors font-space-grotesk">{order.order_items.reduce((sum: number, i) => sum + i.qty, 0)}</Badge>
                 </td>
                 <td className="py-5">
-                  <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest bg-muted/50 px-2 py-1 rounded-md border border-border/50 group-hover:border-primary/30 group-hover:text-primary transition-all">{order.payment?.method === 'cash' ? 'Efectivo' : (order.payment?.method === 'card' ? 'Tarjeta' : (order.payment?.method === 'transfer' ? 'Nequi' : 'Efectivo'))}</span>
+                  <span className="text-[10px] font-black uppercase text-zinc-300 tracking-widest bg-muted/50 px-2 py-1 rounded-md border border-border/50 group-hover:border-primary/30 group-hover:text-primary transition-all">{order.payment?.method === 'cash' ? 'Efectivo' : (order.payment?.method === 'card' ? 'Tarjeta' : (order.payment?.method === 'transfer' ? 'Nequi' : 'Efectivo'))}</span>
                 </td>
                 <td className="py-5">
                   <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight", order.status === 'completed' ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-glow-pro" : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20")}>
@@ -59,7 +69,7 @@ export function RecentSalesWidget({ data }: { data: RecentSalesData | null }) {
                     {order.status === 'completed' ? 'Success' : 'Voided'}
                   </div>
                 </td>
-                <td className={cn("py-5 text-right font-black text-lg tabular-nums font-space-grotesk", order.status === 'cancelled' ? "text-muted-foreground line-through opacity-50" : "text-foreground")}>{formatCOP(order.total)}</td>
+                <td className={cn("py-5 text-right font-black text-lg tabular-nums font-space-grotesk", order.status === 'cancelled' ? "text-zinc-400 line-through opacity-50" : "text-foreground")}>{formatCOP(order.total)}</td>
               </tr>
             ))}
           </tbody>

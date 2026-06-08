@@ -27,16 +27,16 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
       <div className="animate-pro-in">
         <Card className="bg-card dark:bg-white/[0.02] border border-border dark:border-white/5 rounded-3xl shadow-sm dark:shadow-pro relative overflow-hidden h-full group transition-all duration-500 hover:border-emerald-500/30 dark:hover:bg-white/[0.04]">
           <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-emerald-500/40 dark:via-emerald-500/30 to-transparent" />
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400/80 uppercase tracking-widest font-space-grotesk italic">Ingresos Brutos</span>
-              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Recaudación Total</span>
+              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Recaudación Total</span>
             </div>
             <div className="w-10 h-10 bg-emerald-500/10 dark:bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/10 transition-all duration-500 group-hover:scale-110 group-hover:bg-emerald-500/20">
               <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-6 pt-0 space-y-4">
             <div>
               <div className="text-3xl font-black tracking-tighter text-foreground font-space-grotesk italic">
                 {formatCOP(data.metrics.revenue.val)}
@@ -47,7 +47,7 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
                   <span>{data.metrics.revenue.rawDelta >= 0 ? '+' : ''}{formatCOP(data.metrics.revenue.rawDelta)}</span>
                   <span className="opacity-80">({Math.abs(Math.round(data.metrics.revenue.delta))}%)</span>
                 </div>
-                <span className="text-[9px] font-bold text-muted-foreground tracking-tight">vs {formatCOP(data.metrics.revenue.compVal)}</span>
+                <span className="text-[9px] font-bold text-zinc-400 tracking-tight">vs {formatCOP(data.metrics.revenue.compVal)}</span>
               </div>
             </div>
 
@@ -73,16 +73,16 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
       <div className="animate-pro-in delay-75">
         <Card className="bg-card dark:bg-white/[0.02] border border-border dark:border-white/5 rounded-3xl shadow-sm dark:shadow-pro relative overflow-hidden h-full group transition-all duration-500 hover:border-rose-500/30 dark:hover:bg-white/[0.04]">
           <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-rose-500/40 dark:via-rose-500/30 to-transparent" />
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
              <div className="flex flex-col">
               <span className="text-[10px] font-black text-rose-600 dark:text-rose-400/80 uppercase tracking-widest font-space-grotesk italic">Egresos Totales</span>
-              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Costos Operativos</span>
+              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Costos Operativos</span>
             </div>
             <div className="w-10 h-10 bg-rose-500/10 dark:bg-rose-500/10 rounded-xl flex items-center justify-center border border-rose-500/10 transition-all duration-500 group-hover:scale-110 group-hover:bg-rose-500/20">
               <ArrowDownRight className="w-5 h-5 text-rose-600 dark:text-rose-400" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-6 pt-0 space-y-4">
             <div>
               <div className="text-3xl font-black tracking-tighter text-foreground font-space-grotesk italic">
                 {formatCOP(data.metrics.expenses.val)}
@@ -95,7 +95,7 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
                     />
                  </div>
               </div>
-              <p className="text-[9px] font-bold text-muted-foreground/60 mt-3 uppercase tracking-wider">
+              <p className="text-[9px] font-bold text-zinc-400 mt-3 uppercase tracking-wider">
                 {Math.round((data.metrics.expenses.val / (data.metrics.revenue.val || 1)) * 100)}% de los ingresos
               </p>
             </div>
@@ -108,16 +108,16 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
         <Card className="bg-primary/[0.03] dark:bg-primary/5 border border-primary/20 rounded-3xl shadow-sm dark:shadow-pro relative overflow-hidden h-full group transition-all duration-500 hover:bg-primary/[0.06] dark:hover:bg-primary/10">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
           <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-primary uppercase tracking-widest font-space-grotesk italic">Utilidad Neta</span>
-              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Margen Final</span>
+              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Margen Final</span>
             </div>
             <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/20 transition-all duration-500 group-hover:rotate-12">
               <TrendingUp className="w-5 h-5 text-primary" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-6 pt-0 space-y-4">
             <div>
               <div className="text-3xl font-black tracking-tighter text-foreground font-space-grotesk italic dark:text-glow-primary">
                 {formatCOP(data.metrics.netProfit.val)}
@@ -129,9 +129,9 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/5">
+             <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/5">
                 <Activity className="w-3.5 h-3.5 text-primary animate-pulse" />
-                <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Salud Operativa Estable</span>
+                <span className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">Salud Operativa Estable</span>
             </div>
           </CardContent>
         </Card>
@@ -141,16 +141,16 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
       <div className="animate-pro-in delay-200">
         <Card className="bg-card dark:bg-white/[0.02] border border-border dark:border-white/5 rounded-3xl shadow-sm dark:shadow-pro relative overflow-hidden h-full group transition-all duration-500 hover:border-indigo-500/30 dark:hover:bg-white/[0.04]">
           <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-indigo-500/40 dark:via-indigo-500/30 to-transparent" />
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400/80 uppercase tracking-widest font-space-grotesk italic">Flujo Órdenes</span>
-              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Volumen Operativo</span>
+              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Volumen Operativo</span>
             </div>
             <div className="w-10 h-10 bg-indigo-500/10 dark:bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/10 transition-all duration-500 group-hover:scale-110 group-hover:bg-indigo-500/20">
               <ShoppingBag className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-6 pt-0 space-y-4">
             <div>
               <div className="text-3xl font-black tracking-tighter text-foreground font-space-grotesk italic">
                 {data.metrics.orders.val}
@@ -161,7 +161,7 @@ export function StatCards({ data, label }: { data: StatCardsData | null; label: 
                   <span>{data.metrics.orders.rawDelta >= 0 ? '+' : ''}{data.metrics.orders.rawDelta}</span>
                   <span className="opacity-80">({Math.abs(Math.round(data.metrics.orders.delta))}%)</span>
                 </div>
-                <span className="text-[9px] font-bold text-muted-foreground tracking-tight">vs {data.metrics.orders.compVal}</span>
+                 <span className="text-[9px] font-bold text-zinc-400 tracking-tight">vs {data.metrics.orders.compVal}</span>
               </div>
             </div>
 

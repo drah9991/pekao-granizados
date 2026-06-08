@@ -47,7 +47,7 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className={cn(
-        "min-h-screen p-2 md:p-4 lg:p-6 space-y-10 animate-pro-in transition-all duration-300",
+        "min-h-screen p-6 lg:p-8 space-y-12 animate-pro-in transition-all duration-300",
         isPending && "opacity-50 pointer-events-none filter blur-[1px]"
       )}>
         <DashboardHeader 
