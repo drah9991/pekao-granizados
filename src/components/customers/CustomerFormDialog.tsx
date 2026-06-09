@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus } from "lucide-react";
 import { Customer } from "@/hooks/useCustomers";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
-interface CustomerFormData {
-  name: string;
-  email: string;
-  phone: string;
-  document_id: string;
-  consent_habeas_data: boolean;
-}
+const customerSchema = z.object({
+  name: z.string().min(1, "El nombre completo es requerido").transform((v) => v.toUpperCase()),
+  document_id: z.string().min(1, "El documento es requerido"),
+  email: z.string().email("Formato de correo inválido").or(z.literal("")),
+  phone: z.string().optional(),
+  consent_habeas_data: z.boolean().refine((val) => val === true, "Debe autorizar el tratamiento de datos"),
+});
+
+type CustomerFormData = z.infer<typeof customerSchema>;
 
 interface CustomerFormDialogProps {
   isOpen: boolean;
@@ -23,31 +28,50 @@ interface CustomerFormDialogProps {
 }
 
 export default function CustomerFormDialog({ isOpen, onClose, editingCustomer, onSave, isProcessing }: CustomerFormDialogProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    document_id: "",
-    consent_habeas_data: false,
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isValid }
+  } = useForm<CustomerFormData>({
+    resolver: zodResolver(customerSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      document_id: "",
+      email: "",
+      phone: "",
+      consent_habeas_data: false,
+    }
   });
+
+  const watchName = watch("name");
+  const watchDoc = watch("document_id");
+  const watchConsent = watch("consent_habeas_data");
 
   useEffect(() => {
     if (editingCustomer) {
-      setFormData({
+      reset({
         name: editingCustomer.name || "",
+        document_id: editingCustomer.document_id || "",
         email: editingCustomer.email || "",
         phone: editingCustomer.phone || "",
-        document_id: editingCustomer.document_id || "",
         consent_habeas_data: editingCustomer.consent_habeas_data || false,
       });
     } else {
-      setFormData({ name: "", email: "", phone: "", document_id: "", consent_habeas_data: false });
+      reset({
+        name: "",
+        document_id: "",
+        email: "",
+        phone: "",
+        consent_habeas_data: false
+      });
     }
-  }, [editingCustomer, isOpen]);
+  }, [editingCustomer, isOpen, reset]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = await onSave(editingCustomer, formData);
+  const onFormSubmit = async (data: CustomerFormData) => {
+    const success = await onSave(editingCustomer, data);
     if (success) onClose();
   };
 
@@ -60,52 +84,62 @@ export default function CustomerFormDialog({ isOpen, onClose, editingCustomer, o
                         <UserPlus className="w-6 h-6 text-primary" />
                     </div>
                     <div>
-                        <DialogTitle className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight">{editingCustomer ? "Editar Identidad" : "Nueva Identidad CRM"}</DialogTitle>
-                        <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-white/40 italic">Registro y Validación de Cliente en Red Central</DialogDescription>
+                        <DialogTitle className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight">
+                          {editingCustomer ? "Editar Identidad" : "Nueva Identidad CRM"}
+                        </DialogTitle>
+                        <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-white/40 italic">
+                          Registro y Validación de Cliente en Red Central
+                        </DialogDescription>
                     </div>
                 </div>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">NOMBRE COMPLETO</Label>
                         <Input
                             placeholder="EJ: MARIA GÓMEZ"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                            {...register("name")}
                             className="h-14 bg-white/5 border-white/10 rounded-2xl text-xs font-black italic uppercase focus:ring-primary/20"
-                            required
                         />
+                        {errors.name && (
+                          <span className="text-[9px] font-bold text-rose-500 px-2 block">{errors.name.message}</span>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">DOCUMENTO (CC/NIT)</Label>
                         <Input
                             placeholder="EJ: 1000123456"
-                            value={formData.document_id}
-                            onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
+                            {...register("document_id")}
                             className="h-14 bg-white/5 border-white/10 rounded-2xl text-xs font-black italic focus:ring-primary/20"
-                            required
                         />
+                        {errors.document_id && (
+                          <span className="text-[9px] font-bold text-rose-500 px-2 block">{errors.document_id.message}</span>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">EMAIL CORP/PERS</Label>
                         <Input
                             type="email"
                             placeholder="EJ: MARIA@DOMINIO.COM"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
+                            {...register("email")}
                             className="h-14 bg-white/5 border-white/10 rounded-2xl text-xs font-black italic focus:ring-primary/20"
                         />
+                        {errors.email && (
+                          <span className="text-[9px] font-bold text-rose-500 px-2 block">{errors.email.message}</span>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">CANAL WHATSAPP</Label>
                         <Input
                             placeholder="EJ: 300 123 4567"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            {...register("phone")}
                             className="h-14 bg-white/5 border-white/10 rounded-2xl text-xs font-black italic focus:ring-primary/20"
                         />
+                        {errors.phone && (
+                          <span className="text-[9px] font-bold text-rose-500 px-2 block">{errors.phone.message}</span>
+                        )}
                     </div>
                 </div>
 
@@ -114,14 +148,15 @@ export default function CustomerFormDialog({ isOpen, onClose, editingCustomer, o
                         type="checkbox"
                         id="consent"
                         className="mt-1 w-5 h-5 rounded-lg border-white/10 bg-white/5 text-primary focus:ring-primary/40 cursor-pointer"
-                        checked={formData.consent_habeas_data}
-                        onChange={(e) => setFormData({ ...formData, consent_habeas_data: e.target.checked })}
-                        required
+                        {...register("consent_habeas_data")}
                     />
                     <Label htmlFor="consent" className="text-[10px] font-black text-white/60 uppercase italic tracking-widest leading-relaxed cursor-pointer select-none">
                         Autorizo el tratamiento de datos personales conforme a la <span className="text-primary tracking-tighter">LEY 1581 DE 2012 (HÁBEAS DATA)</span> para fines de facturación y compliance digital.
                     </Label>
                 </div>
+                {errors.consent_habeas_data && (
+                  <span className="text-[9px] font-bold text-rose-500 px-2 block">{errors.consent_habeas_data.message}</span>
+                )}
 
                 <DialogFooter className="gap-4">
                     <Button
@@ -135,7 +170,7 @@ export default function CustomerFormDialog({ isOpen, onClose, editingCustomer, o
                     </Button>
                     <Button
                         type="submit"
-                        disabled={isProcessing || !formData.name || !formData.document_id || !formData.consent_habeas_data}
+                        disabled={isProcessing || !watchName || !watchDoc || !watchConsent || !isValid}
                         className="flex-1 h-14 rounded-2xl bg-primary text-white font-black italic uppercase tracking-widest shadow-glow-pro hover:shadow-primary/40 transition-all font-space-grotesk"
                     >
                         {isProcessing ? "PROCESANDO..." : editingCustomer ? "GUARDAR CAMBIOS" : "INDEXAR ENTIDAD ✓"}

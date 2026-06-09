@@ -26,6 +26,7 @@ export function usePOSPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [customizeDialogIsOpen, setCustomizeDialogIsOpen] = useState(false);
   const [paymentDialogIsOpen, setPaymentDialogIsOpen] = useState(false);
+  const [splitBillDialogIsOpen, setSplitBillDialogIsOpen] = useState(false);
   const [receiptDialogIsOpen, setReceiptDialogIsOpen] = useState(false);
   const [lastOrder, setLastOrder] = useState<Record<string, unknown> | null>(null);
   const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<PaymentMethod>("cash");
@@ -77,6 +78,18 @@ export function usePOSPage() {
     setPaymentDialogIsOpen(true);
   }, [cart.length, selectedCustomer, notifyWarning]);
 
+  const handleOpenSplitBillDialog = useCallback(() => {
+    if (cart.length === 0) {
+      notifyWarning("El carrito está vacío");
+      return;
+    }
+    if (!selectedCustomer) {
+      notifyWarning("Debe seleccionar un cliente antes de proceder al pago");
+      return;
+    }
+    setSplitBillDialogIsOpen(true);
+  }, [cart.length, selectedCustomer, notifyWarning]);
+
   const onConfirmSale = useCallback(async (
     method: PaymentMethod, 
     amountReceived: number, 
@@ -111,6 +124,7 @@ export function usePOSPage() {
     selectedProduct, setSelectedProduct,
     customizeDialogIsOpen, setCustomizeDialogIsOpen,
     paymentDialogIsOpen, setPaymentDialogIsOpen,
+    splitBillDialogIsOpen, setSplitBillDialogIsOpen,
     receiptDialogIsOpen, setReceiptDialogIsOpen,
     lastOrder, setLastOrder,
     defaultPaymentMethod, setDefaultPaymentMethod,
@@ -118,7 +132,7 @@ export function usePOSPage() {
     searchInputRef,
     isMobile,
     viewMode, setViewMode,
-    handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, onConfirmSale,
+    handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, handleOpenSplitBillDialog, onConfirmSale,
     availableSizes, availableToppings, updateItemCustomization
   };
 }

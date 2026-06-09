@@ -1,7 +1,7 @@
 import { formatCOP } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Receipt, Wallet, CreditCard, Smartphone } from "lucide-react";
+import { Receipt, Wallet, CreditCard, Smartphone, Split } from "lucide-react";
 
 interface CartTotalsProps {
   subtotal: number;
@@ -13,6 +13,7 @@ interface CartTotalsProps {
   total: number;
   onQuickPayment: (method: string) => void;
   onCheckout: () => void;
+  onSplitPayment: () => void;
 }
 
 export function CartTotals({
@@ -24,7 +25,8 @@ export function CartTotals({
   discountAmount,
   total,
   onQuickPayment,
-  onCheckout
+  onCheckout,
+  onSplitPayment
 }: CartTotalsProps) {
   return (
     <div className="space-y-6 pt-6 border-t border-white/5">
@@ -76,11 +78,11 @@ export function CartTotals({
       </div>
 
       {/* Payment Methods - Iconic Grid */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-2">
          <Button 
            variant="outline" 
            onClick={() => onQuickPayment('cash')}
-           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group font-dm-sans"
+           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group font-dm-sans px-1"
          >
             <Wallet size={20} className="text-emerald-500 group-hover:scale-110 transition-transform" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Efectivo</span>
@@ -88,7 +90,7 @@ export function CartTotals({
          <Button 
            variant="outline" 
            onClick={() => onQuickPayment('card')}
-           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group font-dm-sans"
+           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group font-dm-sans px-1"
          >
             <CreditCard size={20} className="text-blue-500 group-hover:scale-110 transition-transform" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Tarjeta</span>
@@ -96,10 +98,18 @@ export function CartTotals({
          <Button 
            variant="outline" 
            onClick={() => onQuickPayment('transfer')}
-           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all group font-dm-sans"
+           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all group font-dm-sans px-1"
          >
             <Smartphone size={20} className="text-purple-500 group-hover:scale-110 transition-transform" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Transf.</span>
+         </Button>
+         <Button 
+           variant="outline" 
+           onClick={onSplitPayment}
+           className="h-20 bg-muted/10 border-border rounded-2xl flex flex-col gap-2 hover:border-amber-500/30 hover:bg-amber-500/5 transition-all group font-dm-sans px-1"
+         >
+            <Split size={20} className="text-amber-500 group-hover:scale-110 transition-transform" />
+            <span className="text-[9px] font-bold uppercase tracking-widest">Dividir</span>
          </Button>
       </div>
 

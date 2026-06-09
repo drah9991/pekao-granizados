@@ -32,6 +32,7 @@ interface CartSummaryProps {
   total: number;
   onCheckout: () => void;
   onQuickPayment: (method: string) => void;
+  onSplitPayment: () => void;
   onClearCart: () => void;
   restoreLastCart?: () => void;
   selectedCustomer: Customer | null;
@@ -54,6 +55,7 @@ export default function CartSummary({
   total,
   onCheckout,
   onQuickPayment,
+  onSplitPayment,
   onClearCart,
   selectedCustomer,
   setSelectedCustomer,
@@ -98,6 +100,7 @@ export default function CartSummary({
         total={total}
         onQuickPayment={onQuickPayment}
         onCheckout={onCheckout}
+        onSplitPayment={onSplitPayment}
       />
     </div>
   );

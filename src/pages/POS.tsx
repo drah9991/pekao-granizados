@@ -12,19 +12,21 @@ import SyncDrawer from "@/components/pos/SyncDrawer";
 
 const ProductCustomizationDialog = lazy(() => import("@/components/pos/ProductCustomizationDialog"));
 const PaymentDialog = lazy(() => import("@/components/pos/PaymentDialog"));
+const SplitBillDialog = lazy(() => import("@/components/pos/SplitBillDialog"));
 const ReceiptDialog = lazy(() => import("@/components/pos/ReceiptDialog"));
 
 export default function POS() {
   const {
     cart, updateQuantity, removeItem, subtotal, discount, setDiscount, discountType, setDiscountType,
     discountAmount, total, resetCart, restoreLastCart, selectedCustomer, setSelectedCustomer,
-    isProcessing, isOnline, pendingOrdersCount, pendingOrders, handleSync, checkPendingOrders,
+    isProcessing, isOnline, pendingOrdersCount, pendingOrders, processSale, handleSync, checkPendingOrders,
     selectedProduct, customizeDialogIsOpen, setCustomizeDialogIsOpen,
     paymentDialogIsOpen, setPaymentDialogIsOpen,
+    splitBillDialogIsOpen, setSplitBillDialogIsOpen,
     receiptDialogIsOpen, setReceiptDialogIsOpen,
     lastOrder, setLastOrder,
     defaultPaymentMethod, activeCategoryIndex, searchInputRef, viewMode, setViewMode,
-    handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, onConfirmSale,
+    handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, handleOpenSplitBillDialog, onConfirmSale,
     availableSizes, availableToppings, updateItemCustomization
   } = usePOSPage();
 
@@ -116,6 +118,7 @@ export default function POS() {
             total={total}
             onCheckout={() => handleOpenPaymentDialog()}
             onQuickPayment={(method) => handleOpenPaymentDialog(method as PaymentMethod)}
+            onSplitPayment={handleOpenSplitBillDialog}
             onClearCart={() => {
                resetCart();
                toast("Carrito vaciado");
@@ -145,6 +148,18 @@ export default function POS() {
           onConfirmPayment={onConfirmSale}
           isProcessing={isProcessing}
           defaultMethod={defaultPaymentMethod}
+        />
+
+        <SplitBillDialog
+          isOpen={splitBillDialogIsOpen}
+          onClose={() => setSplitBillDialogIsOpen(false)}
+          cart={cart}
+          subtotal={subtotal}
+          discountAmount={discountAmount}
+          total={total}
+          selectedCustomer={selectedCustomer}
+          processSale={processSale}
+          resetCart={resetCart}
         />
 
         <ReceiptDialog
