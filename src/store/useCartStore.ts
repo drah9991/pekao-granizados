@@ -155,7 +155,7 @@ export const useCartStore = create<CartStoreState>()(
         const trackMixture = typeCfg?.track_mixture_inventory || product.type === 'granizado' || product.category === 'Granizado';
 
         const isConfigurable = product.type !== 'sachet' && product.type !== 'sweet';
-        const customizationId = (customized || isConfigurable) ? `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` : product.id;
+        const customizationId = (customized || isConfigurable) ? `${product.id}-${Date.now()}-${crypto.randomUUID()}` : product.id;
 
         set(state => {
           const existingItemIndex = state.cart.findIndex(item => item.id === customizationId);
