@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { TurnStatusChip } from "@/components/TurnStatusChip";
+import { ActiveShiftCard } from "@/components/ActiveShiftCard";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -96,7 +96,7 @@ export default function CashRegister() {
             
             {/* Turn Controls specifically placed here for mobile/desktop visibility */}
             <div className="w-full sm:w-auto max-w-[300px] bg-black/20 rounded-2xl border border-white/5 backdrop-blur-sm mt-2">
-              <TurnStatusChip />
+              <ActiveShiftCard />
             </div>
           </div>
         </motion.div>

@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useTurn } from "@/hooks/useTurn";
-import { TurnStatusChip } from "@/components/TurnStatusChip";
+import { SidebarHeader } from "./SidebarHeader";
+import { ActiveShiftCard } from "./ActiveShiftCard";
 import NotificationCenter from "@/components/pos/NotificationCenter";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertManager } from "./alerts/AlertManager";
@@ -360,29 +361,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="p-8 border-b border-sidebar-border">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-glow transition-all hover:scale-105">
-              {isLoadingBranding ? (
-                <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-              ) : optimizedLogoUrl ? (
-                <img 
-                  src={optimizedLogoUrl} 
-                  alt="Logo" 
-                  className="max-w-full max-h-full object-contain p-2" 
-                  loading="eager"
-                  fetchPriority="high"
-                />
-              ) : (
-                <IceCream className="w-6 h-6 text-white" />
-              )}
-            </div>
-            <div>
-              <span className="text-lg font-extrabold text-foreground tracking-tight font-dm-sans block">{storeName || "OASIS EÓN HUB"}</span>
-              <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Quantum Hub OS</p>
-            </div>
-          </div>
-        </div>
+        <SidebarHeader />
 
         <nav className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
           {visibleGroups.map((group, groupIdx) => (
@@ -515,7 +494,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         </nav>
 
         <div className="p-5 border-t border-border/30 bg-muted/40 backdrop-blur-sm">
-          <TurnStatusChip />
+          <ActiveShiftCard className="p-0" />
           <div className="flex items-center justify-between mb-3 mt-2">
             <span className="text-sm font-medium text-sidebar-foreground/60">Modo Oscuro</span>
             <ThemeToggle />

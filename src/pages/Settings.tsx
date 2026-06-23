@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useConfigStore } from "@/store/useConfigStore";
 
 // Lazy loading components for performance optimization
-const BrandingSettings = lazy(() => import("@/components/settings/BrandingSettings"));
+const SettingsBranding = lazy(() => import("@/components/settings/SettingsBranding"));
 const RolesSettings = lazy(() => import("@/components/settings/RolesSettings"));
 const BusinessSettings = lazy(() => import("@/components/settings/BusinessSettings"));
 const ReceiptTemplateSettings = lazy(() => import("@/components/settings/ReceiptTemplateSettings"));
@@ -109,7 +109,7 @@ export default function Settings() {
                 <Suspense fallback={<TabLoadingSkeleton />}>
                     <Tabs value={activeTab} className="w-full">
                         <TabsContent value="branding" className="m-0 animate-pro-in">
-                            <BrandingSettings />
+                            <SettingsBranding />
                         </TabsContent>
 
                         <TabsContent value="roles" className="m-0 animate-pro-in">
