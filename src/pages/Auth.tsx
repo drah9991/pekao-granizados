@@ -11,7 +11,7 @@ import { MagneticButton } from "@/components/ui/MagneticButton";
 
 
 export default function Auth() {
-  const { logoUrl, isLoadingBranding } = useBranding();
+  const { logoUrl, brandName, isLoadingBranding } = useBranding();
   const { 
     isLoading, rememberMe, setRememberMe, handleLogin, handleSignup 
   } = useAuthPage();
@@ -38,7 +38,11 @@ export default function Auth() {
           </MagneticButton>
           <MagneticButton distance={0.2}>
             <h1 className="text-3xl sm:text-6xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground mb-3">
-              OASIS EÓN <span className="text-primary text-glow">HUB</span>
+              {brandName ? (
+                <>{brandName.toUpperCase()}</>
+              ) : (
+                <>PEKAO <span className="text-primary text-glow">CENTRAL</span></>
+              )}
             </h1>
           </MagneticButton>
           <p className="text-[11px] font-black uppercase tracking-[0.5em] text-primary/60 font-space-grotesk italic">
@@ -80,7 +84,7 @@ export default function Auth() {
         
         <div className="mt-12 text-center">
             <p className="text-[9px] font-black uppercase tracking-[0.6em] text-muted-foreground/40 font-space-grotesk italic">
-                Oasis Eón Hub • Sistema de Inteligencia Operativa • v2.0 Pro Max
+                {brandName || "Pekao Granizados"} • Sistema de Inteligencia Operativa • v2.0 Pro Max
             </p>
         </div>
       </div>

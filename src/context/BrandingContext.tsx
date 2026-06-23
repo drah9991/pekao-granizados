@@ -10,6 +10,7 @@ interface BrandingContextType {
   borderColor: string;
   isLoadingBranding: boolean;
   refreshBranding: () => void;
+  brandName: string | null;
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
@@ -81,6 +82,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState<string>("#700de7");
   const [borderColor, setBorderColor] = useState<string>("");
+  const [brandName, setBrandName] = useState<string | null>(null);
   const [isLoadingBranding, setIsLoadingBranding] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -100,7 +102,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         try {
           const { data: firstStore } = await supabase
             .from('stores')
-            .select('id')
+            .select('id, name')
             .limit(1)
             .maybeSingle();
           if (firstStore) {
@@ -114,7 +116,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
       if (targetStoreId) {
         const { data: store, error: storeError } = await supabase
           .from('stores')
-          .select('config')
+          .select('config, name')
           .eq('id', targetStoreId)
           .maybeSingle();
 
@@ -134,11 +136,13 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
       setLogoUrl(finalLogo);
       setPrimaryColor(finalHex);
       setBorderColor(finalBorder);
+      setBrandName(store ? store.name : null);
       applyAtomicPalette(finalHex, finalBorder);
 
     } catch (error: unknown) {
       console.error('Error loading branding settings:', error);
       applyAtomicPalette("#700de7");
+      setBrandName(null);
     } finally {
       setIsLoadingBranding(false);
     }
@@ -171,7 +175,7 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <BrandingContext.Provider value={{ logoUrl, primaryColor, borderColor, isLoadingBranding, refreshBranding }}>
+    <BrandingContext.Provider value={{ logoUrl, primaryColor, borderColor, isLoadingBranding, refreshBranding, brandName }}>
       {children}
     </BrandingContext.Provider>
   );

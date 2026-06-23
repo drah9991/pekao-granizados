@@ -40,7 +40,7 @@ export default function SignupForm({ isLoading, onSignup }: SignupFormProps) {
             <Input
                 id="signup-email"
                 type="email"
-                placeholder="OPERADOR@OASIS.COM"
+                placeholder="OPERADOR@PEKAO.COM"
                 required
                 disabled={isLoading}
                 value={email}

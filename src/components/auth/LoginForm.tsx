@@ -54,7 +54,7 @@ export default function LoginForm({ isLoading, onLogin, rememberMe, onRememberMe
             <Input
                 id="email"
                 type="email"
-                placeholder="OPERADOR@OASIS.COM"
+                placeholder="OPERADOR@PEKAO.COM"
                 disabled={isLoading}
                 {...register("email")}
                 className={cn(
