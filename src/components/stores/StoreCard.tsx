@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Store as StoreIcon, Settings as SettingsIcon, Trash2, MapPin, Percent, ShieldCheck } from "lucide-react";
+import { Store as StoreIcon, Settings as SettingsIcon, Trash2, MapPin, Percent, ShieldCheck, Power, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StoreCardProps {
@@ -9,9 +9,13 @@ interface StoreCardProps {
   idx: number;
   onEdit: (s: Record<string, unknown>) => void;
   canManage: boolean;
+  isActive: boolean;
+  canSwitch: boolean;
+  onSwitch: (id: string) => void;
+  isSwitching?: boolean;
 }
 
-export default function StoreCard({ store, idx, onEdit, canManage }: StoreCardProps) {
+export default function StoreCard({ store, idx, onEdit, canManage, isActive, canSwitch, onSwitch, isSwitching = false }: StoreCardProps) {
   return (
     <motion.div
         layout
@@ -19,25 +23,59 @@ export default function StoreCard({ store, idx, onEdit, canManage }: StoreCardPr
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ delay: idx * 0.03 }}
-        className="bg-muted border border-border rounded-[3rem] p-10 glass-pro hover:bg-muted/80 hover:border-primary/20 hover:shadow-pro transition-all group relative overflow-hidden"
+        className={cn(
+          "bg-muted border rounded-[3rem] p-10 glass-pro hover:bg-muted/80 transition-all group relative overflow-hidden",
+          isActive 
+            ? "border-primary/50 shadow-glow-pro bg-primary/5" 
+            : "border-border hover:border-primary/20 hover:shadow-pro"
+        )}
     >
         <div className="flex flex-col gap-8 relative z-10">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-glow-pro group-hover:scale-110 transition-transform duration-500">
-                        <StoreIcon className="w-8 h-8 text-primary" />
+                    <div className={cn(
+                      "w-16 h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500 border",
+                      isActive
+                        ? "bg-primary/20 border-primary shadow-glow-pro"
+                        : "bg-primary/10 border-primary/20"
+                    )}>
+                        <StoreIcon className="w-8 h-8 text-primary animate-pulse" />
                     </div>
                     <div>
                         <h3 className="text-xl lg:text-3xl font-black italic font-space-grotesk text-foreground tracking-tighter group-hover:text-primary transition-colors truncate pr-2">
                             {store.name}
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-glow-pro" />
-                            <span className="text-[9px] font-black text-emerald-500 uppercase italic tracking-widest leading-none">NODO ACTIVO</span>
+                            <span className={cn(
+                              "w-2 h-2 rounded-full",
+                              isActive ? "bg-emerald-500 animate-pulse shadow-glow-pro" : "bg-muted-foreground/30"
+                            )} />
+                            <span className={cn(
+                              "text-[9px] font-black uppercase italic tracking-widest leading-none",
+                              isActive ? "text-emerald-500" : "text-muted-foreground/50"
+                            )}>
+                              {isActive ? "NODO ACTIVO" : "NODO AUXILIAR"}
+                            </span>
                         </div>
                     </div>
                 </div>
                 <div className="flex gap-3">
+                    {!isActive && canSwitch && (
+                      <Button
+                        variant="ghost" 
+                        size="icon" 
+                        className="w-12 h-12 rounded-2xl bg-muted border border-border hover:bg-primary/20 hover:text-primary transition-all shadow-pro text-muted-foreground/80 hover:text-primary"
+                        onClick={() => onSwitch(store.id as string)}
+                        disabled={isSwitching}
+                        title="Conectarse a este nodo"
+                      >
+                        {isSwitching ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <Power className="w-5 h-5" />
+                        )}
+                      </Button>
+                    )}
                     <Button
                         variant="ghost" size="icon" className="w-12 h-12 rounded-2xl bg-muted border border-border hover:bg-primary/20 hover:text-primary transition-all shadow-pro"
                         onClick={() => onEdit(store)}

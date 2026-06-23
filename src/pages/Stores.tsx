@@ -9,6 +9,7 @@ import StoreCard from "@/components/stores/StoreCard";
 import StoreFormDialog from "@/components/stores/StoreFormDialog";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,10 +23,11 @@ const itemVariants = {
 
 export default function Stores() {
   const { stores, loading, isProcessing, refreshStores } = useAdministration();
-  const { role: currentUserRole } = useAuth();
+  const { storeId, switchStore, userRole: currentUserRole } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [storeDialogIsOpen, setStoreDialogIsOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Record<string, unknown> | null>(null);
+  const [switchingStoreId, setSwitchingStoreId] = useState<string | null>(null);
 
   const filteredStores = stores.filter(s =>
     (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -33,6 +35,24 @@ export default function Stores() {
   );
 
   const canManageStores = currentUserRole === "admin" || currentUserRole === "manager";
+  const canSwitchAnyStore = currentUserRole === "admin" || currentUserRole === "manager" || currentUserRole === "owner";
+
+  const handleSwitchStore = async (newStoreId: string) => {
+    setSwitchingStoreId(newStoreId);
+    try {
+      const switchPromise = switchStore(newStoreId);
+      toast.promise(switchPromise, {
+        loading: "Reconectando nodo...",
+        success: "Nodo conmutado exitosamente",
+        error: "Error al reconectar nodo",
+      });
+      await switchPromise;
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSwitchingStoreId(null);
+    }
+  };
 
   return (
     <Layout>
@@ -109,15 +129,22 @@ export default function Stores() {
            ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                     <AnimatePresence mode="popLayout">
-                        {filteredStores.map((store, idx) => (
-                            <StoreCard 
-                                key={store.id} 
-                                store={store} 
-                                idx={idx} 
-                                onEdit={(s) => { setEditingStore(s); setStoreDialogIsOpen(true); }}
-                                canManage={canManageStores}
-                            />
-                        ))}
+                        {filteredStores.map((store, idx) => {
+                            const isCurrentActive = store.id === storeId;
+                            return (
+                                <StoreCard 
+                                    key={store.id} 
+                                    store={store} 
+                                    idx={idx} 
+                                    onEdit={(s) => { setEditingStore(s); setStoreDialogIsOpen(true); }}
+                                    canManage={canManageStores}
+                                    isActive={isCurrentActive}
+                                    canSwitch={canSwitchAnyStore}
+                                    onSwitch={handleSwitchStore}
+                                    isSwitching={switchingStoreId === store.id}
+                                />
+                            );
+                        })}
                     </AnimatePresence>
                 </div>
            )}

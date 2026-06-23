@@ -22,6 +22,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useBranding } from "@/context/BrandingContext";
 import { useAuth } from "@/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { useTurn } from "@/hooks/useTurn";
 import { TurnStatusChip } from "@/components/TurnStatusChip";
 import NotificationCenter from "@/components/pos/NotificationCenter";
@@ -105,7 +112,40 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
     return logoUrl;
   }, [logoUrl]);
 
-  const { userRole, isLoading: isLoadingAuth } = useAuth();
+  const { storeId, storeName, switchStore, userRole, isLoading: isLoadingAuth } = useAuth();
+  const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
+  const [isSwitchingNode, setIsSwitchingNode] = useState(false);
+  const canSwitchStore = userRole === "admin" || userRole === "manager" || userRole === "owner";
+
+  useEffect(() => {
+    if (canSwitchStore) {
+      supabase
+        .from("stores")
+        .select("id, name")
+        .order("name")
+        .then(({ data }) => {
+          if (data) setStores(data);
+        });
+    }
+  }, [userRole, canSwitchStore]);
+
+  const handleQuickSwitch = async (newStoreId: string) => {
+    if (newStoreId === storeId || isSwitchingNode) return;
+    setIsSwitchingNode(true);
+    try {
+      const switchPromise = switchStore(newStoreId);
+      toast.promise(switchPromise, {
+        loading: "Reconectando nodo...",
+        success: "Nodo conmutado exitosamente",
+        error: "Error al reconectar nodo",
+      });
+      await switchPromise;
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSwitchingNode(false);
+    }
+  };
   const { activeTurn, isLoading: isLoadingTurn } = useTurn();
   const lowStockCount = useLowStockCount();
   const { showCriticalBanner, hideCriticalBanner } = useAlerts();
@@ -239,6 +279,65 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             </span>
           </div>
         </div>
+        {storeId && (
+          <div className="flex items-center gap-2 px-3 py-1 border-r border-border/50 mr-1">
+            {canSwitchStore ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button 
+                    disabled={isSwitchingNode}
+                    className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity focus:outline-none group"
+                  >
+                    <Building2 className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+                    <div className="flex flex-col items-start">
+                      <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/60 leading-none mb-0.5 flex items-center gap-1">
+                        NODO <ChevronDown className="w-2.5 h-2.5 text-muted-foreground/40" />
+                      </span>
+                      <span className="text-[10px] font-black text-primary leading-none uppercase italic font-space-grotesk max-w-[120px] truncate">
+                        {storeName || 'CARGANDO...'}
+                      </span>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-background/95 backdrop-blur-md border border-border rounded-xl shadow-xl mt-2 p-1.5 space-y-1">
+                  <div className="px-2.5 py-1.5 text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest border-b border-border/30">
+                    CONMUTAR NODO
+                  </div>
+                  {stores.map((s) => (
+                    <DropdownMenuItem
+                      key={s.id}
+                      onClick={() => handleQuickSwitch(s.id)}
+                      disabled={s.id === storeId || isSwitchingNode}
+                      className={cn(
+                        "flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-black uppercase tracking-wider italic cursor-pointer transition-colors",
+                        s.id === storeId
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <span className="truncate">{s.name}</span>
+                      {s.id === storeId && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-glow-pro" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-muted-foreground/40" />
+                <div className="flex flex-col items-start">
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/40 leading-none mb-0.5">
+                    NODO
+                  </span>
+                  <span className="text-[10px] font-black text-muted-foreground/60 leading-none uppercase italic font-space-grotesk max-w-[120px] truncate">
+                    {storeName || 'CARGANDO...'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex items-center px-1 gap-1 border-r border-white/5 pr-2 mr-1">
           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg" onClick={() => setUiScale(s => Math.max(50, s - 10))} aria-label="Disminuir escala de interfaz">
             <Minus className="w-3 h-3" />
