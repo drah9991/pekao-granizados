@@ -101,7 +101,7 @@ export const useConfigStore = create<ConfigStoreState>((set) => ({
       set({ storeConfig: updates });
     } catch (err: unknown) {
       console.error("Error updating store config:", err);
-      toast.error("Error al actualizar la configuración de tienda.");
+      toast.error("Error al actualizar la configuración de sucursal.");
       throw err;
     }
   },

@@ -60,7 +60,7 @@ export function usePOS() {
 
     try {
       if (!user) throw new Error("Usuario no autenticado.");
-      if (!storeId) throw new Error("No se pudo obtener la información de la tienda.");
+      if (!storeId) throw new Error("No se pudo obtener la información de la sucursal.");
 
       if (!activeTurn || activeTurn.status === 'paused') {
         notifyCritical("Debes tener un turno activo para procesar ventas.");

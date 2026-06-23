@@ -83,8 +83,8 @@ export const useTurnStore = create<TurnStoreState>((set, get) => ({
       throw new Error("Usuario no encontrado");
     }
     if (!storeId) {
-      toast.error("No tienes una tienda asignada.");
-      throw new Error("Tienda no asignada");
+      toast.error("No tienes una sucursal asignada.");
+      throw new Error("Sucursal no asignada");
     }
 
     const { error } = await typedFrom.cash_turns()
@@ -154,7 +154,7 @@ export const useTurnStore = create<TurnStoreState>((set, get) => ({
 
     if (error) {
       if (error.message.includes('unique_active_turn')) {
-        toast.error("Error: Ya hay un turno activo en esta tienda.");
+        toast.error("Error: Ya hay un turno activo en esta sucursal.");
       } else {
         toast.error("Error al reabrir el turno: " + error.message);
       }

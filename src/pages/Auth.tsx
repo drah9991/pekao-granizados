@@ -28,7 +28,7 @@ export default function Auth() {
             ) : logoUrl ? (
               <img 
                 src={logoUrl} 
-                alt="Pekao Logo" 
+                alt="Oasis Logo" 
                 className="max-w-[70%] max-h-[70%] object-contain" 
                 loading="eager"
               />
@@ -38,7 +38,7 @@ export default function Auth() {
           </MagneticButton>
           <MagneticButton distance={0.2}>
             <h1 className="text-3xl sm:text-6xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground mb-3">
-              PEKAO <span className="text-primary text-glow">CENTRAL</span>
+              OASIS EÓN <span className="text-primary text-glow">HUB</span>
             </h1>
           </MagneticButton>
           <p className="text-[11px] font-black uppercase tracking-[0.5em] text-primary/60 font-space-grotesk italic">
@@ -80,7 +80,7 @@ export default function Auth() {
         
         <div className="mt-12 text-center">
             <p className="text-[9px] font-black uppercase tracking-[0.6em] text-muted-foreground/40 font-space-grotesk italic">
-                Pekao Granizados • Sistema de Inteligencia Operativa • v2.0 Pro Max
+                Oasis Eón Hub • Sistema de Inteligencia Operativa • v2.0 Pro Max
             </p>
         </div>
       </div>

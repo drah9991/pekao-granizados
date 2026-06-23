@@ -166,7 +166,7 @@ export default function BusinessSettings() {
                 id="store-name"
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value.toUpperCase())}
-                placeholder="EJ: PEKAO GRANIZADOS - CENTRO"
+                placeholder="EJ: OASIS HUB - CENTRAL"
                 className="h-16 bg-white/5 border-white/10 rounded-2xl text-[11px] font-black uppercase italic tracking-widest font-space-grotesk focus:ring-primary/20 shadow-pro transition-all"
               />
             </div>
@@ -255,7 +255,7 @@ export default function BusinessSettings() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="CONTACTO@PEKAO.COM"
+                    placeholder="CONTACTO@OASIS.COM"
                     className="h-16 bg-white/5 border-white/10 rounded-2xl text-[11px] font-black uppercase italic font-space-grotesk focus:ring-amber-500/20 shadow-pro pl-12"
                 />
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />

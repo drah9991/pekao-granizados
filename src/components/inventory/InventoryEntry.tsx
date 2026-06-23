@@ -125,7 +125,7 @@ export default function InventoryEntry({ storeId, onSuccess }: InventoryEntryPro
       }
 
       if (!activeStoreId) {
-        toast.error("Selecciona una tienda para continuar");
+        toast.error("Selecciona una sucursal para continuar");
         setIsProcessing(false);
         return;
       }
@@ -252,10 +252,10 @@ export default function InventoryEntry({ storeId, onSuccess }: InventoryEntryPro
           </div>
           {userRole === 'admin' && (
             <div className="mt-4 min-w-[200px]">
-              <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Tienda Destino (Admin)</Label>
+              <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Sucursal Destino (Admin)</Label>
               <Select value={activeStoreId} onValueChange={setActiveStoreId}>
                 <SelectTrigger className="h-8 text-[10px] font-bold bg-muted/40 border-white/5">
-                  <SelectValue placeholder="Seleccionar Tienda" />
+                  <SelectValue placeholder="Seleccionar Sucursal" />
                 </SelectTrigger>
                 <SelectContent>
                   {allStores.map(s => (

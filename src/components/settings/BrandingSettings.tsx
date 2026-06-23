@@ -97,7 +97,7 @@ export default function BrandingSettings() {
 
   const handleSave = async () => {
     if (!storeId) {
-      toast.error("Primero debes crear o seleccionar una tienda.");
+      toast.error("Primero debes crear o seleccionar una sucursal.");
       return;
     }
 
@@ -235,7 +235,7 @@ export default function BrandingSettings() {
               <div className="space-y-2">
                 <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">NOMBRE DEL NUEVO NODO</Label>
                 <Input
-                    placeholder="EJ: PEKAO CENTRO MATRIX"
+                    placeholder="EJ: OASIS CENTRO CORE"
                     value={newStoreName}
                     onChange={(e) => setNewStoreName(e.target.value.toUpperCase())}
                     disabled={isCreatingStore}
@@ -273,115 +273,113 @@ export default function BrandingSettings() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Logo Card - Bento Wide */}
-        <Card className="lg:col-span-12 bg-[#1C1F26] border border-white/5 rounded-[3rem] shadow-pro glass-pro overflow-hidden group">
-          <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none group-hover:scale-125 transition-transform duration-1000">
+        {/* Logo Card - Bento Half */}
+        <Card className="lg:col-span-6 bg-white/5 border border-white/10 rounded-3xl shadow-pro backdrop-blur-md overflow-hidden group p-6 flex flex-col justify-between">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.02] pointer-events-none group-hover:scale-125 transition-transform duration-1000">
               <ImageIcon className="w-32 h-32 text-primary" />
           </div>
-          <CardHeader className="p-8 pb-4">
+          <CardHeader className="p-0 pb-4">
             <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center text-primary shadow-glow-pro">
                     <ImageIcon className="w-5 h-5" />
                 </div>
                 <div>
-                   <CardTitle className="text-xl font-black italic uppercase font-space-grotesk tracking-widest text-white">Visual Identity Assets</CardTitle>
-                   <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic tracking-widest">Logo Maestro • Alpha Channel Support</CardDescription>
+                   <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Visual Identity Assets</CardTitle>
+                   <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic leading-none">Logo Maestro • Alpha Channel</CardDescription>
                 </div>
             </div>
           </CardHeader>
-          <CardContent className="p-8 pt-4">
-            <div className="flex flex-col md:flex-row items-center gap-12">
-              <div className="relative group/preview">
-                  <div className={cn(
-                    "w-64 h-64 rounded-[2.5rem] border-2 border-dashed border-white/10 overflow-hidden flex items-center justify-center p-8 transition-all duration-700",
-                    logoPreview ? "bg-white/[0.02] border-primary/20" : "bg-white/5"
-                  )}>
-                    <AnimatePresence mode="wait">
-                        {logoPreview ? (
-                            <motion.img 
-                                key={logoPreview}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 1.1 }}
-                                src={logoPreview} 
-                                alt="Logo preview" 
-                                className="max-w-full max-h-full object-contain filter drop-shadow-2xl"
-                            />
-                        ) : (
-                            <motion.div 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="flex flex-col items-center gap-3 opacity-20"
-                            >
-                                <Upload className="w-8 h-8" />
-                                <span className="text-[9px] font-black uppercase tracking-widest italic">Waiting Data...</span>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                  </div>
-                  {logoPreview && (
-                      <Button
-                        variant="ghost" size="icon" 
-                        onClick={() => {setLogoFile(null); setLogoPreview("");}}
-                        className="absolute -top-3 -right-3 w-10 h-10 rounded-xl bg-rose-500/20 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all shadow-pro backdrop-blur-md opacity-0 group-hover/preview:opacity-100"
-                      >
-                          <Trash2 className="w-4 h-4" />
-                      </Button>
-                  )}
-              </div>
-              
-              <div className="flex-1 space-y-8 w-full">
-                  <div className="space-y-4 rounded-[2rem] bg-white/[0.02] border border-white/5 p-8">
-                      <div className="flex items-center gap-3 mb-2">
-                          <Check className="w-4 h-4 text-emerald-500" />
-                          <p className="text-[10px] font-black text-white/60 uppercase italic tracking-widest font-space-grotesk leading-none">Especificaciones Técnicas</p>
+          <CardContent className="p-0 pt-4 flex flex-col items-center gap-6">
+            <div className="relative group/preview w-full flex justify-center">
+                <div className={cn(
+                  "w-full max-w-[240px] h-48 rounded-2xl border-2 border-dashed border-white/10 overflow-hidden flex items-center justify-center p-6 transition-all duration-700",
+                  logoPreview ? "bg-white/[0.02] border-primary/20" : "bg-white/5"
+                )}>
+                  <AnimatePresence mode="wait">
+                      {logoPreview ? (
+                          <motion.img 
+                              key={logoPreview}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 1.1 }}
+                              src={logoPreview} 
+                              alt="Logo preview" 
+                              className="max-w-full max-h-full object-contain filter drop-shadow-2xl"
+                          />
+                      ) : (
+                          <motion.div 
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className="flex flex-col items-center gap-3 opacity-20"
+                          >
+                              <Upload className="w-8 h-8" />
+                              <span className="text-[9px] font-black uppercase tracking-widest italic">Waiting Data...</span>
+                          </motion.div>
+                      )}
+                  </AnimatePresence>
+                </div>
+                {logoPreview && (
+                    <Button
+                      variant="ghost" size="icon" 
+                      onClick={() => {setLogoFile(null); setLogoPreview("");}}
+                      className="absolute -top-3 -right-3 w-10 h-10 rounded-xl bg-rose-500/20 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all shadow-pro backdrop-blur-md opacity-0 group-hover/preview:opacity-100"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </Button>
+                )}
+            </div>
+            
+            <div className="w-full space-y-4">
+                <div className="space-y-3 rounded-2xl bg-white/[0.02] border border-white/5 p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <p className="text-[9px] font-black text-white/60 uppercase italic tracking-widest font-space-grotesk leading-none">Especificaciones</p>
+                    </div>
+                    <p className="text-[8px] text-white/30 font-bold uppercase italic leading-relaxed">
+                        Formatos: PNG (Transparente), SVG o JPG. El sistema optimizará el recurso para el punto de venta.
+                    </p>
+                    
+                    <Label htmlFor="logo-upload" className="cursor-pointer block pt-2">
+                      <div className="flex items-center justify-center gap-3 p-4 border border-dashed border-white/10 rounded-xl hover:border-primary/50 hover:bg-primary/10 transition-all group/upload shadow-pro">
+                        <Upload className="w-4 h-4 text-white/20 group-hover/upload:text-primary transition-colors" />
+                        <span className="text-[9px] font-black uppercase italic tracking-[0.2em] text-white/40 group-hover/upload:text-white transition-colors">
+                          {logoFile ? 'Actualizar Recurso' : 'Vincular Assets de Marca'}
+                        </span>
                       </div>
-                      <p className="text-[10px] text-white/30 font-bold uppercase italic leading-relaxed">
-                          Formatos admitidos: PNG (Transparente), SVG (Vectorial) o JPG de alta densidad. El sistema optimizará el recurso para todas las interfaces de punto de venta.
-                      </p>
-                      
-                      <Label htmlFor="logo-upload" className="cursor-pointer block pt-4">
-                        <div className="flex items-center justify-center gap-4 p-6 border-2 border-dashed border-white/10 rounded-2xl hover:border-primary/50 hover:bg-primary/10 transition-all group/upload shadow-pro">
-                          <Upload className="w-5 h-5 text-white/20 group-hover/upload:text-primary transition-colors" />
-                          <span className="text-[10px] font-black uppercase italic tracking-[0.3em] text-white/40 group-hover/upload:text-white transition-colors">
-                            {logoFile ? 'Actualizar Recurso' : 'Vincular Assets de Marca'}
-                          </span>
-                        </div>
-                        <Input id="logo-upload" type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
-                      </Label>
-                  </div>
-              </div>
+                      <Input id="logo-upload" type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                    </Label>
+                </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Color Card - Bento Tall */}
-        <Card className="xl:col-span-5 bg-[#1C1F26] border border-white/5 rounded-[3rem] shadow-pro glass-pro overflow-hidden">
-          <CardHeader className="p-8">
+        {/* Color Card - Bento Half */}
+        <Card className="lg:col-span-6 bg-white/5 border border-white/10 rounded-3xl shadow-pro backdrop-blur-md overflow-hidden p-6 flex flex-col justify-between">
+          <CardHeader className="p-0 pb-4">
             <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 shadow-glow-pro" style={{ color: primaryColor, backgroundColor: `${primaryColor}20` }}>
+                <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 shadow-glow-pro" style={{ color: primaryColor, backgroundColor: `${primaryColor}20`, borderColor: `${primaryColor}40` }}>
                     <Palette className="w-5 h-5" />
                 </div>
                 <div>
-                   <CardTitle className="text-xl font-black italic uppercase font-space-grotesk tracking-widest text-white">Chroma Core</CardTitle>
-                   <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic">Acento Cromático Global</CardDescription>
+                   <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Chroma Core</CardTitle>
+                   <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic leading-none">Acento Cromático Global</CardDescription>
                 </div>
             </div>
           </CardHeader>
-          <CardContent className="p-8 pt-0 space-y-8">
+          <CardContent className="p-0 pt-4 space-y-6">
             <div className="flex flex-col gap-6">
-              <div className="flex items-center gap-8 p-6 bg-white/[0.02] rounded-[2rem] border border-white/5 shadow-inner">
-                <div className="relative group">
+              <div className="flex items-center gap-6 p-4 bg-white/[0.02] rounded-2xl border border-white/5 shadow-inner">
+                <div className="relative group shrink-0">
                     <Input
                       id="primary-color"
                       type="color"
                       value={primaryColor}
                       onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="w-24 h-24 cursor-pointer rounded-3xl border-none p-0 bg-transparent shadow-pro"
+                      className="w-20 h-20 cursor-pointer rounded-2xl border-none p-0 bg-transparent shadow-pro"
                     />
-                    <div className="absolute inset-0 pointer-events-none rounded-3xl border-2 border-white/10 group-hover:border-white/30 transition-all" />
+                    <div className="absolute inset-0 pointer-events-none rounded-2xl border-2 border-white/10 group-hover:border-white/30 transition-all" />
                 </div>
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-2">
                   <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 font-space-grotesk italic">HEXADECIMAL CODE</Label>
                   <div className="relative">
                       <Input
@@ -389,23 +387,23 @@ export default function BrandingSettings() {
                         value={primaryColor}
                         onChange={(e) => setPrimaryColor(e.target.value)}
                         placeholder="#0EA5E9"
-                        className="h-12 bg-white/5 border-white/10 rounded-xl font-mono text-sm font-black text-indigo-400 uppercase italic tracking-widest focus:ring-primary/20 shadow-pro"
+                        className="h-11 bg-white/5 border-white/10 rounded-xl font-mono text-xs font-black text-indigo-400 uppercase italic tracking-widest focus:ring-primary/20 shadow-pro"
                       />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-glow-pro" style={{ backgroundColor: primaryColor }} />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full shadow-glow-pro" style={{ backgroundColor: primaryColor }} />
                   </div>
                 </div>
               </div>
               
-              <div className="space-y-4">
-                  <p className="text-[10px] font-black text-white/20 uppercase tracking-widest italic ml-1">Simulación UX/UI</p>
-                  <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3 rounded-2xl bg-white/[0.02] border border-white/5 p-4">
+                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest italic ml-1">Simulación UX/UI</p>
+                  <div className="grid grid-cols-2 gap-3">
                     <Button 
                       style={{ backgroundColor: primaryColor }}
-                      className="h-14 rounded-xl text-[9px] font-black uppercase italic tracking-widest text-white shadow-pro border-none hover:scale-105 transition-transform"
+                      className="h-12 rounded-xl text-[9px] font-black uppercase italic tracking-widest text-white shadow-pro border-none hover:scale-105 transition-transform"
                     >
                       Primary Flow
                     </Button>
-                    <Button variant="outline" style={{ borderColor: `${primaryColor}40`, color: primaryColor }} className="h-14 rounded-xl text-[9px] font-black uppercase italic tracking-widest bg-transparent hover:bg-white/5 transition-all">
+                    <Button variant="outline" style={{ borderColor: `${primaryColor}40`, color: primaryColor }} className="h-12 rounded-xl text-[9px] font-black uppercase italic tracking-widest bg-transparent hover:bg-white/5 transition-all">
                       Secondary Vector
                     </Button>
                   </div>
@@ -414,33 +412,33 @@ export default function BrandingSettings() {
           </CardContent>
         </Card>
 
-        {/* Border Config Card */}
-        <Card className="xl:col-span-12 bg-[#1C1F26] border border-white/5 rounded-[3rem] shadow-pro glass-pro overflow-hidden">
-          <CardHeader className="p-8">
+        {/* Border Config Card - Bento Half */}
+        <Card className="lg:col-span-6 bg-white/5 border border-white/10 rounded-3xl shadow-pro backdrop-blur-md overflow-hidden p-6 flex flex-col justify-between">
+          <CardHeader className="p-0 pb-4">
             <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-500 shadow-glow-pro" style={{ color: borderColor || primaryColor, borderColor: borderColor || primaryColor + '40' }}>
                     <Zap className="w-5 h-5" />
                 </div>
                 <div>
-                   <CardTitle className="text-xl font-black italic uppercase font-space-grotesk tracking-widest text-white">Edge Matrix</CardTitle>
-                   <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic">Bordes de Componentes</CardDescription>
+                   <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Edge Matrix</CardTitle>
+                   <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic leading-none">Bordes de Componentes</CardDescription>
                 </div>
             </div>
           </CardHeader>
-          <CardContent className="p-8 pt-0 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="flex items-center gap-8 p-6 bg-white/[0.02] rounded-[2rem] border border-white/5 shadow-inner">
-                <div className="relative group">
+          <CardContent className="p-0 pt-4 space-y-6">
+            <div className="grid grid-cols-1 gap-6">
+              <div className="flex items-center gap-6 p-4 bg-white/[0.02] rounded-2xl border border-white/5 shadow-inner">
+                <div className="relative group shrink-0">
                     <Input
                       id="border-color"
                       type="color"
                       value={borderColor || primaryColor}
                       onChange={(e) => setBorderColor(e.target.value)}
-                      className="w-24 h-24 cursor-pointer rounded-3xl border-none p-0 bg-transparent shadow-pro"
+                      className="w-20 h-20 cursor-pointer rounded-2xl border-none p-0 bg-transparent shadow-pro"
                     />
-                    <div className="absolute inset-0 pointer-events-none rounded-3xl border-2 border-white/10 group-hover:border-white/30 transition-all" />
+                    <div className="absolute inset-0 pointer-events-none rounded-2xl border-2 border-white/10 group-hover:border-white/30 transition-all" />
                 </div>
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-2">
                   <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 font-space-grotesk italic">HEX BORDER CODE</Label>
                   <div className="relative">
                       <Input
@@ -448,15 +446,15 @@ export default function BrandingSettings() {
                         value={borderColor}
                         onChange={(e) => setBorderColor(e.target.value)}
                         placeholder="Automático"
-                        className="h-12 bg-white/5 border-white/10 rounded-xl font-mono text-sm font-black text-indigo-400 uppercase italic tracking-widest focus:ring-primary/20 shadow-pro"
+                        className="h-11 bg-white/5 border-white/10 rounded-xl font-mono text-xs font-black text-indigo-400 uppercase italic tracking-widest focus:ring-primary/20 shadow-pro"
                       />
-                      {borderColor && <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-glow-pro" style={{ backgroundColor: borderColor }} />}
+                      {borderColor && <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full shadow-glow-pro" style={{ backgroundColor: borderColor }} />}
                   </div>
                 </div>
               </div>
               
-              <div className="p-6 bg-white/5 rounded-2xl border border-white/5 flex flex-col justify-center">
-                <p className="text-[10px] text-white/40 font-bold uppercase italic leading-relaxed">
+              <div className="p-4 bg-white/[0.02] rounded-2xl border border-white/5 flex flex-col justify-center min-h-[90px]">
+                <p className="text-[8px] text-white/40 font-bold uppercase italic leading-relaxed">
                   <span className="text-primary mr-1">TÉCNICA GLOW:</span> Si dejas el código vacío, el sistema activará el algoritmo de derivadas, usando una versión traslúcida del acento principal.
                 </p>
               </div>
@@ -464,26 +462,26 @@ export default function BrandingSettings() {
           </CardContent>
         </Card>
 
-        {/* Global Preview - Bento Wide */}
-        <Card className="xl:col-span-7 bg-[#1C1F26] border border-white/5 rounded-[3rem] shadow-pro glass-pro overflow-hidden relative">
-            <div className="absolute inset-0 opacity-[0.03] transition-opacity duration-1000 pointer-events-none" style={{ backgroundColor: primaryColor }} />
-            <CardHeader className="p-8">
+        {/* Global Preview - Bento Half */}
+        <Card className="lg:col-span-6 bg-white/5 border border-white/10 rounded-3xl shadow-pro backdrop-blur-md overflow-hidden relative p-6 flex flex-col justify-between">
+            <div className="absolute inset-0 opacity-[0.02] transition-opacity duration-1000 pointer-events-none" style={{ backgroundColor: primaryColor }} />
+            <CardHeader className="p-0 pb-4">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-500 shadow-glow-pro">
                         <Eye className="w-5 h-5" />
                     </div>
                     <div>
-                       <CardTitle className="text-xl font-black italic uppercase font-space-grotesk tracking-widest text-white">Real-Time Simulator</CardTitle>
-                       <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic">Previsualización de Entorno</CardDescription>
+                       <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Real-Time Simulator</CardTitle>
+                       <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic leading-none">Previsualización de Entorno</CardDescription>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-8 pt-0">
-                <div className="rounded-[2.5rem] bg-[#0A0B0F] border p-10 h-full relative overflow-hidden shadow-inner flex flex-col items-center justify-center min-h-[300px]" style={{ borderColor: borderColor || (primaryColor + '40') }}>
+            <CardContent className="p-0 pt-4 flex-1 flex flex-col justify-end">
+                <div className="rounded-2xl bg-[#0A0B0F]/90 border p-6 h-full relative overflow-hidden shadow-inner flex flex-col items-center justify-center min-h-[220px]" style={{ borderColor: borderColor || (primaryColor + '40') }}>
                     <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                    <div className="absolute -left-10 top-20 w-40 h-40 bg-primary/10 rounded-full blur-[80px] pointer-events-none" style={{ backgroundColor: `${primaryColor}20` }} />
+                    <div className="absolute -left-10 top-10 w-40 h-40 bg-primary/10 rounded-full blur-[80px] pointer-events-none" style={{ backgroundColor: `${primaryColor}20` }} />
                     
-                    <div className="flex flex-col items-center gap-10 relative z-10 w-full">
+                    <div className="flex flex-col items-center gap-6 relative z-10 w-full">
                         <AnimatePresence mode="wait">
                             {logoPreview ? (
                                 <motion.img 
@@ -491,24 +489,24 @@ export default function BrandingSettings() {
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     src={logoPreview} 
-                                    className="h-24 object-contain filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                                    className="h-16 object-contain filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
                                 />
                             ) : (
-                                <div className="h-20 w-64 bg-white/5 rounded-2xl animate-pulse flex items-center justify-center border border-white/5">
-                                    <span className="text-[8px] font-black text-white/10 uppercase italic tracking-[0.5em]">No Image Found</span>
+                                <div className="h-16 w-48 bg-white/5 rounded-xl animate-pulse flex items-center justify-center border border-white/5">
+                                    <span className="text-[8px] font-black text-white/10 uppercase italic tracking-[0.3em]">No Image Found</span>
                                 </div>
                             )}
                         </AnimatePresence>
                         
-                        <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
-                            <div className="h-1 bg-white/5 rounded-full" />
-                            <div className="h-1 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-                            <div className="h-1 bg-white/5 rounded-full" />
+                        <div className="grid grid-cols-3 gap-2 w-full max-w-[200px]">
+                            <div className="h-0.5 bg-white/5 rounded-full" />
+                            <div className="h-0.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
+                            <div className="h-0.5 bg-white/5 rounded-full" />
                         </div>
                         
                         <div className="text-center">
-                            <h4 className="text-xs font-black font-space-grotesk text-white/40 uppercase tracking-[0.4em] italic">Dashboard Alpha V2</h4>
-                            <p className="text-[8px] font-bold text-white/20 uppercase italic tracking-widest mt-2">{storeId || 'UNAUTHORIZED_NODE'}</p>
+                            <h4 className="text-[10px] font-black font-space-grotesk text-white/40 uppercase tracking-[0.3em] italic">Oasis Quantum V2</h4>
+                            <p className="text-[8px] font-bold text-white/20 uppercase italic tracking-widest mt-1">{storeId || 'UNAUTHORIZED_NODE'}</p>
                         </div>
                     </div>
                 </div>

@@ -33,19 +33,19 @@ export const useRealtimeAlerts = () => {
           switch (severity) {
             case 'info':
               notifyInfo(message);
-              sendLocalNotification("Pekao POS - Información", { body: message });
+              sendLocalNotification("Oasis POS - Información", { body: message });
               break;
             case 'warning':
               notifyWarning(message);
-              sendLocalNotification("⚠️ Alerta Pekao POS", { body: message });
+              sendLocalNotification("⚠️ Alerta Oasis POS", { body: message });
               break;
             case 'critical':
               notifyCritical(message);
-              sendLocalNotification("🚨 CRÍTICO - Pekao POS", { body: message });
+              sendLocalNotification("🚨 CRÍTICO - Oasis POS", { body: message });
               break;
             default:
               notifyInfo(message);
-              sendLocalNotification("Notificación Pekao POS", { body: message });
+              sendLocalNotification("Notificación Oasis POS", { body: message });
           }
         }
       )
@@ -67,7 +67,7 @@ export const useRealtimeAlerts = () => {
           if (stock === 0) {
             notifyWarning(`STOCK AGOTADO: ${name}`, 8000);
             sendLocalNotification("⚠️ Inventario Agotado", {
-              body: `El producto ${name} se ha quedado sin stock en la tienda.`,
+              body: `El producto ${name} se ha quedado sin stock en la sucursal.`,
               tag: `stockout-${name}`
             });
           }

@@ -47,7 +47,7 @@ export function InventoryFilters({
             <SelectValue placeholder="NODOS DE RED" />
           </SelectTrigger>
           <SelectContent className="glass-pro border-border rounded-3xl">
-            <SelectItem value="all" className="text-[10px] font-black uppercase italic">TODAS LAS TIENDAS</SelectItem>
+            <SelectItem value="all" className="text-[10px] font-black uppercase italic">TODAS LAS SUCURSALES</SelectItem>
             {stores.map((store) => (
               <SelectItem key={store.id} value={store.id} className="text-[10px] font-black uppercase italic">
                 {store.name}

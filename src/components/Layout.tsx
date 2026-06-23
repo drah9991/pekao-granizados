@@ -151,12 +151,12 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const { showCriticalBanner, hideCriticalBanner } = useAlerts();
 
   const [uiScale, setUiScale] = useState(() => {
-    const saved = localStorage.getItem('pekao_ui_scale_v4');
+    const saved = localStorage.getItem('oasis_ui_scale_v4');
     return saved ? parseInt(saved, 10) : 100;
   });
 
   useEffect(() => {
-    localStorage.setItem('pekao_ui_scale_v4', uiScale.toString());
+    localStorage.setItem('oasis_ui_scale_v4', uiScale.toString());
   }, [uiScale]);
 
   // Initialize Realtime listeners
@@ -263,10 +263,10 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
 
       {/* Floating Control Center (Top Left) */}
       <div className={cn(
-        "fixed top-4 z-[60] flex items-center gap-2 p-1.5 bg-card/80 backdrop-blur-2xl border border-border/50 rounded-2xl animate-pro-in transition-all duration-500",
+        "fixed top-4 z-[60] flex items-center gap-2 p-1.5 bg-slate-950/40 backdrop-blur-xl border border-white/10 rounded-2xl animate-pro-in transition-all duration-500",
         isSidebarOpen ? "left-[17rem]" : "left-16"
       )}>
-        <div className="flex items-center gap-3 px-3 py-1 border-r border-border/50 mr-1 hidden sm:flex">
+        <div className="flex items-center gap-3 px-3 h-8 border-r border-border/50 mr-1 hidden sm:flex justify-center">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/10">
             {userRole?.charAt(0).toUpperCase() || '?'}
           </div>
@@ -280,7 +280,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
           </div>
         </div>
         {storeId && (
-          <div className="flex items-center gap-2 px-3 py-1 border-r border-border/50 mr-1">
+          <div className="flex items-center gap-2 px-3 h-8 border-r border-border/50 mr-1 justify-center">
             {canSwitchStore ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -378,8 +378,8 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               )}
             </div>
             <div>
-              <span className="text-lg font-extrabold text-foreground tracking-tight font-dm-sans block">PEKAO</span>
-              <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Business Pro</p>
+              <span className="text-lg font-extrabold text-foreground tracking-tight font-dm-sans block">{storeName || "OASIS EÓN HUB"}</span>
+              <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Quantum Hub OS</p>
             </div>
           </div>
         </div>
@@ -404,7 +404,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                     const linkContent = (
                       <div
                         className={cn(
-                          "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden font-dm-sans",
+                          "group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden font-dm-sans",
                             isActive
                             ? "text-primary bg-primary/10"
                             : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
@@ -422,8 +422,8 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                         <item.icon className={cn(
                           "w-4 h-4 transition-all duration-300 relative z-10",
                           isActive
-                            ? "text-primary"
-                            : "text-muted-foreground/40 group-hover:text-primary"
+                            ? "text-primary opacity-100"
+                            : "text-sidebar-foreground/50 opacity-30 group-hover:opacity-100 group-hover:text-primary"
                         )} />
                         <span className="relative z-10 flex-1">{item.label}</span>
                         {isLocked && (

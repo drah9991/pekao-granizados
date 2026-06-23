@@ -129,7 +129,7 @@ export function useReports(storeId: string | null) {
 
   const handleLoadPreview = async () => {
     if (!storeId) {
-      toast.error("No se ha seleccionado una tienda");
+      toast.error("No se ha seleccionado una sucursal");
       return;
     }
 
@@ -179,7 +179,7 @@ export function useReports(storeId: string | null) {
 
   const handleExport = async (formatType: "excel" | "pdf") => {
     if (!storeId) {
-      toast.error("No se ha seleccionado una tienda");
+      toast.error("No se ha seleccionado una sucursal");
       return;
     }
 
@@ -197,7 +197,7 @@ export function useReports(storeId: string | null) {
       const config: ReportConfig = {
         title: reportType === 'sales' ? "REPORTE DE VENTAS" : reportType === 'inventory' ? "ESTADO DE INVENTARIO" : "KARDEX DE MOVIMIENTOS",
         subtitle: `${reportType === 'sales' ? 'VENTAS' : reportType === 'inventory' ? 'INVENTARIO' : 'MOVIMIENTOS'} DESDE ${format(dateRange.from, 'dd/MM/yyyy')} HASTA ${format(dateRange.to, 'dd/MM/yyyy')}`,
-        fileName: `REPORTE_PEKAO_${reportType.toUpperCase()}`,
+        fileName: `REPORTE_OASIS_${reportType.toUpperCase()}`,
         columns: filteredColumns
       };
 

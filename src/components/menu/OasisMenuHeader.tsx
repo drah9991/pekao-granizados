@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-export function PekaoMenuHeader({ storeName }: { storeName?: string }) {
+export function OasisMenuHeader({ storeName }: { storeName?: string }) {
   return (
     <header className="py-12 border-b border-white/5 relative overflow-hidden mb-12">
       {/* Texture */}

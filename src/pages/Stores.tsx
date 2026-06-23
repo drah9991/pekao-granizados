@@ -68,7 +68,7 @@ export default function Stores() {
               Red de Nodos
             </h1>
             <p className="text-primary font-black uppercase tracking-[0.3em] text-[10px] italic font-space-grotesk">
-              Maestro de Tiendas • Global Architecture Pro Max
+              Maestro de Sucursales • Global Architecture Pro Max
             </p>
           </div>
           <Button

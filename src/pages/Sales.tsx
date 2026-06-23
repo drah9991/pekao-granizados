@@ -4,6 +4,7 @@ import { SalesFilters } from "@/components/sales/SalesFilters";
 import { SalesTable } from "@/components/sales/SalesTable";
 import { OrderDetailsDialog, CancelOrderDialog, EditOrderDialog } from "@/components/sales/SalesDialogs";
 import { printReceipt } from "@/utils/Sales/printUtils";
+import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 import { Loader2, RefreshCw, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ const Sales = () => {
     testAudioChime,
     dialogs
   } = useSales();
+  const { storeName } = useAuth();
 
   return (
     <Layout>
@@ -151,7 +153,7 @@ const Sales = () => {
           order={dialogs.selectedOrder}
           isOpen={dialogs.isDetailsOpen}
           onClose={() => dialogs.setIsDetailsOpen(false)}
-          onPrint={printReceipt}
+          onPrint={(order) => printReceipt(order, storeName)}
         />
 
         <CancelOrderDialog 

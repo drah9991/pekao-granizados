@@ -375,7 +375,7 @@ export default function ReceiptTemplateSettings() {
                     )}
                     {templateData.header.show_store_name && (
                     <div className="font-black text-lg tracking-tighter italic uppercase leading-none">
-                        PEKAO GRANIZADOS
+                        OASIS EÓN HUB
                     </div>
                     )}
                     {templateData.header.show_address && (
@@ -471,7 +471,7 @@ export default function ReceiptTemplateSettings() {
                       <div className="flex flex-col items-center gap-1 border border-black p-3 bg-black/[0.02]">
                         <div className="flex items-center gap-2">
                             <Instagram className="w-4 h-4" />
-                            <span className="font-black tracking-widest text-[9px]">@PEKAOGRANIZADOS</span>
+                             <span className="font-black tracking-widest text-[9px]">@OASISEONHUB</span>
                         </div>
                         <p className="text-[7px] font-bold opacity-50">SYNC YOUR EXPERIENCE</p>
                       </div>
@@ -488,7 +488,7 @@ export default function ReceiptTemplateSettings() {
                   </div>
                   
                   <div className="pt-6 font-bold text-[8px] opacity-20 tracking-widest">
-                    POWERED BY PEKAO OS v2.0-PRO
+                     POWERED BY OASIS EÓN OS v2.0-PRO
                   </div>
                 </div>
               </motion.div>

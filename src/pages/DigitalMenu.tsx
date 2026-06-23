@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useDigitalMenu } from "@/hooks/useDigitalMenu";
 import { useAuth } from "@/context/AuthContext";
-import { PekaoMenuHeader } from "@/components/menu/PekaoMenuHeader";
-import { PekaoMenuCategory } from "@/components/menu/PekaoMenuCategory";
+import { OasisMenuHeader } from "@/components/menu/OasisMenuHeader";
+import { OasisMenuCategory } from "@/components/menu/OasisMenuCategory";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 
 export default function DigitalMenu() {
-  const { storeId, user, userRole } = useAuth();
+  const { storeId, storeName, user, userRole } = useAuth();
   const { categories, reorderCategories, loading } = useDigitalMenu(storeId);
   const [isEditingOrder, setIsEditingOrder] = useState(false);
 
@@ -48,7 +48,7 @@ export default function DigitalMenu() {
         </filter>
       </svg>
 
-      <PekaoMenuHeader />
+      <OasisMenuHeader storeName={storeName} />
 
       <main className="container max-w-7xl mx-auto px-4 md:px-8 pb-24 relative z-10">
         {canEditOrder && !loading && (
@@ -119,7 +119,7 @@ export default function DigitalMenu() {
         ) : (
           <div className="space-y-4">
             {categories.map((category) => (
-              <PekaoMenuCategory key={category.code} category={category} />
+              <OasisMenuCategory key={category.code} category={category} />
             ))}
             
             {categories.length === 0 && (

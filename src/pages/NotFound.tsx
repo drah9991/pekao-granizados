@@ -68,7 +68,7 @@ const NotFound = () => {
 
           <div className="bg-primary/5 px-8 py-6 border-t border-white/5">
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-primary/40 italic text-center">
-              Pekao Granizados POS • Secure Environment v2.0.4 • 404_NULL_POINTER
+              Oasis Eón Hub POS • Secure Environment v2.0.4 • 404_NULL_POINTER
             </p>
           </div>
         </div>

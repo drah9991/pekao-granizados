@@ -35,7 +35,7 @@ export function useAuthPage() {
 
       if (error) throw error;
 
-      toast.success("¡Bienvenido a Pekao Granizados!");
+      toast.success("¡Bienvenido a Oasis Eón Hub!");
       navigate("/dashboard");
       return true;
     } catch (error: unknown) {

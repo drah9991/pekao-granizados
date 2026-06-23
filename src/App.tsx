@@ -41,6 +41,7 @@ const InventoryManagement = lazy(() => import("./components/settings/InventoryMa
 
 const RecipeManagement = lazy(() => import("./components/settings/RecipeManagement").then(m => ({ default: m.RecipeManagement })));
 const DigitalMenu = lazy(() => import("./pages/DigitalMenu"));
+const PrintManagerModule = lazy(() => import("./pages/PrintManagerModule"));
 
 const ProductsInventoryLayout = lazy(() => import("./components/inventory/ProductsInventoryLayout").then(m => ({ default: m.ProductsInventoryLayout })));
 const RecipeBuilder = lazy(() => import("./components/inventory/RecipeBuilder").then(m => ({ default: m.RecipeBuilder })));
@@ -107,6 +108,18 @@ const App = () => {
                     <ErrorBoundary fallbackTitle="Error en Punto de Venta">
                       <Suspense fallback={<PageLoader />}>
                         <POS />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/print-center"
+                element={
+                  <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
+                    <ErrorBoundary fallbackTitle="Error en Centro de Copiado">
+                      <Suspense fallback={<PageLoader />}>
+                        <PrintManagerModule />
                       </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
@@ -274,7 +287,7 @@ const App = () => {
                 path="/stores"
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager"]}>
-                    <ErrorBoundary fallbackTitle="Error en Tiendas">
+                    <ErrorBoundary fallbackTitle="Error en Sucursales">
                       <Suspense fallback={<PageLoader />}>
                         <Stores />
                       </Suspense>

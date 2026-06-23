@@ -24,7 +24,8 @@ import {
   Users,
   FlaskConical,
   CreditCard,
-  MonitorPlay
+  MonitorPlay,
+  Printer
 } from "lucide-react";
 import { NavGroup } from "@/types/navigation";
 
@@ -40,6 +41,7 @@ export const navConfig: NavGroup[] = [
       { label: "Gastos", href: "/expenses", icon: CreditCard, roles: ["admin", "owner", "manager"] },
       { label: "Ventas", href: "/sales", icon: ReceiptText, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Preparación", href: "/preparation", icon: FlaskConical, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
+      { label: "Copiado", href: "/print-center", icon: Printer, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Facturas", href: "/invoices", icon: FileText, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
     ]
   },
@@ -67,7 +69,7 @@ export const navConfig: NavGroup[] = [
           { label: "Inventario", href: "/inventory", icon: Package, roles: ["admin", "owner", "manager"] },
           { label: "Recetas", href: "/recipes", icon: FileText, roles: ["admin", "owner", "manager"] },
           { label: "Usuarios", href: "/users", icon: UserCog, roles: ["admin", "owner"] },
-          { label: "Tiendas", href: "/stores", icon: StoreIcon, roles: ["admin", "owner"] },
+          { label: "Sucursales", href: "/stores", icon: StoreIcon, roles: ["admin", "owner"] },
           { label: "Kardex", href: "/movements", icon: ClipboardList, roles: ["admin", "owner", "manager"] },
         ]
       },

@@ -153,7 +153,7 @@ export function OrderRowExpand({ order, isOpen, onAnular, onVerFactura }: OrderR
                 <span className="text-slate-500">Cajero: <span className="text-slate-300">{order.creator_profile?.name || 'Sistema'}</span></span>
               </div>
               <div className="text-slate-500">
-                Ubicación: <span className="text-slate-300">Tienda Principal</span>
+                Ubicación: <span className="text-slate-300">Sucursal Principal</span>
               </div>
             </div>
           </>

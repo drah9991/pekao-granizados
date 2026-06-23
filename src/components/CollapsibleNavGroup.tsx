@@ -51,7 +51,7 @@ export function CollapsibleNavGroup({
         type="button"
         onClick={toggle}
         className={cn(
-          "group flex items-center w-full gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
+          "group flex items-center w-full gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 text-sm font-medium relative overflow-hidden",
           parentIsActive
             ? "bg-gradient-to-r from-primary/20 to-primary/10 text-sidebar-foreground shadow-card border border-primary/30"
             : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:shadow-md hover:border hover:border-sidebar-border/50"
@@ -63,8 +63,8 @@ export function CollapsibleNavGroup({
         <Icon className={cn(
           "w-5 h-5 transition-all duration-300",
           parentIsActive
-            ? "text-primary drop-shadow-lg scale-110"
-            : "text-sidebar-foreground/60 group-hover:text-primary group-hover:scale-110"
+            ? "text-primary opacity-100 drop-shadow-lg scale-110"
+            : "text-sidebar-foreground/50 opacity-30 group-hover:opacity-100 group-hover:text-primary group-hover:scale-110"
         )} />
         <span className="relative z-10">{label}</span>
         
@@ -110,7 +110,9 @@ export function CollapsibleNavGroup({
               )}
               <child.icon className={cn(
                 "w-4 h-4 transition-all duration-300",
-                childIsActive ? "text-primary" : "text-sidebar-foreground/60 group-hover:text-primary"
+                childIsActive 
+                  ? "text-primary opacity-100" 
+                  : "text-sidebar-foreground/50 opacity-30 group-hover:opacity-100 group-hover:text-primary"
               )} />
               <span className="relative z-10 flex-1">{child.label}</span>
               

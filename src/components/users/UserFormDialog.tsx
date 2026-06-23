@@ -89,7 +89,7 @@ export default function UserFormDialog({ isOpen, onClose, editingUser, stores, r
                     </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic">TIENDA</Label>
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground italic">SUCURSAL</Label>
                     <Select value={formData.store_id || ""} onValueChange={(v) => setFormData({ ...formData, store_id: v || null })}>
                         <SelectTrigger className="h-14 bg-muted/40 border-border rounded-2xl text-xs font-black italic uppercase"><SelectValue /></SelectTrigger>
                         <SelectContent className="glass-pro border-border rounded-2xl">

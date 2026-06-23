@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight, ChevronDown, Eye, Ban, Edit2, User, UserCheck } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { formatCOP } from "@/lib/currency";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -103,6 +104,7 @@ function OrderRow({ order, isExpanded, onToggle, onView, onCancel, onEdit }: {
   onCancel: () => void,
   onEdit: () => void
 }) {
+  const { storeName } = useAuth();
   const statusInfo = orderStatusOptions.find(s => s.value === order.status) || orderStatusOptions[0];
   const items = (order.items as unknown as OrderItem[]) || [];
 
@@ -120,7 +122,7 @@ function OrderRow({ order, isExpanded, onToggle, onView, onCancel, onEdit }: {
         <TableCell className="px-8 py-7">
           <div className="flex flex-col">
             <span className="text-[12px] font-black font-space-grotesk italic text-white tracking-tighter">#{order.id.slice(0, 8).toUpperCase()}</span>
-            <span className="text-[9px] font-extrabold text-[#00F3FF]/80 uppercase tracking-widest italic">Pekao — POS</span>
+            <span className="text-[9px] font-extrabold text-[#00F3FF]/80 uppercase tracking-widest italic">{storeName || "Oasis"} — POS</span>
           </div>
         </TableCell>
         <TableCell className="px-8 py-7">

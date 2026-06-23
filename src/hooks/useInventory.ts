@@ -27,7 +27,7 @@ export function useInventory() {
       .select("id, name")
       .order("name");
     if (error) {
-      toast.error("Error al cargar tiendas");
+      toast.error("Error al cargar sucursales");
       return;
     }
     setStores(data || []);

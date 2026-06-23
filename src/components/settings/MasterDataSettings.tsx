@@ -28,7 +28,7 @@ export default function MasterDataSettings() {
       <div>
         <h2 className="text-2xl font-bold mb-2">Maestros del Sistema</h2>
         <p className="text-muted-foreground">
-          Gestiona los datos principales de tu negocio: productos (incluyendo toppings, sachets y dulces), inventario, usuarios, tiendas, tamaños y acrónimos SKU.
+          Gestiona los datos principales de tu negocio: productos (incluyendo toppings, sachets y dulces), inventario, usuarios, sucursales, tamaños y acrónimos SKU.
         </p>
       </div>
 
@@ -67,7 +67,7 @@ export default function MasterDataSettings() {
             className="flex items-center gap-2 data-[state=active]:gradient-primary data-[state=active]:text-white"
           >
             <StoreIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">Tiendas</span>
+            <span className="hidden sm:inline">Sucursales</span>
           </TabsTrigger>
           <TabsTrigger
             value="sizes"

@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 
-export const printReceipt = (order: OrderWithDetails) => {
+export const printReceipt = (order: OrderWithDetails, storeName?: string) => {
   const printWindow = window.open('', '_blank', 'width=300,height=600');
   if (!printWindow) {
     toast.error("El bloqueador de ventanas emergentes impidió la impresión");
@@ -36,7 +36,7 @@ export const printReceipt = (order: OrderWithDetails) => {
         </style>
       </head>
       <body>
-        <div class="text-center bold" style="font-size: 16px;">PEKAO GRANIZADOS</div>
+        <div class="text-center bold" style="font-size: 16px;">${(storeName || "Oasis Eón Hub").toUpperCase()}</div>
         <div class="text-center">ORDEN: #${order.id.slice(0, 8).toUpperCase()}</div>
         <div class="text-center">${dateStr}</div>
         <div class="border-bottom"></div>

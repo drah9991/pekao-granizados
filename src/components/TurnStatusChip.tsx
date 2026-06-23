@@ -86,7 +86,7 @@ export function TurnStatusChip() {
     <div className="px-2 py-4">
       {activeTurn ? (
         activeTurn.status === 'paused' ? (
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-amber-500/15 group">
+          <div className="bg-white/5 border border-amber-500/30 rounded-2xl p-4 transition-all duration-300 hover:bg-white/[0.08] group relative overflow-hidden backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(245,158,11,0.05)]">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-2.5 h-2.5 rounded-full bg-amber-500/50" />
               <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Turno Pausado</span>
@@ -149,7 +149,7 @@ export function TurnStatusChip() {
             </div>
           </div>
         ) : (
-        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-emerald-500/15 group">
+        <div className="bg-white/5 border border-emerald-500/30 rounded-2xl p-4 transition-all duration-300 hover:bg-white/[0.08] group relative overflow-hidden backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(16,185,129,0.05)]">
           <div className="flex items-center gap-3 mb-2">
             <div className="relative">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
@@ -215,7 +215,7 @@ export function TurnStatusChip() {
         </div>
         )
       ) : (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-rose-500/15">
+        <div className="bg-white/5 border border-rose-500/30 rounded-2xl p-4 transition-all duration-300 hover:bg-white/[0.08] relative overflow-hidden backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(239,68,68,0.05)]">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-2.5 h-2.5 rounded-full bg-rose-500/50" />
             <span className="text-[10px] font-black uppercase tracking-widest text-rose-500">Ventas Bloqueadas</span>

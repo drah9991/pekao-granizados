@@ -51,16 +51,19 @@ export default function StoreFormDialog({ isOpen, onClose, editingStore, onSave,
       };
 
       if (editingStore) {
-        await supabase.from("stores").update(data).eq("id", editingStore.id);
+        const { error } = await supabase.from("stores").update(data).eq("id", editingStore.id);
+        if (error) throw error;
         toast.success("Nodo actualizado");
       } else {
-        await supabase.from("stores").insert([data]);
+        const { error } = await supabase.from("stores").insert([data]);
+        if (error) throw error;
         toast.success("Nodo creado");
       }
       onSave();
       onClose();
-    } catch (e) {
-      toast.error("Error al guardar nodo");
+    } catch (e: any) {
+      console.error("Error saving store:", e);
+      toast.error(`Error al guardar nodo: ${e.message || 'Error desconocido'}`);
     }
   };
 

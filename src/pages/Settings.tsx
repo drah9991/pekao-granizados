@@ -62,21 +62,24 @@ export default function Settings() {
     <Layout>
       <div className="p-4 md:p-8 space-y-10 max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10 pb-8 border-b border-white/5 relative">
-          <div className="hidden md:block absolute -left-6 lg:-left-12 top-0 bottom-0 w-1.5 bg-gradient-to-b from-primary via-primary/50 to-transparent rounded-full shadow-glow-pro" />
+          <div className="hidden md:block absolute -left-6 lg:-left-12 top-0 bottom-0 w-1.5 bg-gradient-to-b from-primary via-primary/50 to-transparent rounded-full shadow-glow-pro animate-pulse" />
           <div className="animate-pro-in">
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground mb-2">
-              CONFIGURACIÓN <span className="text-primary text-glow italic">SISTEMA</span>
+            <h1 
+              className="text-2xl sm:text-4xl md:text-5xl font-black font-space-grotesk italic tracking-tighter uppercase text-white mb-2"
+              style={{ textShadow: "0 0 15px rgba(236, 72, 153, 0.5)" }}
+            >
+              CONFIGURACIÓN <span className="text-glow italic" style={{ color: "#ec4899" }}>SISTEMA</span>
             </h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60 font-space-grotesk italic">
+            <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/40 font-space-grotesk italic">
                Master Control Panel • Pro Max Environment
             </p>
           </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
-          <Card className="lg:w-80 shrink-0 glass-pro border-white/10 shadow-pro overflow-hidden h-fit lg:sticky lg:top-24">
+          <Card className="lg:w-80 shrink-0 bg-white/5 border border-white/10 rounded-3xl shadow-pro backdrop-blur-md overflow-hidden h-fit lg:sticky lg:top-24 p-2 lg:p-4">
             <Tabs value={activeTab} onValueChange={handleTabChange} orientation="vertical" className="w-full">
-              <TabsList className="flex flex-row lg:flex-col h-auto bg-transparent gap-1 p-2 lg:p-4 overflow-x-auto lg:overflow-visible no-scrollbar">
+              <TabsList className="flex flex-row lg:flex-col h-auto bg-transparent gap-1.5 p-0 overflow-x-auto lg:overflow-visible no-scrollbar">
                 {[
                   { value: "branding", label: "Branding", icon: Palette },
                   { value: "roles", label: "Roles", icon: Shield },
@@ -91,9 +94,9 @@ export default function Settings() {
                   <TabsTrigger
                     key={tab.value}
                     value={tab.value}
-                    className="shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-2xl font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro px-4 lg:px-6"
+                    className="relative shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-none bg-transparent hover:bg-white/[0.02] font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all text-muted-foreground/60 data-[state=active]:text-white px-4 lg:px-6 border-l-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-[inset_4px_0_12px_rgba(236,72,153,0.05)] hover:border-l hover:border-white/10"
                   >
-                    <tab.icon className="w-4 h-4" />
+                    <tab.icon className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
                     {tab.label}
                   </TabsTrigger>
                 ))}
@@ -102,7 +105,7 @@ export default function Settings() {
           </Card>
 
           <div className="flex-1 min-w-0">
-             <Card className="glass-pro border-white/10 shadow-pro overflow-hidden p-4 md:p-8 lg:p-12 min-h-[500px] lg:min-h-[600px]">
+             <Card className="bg-white/5 border border-white/10 rounded-3xl shadow-pro backdrop-blur-md overflow-hidden p-4 md:p-8 lg:p-12 min-h-[500px] lg:min-h-[600px]">
                 <Suspense fallback={<TabLoadingSkeleton />}>
                     <Tabs value={activeTab} className="w-full">
                         <TabsContent value="branding" className="m-0 animate-pro-in">
