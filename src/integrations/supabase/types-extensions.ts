@@ -133,6 +133,16 @@ export interface ProductTypesConfigRow {
   created_at: string | null;
 }
 
+export interface CategoryRow {
+  id: string;
+  name: string;
+  description: string | null;
+  color_hex: string | null;
+  is_active: boolean | null;
+  store_id: string | null;
+  created_at: string | null;
+}
+
 /**
  * Extended profile fields added by migrations (document_id, consent_habeas_data, email)
  */
@@ -202,6 +212,13 @@ export const typedFrom = {
     supabase.from('product_types_config') as unknown as PostgrestQueryBuilder<
       ProductTypesConfigRow,
       ProductTypesConfigRow,
+      unknown
+    >,
+
+  categories: () =>
+    supabase.from('categories') as unknown as PostgrestQueryBuilder<
+      CategoryRow,
+      CategoryRow,
       unknown
     >,
 };

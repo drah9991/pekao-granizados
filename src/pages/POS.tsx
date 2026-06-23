@@ -3,17 +3,19 @@ import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import ProductGrid from "@/components/pos/ProductGrid";
 import CartSummary from "@/components/pos/CartSummary";
-import { ShoppingBag, Receipt as ReceiptIcon, WifiOff, CloudUpload } from "lucide-react";
+import { ShoppingBag, Receipt as ReceiptIcon, WifiOff, CloudUpload, Keyboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { usePOSPage } from "@/hooks/usePOSPage";
 import type { PaymentMethod } from "@/components/pos/PaymentDialog";
 import SyncDrawer from "@/components/pos/SyncDrawer";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ProductCustomizationDialog = lazy(() => import("@/components/pos/ProductCustomizationDialog"));
 const PaymentDialog = lazy(() => import("@/components/pos/PaymentDialog"));
 const SplitBillDialog = lazy(() => import("@/components/pos/SplitBillDialog"));
 const ReceiptDialog = lazy(() => import("@/components/pos/ReceiptDialog"));
+const ShortcutsHelpDialog = lazy(() => import("@/components/pos/ShortcutsHelpDialog"));
 
 export default function POS() {
   const {
@@ -27,13 +29,33 @@ export default function POS() {
     lastOrder, setLastOrder,
     defaultPaymentMethod, activeCategoryIndex, searchInputRef, viewMode, setViewMode,
     handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, handleOpenSplitBillDialog, onConfirmSale,
-    availableSizes, availableToppings, updateItemCustomization
+    availableSizes, availableToppings, updateItemCustomization,
+    shortcutsHelpIsOpen, setShortcutsHelpIsOpen
   } = usePOSPage();
 
   const [syncDrawerIsOpen, setSyncDrawerIsOpen] = useState(false);
 
   return (
     <Layout fullWidth>
+      <div className="fixed top-4 right-4 z-[60] hidden lg:block">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShortcutsHelpIsOpen(prev => !prev)}
+              className="w-10 h-10 rounded-2xl glass-pro bg-card/85 border border-white/10 hover:border-primary/50 text-muted-foreground hover:text-primary shadow-glow transition-all"
+              aria-label="Mostrar atajos de teclado (?)"
+            >
+              <Keyboard className="w-5 h-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className="glass-pro border-white/10 text-xs">
+            Atajos de Teclado (?)
+          </TooltipContent>
+        </Tooltip>
+      </div>
+
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row bg-transparent relative h-full overflow-hidden">
         <div className="flex lg:hidden glass-pro border-b border-white/10 sticky top-0 z-20 items-center pr-4">
           <button
@@ -169,6 +191,11 @@ export default function POS() {
             setLastOrder(null);
           }}
           lastOrder={lastOrder}
+        />
+
+        <ShortcutsHelpDialog
+          isOpen={shortcutsHelpIsOpen}
+          onClose={() => setShortcutsHelpIsOpen(false)}
         />
       </Suspense>
 

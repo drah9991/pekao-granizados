@@ -31,6 +31,7 @@ export function usePOSPage() {
   const [lastOrder, setLastOrder] = useState<Record<string, unknown> | null>(null);
   const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<PaymentMethod>("cash");
 
+  const [shortcutsHelpIsOpen, setShortcutsHelpIsOpen] = useState(false);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
@@ -53,7 +54,8 @@ export function usePOSPage() {
         resetCart();
         toast("Carrito vaciado");
       }
-    }
+    },
+    onToggleHelp: () => setShortcutsHelpIsOpen(prev => !prev),
   });
 
   const handleProductSelect = useCallback((product: Product) => {
@@ -133,6 +135,7 @@ export function usePOSPage() {
     isMobile,
     viewMode, setViewMode,
     handleProductSelect, handleAddToCartFromDialog, handleOpenPaymentDialog, handleOpenSplitBillDialog, onConfirmSale,
-    availableSizes, availableToppings, updateItemCustomization
+    availableSizes, availableToppings, updateItemCustomization,
+    shortcutsHelpIsOpen, setShortcutsHelpIsOpen
   };
 }

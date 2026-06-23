@@ -42,6 +42,9 @@ const InventoryManagement = lazy(() => import("./components/settings/InventoryMa
 const RecipeManagement = lazy(() => import("./components/settings/RecipeManagement").then(m => ({ default: m.RecipeManagement })));
 const DigitalMenu = lazy(() => import("./pages/DigitalMenu"));
 
+const ProductsInventoryLayout = lazy(() => import("./components/inventory/ProductsInventoryLayout").then(m => ({ default: m.ProductsInventoryLayout })));
+const RecipeBuilder = lazy(() => import("./components/inventory/RecipeBuilder").then(m => ({ default: m.RecipeBuilder })));
+
 // El queryClient se inicializa dentro del componente App para asegurar estabilidad con HMR
 
 
@@ -229,6 +232,20 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/catalog"
+                element={
+                  <ProtectedRoute requiredRole={["admin", "manager"]}>
+                    <ErrorBoundary fallbackTitle="Error en Catálogo e Inventario">
+                      <Suspense fallback={<PageLoader />}>
+                        <ProductsInventoryLayout />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="inventory/recipes" element={<RecipeBuilder />} />
+              </Route>
               <Route
                 path="/recipes"
                 element={

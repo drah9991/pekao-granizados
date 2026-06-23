@@ -51,7 +51,7 @@ export function useDigitalMenu(storeId: string | null) {
         if (!isMounted) return;
 
         // Process data
-        const processedCategories: MenuCategory[] = (configData || []).map(cat => {
+        let processedCategories: MenuCategory[] = (configData || []).map(cat => {
           const catProducts = (productsData || []).filter(p => p.type === cat.code);
           
           const items: MenuItem[] = catProducts.map(prod => {
@@ -93,6 +93,24 @@ export function useDigitalMenu(storeId: string | null) {
           };
         }).filter(cat => cat.items.length > 0);
 
+        // Sort categories by localStorage order
+        const savedOrderStr = localStorage.getItem("pekao_menu_categories_order");
+        if (savedOrderStr) {
+          try {
+            const savedOrder: string[] = JSON.parse(savedOrderStr);
+            processedCategories.sort((a, b) => {
+              const idxA = savedOrder.indexOf(a.code);
+              const idxB = savedOrder.indexOf(b.code);
+              if (idxA === -1 && idxB === -1) return 0;
+              if (idxA === -1) return 1;
+              if (idxB === -1) return -1;
+              return idxA - idxB;
+            });
+          } catch (e) {
+            console.error("Error parsing saved categories order:", e);
+          }
+        }
+
         setCategories(processedCategories);
       } catch (error) {
         console.error("Error fetching menu data:", error);
@@ -116,5 +134,11 @@ export function useDigitalMenu(storeId: string | null) {
     };
   }, [storeId]);
 
-  return { categories, loading };
+  const reorderCategories = (newCategories: MenuCategory[]) => {
+    setCategories(newCategories);
+    const codes = newCategories.map(cat => cat.code);
+    localStorage.setItem("pekao_menu_categories_order", JSON.stringify(codes));
+  };
+
+  return { categories, reorderCategories, loading };
 }

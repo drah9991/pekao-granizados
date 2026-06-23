@@ -242,7 +242,8 @@ export default function PaymentDialog({
                 step="1000"
                 value={amountReceived}
                 onChange={(e) => {
-                  setAmountReceived(e.target.value);
+                  const val = parseFloat(e.target.value);
+                  setAmountReceived(val < 0 ? "0" : e.target.value);
                   setHasTypedAmount(true);
                 }}
                 onBlur={(e) => {
@@ -303,9 +304,10 @@ export default function PaymentDialog({
                       value={splitCash}
                       onChange={(e) => {
                         const val = e.target.value;
+                        const numericVal = parseFloat(val || "0");
+                        if (numericVal < 0) return;
                         setSplitCash(val);
                         // Auto-calculate the remaining for transfer if possible
-                        const numericVal = parseFloat(val || "0");
                         if (numericVal <= finalTotal) {
                           setSplitTransfer((Math.round(finalTotal - numericVal)).toString());
                         }
@@ -333,9 +335,10 @@ export default function PaymentDialog({
                       value={splitTransfer}
                       onChange={(e) => {
                         const val = e.target.value;
+                        const numericVal = parseFloat(val || "0");
+                        if (numericVal < 0) return;
                         setSplitTransfer(val);
                         // Auto-calculate the remaining for cash if possible
-                        const numericVal = parseFloat(val || "0");
                         if (numericVal <= finalTotal) {
                           setSplitCash((Math.round(finalTotal - numericVal)).toString());
                         }

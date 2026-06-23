@@ -219,8 +219,8 @@ export const useCartStore = create<CartStoreState>()(
         set(state => {
           const updatedCart = state.cart.map(cartItem => {
             if (cartItem.id === id) {
-              const newQty = cartItem.quantity + delta;
-              return newQty > 0 ? { ...cartItem, quantity: newQty } : cartItem;
+              const newQty = Math.max(0, cartItem.quantity + delta);
+              return { ...cartItem, quantity: newQty };
             }
             return cartItem;
           }).filter(cartItem => cartItem.quantity > 0);

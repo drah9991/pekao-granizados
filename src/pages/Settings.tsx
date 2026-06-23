@@ -16,6 +16,7 @@ const SizesSettings = lazy(() => import("@/components/settings/SizesSettings"));
 const SkuAcronymsSettings = lazy(() => import("@/components/settings/SkuAcronymsSettings"));
 const NotificationSettings = lazy(() => import("@/components/settings/NotificationSettings"));
 const ProductTypesMaster = lazy(() => import("@/components/settings/ProductTypesMaster"));
+const CategoryManager = lazy(() => import("@/components/settings/CategoryManager"));
 
 const TabLoadingSkeleton = () => (
     <div className="flex flex-col items-center justify-center py-24 gap-6 animate-pro-in">
@@ -49,7 +50,7 @@ export default function Settings() {
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.set("tab", value);
     
-    const validTabs = ["branding", "roles", "business", "receipts", "sizes", "sku", "notifications", "product_types"];
+    const validTabs = ["branding", "roles", "business", "receipts", "sizes", "sku", "notifications", "product_types", "categories"];
     if (!validTabs.includes(value)) {
       newSearchParams.delete("tab");
     }
@@ -84,7 +85,8 @@ export default function Settings() {
                   { value: "sizes", label: "Tamaños", icon: Ruler },
                   { value: "sku", label: "Acrónimos", icon: Tag },
                   { value: "notifications", label: "Alertas", icon: Bell },
-                  { value: "product_types", label: "Master Types", icon: Box },
+                  { value: "product_types", label: "Tipos Operativos", icon: Box },
+                  { value: "categories", label: "Categorías ERP", icon: Tag },
                 ].map((tab) => (
                   <TabsTrigger
                     key={tab.value}
@@ -133,6 +135,10 @@ export default function Settings() {
 
                         <TabsContent value="product_types" className="m-0 animate-pro-in">
                             <ProductTypesMaster />
+                        </TabsContent>
+
+                        <TabsContent value="categories" className="m-0 animate-pro-in">
+                            <CategoryManager />
                         </TabsContent>
                     </Tabs>
                 </Suspense>

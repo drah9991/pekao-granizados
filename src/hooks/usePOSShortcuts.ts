@@ -5,6 +5,7 @@ interface POSShortcutsProps {
   onCategoryChange: (index: number) => void;
   onProcessPayment: () => void;
   onClearCart: () => void;
+  onToggleHelp?: () => void;
 }
 
 export const usePOSShortcuts = ({
@@ -12,6 +13,7 @@ export const usePOSShortcuts = ({
   onCategoryChange,
   onProcessPayment,
   onClearCart,
+  onToggleHelp,
 }: POSShortcutsProps) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,6 +35,14 @@ export const usePOSShortcuts = ({
         onProcessPayment();
       }
 
+      // ? or h/H to toggle help
+      if ((e.key === "?" || e.key.toLowerCase() === "h") && 
+          (e.target as HTMLElement).tagName !== "INPUT" && 
+          (e.target as HTMLElement).tagName !== "TEXTAREA") {
+        e.preventDefault();
+        onToggleHelp?.();
+      }
+
       // Escape to clear/close
       if (e.key === "Escape") {
         // Potentially clear something?
@@ -41,5 +51,5 @@ export const usePOSShortcuts = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onSearchFocus, onCategoryChange, onProcessPayment, onClearCart]);
+  }, [onSearchFocus, onCategoryChange, onProcessPayment, onClearCart, onToggleHelp]);
 };

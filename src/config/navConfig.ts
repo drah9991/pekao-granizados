@@ -84,7 +84,8 @@ export const navConfig: NavGroup[] = [
           { label: "Plantillas Recibos", href: "/settings?tab=receipts", icon: Receipt, roles: ["admin", "owner"] },
           { label: "Tamaños Estándar", href: "/settings?tab=sizes", icon: Ruler, roles: ["admin", "owner"] },
           { label: "Acrónimos SKU", href: "/settings?tab=sku", icon: Tag, roles: ["admin", "owner"] },
-          { label: "Tipos de Producto", href: "/settings?tab=product_types", icon: Package, roles: ["admin", "owner"] },
+          { label: "Tipos Operativos", href: "/settings?tab=product_types", icon: Package, roles: ["admin", "owner"] },
+          { label: "Categorías ERP", href: "/settings?tab=categories", icon: Tag, roles: ["admin", "owner", "manager"] },
           { label: "Alertas y Notificaciones", href: "/settings?tab=notifications", icon: Bell, roles: ["admin", "owner", "manager"] },
         ]
       }

@@ -148,8 +148,8 @@ export default function ProductTypesMaster() {
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-white/5 pb-10">
         <div>
-          <h2 className="text-3xl font-black italic uppercase font-space-grotesk tracking-tight text-white leading-none">Category Engine Master</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mt-1 italic leading-relaxed">Parametrización Operativa y Lógica de Venta</p>
+          <h2 className="text-3xl font-black italic uppercase font-space-grotesk tracking-tight text-white leading-none">Tipos Operativos de Producto</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mt-1 italic leading-relaxed">Definición de recetas, modos de venta y control de tanques</p>
         </div>
         <Button 
             onClick={() => handleOpenDialog()} 

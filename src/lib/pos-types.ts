@@ -44,6 +44,18 @@ export interface Product {
   unit_measure?: string | null;
   mixtureStock?: number;
   has_recipe?: boolean;
+  category_id?: string | null;
+  category_relation?: Category | null;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description: string | null;
+  color_hex: string | null;
+  is_active: boolean | null;
+  store_id?: string | null;
+  created_at?: string | null;
 }
 
 export interface Size {

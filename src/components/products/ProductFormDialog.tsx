@@ -274,7 +274,10 @@ export default function ProductFormDialog({
                   min="0"
                   placeholder="0"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setFormData({ ...formData, price: val < 0 ? "0" : e.target.value });
+                  }}
                   onBlur={(e) => {
                     const val = parseFloat(e.target.value);
                     if (!isNaN(val)) {
@@ -298,7 +301,10 @@ export default function ProductFormDialog({
                   min="0"
                   placeholder="0"
                   value={formData.cost}
-                  onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setFormData({ ...formData, cost: val < 0 ? "0" : e.target.value });
+                  }}
                   onBlur={(e) => {
                     const val = parseFloat(e.target.value);
                     if (!isNaN(val)) {
@@ -396,7 +402,10 @@ export default function ProductFormDialog({
                 min="0"
                 placeholder="0"
                 value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setFormData({ ...formData, stock: val < 0 ? "0" : e.target.value });
+                }}
                 className="h-14 bg-white/5 border-white/10 rounded-2xl font-black font-space-grotesk italic tracking-tighter text-2xl focus:border-primary/50 text-emerald-400 transition-all shadow-inner"
               />
             </div>
@@ -419,7 +428,10 @@ export default function ProductFormDialog({
                       step="0.1"
                       placeholder="60.0"
                       value={formData.margin_target}
-                      onChange={(e) => setFormData({ ...formData, margin_target: e.target.value })}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setFormData({ ...formData, margin_target: val < 0 ? "0" : e.target.value });
+                      }}
                       className="h-14 bg-white/5 border-white/10 rounded-2xl font-black font-space-grotesk italic tracking-tighter text-lg focus:border-primary/50 text-white transition-all shadow-inner pr-10"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-primary font-black italic text-xs">%</span>
@@ -437,7 +449,10 @@ export default function ProductFormDialog({
                       step="0.1"
                       placeholder="0.0"
                       value={formData.commission_rate}
-                      onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setFormData({ ...formData, commission_rate: val < 0 ? "0" : e.target.value });
+                      }}
                       className="h-14 bg-white/5 border-white/10 rounded-2xl font-black font-space-grotesk italic tracking-tighter text-lg focus:border-primary/50 text-white transition-all shadow-inner pr-10"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-primary font-black italic text-xs">%</span>
@@ -480,7 +495,10 @@ export default function ProductFormDialog({
                             min="0"
                             placeholder="EJ: 4.0"
                             value={formData.base_volume}
-                            onChange={(e) => setFormData({ ...formData, base_volume: e.target.value })}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              setFormData({ ...formData, base_volume: val < 0 ? "0" : e.target.value });
+                            }}
                             className="h-14 bg-white/5 border-white/10 rounded-2xl font-black font-space-grotesk italic tracking-tighter text-xl focus:border-primary/50 text-white transition-all shadow-inner"
                         />
                         <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1 italic opacity-60 px-1">

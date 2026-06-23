@@ -1,0 +1,437 @@
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Edit, Trash2, Tag, Loader2, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
+import { Category } from "@/lib/pos-types";
+
+const categoryFormSchema = z.object({
+  name: z.string().min(1, "El nombre de la categoría es requerido y obligatorio").max(50, "Máximo 50 caracteres"),
+  description: z.string().optional().or(z.literal("")),
+  color_hex: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Debe ser un código hexadecimal válido (ej. #06b6d4)"),
+  is_active: z.boolean().default(true)
+});
+
+type CategoryFormData = z.infer<typeof categoryFormSchema>;
+
+const COLOR_PALETTE = [
+  { value: "#06b6d4", name: "Cian Neón", shadow: "shadow-[0_0_15px_rgba(6,182,212,0.5)] bg-[#06b6d4]" },
+  { value: "#d946ef", name: "Magenta Pro", shadow: "shadow-[0_0_15px_rgba(217,70,239,0.5)] bg-[#d946ef]" },
+  { value: "#f97316", name: "Naranja Sol", shadow: "shadow-[0_0_15px_rgba(249,115,22,0.5)] bg-[#f97316]" },
+  { value: "#84cc16", name: "Lime Glow", shadow: "shadow-[0_0_15px_rgba(132,204,22,0.5)] bg-[#84cc16]" },
+  { value: "#eab308", name: "Yellow Acid", shadow: "shadow-[0_0_15px_rgba(234,179,8,0.5)] bg-[#eab308]" },
+  { value: "#ef4444", name: "Red Warning", shadow: "shadow-[0_0_15px_rgba(239,68,68,0.5)] bg-[#ef4444]" },
+  { value: "#3b82f6", name: "Blue Aurora", shadow: "shadow-[0_0_15px_rgba(59,130,246,0.5)] bg-[#3b82f6]" },
+  { value: "#a855f7", name: "Purple Void", shadow: "shadow-[0_0_15px_rgba(168,85,247,0.5)] bg-[#a855f7]" }
+];
+
+export default function CategoryManager() {
+  const { storeId: userStoreId } = useAuth();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Dialog & Form state
+  const [dialogIsOpen, setDialogIsOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors }
+  } = useForm<CategoryFormData>({
+    resolver: zodResolver(categoryFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      color_hex: "#06b6d4",
+      is_active: true
+    }
+  });
+
+  const selectedColor = watch("color_hex");
+
+  const fetchCategories = async () => {
+    if (!userStoreId) return;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .or(`store_id.eq.${userStoreId},store_id.is.null`)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      toast.error("Fallo al sincronizar base de datos de categorías");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userStoreId) {
+      fetchCategories();
+    }
+  }, [userStoreId]);
+
+  const openCreateDialog = () => {
+    setEditingCategory(null);
+    reset({
+      name: "",
+      description: "",
+      color_hex: "#06b6d4",
+      is_active: true
+    });
+    setDialogIsOpen(true);
+  };
+
+  const openEditDialog = (category: Category) => {
+    setEditingCategory(category);
+    reset({
+      name: category.name,
+      description: category.description || "",
+      color_hex: category.color_hex || "#06b6d4",
+      is_active: category.is_active ?? true
+    });
+    setDialogIsOpen(true);
+  };
+
+  const onSubmit = async (data: CategoryFormData) => {
+    if (!userStoreId) return;
+    setIsProcessing(true);
+
+    try {
+      const payload = {
+        name: data.name.trim(),
+        description: data.description?.trim() || null,
+        color_hex: data.color_hex,
+        is_active: data.is_active,
+        store_id: userStoreId
+      };
+
+      if (editingCategory) {
+        const { error } = await supabase
+          .from("categories")
+          .update(payload)
+          .eq("id", editingCategory.id);
+
+        if (error) throw error;
+        toast.success("Estructura de categoría actualizada con éxito.");
+      } else {
+        const { error } = await supabase
+          .from("categories")
+          .insert([payload]);
+
+        if (error) throw error;
+        toast.success("Nueva categoría incorporada al registro.");
+      }
+
+      setDialogIsOpen(false);
+      fetchCategories();
+    } catch (err: any) {
+      console.error("Error saving category:", err);
+      if (err.code === "23505") {
+        toast.error("Ya existe una categoría registrada con este nombre.");
+      } else {
+        toast.error("Fallo de red en la persistencia de la categoría.");
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteCategory = async (category: Category) => {
+    // Check if category has dependent products
+    try {
+      const { count, error: countError } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("category_id", category.id);
+
+      if (countError) throw countError;
+
+      if (count && count > 0) {
+        toast.error(`No es posible eliminar. Existen ${count} productos enlazados a esta categoría.`);
+        return;
+      }
+    } catch (err) {
+      console.error("Error checking product dependencies:", err);
+    }
+
+    if (!confirm(`¿Confirmas la remoción permanente de la categoría "${category.name.toUpperCase()}"?`)) {
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", category.id);
+
+      if (error) throw error;
+      toast.success("Categoría eliminada del catálogo.");
+      fetchCategories();
+    } catch (err) {
+      console.error("Error deleting category:", err);
+      toast.error("Error de exclusión física en base de datos.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const filteredCategories = categories.filter(cat =>
+    cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (cat.description && cat.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-10"
+    >
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black font-space-grotesk tracking-wide uppercase text-foreground flex items-center gap-3">
+            <Tag className="w-6 h-6 text-primary" />
+            Category Engine Master
+          </h2>
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mt-1 italic font-space-grotesk">
+            Clasificación y Agrupación Comercial ERP
+          </p>
+        </div>
+
+        <Button
+          onClick={openCreateDialog}
+          className="h-12 px-6 rounded-2xl bg-primary text-primary-foreground font-black font-space-grotesk italic text-[11px] tracking-widest uppercase hover:bg-primary/95 transition-all shadow-glow-pro group shrink-0"
+        >
+          <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
+          Nueva Categoría
+        </Button>
+      </div>
+
+      <Card className="glass-pro border-white/5 shadow-pro overflow-hidden">
+        <CardHeader className="border-b border-white/5 py-5 px-6">
+          <div className="relative w-full max-w-md group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 group-focus-within:text-primary transition-all duration-300" />
+            <Input
+              placeholder="BUSCAR CATEGORÍA..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-11 h-11 bg-white/5 border-white/10 rounded-xl focus:border-primary/40 focus:ring-0 text-xs font-black font-space-grotesk tracking-wider italic placeholder:text-muted-foreground/30 uppercase"
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-white/[0.02] border-b border-white/5">
+                <TableRow className="hover:bg-transparent border-white/5">
+                  <TableHead className="w-16 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">COLOR</TableHead>
+                  <TableHead className="text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">IDENTIFICADOR (NOMBRE)</TableHead>
+                  <TableHead className="text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">DESCRIPCIÓN</TableHead>
+                  <TableHead className="w-32 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk text-center">ESTADO</TableHead>
+                  <TableHead className="w-32 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk text-right pr-6">ACCIONES</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={5} className="py-20 text-center">
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary shadow-glow-pro" />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-primary italic animate-pulse">Sincronizando Archivos...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredCategories.length === 0 ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={5} className="py-20 text-center text-muted-foreground font-caveat text-2xl">
+                      No se encontraron categorías registradas.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredCategories.map((cat) => (
+                    <TableRow key={cat.id} className="border-white/5 hover:bg-white/[0.01] transition-colors h-16">
+                      <TableCell className="pl-6">
+                        <div 
+                          className="w-5 h-5 rounded-full border border-white/10" 
+                          style={{ 
+                            backgroundColor: cat.color_hex || "#06b6d4",
+                            boxShadow: `0 0 10px ${cat.color_hex || "#06b6d4"}80`
+                          }} 
+                        />
+                      </TableCell>
+                      <TableCell className="font-dm-sans font-bold text-xs uppercase text-foreground">
+                        {cat.name}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground/80 max-w-xs truncate">
+                        {cat.description || "—"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge 
+                          className={cn(
+                            "rounded-md text-[8px] font-black uppercase tracking-wider px-2 py-0.5",
+                            cat.is_active 
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                              : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                          )}
+                        >
+                          {cat.is_active ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right pr-6 space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(cat)}
+                          className="h-8 w-8 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-primary transition-all"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteCategory(cat)}
+                          className="h-8 w-8 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-400 transition-all"
+                          disabled={isProcessing}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogIsOpen} onOpenChange={setDialogIsOpen}>
+        <DialogContent className="sm:max-w-lg bg-card/95 border border-white/10 backdrop-blur-2xl p-6 rounded-2xl shadow-glow-pro animate-in fade-in zoom-in-95 duration-200 glass-pro">
+          <DialogHeader className="border-b border-white/5 pb-3">
+            <DialogTitle className="text-lg font-black font-space-grotesk tracking-wide uppercase text-primary">
+              {editingCategory ? "EDITAR CATEGORÍA" : "REGISTRAR CATEGORÍA"}
+            </DialogTitle>
+            <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">
+              Category Engine Master • Clasificación Comercial
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
+                Identificador (Nombre)
+              </Label>
+              <Input
+                {...register("name")}
+                placeholder="EJ. COCTELES, ENTRADAS..."
+                className={cn(
+                  "h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary/50 text-xs font-black uppercase tracking-wider font-space-grotesk",
+                  errors.name && "border-destructive/50 focus:border-destructive/50"
+                )}
+              />
+              {errors.name && (
+                <p className="text-[10px] font-bold text-destructive uppercase tracking-widest font-space-grotesk italic ml-1 mt-1">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
+                Descripción
+              </Label>
+              <Input
+                {...register("description")}
+                placeholder="Breve detalle de la categoría..."
+                className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary/50 text-xs text-foreground font-dm-sans"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
+                Color de Asignación (Paleta POS)
+              </Label>
+              
+              <div className="grid grid-cols-4 gap-3">
+                {COLOR_PALETTE.map((color) => {
+                  const isActive = selectedColor === color.value;
+                  return (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setValue("color_hex", color.value)}
+                      className={cn(
+                        "h-10 rounded-xl border border-white/10 relative transition-all duration-300 flex items-center justify-center",
+                        color.shadow,
+                        isActive ? "scale-105 border-white/50" : "opacity-60 hover:opacity-100 hover:scale-[1.02]"
+                      )}
+                      title={color.name}
+                    >
+                      {isActive && (
+                        <Check className="w-4 h-4 text-zinc-950 font-black" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 bg-white/5 p-4 rounded-xl border border-white/5">
+              <input
+                id="is_active"
+                type="checkbox"
+                {...register("is_active")}
+                className="w-4 h-4 rounded border-white/10 text-primary bg-zinc-950 focus:ring-0 focus:ring-offset-0 focus:outline-none transition-colors"
+              />
+              <Label htmlFor="is_active" className="text-[10px] font-black uppercase tracking-wider text-foreground cursor-pointer select-none">
+                Categoría Activa (Visible en POS y menú digital)
+              </Label>
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-white/5 gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setDialogIsOpen(false)}
+                className="h-11 rounded-xl text-xs font-black font-space-grotesk tracking-widest uppercase hover:bg-white/5"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={isProcessing}
+                className="h-11 rounded-xl bg-primary text-primary-foreground font-black font-space-grotesk italic text-[11px] tracking-widest uppercase hover:bg-primary/95 transition-all shadow-glow-pro px-6"
+              >
+                {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Guardar Cambios
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
+  );
+}

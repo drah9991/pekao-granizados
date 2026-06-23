@@ -1,9 +1,25 @@
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, "El correo de operador es obligatorio")
+    .email("Ingresa un identificador de canal (email) válido"),
+  password: z
+    .string()
+    .min(6, "El código de encriptación debe tener al menos 6 caracteres")
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
   isLoading: boolean;
@@ -13,31 +29,46 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ isLoading, onLogin, rememberMe, onRememberMeChange }: LoginFormProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onLogin(email, password);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: ""
+    }
+  });
+
+  const onSubmit = (data: LoginFormData) => {
+    onLogin(data.email, data.password);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 animate-pro-in">
-        <div className="space-y-3">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 animate-pro-in">
+        <div className="space-y-2">
             <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 ml-2 font-space-grotesk italic">IDENTIFICADOR DE CANAL</Label>
             <Input
                 id="email"
                 type="email"
                 placeholder="OPERADOR@PEKAO.COM"
-                required
                 disabled={isLoading}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-14 bg-muted border-border rounded-2xl font-black font-space-grotesk italic tracking-widest text-[11px] uppercase focus:border-primary/50 text-foreground transition-all shadow-inner placeholder:opacity-20"
+                {...register("email")}
+                className={cn(
+                  "h-14 bg-muted border-border rounded-2xl font-black font-space-grotesk italic tracking-widest text-[11px] uppercase focus:border-primary/50 text-foreground transition-all shadow-inner placeholder:opacity-20",
+                  errors.email && "border-destructive/50 focus:border-destructive/50"
+                )}
             />
+            {errors.email && (
+              <p className="text-[10px] font-bold text-destructive uppercase tracking-widest font-space-grotesk italic ml-2 mt-1">
+                {errors.email.message}
+              </p>
+            )}
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2">
             <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 ml-2 font-space-grotesk italic">CÓDIGO DE ENCRIPTACIÓN</Label>
             <div className="relative">
                 <Input
@@ -45,11 +76,12 @@ export default function LoginForm({ isLoading, onLogin, rememberMe, onRememberMe
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    required
                     disabled={isLoading}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-14 bg-muted border-border rounded-2xl font-black font-space-grotesk italic tracking-widest text-sm focus:border-primary/50 text-foreground transition-all shadow-inner placeholder:opacity-20"
+                    {...register("password")}
+                    className={cn(
+                      "h-14 bg-muted border-border rounded-2xl font-black font-space-grotesk italic tracking-widest text-sm focus:border-primary/50 text-foreground transition-all shadow-inner placeholder:opacity-20",
+                      errors.password && "border-destructive/50 focus:border-destructive/50"
+                    )}
                 />
                 <button
                     type="button"
@@ -60,6 +92,11 @@ export default function LoginForm({ isLoading, onLogin, rememberMe, onRememberMe
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
             </div>
+            {errors.password && (
+              <p className="text-[10px] font-bold text-destructive uppercase tracking-widest font-space-grotesk italic ml-2 mt-1">
+                {errors.password.message}
+              </p>
+            )}
         </div>
         <div className="flex items-center justify-between px-2">
             <div className="flex items-center space-x-3">
@@ -86,3 +123,7 @@ export default function LoginForm({ isLoading, onLogin, rememberMe, onRememberMe
     </form>
   );
 }
+
+// Helper utility import
+import { cn } from "@/lib/utils";
+

@@ -478,7 +478,10 @@ export default function SplitBillDialog({
                       type="number"
                       step="1000"
                       value={cashReceived}
-                      onChange={(e) => setCashReceived(e.target.value)}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setCashReceived(val < 0 ? "0" : e.target.value);
+                      }}
                       onBlur={(e) => {
                         const val = parseFloat(e.target.value);
                         if (!isNaN(val)) {
@@ -525,8 +528,9 @@ export default function SplitBillDialog({
                             value={mixCash}
                             onChange={(e) => {
                               const val = e.target.value;
-                              setMixCash(val);
                               const numericVal = parseFloat(val || "0");
+                              if (numericVal < 0) return;
+                              setMixCash(val);
                               if (numericVal <= activeClients[activePaymentIndex].amount) {
                                 setMixTransfer((Math.round(activeClients[activePaymentIndex].amount - numericVal)).toString());
                               }
@@ -554,8 +558,9 @@ export default function SplitBillDialog({
                             value={mixTransfer}
                             onChange={(e) => {
                               const val = e.target.value;
-                              setMixTransfer(val);
                               const numericVal = parseFloat(val || "0");
+                              if (numericVal < 0) return;
+                              setMixTransfer(val);
                               if (numericVal <= activeClients[activePaymentIndex].amount) {
                                 setMixCash((Math.round(activeClients[activePaymentIndex].amount - numericVal)).toString());
                               }
