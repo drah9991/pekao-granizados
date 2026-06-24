@@ -55,6 +55,7 @@ import { InteractiveCursor } from "./ui/InteractiveCursor";
 import { BoneyardSkeleton } from "./ui/BoneyardSkeleton";
 
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const { isInstallable, installApp } = usePWAInstall();
@@ -537,7 +538,9 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
           fullWidth ? "p-0 overflow-hidden h-full" : "p-4 md:p-8"
         )} style={{ zoom: `${uiScale * 0.8}%` } as React.CSSProperties}>
             <AlertManager />
-            {children}
+            <ErrorBoundary fallbackTitle="Módulo Temporalmente No Disponible">
+              {children}
+            </ErrorBoundary>
         </div>
       </main>
     </div>

@@ -167,7 +167,7 @@ export default function PrintManagerModule() {
           </div>
           <div>
             <h1 className="text-xl font-black text-white tracking-widest uppercase font-space-grotesk">Comando Operativo</h1>
-            <p className="text-xs text-cyan-400/70 font-mono tracking-wider">OASIS EÓN HUB // PRINT_SYS</p>
+            <p className="text-xs text-cyan-400/70 font-mono tracking-wider">PUNTO PLAY PAUSA // PRINT_SYS</p>
           </div>
         </div>
         <div className="flex items-center gap-4">

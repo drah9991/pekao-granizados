@@ -1,7 +1,7 @@
 import { openDB, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'pekao-offline-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export interface OfflineOrder {
   id: string;
@@ -15,14 +15,15 @@ class OfflineService {
 
   constructor() {
     this.db = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        // Store for products to allow browsing while offline
+      upgrade(db, oldVersion) {
         if (!db.objectStoreNames.contains('products')) {
           db.createObjectStore('products', { keyPath: 'id' });
         }
-        // Store for orders created while offline
         if (!db.objectStoreNames.contains('orders')) {
           db.createObjectStore('orders', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('sync_store')) {
+          db.createObjectStore('sync_store');
         }
       },
     });
@@ -68,6 +69,38 @@ class OfflineService {
   }
 
   /**
+   * Métodos helpers para la persistencia de Zustand y sesión compartida con el Service Worker
+   */
+  async getSyncStoreVal(key: string): Promise<string | null> {
+    const db = await this.db;
+    return (await db.get('sync_store', key)) || null;
+  }
+
+  async setSyncStoreVal(key: string, value: string): Promise<void> {
+    const db = await this.db;
+    await db.put('sync_store', value, key);
+  }
+
+  async removeSyncStoreVal(key: string): Promise<void> {
+    const db = await this.db;
+    await db.delete('sync_store', key);
+  }
+
+  async saveAuthSession(session: any) {
+    const db = await this.db;
+    if (session) {
+      await db.put('sync_store', {
+        accessToken: session.access_token,
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+        supabaseKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        updatedAt: new Date().toISOString()
+      }, 'auth-session');
+    } else {
+      await db.delete('sync_store', 'auth-session');
+    }
+  }
+
+  /**
    * Cleanup periódico: elimina órdenes con más de 30 días de antigüedad
    */
   async cleanOldOrders(maxAgeDays = 30) {
@@ -85,3 +118,4 @@ class OfflineService {
 }
 
 export const offlineService = new OfflineService();
+

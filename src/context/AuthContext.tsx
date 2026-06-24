@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import type { Enums, Tables } from '@/integrations/supabase/types';
 import { identifyUser, clearUser } from '@/lib/sentry';
+import { offlineService } from '@/lib/OfflineService';
 
 type AppRole = Enums<'app_role'>;
 type Profile = Tables<'profiles'>;
@@ -136,11 +137,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (event === 'SIGNED_OUT') {
           setAuthState({ user: null, session: null, isLoading: false, userRole: null, storeId: null, storeName: null });
           clearUser(); // Clear Sentry user context
+          offlineService.saveAuthSession(null);
           return;
         }
 
         // Update session synchronously
         setAuthState(prev => ({ ...prev, session }));
+        offlineService.saveAuthSession(session);
 
         // Defer async work to avoid deadlock
         if (session?.user) {
@@ -160,12 +163,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (isMounted.current) {
             setAuthState({ user: null, session: null, isLoading: false, userRole: null, storeId: null, storeName: null });
           }
+          offlineService.saveAuthSession(null);
           return;
         }
 
         if (isMounted.current) {
           setAuthState(prev => ({ ...prev, session }));
         }
+        offlineService.saveAuthSession(session);
 
         await fetchProfileAndRole(session.user.id);
       } catch (err) {

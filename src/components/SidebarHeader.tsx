@@ -48,8 +48,8 @@ export function SidebarHeader({ className }: SidebarHeaderProps) {
 
         {/* Dynamic Branch/Store Info */}
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-extrabold text-foreground tracking-tight font-space-grotesk truncate uppercase italic" title={storeName || "OASIS EÓN HUB"}>
-            {storeName || "OASIS EÓN HUB"}
+          <h2 className="text-sm font-extrabold text-foreground tracking-tight font-space-grotesk truncate uppercase italic" title={storeName || "PUNTO PLAY PAUSA"}>
+            {storeName || "PUNTO PLAY PAUSA"}
           </h2>
           <p className="text-[9px] text-primary font-black uppercase tracking-[0.2em] italic mt-0.5 font-space-grotesk">
             Quantum Hub OS

@@ -1,9 +1,11 @@
+import * as Sentry from "@sentry/react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseRpc } from "@/integrations/supabase/types-extensions";
 import { useAuth } from "@/context/AuthContext";
 import { useTurn } from "@/hooks/useTurn";
-import { offlineService, OfflineOrder } from "@/lib/OfflineService";
+import { offlineService } from "@/lib/OfflineService";
+import { useSyncStore } from "@/store/useSyncStore";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useQueryClient } from "@tanstack/react-query";
 import type { PaymentMethod } from "@/components/pos/PaymentDialog";
@@ -16,17 +18,34 @@ export function usePOS() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
-  const [pendingOrders, setPendingOrders] = useState<OfflineOrder[]>([]);
+  
+  const pendingOrders = useSyncStore((state) => state.syncQueue);
+  const pendingOrdersCount = pendingOrders.length;
+
+  const registerBackgroundSync = async () => {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        await (registration as any).sync.register('sync-orders');
+      } catch (err) {
+        console.warn("Background sync registration failed:", err);
+      }
+    }
+  };
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
+    const handleOnline = () => {
+      setIsOnline(true);
+      handleSync();
+    };
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    checkPendingOrders();
+    if (navigator.onLine) {
+      handleSync();
+    }
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -34,10 +53,30 @@ export function usePOS() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleSWMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'SYNC_COMPLETED') {
+        notifyInfo(`Sincronización en segundo plano: ${event.data.successCount} pedidos subidos.`);
+        queryClient.invalidateQueries({ queryKey: ['tank-status'] });
+        queryClient.invalidateQueries({ queryKey: ['products-grid'] });
+      } else if (event.data && event.data.type === 'SYNC_ERROR') {
+        notifyWarning(`Error en sincronización en segundo plano: ${event.data.message}`);
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSWMessage);
+    }
+
+    return () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+      }
+    };
+  }, [queryClient]);
+
   const checkPendingOrders = async () => {
-    const pending = await offlineService.getPendingOrders();
-    setPendingOrders(pending);
-    setPendingOrdersCount(pending.length);
+    // Reactivo mediante useSyncStore
   };
 
   const processSale = async (
@@ -64,6 +103,7 @@ export function usePOS() {
 
       if (!activeTurn || activeTurn.status === 'paused') {
         notifyCritical("Debes tener un turno activo para procesar ventas.");
+        setIsProcessing(false);
         return null;
       }
 
@@ -111,24 +151,10 @@ export function usePOS() {
         items: mappedItems
       };
 
-      let orderId: string | null = null;
-
-      if (isOnline) {
-        const { data: orderWithId, error: rpcError } = await supabaseRpc<string>('process_sale', {
-          sale_data: salePayload as Record<string, unknown>
-        });
-
-        if (rpcError) throw rpcError;
-        orderId = orderWithId ?? null;
-      } else {
-        const offlineOrder = await offlineService.saveOfflineOrder(salePayload);
-        orderId = offlineOrder.id;
-        notifyInfo("Venta guardada localmente (Modo Offline)");
-        checkPendingOrders();
-      }
+      const optimisticOrderId = `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       const orderData = {
-        id: orderId,
+        id: optimisticOrderId,
         total: saleTotal + (deliveryData?.fee || 0),
         subtotal: saleSubtotal,
         discountAmount: saleDiscountAmount,
@@ -187,37 +213,65 @@ export function usePOS() {
         console.error("Error doing optimistic update of tank status:", optError);
       }
 
+      // Procesamiento asíncrono en segundo plano (Optimistic UI Fire-and-Forget)
+      (async () => {
+        try {
+          if (isOnline) {
+            const { error: rpcError } = await supabaseRpc<string>('process_sale', {
+              sale_data: salePayload as Record<string, unknown>
+            });
+
+            if (rpcError) throw rpcError;
+            
+            // Revalidación en segundo plano tras éxito
+            Promise.all([
+              queryClient.invalidateQueries({ queryKey: ['products-grid'] }),
+              queryClient.invalidateQueries({ queryKey: ['tank-status'] })
+            ]);
+          } else {
+            useSyncStore.getState().addToQueue(salePayload);
+            registerBackgroundSync();
+          }
+        } catch (error: unknown) {
+          console.error("Error background processing sale:", error);
+          Sentry.captureException(error);
+          
+          // Fallback silencioso: encolar localmente
+          try {
+            useSyncStore.getState().addToQueue(salePayload);
+            registerBackgroundSync();
+            notifyWarning("Red inestable: Venta guardada offline para reintento automático.");
+          } catch (offlineErr) {
+            Sentry.captureException(offlineErr);
+          }
+        }
+      })();
+
       notifyInfo("¡Venta procesada exitosamente!");
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['products-grid'] }),
-        queryClient.invalidateQueries({ queryKey: ['tank-status'] })
-      ]);
+      setIsProcessing(false);
       
       return orderData;
     } catch (error: unknown) {
+      setIsProcessing(false);
       const msg = error instanceof Error ? error.message : "Error desconocido";
       console.error("Error processing sale:", error);
       notifyCritical("Error al procesar la venta: " + msg);
       return null;
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   const handleSync = async () => {
-    if (!isOnline) {
-      notifyCritical("No hay conexión a internet para sincronizar.");
+    if (!navigator.onLine) {
+      return;
+    }
+
+    const pending = useSyncStore.getState().syncQueue;
+    if (pending.length === 0) {
       return;
     }
 
     setIsProcessing(true);
     try {
-      const pending = await offlineService.getPendingOrders();
-      if (pending.length === 0) {
-        notifyInfo("No hay pedidos pendientes.");
-        return;
-      }
-
       let successCount = 0;
       for (const order of pending) {
         try {
@@ -225,7 +279,7 @@ export function usePOS() {
             sale_data: order.payload as Record<string, unknown>
           });
           if (!error) {
-            await offlineService.markOrderSynced(order.id);
+            useSyncStore.getState().removeFromQueue(order.id);
             successCount++;
           }
         } catch (e) {
@@ -233,7 +287,6 @@ export function usePOS() {
         }
       }
 
-      await checkPendingOrders();
       if (successCount > 0) {
         notifyInfo(`Sincronización completada: ${successCount} pedidos subidos.`);
         Promise.all([

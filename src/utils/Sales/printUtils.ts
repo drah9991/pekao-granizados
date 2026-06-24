@@ -36,7 +36,7 @@ export const printReceipt = (order: OrderWithDetails, storeName?: string) => {
         </style>
       </head>
       <body>
-        <div class="text-center bold" style="font-size: 16px;">${(storeName || "Oasis Eón Hub").toUpperCase()}</div>
+        <div class="text-center bold" style="font-size: 16px;">${(storeName || "Punto Play Pausa").toUpperCase()}</div>
         <div class="text-center">ORDEN: #${order.id.slice(0, 8).toUpperCase()}</div>
         <div class="text-center">${dateStr}</div>
         <div class="border-bottom"></div>

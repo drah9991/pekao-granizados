@@ -35,7 +35,7 @@ export function useAuthPage() {
 
       if (error) throw error;
 
-      toast.success("¡Bienvenido a Oasis Eón Hub!");
+      toast.success("¡Bienvenido a Punto Play Pausa!");
       navigate("/dashboard");
       return true;
     } catch (error: unknown) {

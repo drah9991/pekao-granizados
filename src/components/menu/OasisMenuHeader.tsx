@@ -23,7 +23,7 @@ export function OasisMenuHeader({ storeName }: { storeName?: string }) {
           className="text-6xl md:text-8xl lg:text-9xl font-marker text-white tracking-widest mb-6"
           style={{ textShadow: '2px 4px 10px rgba(0,0,0,0.5)' }}
         >
-          {storeName || "OASIS EÓN HUB"}
+          {storeName || "PUNTO PLAY PAUSA"}
         </motion.h1>
 
         <motion.p 

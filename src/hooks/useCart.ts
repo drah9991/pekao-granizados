@@ -9,28 +9,27 @@ import { useAuth } from "@/context/AuthContext";
 export const useCart = () => {
   const { notifyCritical } = useAlerts();
   
-  const {
-    cart,
-    discount,
-    discountType,
-    selectedCustomer,
-    availableSizes,
-    availableToppings,
-    setDynamicData,
-    setCart,
-    setDiscount,
-    setDiscountType,
-    setSelectedCustomer,
-    getSubtotal,
-    getDiscountAmount,
-    getTotal,
-    addToCart: storeAddToCart,
-    updateQuantity: storeUpdateQuantity,
-    removeItem,
-    updateItemCustomization: storeUpdateItemCustomization,
-    resetCart,
-    restoreLastCart
-  } = useCartStore();
+  const cart = useCartStore((state) => state.cart);
+  const discount = useCartStore((state) => state.discount);
+  const discountType = useCartStore((state) => state.discountType);
+  const selectedCustomer = useCartStore((state) => state.selectedCustomer);
+  const availableSizes = useCartStore((state) => state.availableSizes);
+  const availableToppings = useCartStore((state) => state.availableToppings);
+  
+  const setDynamicData = useCartStore((state) => state.setDynamicData);
+  const setCart = useCartStore((state) => state.setCart);
+  const setDiscount = useCartStore((state) => state.setDiscount);
+  const setDiscountType = useCartStore((state) => state.setDiscountType);
+  const setSelectedCustomer = useCartStore((state) => state.setSelectedCustomer);
+  const getSubtotal = useCartStore((state) => state.getSubtotal);
+  const getDiscountAmount = useCartStore((state) => state.getDiscountAmount);
+  const getTotal = useCartStore((state) => state.getTotal);
+  const storeAddToCart = useCartStore((state) => state.addToCart);
+  const storeUpdateQuantity = useCartStore((state) => state.updateQuantity);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const storeUpdateItemCustomization = useCartStore((state) => state.updateItemCustomization);
+  const resetCart = useCartStore((state) => state.resetCart);
+  const restoreLastCart = useCartStore((state) => state.restoreLastCart);
 
   const { storeId } = useAuth();
 

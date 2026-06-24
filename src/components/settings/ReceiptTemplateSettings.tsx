@@ -375,7 +375,7 @@ export default function ReceiptTemplateSettings() {
                     )}
                     {templateData.header.show_store_name && (
                     <div className="font-black text-lg tracking-tighter italic uppercase leading-none">
-                        OASIS EÓN HUB
+                        PUNTO PLAY PAUSA
                     </div>
                     )}
                     {templateData.header.show_address && (
