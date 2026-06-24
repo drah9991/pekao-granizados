@@ -55,7 +55,7 @@ export default function CashRegister() {
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="min-h-screen bg-[#0F1117] text-white p-6 lg:p-10 space-y-8"
+        className="min-h-screen bg-background text-foreground p-6 lg:p-10 space-y-8"
       >
         {/* Header Section */}
         <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-6">

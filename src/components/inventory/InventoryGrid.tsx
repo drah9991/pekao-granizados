@@ -36,7 +36,7 @@ export function InventoryGrid({ items, onAdjust, loading }: InventoryGridProps) 
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ delay: idx * 0.02, type: "spring", damping: 20 }}
               className={cn(
-                "bg-muted border rounded-[3rem] p-10 glass-pro group relative overflow-hidden transition-all duration-500",
+                "bg-muted border rounded-2xl lg:rounded-[3rem] p-5 lg:p-10 glass-pro group relative overflow-hidden transition-all duration-500",
                 isLowStock ? "border-rose-500/30 bg-rose-500/[0.03] shadow-glow-pro animate-border-glow-pulse-red" : "border-border hover:border-primary/20 hover:bg-muted/80 shadow-pro"
               )}
             >

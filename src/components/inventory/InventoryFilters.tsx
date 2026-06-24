@@ -41,9 +41,9 @@ export function InventoryFilters({
         />
       </div>
       
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4">
         <Select value={selectedStore} onValueChange={setSelectedStore}>
-          <SelectTrigger className="w-[200px] h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk transition-all shadow-pro focus:ring-primary/20">
+          <SelectTrigger className="w-full sm:w-[200px] h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk transition-all shadow-pro focus:ring-primary/20">
             <SelectValue placeholder="NODOS DE RED" />
           </SelectTrigger>
           <SelectContent className="glass-pro border-border rounded-3xl">
@@ -57,7 +57,7 @@ export function InventoryFilters({
         </Select>
 
         <Select value={filterProductType} onValueChange={(value: Enums<'product_type'> | "all") => setFilterProductType(value)}>
-          <SelectTrigger className="w-[180px] h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk transition-all shadow-pro focus:ring-primary/20">
+          <SelectTrigger className="w-full sm:w-[180px] h-16 bg-muted/40 border-border rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest italic font-space-grotesk transition-all shadow-pro focus:ring-primary/20">
             <SelectValue placeholder="FILTRO DE TIPO" />
           </SelectTrigger>
           <SelectContent className="glass-pro border-border rounded-3xl">

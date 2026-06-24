@@ -56,7 +56,7 @@ export function PaymentMethodsWidget({ data }: { data: PaymentMethodsData | null
           {/* Usability Center Indicator */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none mb-2 z-10">
             <div className="text-center">
-              <p className="text-[20px] lg:text-[24px] font-black tracking-tighter text-white font-space-grotesk italic pr-1">
+              <p className="text-[20px] lg:text-[24px] font-black tracking-tighter text-foreground font-space-grotesk italic pr-1">
                 {formatCOP(totalCaja)}
               </p>
               <p className="text-[9px] font-black uppercase text-[#00F3FF] tracking-[0.25em] mt-1">

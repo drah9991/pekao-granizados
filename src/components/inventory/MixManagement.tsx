@@ -99,7 +99,7 @@ export default function MixManagement({ storeId }: { storeId: string }) {
         
         <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="text-center md:text-left">
-            <h2 className="text-4xl font-black text-white font-space-grotesk mb-3 tracking-tighter italic uppercase">
+            <h2 className="text-4xl font-black text-foreground font-space-grotesk mb-3 tracking-tighter italic uppercase">
               RESERVA DE <span className="text-primary text-glow">MEZCLAS</span>
             </h2>
             <p className="text-muted-foreground max-w-lg font-dm-sans text-sm leading-relaxed uppercase tracking-wider font-bold">
@@ -153,7 +153,7 @@ export default function MixManagement({ storeId }: { storeId: string }) {
               <CardContent className="space-y-6 relative z-10">
                 <div className="flex justify-between items-end">
                     <div>
-                        <p className="text-5xl font-black font-space-grotesk italic tracking-tighter text-white">
+                        <p className="text-5xl font-black font-space-grotesk italic tracking-tighter text-foreground">
                             {liters.toFixed(1)} <span className="text-xl text-primary font-bold not-italic ml-0.5">L</span>
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-2 font-black uppercase tracking-widest opacity-60">Volumen en Depósito</p>
@@ -217,7 +217,7 @@ export default function MixManagement({ storeId }: { storeId: string }) {
             <TableBody>
               {history.map((item) => (
                 <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-all group h-20">
-                  <TableCell className="px-10 font-black font-space-grotesk italic uppercase text-white group-hover:text-primary transition-colors">
+                  <TableCell className="px-10 font-black font-space-grotesk italic uppercase text-foreground group-hover:text-primary transition-colors">
                     {mixes.find(m => m.id === item.inventory_item_id)?.name || "—"}
                   </TableCell>
                   <TableCell>
@@ -237,7 +237,7 @@ export default function MixManagement({ storeId }: { storeId: string }) {
                         {new Date(item.created_at).toLocaleString()}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right px-10 text-[10px] font-dm-sans text-muted-foreground italic group-hover:text-white transition-colors">
+                  <TableCell className="text-right px-10 text-[10px] font-dm-sans text-muted-foreground italic group-hover:text-foreground transition-colors">
                     {item.notes || "S/O"}
                   </TableCell>
                 </TableRow>

@@ -264,7 +264,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
 
       {/* Floating Control Center (Top Left) */}
       <div className={cn(
-        "fixed top-4 z-[60] flex items-center gap-2 p-1.5 bg-slate-950/40 backdrop-blur-xl border border-white/10 rounded-2xl animate-pro-in transition-all duration-500",
+        "fixed top-4 z-[60] hidden lg:flex items-center gap-2 p-1.5 bg-slate-950/40 backdrop-blur-xl border border-white/10 rounded-2xl animate-pro-in transition-all duration-500",
         isSidebarOpen ? "left-[17rem]" : "left-16"
       )}>
         <div className="flex items-center gap-3 px-3 h-8 border-r border-border/50 mr-1 hidden sm:flex justify-center">

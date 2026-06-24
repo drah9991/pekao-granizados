@@ -25,7 +25,7 @@ interface CashLiquidityCardProps {
 
 export function CashLiquidityCard({ summary, stats, orderCount, peakHour }: CashLiquidityCardProps) {
   return (
-    <Card className="bg-[#1C1F26] border border-white/10 rounded-[3rem] shadow-pro relative overflow-hidden glass-pro dim-layering group">
+    <Card className="bg-card border border-white/10 rounded-[3rem] shadow-pro relative overflow-hidden glass-pro dim-layering group">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50 group-hover:opacity-70 transition-opacity" />
       <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-[10rem] -translate-y-1/2 translate-x-1/2" />
       <CardContent className="p-10 lg:p-12 relative z-10">

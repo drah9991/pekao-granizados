@@ -232,12 +232,12 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                 <StoreIcon className="w-10 h-10 text-white/20" />
             </div>
             <CardTitle className="text-3xl font-black italic uppercase font-space-grotesk tracking-tight mb-4">Nodo No Detectado</CardTitle>
-            <CardDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-10 max-w-xs mx-auto leading-relaxed italic font-space-grotesk">
+            <CardDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40 mb-10 max-w-xs mx-auto leading-relaxed italic font-space-grotesk">
               Para configurar el ADN visual, primero es necesario indexar una sucursal en el ecosistema digital.
             </CardDescription>
             <div className="max-w-sm mx-auto space-y-6">
               <div className="space-y-2">
-                <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2 font-space-grotesk">NOMBRE DEL NUEVO NODO</Label>
+                <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-foreground/40 italic px-2 font-space-grotesk">NOMBRE DEL NUEVO NODO</Label>
                 <Input
                     placeholder="EJ: OASIS CENTRO CORE"
                     value={newStoreName}
@@ -268,10 +268,10 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
     >
       <div className="flex items-center justify-between">
         <div>
-            <h2 className="text-3xl font-black italic uppercase font-space-grotesk tracking-tight text-white leading-none">Global DNA Branding</h2>
+            <h2 className="text-3xl font-black italic uppercase font-space-grotesk tracking-tight text-foreground leading-none">Global DNA Branding</h2>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mt-1 italic font-space-grotesk">Personalización Atómica de Interfaz</p>
         </div>
-        <div className="flex items-center gap-3 bg-white/5 px-4 h-9 rounded-full border border-white/10 font-black text-[9px] text-white/40 italic uppercase tracking-widest leading-none font-space-grotesk">
+        <div className="flex items-center gap-3 bg-white/5 px-4 h-9 rounded-full border border-white/10 font-black text-[9px] text-foreground/40 italic uppercase tracking-widest leading-none font-space-grotesk">
             <Zap className="w-4 h-4 text-amber-500" /> Sincronización v2.0
         </div>
       </div>
@@ -288,8 +288,8 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                     <ImageIcon className="w-5 h-5" />
                 </div>
                 <div>
-                   <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Visual Identity Assets</CardTitle>
-                   <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic leading-none font-space-grotesk">Logo Maestro • Alpha Channel</CardDescription>
+                   <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-foreground">Visual Identity Assets</CardTitle>
+                   <CardDescription className="text-[9px] font-bold text-foreground/20 uppercase tracking-widest italic leading-none font-space-grotesk">Logo Maestro • Alpha Channel</CardDescription>
                 </div>
             </div>
           </CardHeader>
@@ -337,16 +337,16 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                 <div className="space-y-3 rounded-xl bg-white/[0.02] border border-white/5 p-4">
                     <div className="flex items-center gap-2 mb-1">
                         <Check className="w-3.5 h-3.5 text-emerald-500" />
-                        <p className="text-[9px] font-black text-white/60 uppercase italic tracking-widest font-space-grotesk leading-none">Especificaciones</p>
+                        <p className="text-[9px] font-black text-foreground/60 uppercase italic tracking-widest font-space-grotesk leading-none">Especificaciones</p>
                     </div>
-                    <p className="text-[8px] text-white/30 font-bold uppercase italic leading-relaxed font-space-grotesk">
+                    <p className="text-[8px] text-foreground/30 font-bold uppercase italic leading-relaxed font-space-grotesk">
                       Formatos: PNG (Transparente), SVG o JPG. El sistema optimizará el recurso para el punto de venta.
                     </p>
                     
                     <Label htmlFor="logo-upload" className="cursor-pointer block pt-2">
                       <div className="flex items-center justify-center gap-3 p-4 border border-dashed border-white/10 rounded-xl hover:border-primary/50 hover:bg-primary/10 transition-all group/upload shadow-pro">
                         <Upload className="w-4 h-4 text-white/20 group-hover/upload:text-primary transition-colors" />
-                        <span className="text-[9px] font-black uppercase italic tracking-[0.2em] text-white/40 group-hover/upload:text-white transition-colors font-space-grotesk">
+                        <span className="text-[9px] font-black uppercase italic tracking-[0.2em] text-foreground/40 group-hover/upload:text-foreground transition-colors font-space-grotesk">
                           {logoFile ? 'Actualizar Recurso' : 'Vincular Assets de Marca'}
                         </span>
                       </div>
@@ -365,8 +365,8 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                     <Palette className="w-5 h-5" />
                 </div>
                 <div>
-                   <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Chroma Core</CardTitle>
-                   <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic leading-none font-space-grotesk">Acento Cromático Global</CardDescription>
+                   <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-foreground">Chroma Core</CardTitle>
+                   <CardDescription className="text-[9px] font-bold text-foreground/20 uppercase tracking-widest italic leading-none font-space-grotesk">Acento Cromático Global</CardDescription>
                 </div>
             </div>
           </CardHeader>
@@ -384,7 +384,7 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                     <div className="absolute inset-0 pointer-events-none rounded-xl border-2 border-white/10 group-hover:border-white/30 transition-all" />
                 </div>
                 <div className="flex-1 space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 font-space-grotesk italic">HEXADECIMAL CODE</Label>
+                  <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/40 font-space-grotesk italic">HEXADECIMAL CODE</Label>
                   <div className="relative">
                       <Input
                         type="text"
@@ -399,7 +399,7 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
               </div>
               
               <div className="space-y-3 rounded-xl bg-white/[0.02] border border-white/5 p-4">
-                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest italic ml-1 font-space-grotesk">Simulación UX/UI</p>
+                  <p className="text-[9px] font-black text-foreground/20 uppercase tracking-widest italic ml-1 font-space-grotesk">Simulación UX/UI</p>
                   <div className="grid grid-cols-2 gap-3">
                     <Button 
                       style={{ backgroundColor: primaryColor }}
@@ -424,8 +424,8 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                     <Zap className="w-5 h-5" />
                 </div>
                 <div>
-                   <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Edge Matrix</CardTitle>
-                   <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic leading-none font-space-grotesk">Bordes de Componentes</CardDescription>
+                   <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-foreground">Edge Matrix</CardTitle>
+                   <CardDescription className="text-[9px] font-bold text-foreground/20 uppercase tracking-widest italic leading-none font-space-grotesk">Bordes de Componentes</CardDescription>
                 </div>
             </div>
           </CardHeader>
@@ -443,7 +443,7 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                     <div className="absolute inset-0 pointer-events-none rounded-xl border-2 border-white/10 group-hover:border-white/30 transition-all" />
                 </div>
                 <div className="flex-1 space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 font-space-grotesk italic">HEX BORDER CODE</Label>
+                  <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/40 font-space-grotesk italic">HEX BORDER CODE</Label>
                   <div className="relative">
                       <Input
                         type="text"
@@ -458,7 +458,7 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
               </div>
               
               <div className="p-4 bg-white/[0.02] rounded-xl border border-white/5 flex flex-col justify-center min-h-[90px]">
-                <p className="text-[8px] text-white/40 font-bold uppercase italic leading-relaxed font-space-grotesk">
+                <p className="text-[8px] text-foreground/40 font-bold uppercase italic leading-relaxed font-space-grotesk">
                   <span className="text-primary mr-1">TÉCNICA GLOW:</span> Si dejas el código vacío, el sistema activará el algoritmo de derivadas, usando una versión traslúcida del acento principal.
                 </p>
               </div>
@@ -475,8 +475,8 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                         <Eye className="w-5 h-5" />
                     </div>
                     <div>
-                       <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-white">Real-Time Simulator</CardTitle>
-                       <CardDescription className="text-[9px] font-bold text-white/20 uppercase tracking-widest italic leading-none font-space-grotesk">Previsualización de Entorno</CardDescription>
+                       <CardTitle className="text-lg font-black italic uppercase font-space-grotesk tracking-widest text-foreground">Real-Time Simulator</CardTitle>
+                       <CardDescription className="text-[9px] font-bold text-foreground/20 uppercase tracking-widest italic leading-none font-space-grotesk">Previsualización de Entorno</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -497,7 +497,7 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                                 />
                             ) : (
                                 <div className="h-16 w-48 bg-white/5 rounded-xl animate-pulse flex items-center justify-center border border-white/5">
-                                    <span className="text-[8px] font-black text-white/10 uppercase italic tracking-[0.3em]">No Image Found</span>
+                                    <span className="text-[8px] font-black text-foreground/10 uppercase italic tracking-[0.3em]">No Image Found</span>
                                 </div>
                             )}
                         </AnimatePresence>
@@ -509,8 +509,8 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
                         </div>
                         
                         <div className="text-center">
-                            <h4 className="text-[10px] font-black font-space-grotesk text-white/40 uppercase tracking-[0.3em] italic">Oasis Quantum V2</h4>
-                            <p className="text-[8px] font-bold text-white/20 uppercase italic tracking-widest mt-1 font-space-grotesk">{storeId || 'UNAUTHORIZED_NODE'}</p>
+                            <h4 className="text-[10px] font-black font-space-grotesk text-foreground/40 uppercase tracking-[0.3em] italic">Oasis Quantum V2</h4>
+                            <p className="text-[8px] font-bold text-foreground/20 uppercase italic tracking-widest mt-1 font-space-grotesk">{storeId || 'UNAUTHORIZED_NODE'}</p>
                         </div>
                     </div>
                 </div>

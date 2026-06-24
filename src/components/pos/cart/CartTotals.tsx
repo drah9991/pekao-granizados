@@ -29,7 +29,7 @@ export function CartTotals({
   onSplitPayment
 }: CartTotalsProps) {
   return (
-    <div className="space-y-6 pt-6 border-t border-white/5">
+    <div className="space-y-6 pt-6 border-t border-border/50">
       {/* Discount Area - Minimalist */}
       <div className="flex items-center justify-between gap-4 px-2">
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground font-dm-sans">Descuento</span>
@@ -49,7 +49,7 @@ export function CartTotals({
                   variant="ghost"
                   size="sm"
                   onClick={() => setDiscountType(discountType === "percent" ? "fixed" : "percent")}
-                  className="h-8 w-8 px-0 text-[10px] font-bold border-l border-white/5 text-primary"
+                  className="h-8 w-8 px-0 text-[10px] font-bold border-l border-border/50 text-primary"
                 >
                   {discountType === "percent" ? "%" : "$"}
                 </Button>
@@ -69,7 +69,7 @@ export function CartTotals({
               <span className="text-sm font-bold text-rose-400 font-dm-sans tabular-nums">-{formatCOP(discountAmount)}</span>
            </div>
         )}
-        <div className="flex justify-between items-center pt-4 border-t border-white/5 mt-4">
+        <div className="flex justify-between items-center pt-4 border-t border-border/50 mt-4">
           <span className="text-base font-extrabold text-primary uppercase tracking-tight font-dm-sans">Total</span>
           <span className="text-3xl lg:text-5xl font-black text-foreground font-dm-sans tracking-tighter tabular-nums">
             {formatCOP(total)}

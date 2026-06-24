@@ -60,7 +60,7 @@ const getMethodBadge = (method: string) => {
 
 export function CashTransactionTable({ orders, loading, summary }: CashTransactionTableProps) {
   return (
-    <Card className="bg-[#1C1F26] border border-white/10 rounded-[3rem] p-10 shadow-pro glass-pro overflow-hidden">
+    <Card className="bg-card border border-white/10 rounded-[3rem] p-10 shadow-pro glass-pro overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div>
           <h2 className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight text-white mb-1">Desglose de Facturación</h2>

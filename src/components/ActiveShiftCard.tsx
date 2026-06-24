@@ -87,7 +87,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
       {activeTurn ? (
         activeTurn.status === 'paused' ? (
           /* PAUSED SHIFT CARD */
-          <div className="bg-slate-950/40 border border-amber-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-900/40 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(245,158,11,0.05)]">
+          <div className="bg-muted/40 border border-amber-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-900/40 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(245,158,11,0.05)]">
             <div className="flex items-center gap-3 mb-3">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
@@ -129,7 +129,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
           </div>
         ) : (
           /* ACTIVE SHIFT CARD (OPEN) */
-          <div className="bg-slate-950/40 border border-emerald-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-900/40 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(16,185,129,0.05)]">
+          <div className="bg-muted/40 border border-emerald-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-900/40 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(16,185,129,0.05)]">
             <div className="flex items-center gap-3 mb-3">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -171,7 +171,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
         )
       ) : (
         /* NO ACTIVE SHIFT CARD (LOCKED) */
-        <div className="bg-slate-950/40 border border-rose-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-900/40 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(239,68,68,0.05)]">
+        <div className="bg-muted/40 border border-rose-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-900/40 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(239,68,68,0.05)]">
           <div className="flex items-center gap-3 mb-3">
             <span className="relative flex h-2.5 w-2.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-rose-400/30 animate-pulse" />
@@ -211,7 +211,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
                 placeholder="Eje: 50000" 
                 value={amount} 
                 onChange={(e) => setAmount(e.target.value)}
-                className="bg-slate-950 border-white/10 h-12 rounded-xl text-sm font-semibold tracking-wider font-space-grotesk text-center"
+                className="bg-background border-input text-foreground h-12 rounded-xl text-sm font-semibold tracking-wider font-space-grotesk text-center"
               />
             </div>
           </div>
@@ -240,7 +240,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
                 placeholder="0.00" 
                 value={amount} 
                 onChange={(e) => setAmount(e.target.value)}
-                className="bg-slate-950 border-white/10 h-12 rounded-xl text-sm font-semibold tracking-wider font-space-grotesk text-center"
+                className="bg-background border-input text-foreground h-12 rounded-xl text-sm font-semibold tracking-wider font-space-grotesk text-center"
               />
             </div>
             <div className="space-y-2">
@@ -249,7 +249,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
                 placeholder="..." 
                 value={notes} 
                 onChange={(e) => setNotes(e.target.value)}
-                className="bg-slate-950 border-white/10 h-12 rounded-xl text-xs font-semibold"
+                className="bg-background border-input text-foreground h-12 rounded-xl text-xs font-semibold"
               />
             </div>
           </div>

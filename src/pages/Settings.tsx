@@ -65,7 +65,7 @@ export default function Settings() {
           <div className="hidden md:block absolute -left-6 lg:-left-12 top-0 bottom-0 w-1.5 bg-gradient-to-b from-primary via-primary/50 to-transparent rounded-full shadow-glow-pro animate-pulse" />
           <div className="animate-pro-in">
             <h1 
-              className="text-2xl sm:text-4xl md:text-5xl font-black font-space-grotesk italic tracking-tighter uppercase text-white mb-2"
+              className="text-2xl sm:text-4xl md:text-5xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground mb-2"
               style={{ textShadow: "0 0 15px rgba(236, 72, 153, 0.5)" }}
             >
               CONFIGURACIÓN <span className="text-glow italic" style={{ color: "#ec4899" }}>SISTEMA</span>
@@ -94,7 +94,7 @@ export default function Settings() {
                   <TabsTrigger
                     key={tab.value}
                     value={tab.value}
-                    className="relative shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-none bg-transparent hover:bg-white/[0.02] font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all text-muted-foreground/60 data-[state=active]:text-white px-4 lg:px-6 border-l-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-[inset_4px_0_12px_rgba(236,72,153,0.05)] hover:border-l hover:border-white/10"
+                    className="relative shrink-0 lg:w-full justify-start gap-4 h-12 lg:h-14 rounded-none bg-transparent hover:bg-white/[0.02] font-black font-space-grotesk italic text-[10px] lg:text-[11px] tracking-widest uppercase transition-all text-muted-foreground/60 data-[state=active]:text-primary px-4 lg:px-6 border-l-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-[inset_4px_0_12px_rgba(236,72,153,0.05)] hover:border-l hover:border-white/10"
                   >
                     <tab.icon className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
                     {tab.label}
