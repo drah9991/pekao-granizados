@@ -81,15 +81,16 @@ export function PaymentMethodsWidget({ data }: { data: PaymentMethodsData | null
                 </Pie>
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))',
+                    backgroundColor: 'oklch(var(--card))',
                     backdropFilter: 'blur(32px)', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '2rem', 
+                    border: '1px solid oklch(var(--border))',
+                    borderRadius: '16px', 
                     padding: '20px', 
                     boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)'
                   }}
-                  itemStyle={{ color: 'hsl(var(--foreground))', fontWeight: 900, fontSize: '16px', fontFamily: 'Space Grotesk' }}
+                  itemStyle={{ color: 'oklch(var(--foreground))', fontWeight: 900, fontSize: '16px', fontFamily: 'Space Grotesk' }}
                   formatter={(val: number) => [formatCOP(val), "Recaudo"]}
+                  labelStyle={{ color: 'oklch(var(--muted-foreground))' }}
                 />
               </PieChart>
             </ResponsiveContainer>

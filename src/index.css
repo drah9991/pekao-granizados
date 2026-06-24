@@ -63,10 +63,10 @@
     --shadow-glow: 0 0 30px hsla(var(--brand-primary-h), 100%, 60%, 0.15);
 
     /* Sidebar Light Mode */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: var(--brand-primary-h) 50% 10%;
-    --sidebar-primary: var(--brand-primary-h) 80% 50%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-background: 1.0 0.0 0;
+    --sidebar-foreground: 0.21 0.04 250;
+    --sidebar-primary: 0.58 0.23 250;
+    --sidebar-border: 0.92 0.01 220;
 
     --glass-bg: rgba(255, 255, 255, 0.6);
     --glass-border: rgba(0, 0, 0, 0.05);
@@ -112,9 +112,9 @@
     --shadow-glow: 0 0 80px hsla(270, 100%, 50%, 0.2);
 
 
-    --sidebar-background: var(--brand-primary-h) 30% 6%;
-    --sidebar-foreground: var(--brand-primary-h) 10% 90%;
-    --sidebar-border: var(--brand-primary-h) 20% 12%;
+    --sidebar-background: 0.15 0.02 250;
+    --sidebar-foreground: 0.95 0.01 250;
+    --sidebar-border: 0.24 0.02 250;
 
     --glass-bg: rgba(15, 17, 23, 0.7);
     --glass-border: rgba(255, 255, 255, 0.08);

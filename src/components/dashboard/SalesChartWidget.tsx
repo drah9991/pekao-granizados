@@ -77,16 +77,16 @@ export function SalesChartWidget({ data }: { data: SalesChartData | null }) {
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
+                  backgroundColor: 'oklch(var(--card))',
                   backdropFilter: 'blur(32px)', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '2rem', 
+                  border: '1px solid oklch(var(--border))',
+                  borderRadius: '16px', 
                   padding: '20px', 
                   boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)'
                 }}
-                itemStyle={{ color: 'hsl(var(--foreground))', fontWeight: 900, fontSize: '16px', fontFamily: 'Space Grotesk' }}
+                itemStyle={{ color: 'oklch(var(--foreground))', fontWeight: 900, fontSize: '16px', fontFamily: 'Space Grotesk' }}
                 formatter={(val: number) => [formatCOP(val), "Ingresos"]}
-                labelStyle={{ color: 'hsl(var(--muted-foreground))', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px', marginBottom: '8px', letterSpacing: '0.2em' }}
+                labelStyle={{ color: 'oklch(var(--muted-foreground))', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px', marginBottom: '8px', letterSpacing: '0.2em' }}
                 cursor={{ stroke: '#8b5cf6', strokeWidth: 2, strokeDasharray: '6 6' }}
               />
               <Area 

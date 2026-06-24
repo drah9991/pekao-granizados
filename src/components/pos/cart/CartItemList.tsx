@@ -93,7 +93,7 @@ export function CartItemList({
                               <Plus className="w-2.5 h-2.5" /> Topping
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-64 bg-slate-950/95 border-white/10 backdrop-blur-md p-3 text-white rounded-xl shadow-xl z-50">
+                          <PopoverContent className="w-64 bg-popover/95 border-border backdrop-blur-md p-3 text-popover-foreground rounded-xl shadow-xl z-50">
                             <h4 className="font-bold text-xs uppercase tracking-wider mb-2 text-white/60 font-dm-sans">Agregar Toppings</h4>
                             <div className="space-y-1 max-h-48 overflow-y-auto no-scrollbar">
                               {availableToppings.map((topping) => {
