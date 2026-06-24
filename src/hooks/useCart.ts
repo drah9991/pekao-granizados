@@ -85,8 +85,8 @@ export const useCart = () => {
     }
   };
 
-  const addToCart = useCallback((product: Product, selectedSizeId: string, selectedToppingIds: string[], customized: boolean = false, quantity: number = 1) => {
-    storeAddToCart(product, selectedSizeId, selectedToppingIds, customized, quantity, notifyCritical);
+  const addToCart = useCallback((product: Product, selectedSizeId: string, selectedToppingIds: string[], customized: boolean = false, quantity: number = 1, discountMessage?: string) => {
+    storeAddToCart(product, selectedSizeId, selectedToppingIds, customized, quantity, notifyCritical, discountMessage);
   }, [storeAddToCart, notifyCritical]);
 
   const updateQuantity = useCallback((id: string, delta: number) => {

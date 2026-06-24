@@ -69,7 +69,8 @@ export interface CartStoreState {
     selectedToppingIds: string[],
     customized?: boolean,
     quantity?: number,
-    notifyCritical?: (msg: string) => void
+    notifyCritical?: (msg: string) => void,
+    discountMessage?: string
   ) => void;
   updateQuantity: (id: string, delta: number, notifyCritical?: (msg: string) => void) => void;
   removeItem: (id: string) => void;
@@ -124,7 +125,7 @@ export const useCartStore = create<CartStoreState>()(
         return Math.max(0, Math.round(state.getSubtotal() - state.getDiscountAmount()));
       },
 
-      addToCart: (product, selectedSizeId, selectedToppingIds, customized = false, quantity = 1, notifyCritical) => {
+      addToCart: (product, selectedSizeId, selectedToppingIds, customized = false, quantity = 1, notifyCritical, overrideDiscountMessage) => {
         const state = get();
         const cart = state.cart;
         const typeCfg = state.productTypes.find(t => t.code === product.type);
@@ -194,8 +195,10 @@ export const useCartStore = create<CartStoreState>()(
           return { cart: cleanCartItems([...state.cart, newItem]) };
         });
 
-        if (discountMessage) {
-          toast.success(`Producto agregado con descuento: ${discountMessage}`);
+        const finalDiscountMessage = overrideDiscountMessage || pricingResult.discountMessage;
+
+        if (finalDiscountMessage) {
+          toast.success(`Producto agregado con descuento: ${finalDiscountMessage}`);
         } else {
           toast.success("Producto agregado al carrito");
         }

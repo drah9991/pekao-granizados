@@ -53,7 +53,7 @@ SET inventory_item_id = EXCLUDED.inventory_item_id,
     current_volume_ml = EXCLUDED.current_volume_ml;
 
 -- 2. Create vw_tank_percentages view
-CREATE OR REPLACE VIEW public.vw_tank_percentages AS
+CREATE OR REPLACE VIEW public.vw_tank_percentages WITH (security_invoker = on) AS
 SELECT 
     id,
     store_id,
