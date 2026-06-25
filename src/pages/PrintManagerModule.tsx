@@ -1,383 +1,503 @@
-import React, { useState, useEffect } from 'react';
-import Layout from '@/components/Layout';
-import { Smartphone, Printer, Scan, FileText, Settings2, Plus, Calculator, CheckCircle2, Copy, History, Terminal } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { formatCOP } from '@/lib/currency';
+import React, { useMemo, useState } from 'react';
+import { Smartphone, Copy, Scan, Printer, Plus, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
+import Layout from '@/components/Layout';
+import { useAuth } from '@/context/AuthContext';
+import { useTurn } from '@/hooks/useTurn';
+import { useConfigStore } from '@/store/useConfigStore';
+import { usePOS } from '@/hooks/usePOS';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-// --- Interfaces & Types ---
+// Interfaces estrictas para el módulo
 type OriginType = 'whatsapp' | 'physical' | 'scanner';
 type ColorMode = 'bw' | 'color';
-type DuplexMode = 'simplex' | 'duplex';
 type PaperSize = 'letter' | 'legal';
 
-interface PrintPricing {
-  bw_letter: number;
-  bw_legal: number;
-  color_letter: number;
-  color_legal: number;
-  scanner: number;
-}
-
-interface PrintPayload {
+interface PrintJob {
   id: string;
-  created_at: string;
-  origin: OriginType;
-  color_mode: ColorMode;
-  duplex_mode: DuplexMode;
-  paper_size: PaperSize;
-  pages: number;
-  sets: number;
-  total_impressions: number;
-  total_price: number;
-  status: 'completed' | 'pending';
+  origin: string;
+  impressions: number;
+  price: number;
+  time: string;
+  rawOrder?: any;
 }
-
-// --- Mock Data & Config ---
-const PRICING: PrintPricing = {
-  bw_letter: 200,
-  bw_legal: 300,
-  color_letter: 1000,
-  color_legal: 1200,
-  scanner: 500, // Flat rate per scanned page
-};
-
-const MOCK_INITIAL_HISTORY: PrintPayload[] = [
-  { id: 'TX-001', created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(), origin: 'whatsapp', color_mode: 'bw', duplex_mode: 'simplex', paper_size: 'letter', pages: 45, sets: 1, total_impressions: 45, total_price: 9000, status: 'completed' },
-  { id: 'TX-002', created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(), origin: 'physical', color_mode: 'color', duplex_mode: 'duplex', paper_size: 'letter', pages: 10, sets: 2, total_impressions: 20, total_price: 20000, status: 'completed' },
-];
 
 export default function PrintManagerModule() {
-  // --- State ---
+  const { user, userRole } = useAuth();
+  const { activeTurn } = useTurn();
+  
+  const storeConfig = useConfigStore((state) => state.storeConfig) as Record<string, any>;
+  const pricing = storeConfig?.copyCenter?.pricing || {
+    print: { bw_letter: 200, bw_legal: 300, color_letter: 1000, color_legal: 1200 },
+    copy: { bw_letter: 200, bw_legal: 300, color_letter: 1000, color_legal: 1200 },
+    scanner: 500
+  };
+
+  // Estados del formulario
   const [origin, setOrigin] = useState<OriginType>('whatsapp');
   const [colorMode, setColorMode] = useState<ColorMode>('bw');
-  const [duplexMode, setDuplexMode] = useState<DuplexMode>('simplex');
   const [paperSize, setPaperSize] = useState<PaperSize>('letter');
-  
   const [pages, setPages] = useState<number>(1);
   const [sets, setSets] = useState<number>(1);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
-  const [totalPrice, setTotalPrice] = useState<number>(0);
-  const [totalImpressions, setTotalImpressions] = useState<number>(0);
+  const queryClient = useQueryClient();
+  const { processSale } = usePOS();
   
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [history, setHistory] = useState<PrintPayload[]>(MOCK_INITIAL_HISTORY);
+  // Historial desde Supabase (sólo las de este turno/tienda y origen print_center)
+  const { data: history = [], refetch: refetchHistory } = useQuery({
+    queryKey: ['print-center-history', activeTurn?.id],
+    queryFn: async () => {
+      if (!activeTurn) return [];
+      
+      // Obtener inicio del día para filtrar
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-  // --- Reactivity: Price Calculation ---
-  useEffect(() => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          total,
+          created_at,
+          payment,
+          order_items (
+            name,
+            qty
+          )
+        `)
+        .eq('store_id', user?.store_id || '')
+        .gte('created_at', today.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching print history:", error);
+        return [];
+      }
+
+      // Filtrar por tag metadata (origin: 'print_center')
+      const printOrders = data.filter(order => {
+        const p = order.payment as any;
+        return p && p.origin === 'print_center';
+      });
+
+      return printOrders.map(order => {
+        const p = order.payment as any;
+        return {
+          id: order.id,
+          origin: p.copy_origin || 'Desconocido',
+          impressions: p.copy_pages || 1,
+          price: order.total,
+          time: new Date(order.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+          rawOrder: order
+        } as PrintJob;
+      });
+    },
+    enabled: !!activeTurn && !!user?.store_id
+  });
+
+  // OPTIMIZACIÓN: Estado derivado puro y síncrono mediante useMemo
+  const { totalImpressions, totalPrice } = useMemo(() => {
     let pricePerPage = 0;
     
     if (origin === 'scanner') {
-      pricePerPage = PRICING.scanner;
+      pricePerPage = pricing.scanner; // Tarifa dinámica escáner
     } else {
+      const activeMatrix = origin === 'physical' ? pricing.copy : pricing.print;
       if (colorMode === 'bw') {
-        pricePerPage = paperSize === 'letter' ? PRICING.bw_letter : PRICING.bw_legal;
+        pricePerPage = paperSize === 'letter' ? activeMatrix.bw_letter : activeMatrix.bw_legal;
       } else {
-        pricePerPage = paperSize === 'letter' ? PRICING.color_letter : PRICING.color_legal;
+        pricePerPage = paperSize === 'letter' ? activeMatrix.color_letter : activeMatrix.color_legal;
       }
     }
+    
+    const impressions = Math.max(0, pages) * Math.max(0, sets);
+    return {
+      totalImpressions: impressions,
+      totalPrice: impressions * pricePerPage
+    };
+  }, [origin, colorMode, paperSize, pages, sets, pricing]);
 
-    const impressions = pages * sets;
-    setTotalImpressions(impressions);
-    setTotalPrice(impressions * pricePerPage);
-  }, [origin, colorMode, duplexMode, paperSize, pages, sets]);
+  // Rendimiento total acumulado en el turno
+  const totalTurnImpressions = useMemo(() => {
+    return history.reduce((acc, job) => acc + job.impressions, 0);
+  }, [history]);
 
-  // --- Mock Supabase Functions ---
-  const mockSupabaseInsert = async (payload: Omit<PrintPayload, 'id' | 'created_at'>): Promise<PrintPayload> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          ...payload,
-          id: `TX-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-          created_at: new Date().toISOString(),
-        });
-      }, 600); // Simulate network delay
-    });
+  // Manejadores de adición rápida (Fast-add)
+  const handleFastAdd = (amount: number) => {
+    setPages((prev) => Math.max(1, (prev <= 0 ? 0 : prev) + amount));
   };
 
-  // --- Handlers ---
+  // Procesamiento, Facturación y Copiado automatizado
   const handleProcessAndBill = async () => {
+    // AUDITORÍA DE SEGURIDAD: Validación de roles en tiempo de ejecución
+    if (!user || (userRole !== 'cashier' && userRole !== 'admin' && userRole !== 'manager')) {
+      toast.error('Acceso denegado: Permisos insuficientes para facturar.');
+      return;
+    }
+
+    if (!activeTurn || activeTurn.status === 'paused') {
+      toast.error('Operación bloqueada: Requiere un turno de caja activo.');
+      return;
+    }
+
     if (pages <= 0 || sets <= 0) {
-      toast.error("La cantidad de páginas y juegos debe ser mayor a cero.");
+      toast.error('La cantidad de páginas y juegos debe ser mayor a cero.');
       return;
     }
 
     setIsProcessing(true);
-    
+
     try {
-      const newJob = await mockSupabaseInsert({
-        origin,
-        color_mode: colorMode,
-        duplex_mode: duplexMode,
-        paper_size: paperSize,
-        pages,
-        sets,
-        total_impressions: totalImpressions,
-        total_price: totalPrice,
-        status: 'completed'
-      });
+      const dummyCart = [{
+        productId: 'generic-copy-service', 
+        quantity: 1, 
+        price: totalPrice, 
+        name: `Servicio Centro de Copiado (${origin})`,
+        sizeMultiplier: 1,
+        baseVolume: 0,
+        toppings: []
+      }];
 
-      // Update history (Simulating realtime subscription)
-      setHistory(prev => [newJob, ...prev]);
+      const orderResult = await processSale(
+        dummyCart,
+        totalPrice, // saleTotal
+        totalPrice, // saleSubtotal
+        0, // discountAmount
+        null, // customer
+        'cash', // payment method
+        totalPrice, // amountReceived
+        undefined, // deliveryData
+        undefined, // splitDetails
+        { origin: 'print_center', copy_origin: origin, copy_pages: totalImpressions } // metadata
+      );
 
-      // Clipboard action
-      const whatsappMessage = `¡Hola! Tu documento está listo. El total de tus ${totalImpressions} páginas es de ${formatCOP(totalPrice)}. Puedes pasar a caja.`;
-      await navigator.clipboard.writeText(whatsappMessage);
-      
-      toast.success("Trabajo facturado exitosamente", {
-        description: "Mensaje copiado al portapapeles.",
-        style: { background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.5)', color: '#10b981' }
-      });
+      if (orderResult) {
+        // Generación de mensaje automatizado para el portapapeles
+        const whatsappMessage = `¡Hola! Tu documento está listo. El total de tus ${totalImpressions} páginas es de $${totalPrice.toLocaleString('es-CO')}. Puedes pasar a caja.`;
+        await navigator.clipboard.writeText(whatsappMessage).catch(() => console.log('Clipboard no disponible'));
 
-      // Reset fast inputs
-      setPages(1);
-      setSets(1);
-      
+        toast.success('Servicio facturado correctamente en la caja global', {
+          className: 'border-emerald-500/40 bg-slate-950 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]',
+        });
+
+        // Resetear formulario
+        setPages(1);
+        setSets(1);
+        
+        // Refrescar historial
+        refetchHistory();
+      }
     } catch (error) {
-      toast.error("Error al procesar el trabajo.");
+      toast.error('Error crítico al registrar el trabajo de impresión.');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleFastAdd = (amount: number) => {
-    setPages(prev => prev + amount);
-  };
+  const handleCancelJob = async (job: PrintJob) => {
+    if (!confirm('¿Estás seguro de que deseas anular este registro de impresión? Esto restará el dinero de tu caja.')) return;
+    
+    try {
+      const { error } = await supabase.rpc('cancel_sale_with_stock_restore', {
+        sale_id_param: job.id,
+        cancellation_reason_param: 'Anulación manual desde Print Center',
+        cancelled_by_param: user?.id || ''
+      });
 
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+      if (error) throw error;
+      
+      toast.success('Registro anulado correctamente');
+      refetchHistory();
+      // Invalidate global sales query to update dashboard
+      queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Error al anular: ' + (err.message || 'Desconocido'));
+    }
   };
-
-  // --- Cyberpunk / Neon Styles ---
-  const glassPanel = "bg-[#0a0a0f]/80 backdrop-blur-xl border border-white/5 rounded-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]";
-  const neonCyan = "text-cyan-400 border-cyan-400/50 shadow-[0_0_15px_rgba(34,211,238,0.2)] bg-cyan-400/10";
-  const neonFuchsia = "text-fuchsia-400 border-fuchsia-400/50 shadow-[0_0_15px_rgba(232,121,249,0.2)] bg-fuchsia-400/10";
-  const neonGreen = "text-emerald-400 border-emerald-400/50 shadow-[0_0_20px_rgba(52,211,153,0.3)] bg-emerald-400/10";
 
   return (
     <Layout>
-      <div className="min-h-screen bg-[#050508] text-slate-300 font-sans p-4 lg:p-6 flex flex-col selection:bg-cyan-500/30">
-      
-      {/* Header */}
-      <header className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-400/10 rounded-xl border border-cyan-400/20">
-            <Terminal className="w-6 h-6 text-cyan-400" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-white tracking-widest uppercase font-space-grotesk">Comando Operativo</h1>
-            <p className="text-xs text-cyan-400/70 font-mono tracking-wider">PUNTO PLAY PAUSA // PRINT_SYS</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-widest text-slate-500">Estado de Red</p>
-            <div className="flex items-center gap-2 justify-end">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse"></span>
-              <span className="text-xs font-mono text-emerald-400">ONLINE_SECURE</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Grid */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 h-full overflow-hidden">
+      <div className="min-h-screen bg-[#030712] text-slate-100 font-sans p-4 lg:p-6 flex flex-col gap-6 selection:bg-cyan-500/30">
         
-        {/* ZONA A: PANEL DE INYECCIÓN OPERATIVA (Izquierda) */}
-        <section className={`col-span-1 lg:col-span-8 flex flex-col gap-6 h-full`}>
-          
-          {/* Row 1: Selectors */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Origin Selector */}
-            <div className={cn(glassPanel, "p-5")}>
-              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                <Settings2 className="w-3 h-3" /> Origen de Datos
-              </h2>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { id: 'whatsapp', label: 'WhatsApp', icon: Smartphone, color: 'text-emerald-400' },
-                  { id: 'physical', label: 'Copia', icon: Copy, color: 'text-cyan-400' },
-                  { id: 'scanner', label: 'Escáner', icon: Scan, color: 'text-fuchsia-400' }
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setOrigin(item.id as OriginType)}
-                    className={cn(
-                      "flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all duration-200",
-                      origin === item.id 
-                        ? (item.id === 'whatsapp' ? neonGreen : item.id === 'physical' ? neonCyan : neonFuchsia)
-                        : "border-white/5 bg-white/5 hover:bg-white/10 text-slate-400"
-                    )}
-                  >
-                    <item.icon className={cn("w-6 h-6", origin === item.id ? "" : "opacity-50")} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
-                  </button>
-                ))}
-              </div>
+        {/* Encabezado del Módulo */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.15)]">
+              <Printer className="w-6 h-6 text-cyan-400" />
             </div>
-
-            {/* Attributes Selector */}
-            <div className={cn(glassPanel, "p-5")}>
-               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                <Settings2 className="w-3 h-3" /> Atributos de Renderizado
-              </h2>
-              <div className="flex flex-col gap-3">
-                {/* BW vs Color */}
-                <div className="grid grid-cols-2 gap-2 p-1 bg-black/40 rounded-xl border border-white/5">
-                  <button onClick={() => setColorMode('bw')} className={cn("py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all", colorMode === 'bw' ? "bg-white text-black shadow-md" : "text-slate-400 hover:text-white")}>
-                    Blanco & Negro
-                  </button>
-                  <button onClick={() => setColorMode('color')} className={cn("py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all", colorMode === 'color' ? neonFuchsia : "text-slate-400 hover:text-white")}>
-                    Full Color
-                  </button>
-                </div>
-                {/* Simplex vs Duplex & Size */}
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => setDuplexMode(prev => prev === 'simplex' ? 'duplex' : 'simplex')} className={cn("flex items-center justify-center py-3 rounded-xl border border-white/5 text-xs font-bold uppercase tracking-wider transition-all", duplexMode === 'duplex' ? neonCyan : "bg-white/5 text-slate-400 hover:bg-white/10")}>
-                    {duplexMode === 'simplex' ? 'Una Cara' : 'Dúplex'}
-                  </button>
-                  <button onClick={() => setPaperSize(prev => prev === 'letter' ? 'legal' : 'letter')} className={cn("flex items-center justify-center py-3 rounded-xl border border-white/5 text-xs font-bold uppercase tracking-wider transition-all", paperSize === 'legal' ? neonCyan : "bg-white/5 text-slate-400 hover:bg-white/10")}>
-                    {paperSize === 'letter' ? 'CARTA' : 'OFICIO'}
-                  </button>
-                </div>
-              </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-emerald-400 bg-clip-text text-transparent">
+                Print Center
+              </h1>
+              <p className="text-xs text-slate-400">Gestión automatizada de copiado, escaneo y facturación de servicios</p>
             </div>
           </div>
+          
+          {/* Indicador de Estado del Turno */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium backdrop-blur-md ${
+            activeTurn && activeTurn.status !== 'paused'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+              : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${activeTurn && activeTurn.status !== 'paused' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+            {activeTurn && activeTurn.status !== 'paused' ? `Turno Activo` : 'Caja Cerrada / Pausada'}
+          </div>
+        </div>
 
-          {/* Row 2: High Speed Numeric Panel */}
-          <div className={cn(glassPanel, "p-6 flex-1 flex flex-col justify-center relative overflow-hidden")}>
-             {/* Background watermark */}
-             <Calculator className="absolute -right-10 -bottom-10 w-64 h-64 text-white/[0.02] pointer-events-none" />
-             
-             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 relative z-10">
-                {/* Pages Input & Fast Add */}
-                <div className="md:col-span-8 flex flex-col justify-center">
-                  <label className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400 mb-3 ml-1 font-mono">CANTIDAD DE PÁGINAS</label>
-                  <div className="flex items-center gap-4 mb-4">
-                    <input 
-                      type="number" 
+        {/* Distribución de Paneles de Vidrio (Glassmorphism Grid) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* PANEL IZQUIERDO: Configuración del Trabajo (7 Columnas) */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 p-6 rounded-2xl shadow-2xl flex flex-col gap-5">
+              
+              {/* Selector de Origen */}
+              <div>
+                <label className="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-3 block">Origen del Documento</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(['whatsapp', 'physical', 'scanner'] as OriginType[]).map((type) => {
+                    const icons = { whatsapp: Smartphone, physical: Copy, scanner: Scan };
+                    const Icon = icons[type];
+                    const labels = { whatsapp: 'WhatsApp', physical: 'Copia Física', scanner: 'Escáner' };
+                    
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setOrigin(type)}
+                        className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-medium transition-all duration-200 active:scale-95 ${
+                          origin === type
+                            ? 'bg-cyan-500/10 border-cyan-400 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                            : 'bg-slate-950/40 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                        {labels[type]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Atributos (Modo de Color y Tamaño de Papel) */}
+              {origin !== 'scanner' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Modo de Color */}
+                  <div>
+                    <label className="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-2 block">Modo de Color</label>
+                    <div className="flex bg-slate-950/60 p-1 border border-white/5 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setColorMode('bw')}
+                        className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${colorMode === 'bw' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                      >
+                        Blanco & Negro
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setColorMode('color')}
+                        className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${colorMode === 'color' ? 'bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30 shadow-[0_0_10px_rgba(217,70,239,0.1)]' : 'text-slate-400 hover:text-slate-200'}`}
+                      >
+                        Full Color
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Tamaño de Papel */}
+                  <div>
+                    <label className="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-2 block">Tamaño de Papel</label>
+                    <div className="flex bg-slate-950/60 p-1 border border-white/5 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setPaperSize('letter')}
+                        className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${paperSize === 'letter' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                      >
+                        Carta
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaperSize('legal')}
+                        className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${paperSize === 'legal' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                      >
+                        Oficio (Legal)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Contadores Numéricos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                {/* Páginas */}
+                <div className="bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2">
+                  <label className="text-xs font-semibold text-slate-400 uppercase">Cantidad de Páginas</label>
+                  <div className="flex items-center justify-between gap-2">
+                    <input
+                      type="number"
                       min="1"
                       value={pages}
-                      onChange={(e) => setPages(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="bg-black/50 border border-cyan-400/30 rounded-2xl h-24 w-40 text-center text-6xl font-black text-white font-space-grotesk focus:outline-none focus:border-cyan-400 focus:shadow-[0_0_20px_rgba(34,211,238,0.2)] transition-all"
+                      onChange={(e) => setPages(Math.max(1, parseInt(e.target.value) || 0))}
+                      className="bg-transparent text-xl font-bold border-none text-white focus:outline-none w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                    <div className="grid grid-cols-2 gap-2 flex-1">
-                      {[1, 5, 10, 50].map((num) => (
-                        <button 
-                          key={num} 
-                          onClick={() => handleFastAdd(num)}
-                          className="h-11 bg-white/5 hover:bg-cyan-400/20 border border-white/10 hover:border-cyan-400/50 rounded-xl text-cyan-400 font-black text-lg flex items-center justify-center gap-1 transition-all"
+                    <div className="flex gap-1">
+                      {[1, 5, 10, 50].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => handleFastAdd(val)}
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-bold rounded border border-white/5 text-cyan-400 transition-colors"
                         >
-                          <Plus className="w-4 h-4" />{num}
+                          +{val}
                         </button>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Sets (Juegos) Input */}
-                <div className="md:col-span-4 flex flex-col justify-center border-l border-white/10 pl-8">
-                  <label className="text-xs font-bold uppercase tracking-[0.2em] text-fuchsia-400 mb-3 ml-1 font-mono">MULTIP. (JUEGOS)</label>
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl text-fuchsia-400/50 font-black">×</span>
-                    <input 
-                      type="number" 
+                {/* Juegos / Sets */}
+                <div className="bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2">
+                  <label className="text-xs font-semibold text-slate-400 uppercase">Número de Juegos (Sets)</label>
+                  <div className="flex items-center gap-4 justify-between">
+                    <input
+                      type="number"
                       min="1"
                       value={sets}
-                      onChange={(e) => setSets(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="bg-black/50 border border-fuchsia-400/30 rounded-2xl h-20 w-full text-center text-4xl font-black text-white font-space-grotesk focus:outline-none focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(232,121,249,0.2)] transition-all"
+                      onChange={(e) => setSets(Math.max(1, parseInt(e.target.value) || 0))}
+                      className="bg-transparent text-xl font-bold border-none text-white focus:outline-none w-20"
                     />
-                  </div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-3 text-center">Total Impresiones: <strong className="text-white">{totalImpressions}</strong></p>
-                </div>
-             </div>
-          </div>
-
-          {/* Row 3: Main Action Button */}
-          <button 
-            onClick={handleProcessAndBill}
-            disabled={isProcessing}
-            className={cn(
-              "relative overflow-hidden w-full h-24 rounded-[2rem] font-black uppercase tracking-[0.2em] flex items-center justify-between px-8 transition-all group",
-              isProcessing 
-                ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
-                : "bg-emerald-500 hover:bg-emerald-400 text-black shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:shadow-[0_0_50px_rgba(16,185,129,0.6)] active:scale-[0.98]"
-            )}
-          >
-            {/* Holographic reflection effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-            
-            <div className="flex items-center gap-4 relative z-10">
-               {isProcessing ? (
-                 <div className="w-8 h-8 border-4 border-black/20 border-t-black rounded-full animate-spin" />
-               ) : (
-                 <Printer className="w-8 h-8" />
-               )}
-               <span className="text-2xl font-space-grotesk">{isProcessing ? 'PROCESANDO...' : 'FACTURAR & PROCESAR'}</span>
-            </div>
-            
-            <div className="text-right relative z-10 flex flex-col items-end">
-               <span className="text-[10px] opacity-70 tracking-widest font-bold">TOTAL CALC.</span>
-               <span className="text-4xl font-space-grotesk">{formatCOP(totalPrice)}</span>
-            </div>
-          </button>
-
-        </section>
-
-        {/* ZONA B: REGISTRO DE TRANSACCIONES (Derecha) */}
-        <aside className={cn(glassPanel, "col-span-1 lg:col-span-4 flex flex-col overflow-hidden")}>
-          <div className="p-5 border-b border-white/5 bg-white/[0.02]">
-            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2">
-              <History className="w-4 h-4 text-cyan-400" /> Historial de Turno
-            </h2>
-            <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Live Sync • Supabase Edge</p>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-            {history.map((job) => (
-              <div key={job.id} className="p-4 rounded-2xl bg-black/40 border border-white/5 hover:border-cyan-400/30 transition-colors group">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {job.origin === 'whatsapp' && <Smartphone className="w-3 h-3 text-emerald-400" />}
-                    {job.origin === 'physical' && <Copy className="w-3 h-3 text-cyan-400" />}
-                    {job.origin === 'scanner' && <Scan className="w-3 h-3 text-fuchsia-400" />}
-                    <span className="text-[10px] font-mono text-slate-400">{job.id}</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-mono">{formatTime(job.created_at)}</span>
-                </div>
-                
-                <div className="flex items-end justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-white uppercase tracking-wider font-space-grotesk">
-                      {job.total_impressions} PÁGS <span className="text-slate-600">|</span> {job.color_mode === 'bw' ? 'B/N' : 'CLR'}
-                    </p>
-                    <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-0.5">
-                      {job.paper_size === 'letter' ? 'CARTA' : 'OFICIO'} • {job.duplex_mode === 'simplex' ? '1-CARA' : 'DUPLEX'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-base font-black text-emerald-400 font-mono">{formatCOP(job.total_price)}</p>
-                    <p className="text-[8px] text-emerald-400/60 uppercase tracking-widest flex items-center justify-end gap-1 mt-1">
-                      <CheckCircle2 className="w-2 h-2" /> Cobrado
-                    </p>
+                    <div className="flex items-center border border-white/5 bg-slate-950 rounded-lg overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setSets(prev => Math.max(1, prev - 1))}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm"
+                      >
+                        -
+                      </button>
+                      <span className="px-4 text-xs font-bold text-slate-200">{sets}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSets(prev => prev + 1)}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            ))}
+
+            </div>
           </div>
-          
-          <div className="p-4 border-t border-white/5 bg-black/20">
-             <div className="flex justify-between items-center text-[10px] font-mono uppercase text-slate-500">
-                <span>Rendimiento Turno</span>
-                <span className="text-cyan-400 font-bold">{history.reduce((acc, curr) => acc + curr.total_impressions, 0)} PÁGS TOTALES</span>
-             </div>
+
+          {/* PANEL DERECHO: Liquidación, Totales e Historial (5 Columnas) */}
+          <div className="lg:col-span-5 space-y-6">
+            
+            {/* Liquidación de Caja */}
+            <div className="bg-gradient-to-b from-slate-900/60 to-slate-950/40 backdrop-blur-xl border border-white/5 p-6 rounded-2xl shadow-2xl flex flex-col gap-4">
+              <h2 className="text-xs font-semibold tracking-wider text-slate-400 uppercase">Cómputo de Operación</h2>
+              
+              <div className="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-white/5">
+                <div className="flex justify-between text-xs text-slate-400">
+                  <span>Total Impresiones / Caras:</span>
+                  <span className="font-mono font-medium text-slate-200">{totalImpressions} págs</span>
+                </div>
+                <div className="flex justify-between items-baseline pt-2 border-t border-white/5">
+                  <span className="text-sm font-medium text-slate-300">Total a Cobrar:</span>
+                  <span className="text-2xl font-black font-mono text-emerald-400 shadow-glow">
+                    ${totalPrice.toLocaleString('es-CO')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Botón de Acción Principal con micro-animaciones */}
+              <button
+                type="button"
+                disabled={isProcessing || !activeTurn || activeTurn.status === 'paused'}
+                onClick={handleProcessAndBill}
+                className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98] ${
+                  !activeTurn || activeTurn.status === 'paused'
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-[0_4px_20px_rgba(16,185,129,0.25)] hover:shadow-[0_0_25px_rgba(52,211,153,0.4)] hover:brightness-110'
+                }`}
+              >
+                {isProcessing ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Printer className="w-4 h-4" />
+                    FACTURAR & PROCESAR
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Monitor de Rendimiento del Turno */}
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Volumen del Turno</span>
+              </div>
+              <span className="font-mono text-sm font-bold bg-slate-950 px-3 py-1 border border-white/5 rounded-lg text-cyan-400">
+                {totalTurnImpressions} impresiones
+              </span>
+            </div>
+
           </div>
-        </aside>
+
+        </div>
+
+        {/* HISTORIAL EN TIEMPO REAL (Fila Inferior Completa) */}
+        <div className="bg-slate-900/20 backdrop-blur-xl border border-white/5 rounded-2xl p-6 mt-2">
+          <h2 className="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-4">Registro de Trabajos Recientes</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  <th className="pb-3 pl-2">ID Operación</th>
+                  <th className="pb-3">Origen</th>
+                  <th className="pb-3">Impresiones</th>
+                  <th className="pb-3">Importe</th>
+                  <th className="pb-3 text-right pr-2">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-xs font-medium text-slate-300">
+                {history.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-slate-500 font-normal">
+                      No se registran transacciones de impresión en este turno.
+                    </td>
+                  </tr>
+                ) : (
+                  history.map((job) => (
+                    <tr key={job.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="py-3 pl-2 font-mono text-slate-500 group-hover:text-cyan-400 transition-colors">
+                        #{job.id.slice(0, 8)}
+                      </td>
+                      <td className="py-3 capitalize">{job.origin}</td>
+                      <td className="py-3 font-mono">{job.impressions} u.</td>
+                      <td className="py-3 font-mono text-emerald-400">${job.price.toLocaleString('es-CO')}</td>
+                      <td className="py-3 text-right pr-2 text-slate-500 font-mono">{job.time}</td>
+                      <td className="py-3 text-right pr-2">
+                         <button 
+                           onClick={() => handleCancelJob(job)}
+                           className="text-xs text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 px-2 py-1 rounded transition-colors border border-transparent hover:border-rose-500/30"
+                         >
+                           Anular
+                         </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
       </div>
-    </div>
     </Layout>
   );
 }

@@ -42,6 +42,7 @@ const InventoryManagement = lazy(() => import("./components/settings/InventoryMa
 const RecipeManagement = lazy(() => import("./components/settings/RecipeManagement").then(m => ({ default: m.RecipeManagement })));
 const DigitalMenu = lazy(() => import("./pages/DigitalMenu"));
 const PrintManagerModule = lazy(() => import("./pages/PrintManagerModule"));
+const Workflow = lazy(() => import("./pages/Workflow"));
 
 const ProductsInventoryLayout = lazy(() => import("./components/inventory/ProductsInventoryLayout").then(m => ({ default: m.ProductsInventoryLayout })));
 const RecipeBuilder = lazy(() => import("./components/inventory/RecipeBuilder").then(m => ({ default: m.RecipeBuilder })));
@@ -332,7 +333,20 @@ const App = () => {
               />
 
               {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
+              <Route
+  path="/workflow"
+  element={
+    <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
+      <ErrorBoundary fallbackTitle="Error en Workflow">
+        <Suspense fallback={<PageLoader />}> 
+          <Workflow />
+        </Suspense>
+      </ErrorBoundary>
+    </ProtectedRoute>
+  }
+/>
+{/* Catch-all route */}
+<Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </BrandingProvider>

@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { Palette, Shield, Building2, Receipt, Ruler, Tag, Bell, Box, Loader2 } from "lucide-react";
+import { Palette, Shield, Building2, Receipt, Ruler, Tag, Bell, Box, Printer, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useConfigStore } from "@/store/useConfigStore";
 
@@ -17,6 +17,7 @@ const SkuAcronymsSettings = lazy(() => import("@/components/settings/SkuAcronyms
 const NotificationSettings = lazy(() => import("@/components/settings/NotificationSettings"));
 const ProductTypesMaster = lazy(() => import("@/components/settings/ProductTypesMaster"));
 const CategoryManager = lazy(() => import("@/components/settings/CategoryManager"));
+const CopyCenterSettings = lazy(() => import("@/components/settings/CopyCenterSettings"));
 
 const TabLoadingSkeleton = () => (
     <div className="flex flex-col items-center justify-center py-24 gap-6 animate-pro-in">
@@ -50,7 +51,7 @@ export default function Settings() {
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.set("tab", value);
     
-    const validTabs = ["branding", "roles", "business", "receipts", "sizes", "sku", "notifications", "product_types", "categories"];
+    const validTabs = ["branding", "roles", "business", "receipts", "sizes", "sku", "notifications", "product_types", "categories", "print_center"];
     if (!validTabs.includes(value)) {
       newSearchParams.delete("tab");
     }
@@ -60,7 +61,7 @@ export default function Settings() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-8 space-y-10 max-w-7xl mx-auto">
+      <div className="space-y-10 w-full p-4 md:p-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10 pb-8 border-b border-white/5 relative">
           <div className="hidden md:block absolute -left-6 lg:-left-12 top-0 bottom-0 w-1.5 bg-gradient-to-b from-primary via-primary/50 to-transparent rounded-full shadow-glow-pro animate-pulse" />
           <div className="animate-pro-in">
@@ -76,7 +77,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
           <Card className="lg:w-80 shrink-0 bg-white/5 border border-white/10 rounded-3xl shadow-pro backdrop-blur-md overflow-hidden h-fit lg:sticky lg:top-24 p-2 lg:p-4">
             <Tabs value={activeTab} onValueChange={handleTabChange} orientation="vertical" className="w-full">
               <TabsList className="flex flex-row lg:flex-col h-auto bg-transparent gap-1.5 p-0 overflow-x-auto lg:overflow-visible no-scrollbar">
@@ -90,6 +91,7 @@ export default function Settings() {
                   { value: "notifications", label: "Alertas", icon: Bell },
                   { value: "product_types", label: "Tipos Operativos", icon: Box },
                   { value: "categories", label: "Categorías ERP", icon: Tag },
+                  { value: "print_center", label: "Centro de Copiado", icon: Printer },
                 ].map((tab) => (
                   <TabsTrigger
                     key={tab.value}
@@ -142,6 +144,10 @@ export default function Settings() {
 
                         <TabsContent value="categories" className="m-0 animate-pro-in">
                             <CategoryManager />
+                        </TabsContent>
+
+                        <TabsContent value="print_center" className="m-0 animate-pro-in">
+                            <CopyCenterSettings />
                         </TabsContent>
                     </Tabs>
                 </Suspense>

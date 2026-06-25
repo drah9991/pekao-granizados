@@ -88,12 +88,13 @@ export function usePOS() {
     method: PaymentMethod, 
     amountReceived: number, 
     deliveryData?: {
-      type: 'pickup' | 'delivery';
+      type: 'pickup' | 'delivery' | 'print_center';
       fee: number;
       address: string;
       phone: string;
     },
-    splitDetails?: { cash: number; transfer: number }
+    splitDetails?: { cash: number; transfer: number },
+    metadata?: Record<string, unknown>
   ) => {
     setIsProcessing(true);
 
@@ -113,7 +114,7 @@ export function usePOS() {
         const baseItemPrice = Number(item.price) - toppingsPrice;
 
         const mainItem = {
-          product_id: item.productId as string,
+          product_id: item.productId === 'generic' || item.productId === 'generic-copy-service' ? null : (item.productId as string),
           quantity: item.quantity as number,
           price: baseItemPrice,
           name: item.name as string,
@@ -134,6 +135,12 @@ export function usePOS() {
         return [mainItem, ...toppingItems];
       });
 
+      const paymentData = method === 'split' ? { 
+        method: 'split',
+        details: splitDetails,
+        ...metadata
+      } : { method, ...metadata };
+
       const salePayload = {
         store_id: storeId,
         employee_id: user.id,
@@ -144,10 +151,7 @@ export function usePOS() {
         delivery_address: deliveryData?.address || null,
         delivery_phone: deliveryData?.phone || null,
         total: saleTotal + (deliveryData?.fee || 0),
-        payment: method === 'split' ? { 
-          method: 'split',
-          details: splitDetails
-        } : { method },
+        payment: paymentData,
         items: mappedItems
       };
 
