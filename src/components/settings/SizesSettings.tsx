@@ -88,7 +88,8 @@ export default function SizesSettings() {
         const { error } = await supabase
           .from("sizes")
           .update(sizeData)
-          .eq("id", editingSize.id);
+          .eq("id", editingSize.id)
+          .eq("store_id", userStoreId);
 
         if (error) throw error;
         toast.success("Dimensión de ticket actualizada");
@@ -121,7 +122,8 @@ export default function SizesSettings() {
       const { error } = await supabase
         .from("sizes")
         .delete()
-        .eq("id", size.id);
+        .eq("id", size.id)
+        .eq("store_id", userStoreId);
 
       if (error) throw error;
       toast.success("Dimensión removida del ecosistema");

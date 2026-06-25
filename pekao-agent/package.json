@@ -1,0 +1,19 @@
+{
+  "name": "pekao-agent",
+  "version": "1.0.0",
+  "description": "Agente autónomo de alertas e informes para Punto Play Pausa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "eve dev",
+    "build": "eve build",
+    "start": "eve start"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "eve": "latest"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

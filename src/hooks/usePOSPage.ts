@@ -1,4 +1,4 @@
-import { useState, useRef, useTransition, useCallback } from "react";
+import { useState, useRef, useTransition, useCallback, startTransition } from "react";
 import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
 import { usePOS } from "@/hooks/usePOS";
@@ -76,8 +76,10 @@ export function usePOSPage() {
       notifyWarning("Debe seleccionar un cliente antes de proceder al pago");
       return;
     }
-    setDefaultPaymentMethod(method);
-    setPaymentDialogIsOpen(true);
+    startTransition(() => {
+      setDefaultPaymentMethod(method);
+      setPaymentDialogIsOpen(true);
+    });
   }, [cart.length, selectedCustomer, notifyWarning]);
 
   const handleOpenSplitBillDialog = useCallback(() => {
@@ -89,7 +91,9 @@ export function usePOSPage() {
       notifyWarning("Debe seleccionar un cliente antes de proceder al pago");
       return;
     }
-    setSplitBillDialogIsOpen(true);
+    startTransition(() => {
+      setSplitBillDialogIsOpen(true);
+    });
   }, [cart.length, selectedCustomer, notifyWarning]);
 
   const onConfirmSale = useCallback(async (

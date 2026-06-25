@@ -70,13 +70,15 @@ export default function SkuAcronymsSettings() {
       const acronymData = {
         type: formData.type as ProductType,
         code: formData.code.toUpperCase().trim(),
+        store_id: storeId,
       };
 
       if (editingAcronym) {
         const { error } = await supabase
           .from("sku_acronyms")
           .update(acronymData)
-          .eq("id", editingAcronym.id);
+          .eq("id", editingAcronym.id)
+          .eq("store_id", storeId);
 
         if (error) throw error;
         toast.success("Acrónimo SKU re-indexado");
@@ -114,7 +116,8 @@ export default function SkuAcronymsSettings() {
       const { error } = await supabase
         .from("sku_acronyms")
         .delete()
-        .eq("id", acronym.id);
+        .eq("id", acronym.id)
+        .eq("store_id", storeId);
 
       if (error) throw error;
       toast.success("Acrónimo removido de la lógica global");

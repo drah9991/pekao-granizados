@@ -51,7 +51,7 @@ export function InventoryGrid({ items, onAdjust, loading }: InventoryGridProps) 
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg lg:text-xl font-black italic font-space-grotesk text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors truncate pr-2">
-                        {item.product.name}
+                        {item.product?.name || 'N/A'}
                       </h3>
                       <div className="flex items-center gap-2 mt-2">
                         <span className={cn("w-1.5 h-1.5 rounded-full shadow-glow-pro", isLowStock ? "bg-rose-500 animate-pulse" : "bg-emerald-500")} />

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState } from "react";
+import React, { lazy, Suspense, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import ProductGrid from "@/components/pos/ProductGrid";
@@ -32,6 +32,11 @@ export default function POS() {
     availableSizes, availableToppings, updateItemCustomization,
     shortcutsHelpIsOpen, setShortcutsHelpIsOpen
   } = usePOSPage();
+
+  const handleClearCart = useCallback(() => {
+    resetCart();
+    toast("Carrito vaciado");
+  }, [resetCart]);
 
   const [syncDrawerIsOpen, setSyncDrawerIsOpen] = useState(false);
 
@@ -138,13 +143,10 @@ export default function POS() {
             setDiscountType={setDiscountType}
             discountAmount={discountAmount}
             total={total}
-            onCheckout={() => handleOpenPaymentDialog()}
-            onQuickPayment={(method) => handleOpenPaymentDialog(method as PaymentMethod)}
+            onCheckout={handleOpenPaymentDialog}
+            onQuickPayment={handleOpenPaymentDialog}
             onSplitPayment={handleOpenSplitBillDialog}
-            onClearCart={() => {
-               resetCart();
-               toast("Carrito vaciado");
-            }}
+            onClearCart={handleClearCart}
             restoreLastCart={restoreLastCart}
             selectedCustomer={selectedCustomer}
             setSelectedCustomer={setSelectedCustomer}

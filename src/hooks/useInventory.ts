@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StockItem, Store } from "@/types/inventory";
 import { Enums } from "@/integrations/supabase/types";
+import { useAuth } from "@/context/AuthContext";
 
 export function useInventory() {
+  const { storeId } = useAuth();
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>("all");
@@ -34,6 +36,7 @@ export function useInventory() {
   };
 
   const fetchStockData = async () => {
+    if (!storeId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -57,6 +60,7 @@ export function useInventory() {
             name
           )
         `)
+        .eq("store_id", storeId)
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
@@ -82,12 +86,18 @@ export function useInventory() {
   };
 
   useEffect(() => {
+    if (!storeId) return;
     fetchStores();
     fetchStockData();
     
     // Realtime subscription to keep Inventory synchronized across screens
-    const channel = supabase.channel(`inventory-sync`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'store_stock' }, () => {
+    const channel = supabase.channel(`inventory-sync-${storeId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'store_stock',
+        filter: `store_id=eq.${storeId}`
+      }, () => {
         fetchStockData();
       })
       .subscribe();
@@ -96,7 +106,7 @@ export function useInventory() {
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [storeId]);
 
   const handleAdjustStock = async () => {
     if (!selectedItem || !adjustmentQty || parseFloat(adjustmentQty) <= 0) {
@@ -123,7 +133,7 @@ export function useInventory() {
         .from("movements")
         .insert({
           product_id: selectedItem.product_id,
-          store_id: selectedItem.store_id,
+          store_id: storeId || selectedItem.store_id,
           qty: adjustmentType === "add" ? qty : -qty,
           type: adjustmentType === "add" ? "entry" : "exit",
           reason: adjustmentReason || `Ajuste manual (${adjustmentType === "add" ? "entrada" : "salida"})`,

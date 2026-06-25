@@ -1,19 +1,6 @@
+import { memo } from "react";
 import type { CartItem, Product } from "@/lib/pos-types";
-import CustomerSelection from "@/components/pos/CustomerSelection";
 import type { Customer } from "@/components/pos/CustomerSelection";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { 
-  Minus, Plus, Trash2, Percent, Tag, Receipt, 
-  User as UserIcon, UserX, Wallet, CreditCard, Smartphone,
-  RotateCcw
-} from "lucide-react";
-import { formatCOP } from "@/lib/currency";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { CartItemList } from "./cart/CartItemList";
 import { CartCustomerSelector } from "./cart/CartCustomerSelector";
 import { CartTotals } from "./cart/CartTotals";
@@ -42,7 +29,7 @@ interface CartSummaryProps {
   updateItemCustomization?: (id: string, sizeId: string, toppingIds: string[]) => void;
 }
 
-export default function CartSummary({
+const CartSummary = memo(function CartSummary({
   cart,
   updateQuantity,
   removeItem,
@@ -61,12 +48,10 @@ export default function CartSummary({
   setSelectedCustomer,
   availableSizes = [],
   availableToppings = [],
-  updateItemCustomization
+  updateItemCustomization,
+  restoreLastCart
 }: CartSummaryProps) {
-  
-
-
-  return (    <div className="w-full lg:w-[30rem] glass-pro border-t lg:border-t-0 lg:border-l border-white/5 p-4 md:p-8 flex flex-col h-full relative z-10 animate-pro-in">
+  return (<div className="w-full lg:w-[30rem] glass-pro border-t lg:border-t-0 lg:border-l border-white/5 p-4 md:p-8 flex flex-col h-full relative z-10 animate-pro-in">
       {/* Header Cart */}
       <CartHeader 
         itemCount={cart.reduce((acc, item) => acc + item.quantity, 0)}
@@ -104,4 +89,6 @@ export default function CartSummary({
       />
     </div>
   );
-}
+});
+
+export default CartSummary;

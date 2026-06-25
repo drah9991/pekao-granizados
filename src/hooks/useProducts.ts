@@ -75,6 +75,7 @@ export function useProducts() {
             )
           )
         `)
+        .eq("store_id", storeId)
         .order("name", { ascending: true });
       if (error) throw error;
 
@@ -94,6 +95,7 @@ export function useProducts() {
       });
     },
     staleTime: 30_000, // 30s — panel admin, cambios moderados
+    enabled: !!storeId,
   });
 
   // Realtime subscription for products and stock
@@ -115,13 +117,15 @@ export function useProducts() {
   }, [storeId, queryClient]);
 
   const { data: skuAcronyms = [] } = useQuery({
-    queryKey: ["sku-acronyms"],
+    queryKey: ["sku-acronyms", storeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sku_acronyms").select("*");
+      if (!storeId) return [];
+      const { data, error } = await supabase.from("sku_acronyms").select("*").eq("store_id", storeId);
       if (error) throw error;
       return data || [];
     },
     staleTime: 5 * 60_000, // 5 min — acrónimos SKU, casi nunca cambian
+    enabled: !!storeId,
   });
 
   const handleSaveProduct = async () => {

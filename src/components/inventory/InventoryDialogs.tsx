@@ -52,7 +52,7 @@ export function InventoryDialogs({
                 Sincronización de Stock
               </DialogTitle>
               <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-white/40 italic">
-                {selectedItem.product.name} • Protocolo de Ajuste Manual
+                {selectedItem.product?.name ?? "Producto"} • Protocolo de Ajuste Manual
               </DialogDescription>
             </div>
           </div>

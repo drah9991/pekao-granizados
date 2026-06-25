@@ -12,6 +12,7 @@ import { Package, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import InventoryReceipts from "@/components/inventory/InventoryReceipts";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -118,6 +119,10 @@ export default function Inventory() {
                             Registro de Entrada
                             <div className="absolute -bottom-2 left-0 w-0 h-1 bg-primary transition-all duration-500 group-data-[state=active]:w-full rounded-full shadow-glow-pro" />
                         </TabsTrigger>
+                        <TabsTrigger value="receipts" className="bg-transparent border-none p-0 text-muted-foreground/40 data-[state=active]:text-primary data-[state=active]:shadow-none font-black italic uppercase tracking-[0.2em] font-space-grotesk text-sm relative group">
+                          Recepción de Mercancía
+                          <div className="absolute -bottom-2 left-0 w-0 h-1 bg-primary transition-all duration-500 group-data-[state=active]:w-full rounded-full shadow-glow-pro" />
+                        </TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -139,7 +144,10 @@ export default function Inventory() {
                         onSuccess={refreshStock} 
                     />
                 </TabsContent>
-            </Tabs>
+            <TabsContent value="receipts" className="space-y-10 focus:outline-none">
+  <InventoryReceipts />
+</TabsContent>
+</Tabs>
         </motion.div>
 
         {/* Tactical Adjustment Dialog */}
