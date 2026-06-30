@@ -82,7 +82,7 @@ export function useTankStatus(customStoreId?: string | null) {
         {
           event: '*',
           schema: 'public',
-          table: 'inventory_items',
+          table: 'machine_tanks',
           filter: `store_id=eq.${storeId}`
         },
         () => {
