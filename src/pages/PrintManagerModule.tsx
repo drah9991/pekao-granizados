@@ -28,6 +28,7 @@ export default function PrintManagerModule() {
   const { activeTurn } = useTurn();
   
   const storeConfig = useConfigStore((state) => state.storeConfig) as Record<string, any>;
+  const fetchConfig = useConfigStore((state) => state.fetchConfig);
   const pricing = storeConfig?.copyCenter?.pricing || {
     print: { bw_letter: 200, bw_legal: 300, color_letter: 1000, color_legal: 1200 },
     copy: { bw_letter: 200, bw_legal: 300, color_letter: 1000, color_legal: 1200 },
@@ -40,10 +41,18 @@ export default function PrintManagerModule() {
   const [paperSize, setPaperSize] = useState<PaperSize>('letter');
   const [pages, setPages] = useState<number>(1);
   const [sets, setSets] = useState<number>(1);
+  const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
   const queryClient = useQueryClient();
   const { processSale } = usePOS();
+
+  // Cargar configuración de la sucursal al montar el módulo
+  React.useEffect(() => {
+    if (user?.store_id) {
+      fetchConfig(user.store_id);
+    }
+  }, [user?.store_id, fetchConfig]);
   
   // Historial desde Supabase (sólo las de este turno/tienda y origen print_center)
   const { data: history = [], refetch: refetchHistory } = useQuery({
@@ -62,6 +71,8 @@ export default function PrintManagerModule() {
           total,
           created_at,
           payment,
+          payment_method,
+          status,
           order_items (
             name,
             qty
@@ -90,7 +101,11 @@ export default function PrintManagerModule() {
           impressions: p.copy_pages || 1,
           price: order.total,
           time: new Date(order.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
-          rawOrder: order
+          rawOrder: {
+            ...order,
+            payment_method: order.payment_method,
+            status: order.status
+          }
         } as PrintJob;
       });
     },
@@ -166,7 +181,7 @@ export default function PrintManagerModule() {
         totalPrice, // saleSubtotal
         0, // discountAmount
         null, // customer
-        'cash', // payment method
+        paymentMethod, // payment method
         totalPrice, // amountReceived
         undefined, // deliveryData
         undefined, // splitDetails
@@ -414,6 +429,34 @@ export default function PrintManagerModule() {
                 </div>
               </div>
 
+              {/* Selector de Método de Pago */}
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 block">Método de Pago</label>
+                <div className="grid grid-cols-3 gap-2 bg-slate-950/60 p-1 border border-white/5 rounded-xl">
+                  {[
+                    { code: 'cash', label: 'Efectivo' },
+                    { code: 'nequi', label: 'Nequi' },
+                    { code: 'daviplata', label: 'Daviplata' },
+                    { code: 'tarjeta', label: 'Tarjeta' },
+                    { code: 'bancolombia', label: 'Bancolombia' },
+                    { code: 'transfer', label: 'Transf.' }
+                  ].map((pm) => (
+                    <button
+                      key={pm.code}
+                      type="button"
+                      onClick={() => setPaymentMethod(pm.code)}
+                      className={`py-1.5 px-2 text-[10px] font-bold rounded-lg uppercase tracking-wider transition-all duration-150 ${
+                        paymentMethod === pm.code
+                          ? 'bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'
+                      }`}
+                    >
+                      {pm.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Botón de Acción Principal con micro-animaciones */}
               <button
                 type="button"
@@ -461,37 +504,62 @@ export default function PrintManagerModule() {
                   <th className="pb-3 pl-2">ID Operación</th>
                   <th className="pb-3">Origen</th>
                   <th className="pb-3">Impresiones</th>
+                  <th className="pb-3">Medio de Pago</th>
+                  <th className="pb-3">Estado</th>
                   <th className="pb-3">Importe</th>
+                  <th className="pb-3 text-right">Hora</th>
                   <th className="pb-3 text-right pr-2">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-xs font-medium text-slate-300">
                 {history.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-slate-500 font-normal">
+                    <td colSpan={8} className="py-6 text-center text-slate-500 font-normal">
                       No se registran transacciones de impresión en este turno.
                     </td>
                   </tr>
                 ) : (
-                  history.map((job) => (
-                    <tr key={job.id} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="py-3 pl-2 font-mono text-slate-500 group-hover:text-cyan-400 transition-colors">
-                        #{job.id.slice(0, 8)}
-                      </td>
-                      <td className="py-3 capitalize">{job.origin}</td>
-                      <td className="py-3 font-mono">{job.impressions} u.</td>
-                      <td className="py-3 font-mono text-emerald-400">${job.price.toLocaleString('es-CO')}</td>
-                      <td className="py-3 text-right pr-2 text-slate-500 font-mono">{job.time}</td>
-                      <td className="py-3 text-right pr-2">
-                         <button 
-                           onClick={() => handleCancelJob(job)}
-                           className="text-xs text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 px-2 py-1 rounded transition-colors border border-transparent hover:border-rose-500/30"
-                         >
-                           Anular
-                         </button>
-                      </td>
-                    </tr>
-                  ))
+                  history.map((job) => {
+                    const isCancelled = job.rawOrder?.status === 'cancelled';
+                    return (
+                      <tr key={job.id} className={`hover:bg-white/[0.02] transition-colors group ${isCancelled ? 'opacity-50 line-through' : ''}`}>
+                        <td className="py-3 pl-2 font-mono text-slate-500 group-hover:text-cyan-400 transition-colors">
+                          #{job.id.slice(0, 8)}
+                        </td>
+                        <td className="py-3 capitalize">{job.origin}</td>
+                        <td className="py-3 font-mono">{job.impressions} u.</td>
+                        <td className="py-3 uppercase font-bold text-[10px] text-slate-400">
+                          {job.rawOrder?.payment_method === 'cash' ? '💵 Efectivo' : 
+                           job.rawOrder?.payment_method === 'nequi' ? '📱 Nequi' :
+                           job.rawOrder?.payment_method === 'daviplata' ? '📱 Daviplata' :
+                           job.rawOrder?.payment_method === 'tarjeta' ? '💳 Tarjeta' :
+                           job.rawOrder?.payment_method === 'bancolombia' ? '🏦 Bancolombia' : 
+                           `🏦 ${job.rawOrder?.payment_method || 'Otro'}`}
+                        </td>
+                        <td className="py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                            isCancelled 
+                              ? 'bg-rose-500/10 border border-rose-500/30 text-rose-400' 
+                              : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                          }`}>
+                            {isCancelled ? 'Anulada' : 'Facturada'}
+                          </span>
+                        </td>
+                        <td className="py-3 font-mono text-emerald-400">${job.price.toLocaleString('es-CO')}</td>
+                        <td className="py-3 text-right text-slate-500 font-mono">{job.time}</td>
+                        <td className="py-3 text-right pr-2">
+                           {!isCancelled && (
+                             <button 
+                               onClick={() => handleCancelJob(job)}
+                               className="text-xs text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 px-2 py-1 rounded transition-colors border border-transparent hover:border-rose-500/30"
+                             >
+                               Anular
+                             </button>
+                           )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
