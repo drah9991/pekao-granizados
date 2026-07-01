@@ -9,6 +9,7 @@ import { usePOS } from '@/hooks/usePOS';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+
 // Interfaces estrictas para el módulo
 type OriginType = 'whatsapp' | 'physical' | 'scanner';
 type ColorMode = 'bw' | 'color';
@@ -60,10 +61,6 @@ export default function PrintManagerModule() {
     queryFn: async () => {
       if (!activeTurn) return [];
       
-      // Obtener inicio del día para filtrar
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -71,7 +68,6 @@ export default function PrintManagerModule() {
           total,
           created_at,
           payment,
-          payment_method,
           status,
           order_items (
             name,
@@ -79,13 +75,15 @@ export default function PrintManagerModule() {
           )
         `)
         .eq('store_id', user?.store_id || '')
-        .gte('created_at', today.toISOString())
+        .gte('created_at', activeTurn.opened_at)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching print history:", error);
         return [];
       }
+
+      console.log("DEBUG Print Center: all fetched orders for shift:", data);
 
       // Filtrar por tag metadata (origin: 'print_center')
       const printOrders = data.filter(order => {
@@ -116,7 +114,7 @@ export default function PrintManagerModule() {
           time: new Date(order.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
           rawOrder: {
             ...order,
-            payment_method: order.payment_method,
+            payment_method: payObj.method || 'cash', // Se extrae del JSON payment
             status: order.status
           }
         } as PrintJob;
@@ -124,6 +122,8 @@ export default function PrintManagerModule() {
     },
     enabled: !!activeTurn && !!user?.store_id
   });
+
+
 
   // OPTIMIZACIÓN: Estado derivado puro y síncrono mediante useMemo
   const { totalImpressions, totalPrice } = useMemo(() => {
@@ -147,9 +147,11 @@ export default function PrintManagerModule() {
     };
   }, [origin, colorMode, paperSize, pages, sets, pricing]);
 
-  // Rendimiento total acumulado en el turno
+  // Rendimiento total acumulado en el turno (excluye anuladas)
   const totalTurnImpressions = useMemo(() => {
-    return history.reduce((acc, job) => acc + job.impressions, 0);
+    return history
+      .filter(job => job.rawOrder?.status !== 'cancelled')
+      .reduce((acc, job) => acc + job.impressions, 0);
   }, [history]);
 
   // Manejadores de adición rápida (Fast-add)
@@ -578,6 +580,8 @@ export default function PrintManagerModule() {
             </table>
           </div>
         </div>
+
+
 
       </div>
     </Layout>
