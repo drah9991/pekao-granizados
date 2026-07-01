@@ -89,16 +89,29 @@ export default function PrintManagerModule() {
 
       // Filtrar por tag metadata (origin: 'print_center')
       const printOrders = data.filter(order => {
-        const p = order.payment as any;
-        return p && p.origin === 'print_center';
+        let p = order.payment;
+        if (typeof p === 'string') {
+          try {
+            p = JSON.parse(p);
+          } catch (_) {
+            return false;
+          }
+        }
+        return p && (p as any).origin === 'print_center';
       });
 
       return printOrders.map(order => {
-        const p = order.payment as any;
+        let p = order.payment;
+        if (typeof p === 'string') {
+          try {
+            p = JSON.parse(p);
+          } catch (_) {}
+        }
+        const payObj = (p || {}) as any;
         return {
           id: order.id,
-          origin: p.copy_origin || 'Desconocido',
-          impressions: p.copy_pages || 1,
+          origin: payObj.copy_origin || 'Desconocido',
+          impressions: payObj.copy_pages || 1,
           price: order.total,
           time: new Date(order.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
           rawOrder: {
