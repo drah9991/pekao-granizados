@@ -121,9 +121,9 @@ export default function ProductCustomizationDialog({
     );
   };
 
-  if (!product) return null;
-
   const pricingRules = useCartStore((state) => state.pricingRules) as unknown as PricingRuleRow[];
+
+  if (!product) return null;
 
   const currentSize = availableSizes.find(s => s.id === selectedSize);
   const selectedToppingsList = availableToppings.filter(t => selectedToppings.includes(t.id));
