@@ -67,13 +67,19 @@ export default function DigitalMenu() {
         {!isEditingOrder && !loading && categories.length > 0 && (
           <div className="sticky top-0 z-50 py-4 mb-12 -mx-4 px-4 bg-zinc-950/80 backdrop-blur-md border-b border-white/5 flex gap-4 overflow-x-auto no-scrollbar">
             {categories.map((cat) => (
-              <a 
+              <button 
                 key={cat.code}
-                href={`#category-${cat.code}`}
-                className="whitespace-nowrap px-6 py-2 rounded-full border border-white/10 text-white/60 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10 font-space-grotesk text-xs uppercase tracking-widest transition-all"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const target = document.getElementById(`category-${cat.code}`);
+                  if (target) {
+                    target.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }}
+                className="whitespace-nowrap px-6 py-2 rounded-full border border-white/10 text-white/60 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10 font-space-grotesk text-xs uppercase tracking-widest transition-all cursor-pointer"
               >
                 {cat.label}
-              </a>
+              </button>
             ))}
           </div>
         )}

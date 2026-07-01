@@ -7,125 +7,6 @@ import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
 import { DateRange } from "react-day-picker";
 import { playNewOrderSound, forceAudioUnlock } from "@/utils/audio";
 
-function getMockOrders(storeId: string | null): OrderWithDetails[] {
-  const now = new Date();
-  const today = now.toISOString();
-  const todayMinus3h = new Date(now.getTime() - 3 * 3600 * 1000).toISOString();
-  const yesterday = new Date(now.getTime() - 25 * 3600 * 1000).toISOString();
-  const twoDaysAgo = new Date(now.getTime() - 48 * 3600 * 1000).toISOString();
-  const threeDaysAgo = new Date(now.getTime() - 72 * 3600 * 1000).toISOString();
-
-  return [
-    {
-      id: "sale-f7a2b3c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
-      store_id: storeId || "default-store",
-      created_at: today,
-      total: 24500,
-      subtotal: 24500,
-      status: "completed",
-      payment_method: "nequi",
-      order_type: "pickup",
-      delivery_fee: 0,
-      tip_amount: 0,
-      payment: { method: "nequi" },
-      creator_profile: { name: "Valentina Ospina" },
-      customer_details: {
-        name: "Carlos Andrés Mendoza",
-        phone: "3124567890",
-        email: "carlos.mendoza@gmail.com",
-        document_id: "1020304050"
-      },
-      items: [
-        { id: "item-1", name: "Granizado Limonada de Coco", qty: 2, price: 8500, size: "12oz", size_multiplier: 1.2 },
-        { id: "item-2", name: "Granizado Fresa Especial", qty: 1, price: 7500, size: "10oz", size_multiplier: 1.0 }
-      ]
-    },
-    {
-      id: "sale-8f9e0d1a-2b3c-4d5e-6f7a-8b9c0d1e2f3a",
-      store_id: storeId || "default-store",
-      created_at: todayMinus3h,
-      total: 38000,
-      subtotal: 35000,
-      status: "processing",
-      payment_method: "tarjeta",
-      order_type: "delivery",
-      delivery_fee: 3000,
-      delivery_address: "Calle 45 # 82 - 12 Apt 402, Belén",
-      delivery_phone: "3159876543",
-      payment: { method: "credit_card" },
-      creator_profile: { name: "Mateo Silva" },
-      customer_details: {
-        name: "María Camila Restrepo",
-        phone: "3159876543",
-        email: "camila.restrepo@outlook.com",
-        document_id: "1032456789"
-      },
-      items: [
-        { id: "item-3", name: "Granizado Maracuyá con Vodka", qty: 2, price: 12000, size: "14oz", size_multiplier: 1.4 },
-        { id: "item-4", name: "Granizado Mango Biche con Chamoy", qty: 1, price: 11000, size: "12oz", size_multiplier: 1.2 }
-      ]
-    },
-    {
-      id: "sale-4b5c6d7e-8f9a-0b1c-2d3e-4f5a6b7c8d9e",
-      store_id: storeId || "default-store",
-      created_at: yesterday,
-      total: 19000,
-      subtotal: 19000,
-      status: "pending",
-      payment_method: "daviplata",
-      order_type: "pickup",
-      payment: { method: "daviplata" },
-      creator_profile: { name: "Andrés Felipe Castro" },
-      customer_details: {
-        name: "Juan Sebastián Gómez",
-        phone: "3201234567",
-        email: "juan.gomez@hotmail.com"
-      },
-      items: [
-        { id: "item-5", name: "Granizado Baileys & Café", qty: 1, price: 10500, size: "12oz", size_multiplier: 1.2 },
-        { id: "item-6", name: "Granizado Fresa Especial", qty: 1, price: 8500, size: "12oz", size_multiplier: 1.2 }
-      ]
-    },
-    {
-      id: "sale-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-      store_id: storeId || "default-store",
-      created_at: twoDaysAgo,
-      total: 17000,
-      subtotal: 17000,
-      status: "completed",
-      payment_method: "efectivo",
-      order_type: "pickup",
-      payment: { method: "cash" },
-      creator_profile: { name: "Valentina Ospina" },
-      customer_details: {
-        name: "Santiago Valencia",
-        phone: "3104445566"
-      },
-      items: [
-        { id: "item-7", name: "Granizado Limonada de Coco", qty: 2, price: 8500, size: "12oz", size_multiplier: 1.2 }
-      ]
-    },
-    {
-      id: "sale-3d4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a",
-      store_id: storeId || "default-store",
-      created_at: threeDaysAgo,
-      total: 22000,
-      subtotal: 22000,
-      status: "cancelled",
-      payment_method: "efectivo",
-      order_type: "pickup",
-      payment: { method: "cash" },
-      creator_profile: { name: "Mateo Silva" },
-      customer_details: {
-        name: "Diana Carolina Rojas",
-        phone: "3007654321"
-      },
-      items: [
-        { id: "item-8", name: "Granizado Mango Biche con Chamoy", qty: 2, price: 11000, size: "12oz", size_multiplier: 1.2 }
-      ]
-    }
-  ];
-}
 
 export function useSales() {
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
@@ -199,15 +80,7 @@ export function useSales() {
       const { data, error } = await query;
       if (error) throw error;
       const fetchedOrders = (data as unknown as OrderWithDetails[]) || [];
-      if (fetchedOrders.length === 0) {
-        const mocks = getMockOrders(storeId);
-        const filteredMocks = selectedStatusFilter === "all"
-          ? mocks
-          : mocks.filter(m => m.status === selectedStatusFilter);
-        setOrders(filteredMocks);
-      } else {
-        setOrders(fetchedOrders);
-      }
+      setOrders(fetchedOrders);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error desconocido";
       toast.error("Error al cargar ventas: " + msg);

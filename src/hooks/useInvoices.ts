@@ -110,15 +110,24 @@ export function useInvoices() {
     const printWindow = window.open('', '', 'height=600,width=800');
     if (!printWindow) return;
 
-    const invoiceNumber = `F-${invoice.id.slice(0, 8).toUpperCase()}`;
+    // Escape helper to prevent DOM-based XSS in document.write
+    const esc = (v: unknown) => String(v ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+
+    const invoiceNumber = `F-${esc(invoice.id.slice(0, 8).toUpperCase())}`;
+    const safeDate = esc(new Date(invoice.order.created_at).toLocaleString());
+    const safeCustomer = esc(invoice.order.customer_details?.name || 'Cliente General');
+    const safeTotal = esc(formatCOP(invoice.order.total));
+
     printWindow.document.write(`
       <html><head><title>Factura ${invoiceNumber}</title>
       <style>body { font-family: sans-serif; padding: 40px; } .header { text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 20px; } .total { font-size: 24px; font-weight: bold; margin-top: 30px; text-align: right; }</style>
       </head><body>
       <div class="header"><h1>Factura Electrónica</h1><h2>${invoiceNumber}</h2></div>
-      <p><strong>Fecha:</strong> ${new Date(invoice.order.created_at).toLocaleString()}</p>
-      <p><strong>Cliente:</strong> ${invoice.order.customer_details?.name || 'Cliente General'}</p>
-      <div class="total">Total: ${formatCOP(invoice.order.total)}</div>
+      <p><strong>Fecha:</strong> ${safeDate}</p>
+      <p><strong>Cliente:</strong> ${safeCustomer}</p>
+      <div class="total">Total: ${safeTotal}</div>
       </body></html>
     `);
     printWindow.document.close();

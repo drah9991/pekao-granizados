@@ -85,6 +85,11 @@ async function syncOrders() {
     let successCount = 0;
     const remainingQueue = [...queue];
 
+    /* 
+     * INTENTIONAL N+1 PATTERN: Orders must be synchronized sequentially (FIFO) 
+     * to preserve transaction chronology and allow atomicity/stop-on-failure 
+     * behavior if an order fails validation (e.g. stock, pricing) or network drops.
+     */
     for (const order of queue) {
       try {
         const response = await fetch(`${supabaseUrl}/rest/v1/rpc/process_sale`, {
