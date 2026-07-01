@@ -73,7 +73,18 @@ export default function DigitalMenu() {
                   e.preventDefault();
                   const target = document.getElementById(`category-${cat.code}`);
                   if (target) {
-                    target.scrollIntoView({ behavior: "smooth", block: "start" });
+                    // Find the immediate scrolling parent wrapper in Layout (which has overflow-y-auto)
+                    const scrollContainer = target.closest(".overflow-y-auto") || document.documentElement;
+                    const containerRect = scrollContainer.getBoundingClientRect();
+                    const targetRect = target.getBoundingClientRect();
+                    const offset = 140; // Height of sticky navbar + safety margin
+
+                    const targetScrollTop = (scrollContainer.scrollTop + targetRect.top) - containerRect.top - offset;
+
+                    scrollContainer.scrollTo({
+                      top: targetScrollTop,
+                      behavior: "smooth"
+                    });
                   }
                 }}
                 className="whitespace-nowrap px-6 py-2 rounded-full border border-white/10 text-white/60 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10 font-space-grotesk text-xs uppercase tracking-widest transition-all cursor-pointer"
