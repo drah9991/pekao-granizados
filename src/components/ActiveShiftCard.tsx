@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAlerts } from '@/hooks/useAlerts';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ActiveShiftCardProps {
   className?: string;
@@ -55,8 +56,45 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
 
   const handleCloseTurn = async () => {
     try {
+      if (!activeTurn) return;
       const closingAmount = parseFloat(amount) || 0;
-      const expectedAmount = (activeTurn?.opening_amount || 0) + 150000;
+      
+      let cashSales = 0;
+      let cashExpenses = 0;
+
+      // Calcular ventas en efectivo durante el turno
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("total, payment")
+        .eq("store_id", activeTurn.store_id)
+        .eq("status", "completed")
+        .gte("created_at", activeTurn.opened_at);
+
+      if (orders) {
+        orders.forEach((order: any) => {
+          const totalAmount = Number(order.total) || 0;
+          const payment = order.payment && typeof order.payment === 'object' ? order.payment : { method: 'cash' };
+          const method = payment.method;
+          
+          if (method === 'cash') cashSales += totalAmount;
+          else if (method === 'split' && payment.details) {
+            cashSales += (Number(payment.details.cash) || 0);
+          }
+        });
+      }
+
+      // Calcular gastos registrados durante el turno
+      const { data: expenses } = await supabase
+        .from("expenses")
+        .select("amount")
+        .eq("store_id", activeTurn.store_id)
+        .gte("expense_date", activeTurn.opened_at);
+        
+      if (expenses) {
+        cashExpenses = expenses.reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
+      }
+
+      const expectedAmount = (activeTurn.opening_amount || 0) + cashSales - cashExpenses;
       const difference = Math.abs(closingAmount - expectedAmount);
       const THRESHOLD = 5000; 
 
