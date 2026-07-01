@@ -33,6 +33,10 @@ dist-ssr
 !features_listed.md
 !help.txt
 tmp/
+tmp_package/
+
+# Compressed artifacts
+project_package.zip
 
 # One-off scripts
 src/fix_tanks.ts

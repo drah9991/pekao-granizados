@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseRpc } from "@/integrations/supabase/types-extensions";
 import { useAuth } from "@/context/AuthContext";
@@ -9,6 +9,22 @@ import { useSyncStore } from "@/store/useSyncStore";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useQueryClient } from "@tanstack/react-query";
 import type { PaymentMethod } from "@/components/pos/PaymentDialog";
+import { calculateOptimisticTanks, calculateOptimisticProducts } from "@/lib/inventory-sync-utils";
+import type { Product, CartItem, TankStatus } from "@/lib/inventory-sync-utils";
+
+const isValidationError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as Record<string, unknown>;
+  const code = String(err.code || '');
+  const status = Number(err.status || 0);
+  
+  return (
+    code === 'P0001' ||
+    code.startsWith('23') ||
+    status === 400 ||
+    status === 409
+  );
+};
 
 export function usePOS() {
   const { user, storeId } = useAuth();
@@ -26,12 +42,80 @@ export function usePOS() {
     if ('serviceWorker' in navigator && 'SyncManager' in window) {
       try {
         const registration = await navigator.serviceWorker.ready;
-        await (registration as any).sync.register('sync-orders');
+        const regWithSync = registration as unknown as { sync: { register: (tag: string) => Promise<void> } };
+        await regWithSync.sync.register('sync-orders');
       } catch (err) {
         console.warn("Background sync registration failed:", err);
       }
     }
   };
+
+  // ── handleSync must be declared BEFORE any useEffect that calls it ──────────
+  const handleSync = useCallback(async () => {
+    if (!navigator.onLine) {
+      return;
+    }
+
+    const pending = useSyncStore.getState().syncQueue;
+    if (pending.length === 0) {
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      let successCount = 0;
+      for (const order of pending) {
+        try {
+          const { error } = await supabaseRpc('process_sale', {
+            sale_data: order.payload as Record<string, unknown>
+          });
+          if (!error) {
+            useSyncStore.getState().removeFromQueue(order.id);
+            successCount++;
+          } else {
+            console.error("Error syncing order:", order.id, error);
+            const status = error && typeof error === 'object' ? Number((error as Record<string, unknown>).status || 0) : 0;
+            if (status === 401 || status === 403) {
+              break;
+            }
+            if (isValidationError(error)) {
+              useSyncStore.getState().removeFromQueue(order.id);
+              notifyWarning(`Pedido eliminado de la cola debido a un error de validación permanente: ${String((error as Record<string, unknown>).message || JSON.stringify(error))}`);
+            } else {
+              break;
+            }
+          }
+        } catch (e: unknown) {
+          console.error("Error syncing order:", order.id, e);
+          const err = e as Record<string, unknown>;
+          const status = err && typeof err === 'object' ? Number(err.status || 0) : 0;
+          if (status === 401 || status === 403) {
+            break;
+          }
+          if (isValidationError(e)) {
+            useSyncStore.getState().removeFromQueue(order.id);
+            notifyWarning(`Pedido eliminado de la cola debido a un error de validación permanente: ${String(err.message || e)}`);
+          } else {
+            break;
+          }
+        }
+      }
+
+      if (successCount > 0) {
+        notifyInfo(`Sincronización completada: ${successCount} pedidos subidos.`);
+        Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['tank-status'] }),
+          queryClient.invalidateQueries({ queryKey: ['products-grid'] })
+        ]);
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error desconocido";
+      notifyCritical("Error durante la sincronización: " + msg);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [queryClient, notifyInfo, notifyWarning, notifyCritical]);
+  // ────────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const handleOnline = () => {
@@ -51,16 +135,16 @@ export function usePOS() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [handleSync]);
 
   useEffect(() => {
     const handleSWMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === 'SYNC_COMPLETED') {
-        notifyInfo(`Sincronización en segundo plano: ${event.data.successCount} pedidos subidos.`);
+        notifyInfo(`Sincronización en segundo plano: ${Number(event.data.successCount || 0)} pedidos subidos.`);
         queryClient.invalidateQueries({ queryKey: ['tank-status'] });
         queryClient.invalidateQueries({ queryKey: ['products-grid'] });
       } else if (event.data && event.data.type === 'SYNC_ERROR') {
-        notifyWarning(`Error en sincronización en segundo plano: ${event.data.message}`);
+        notifyWarning(`Error en sincronización en segundo plano: ${String(event.data.message || '')}`);
       }
     };
 
@@ -73,7 +157,7 @@ export function usePOS() {
         navigator.serviceWorker.removeEventListener('message', handleSWMessage);
       }
     };
-  }, [queryClient]);
+  }, [queryClient, notifyInfo, notifyWarning]);
 
   const checkPendingOrders = async () => {
     // Reactivo mediante useSyncStore
@@ -171,85 +255,61 @@ export function usePOS() {
         splitDetails
       };
 
-      // Optimistic update for machine tanks
+      // Optimistic update for machine tanks and product stock
       try {
-        const cachedGrid = queryClient.getQueryData(['products-grid', storeId]) as Record<string, unknown> | undefined;
+        const cachedGrid = queryClient.getQueryData(['products-grid', storeId]) as { products: Product[] } | undefined;
         if (cachedGrid?.products) {
+          // 1. Update products-grid cache
+          const updatedProducts = calculateOptimisticProducts(cart as CartItem[], cachedGrid.products);
+          queryClient.setQueryData(['products-grid', storeId], {
+            ...cachedGrid,
+            products: updatedProducts
+          });
+
+          // 2. Update tank status queries
           const queryCache = queryClient.getQueryCache();
           const tankQueries = queryCache.findAll({ queryKey: ['tank-status', storeId] });
 
           tankQueries.forEach((q) => {
             const queryKey = q.queryKey;
             queryClient.setQueryData(queryKey, (oldTanks: unknown) => {
-              if (!Array.isArray(oldTanks)) return oldTanks;
-              return oldTanks.map((tank: Record<string, unknown>) => {
-                let updatedVolume = tank.current_volume_ml as number;
-                
-                (cart as Record<string, unknown>[]).forEach((item: Record<string, unknown>) => {
-                  const productsList = (cachedGrid?.products as Record<string, unknown>[]) || [];
-                  const product = productsList.find((p: Record<string, unknown>) => p.id === item.productId);
-                  const recipes = (product?.recipes as Record<string, unknown>[]) || [];
-                  if (recipes.length > 0) {
-                    recipes.forEach((recipe: Record<string, unknown>) => {
-                      if (recipe.inventory_item_id === tank.inventory_item_id) {
-                        const multiplier = (item.sizeMultiplier as number) || 1;
-                        const deduction = (Number(recipe.quantity_required) || 0) * Number(item.quantity) * multiplier;
-                        updatedVolume = Math.max(0, updatedVolume - deduction);
-                      }
-                    });
-                  }
-                });
-
-                if (updatedVolume !== (tank.current_volume_ml as number)) {
-                  const percentage = Math.round((updatedVolume / (tank.max_capacity_ml as number)) * 100 * 100) / 100;
-                  return {
-                    ...tank,
-                    current_volume_ml: updatedVolume,
-                    percentage
-                  };
-                }
-                return tank;
-              });
+              return calculateOptimisticTanks(cart as CartItem[], oldTanks as TankStatus[], cachedGrid.products);
             });
           });
         }
       } catch (optError) {
-        console.error("Error doing optimistic update of tank status:", optError);
+        console.error("Error doing optimistic update:", optError);
       }
 
-      // Procesamiento asíncrono en segundo plano (Optimistic UI Fire-and-Forget)
-      (async () => {
+      if (isOnline) {
         try {
-          if (isOnline) {
-            const { error: rpcError } = await supabaseRpc<string>('process_sale', {
-              sale_data: salePayload as Record<string, unknown>
-            });
+          const { data: rpcData, error: rpcError } = await supabaseRpc<string>('process_sale', {
+            sale_data: salePayload as Record<string, unknown>
+          });
 
-            if (rpcError) throw rpcError;
-            
-            // Revalidación en segundo plano tras éxito
-            Promise.all([
-              queryClient.invalidateQueries({ queryKey: ['products-grid'] }),
-              queryClient.invalidateQueries({ queryKey: ['tank-status'] })
-            ]);
+          if (rpcError) {
+            throw rpcError;
+          }
+          
+          // Revalidación tras éxito
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['products-grid'] }),
+            queryClient.invalidateQueries({ queryKey: ['tank-status'] })
+          ]);
+        } catch (error: unknown) {
+          console.error("Error processing sale online:", error);
+          if (isValidationError(error)) {
+            throw error;
           } else {
             useSyncStore.getState().addToQueue(salePayload);
-            registerBackgroundSync();
-          }
-        } catch (error: unknown) {
-          console.error("Error background processing sale:", error);
-          Sentry.captureException(error);
-          
-          // Fallback silencioso: encolar localmente
-          try {
-            useSyncStore.getState().addToQueue(salePayload);
-            registerBackgroundSync();
+            await registerBackgroundSync();
             notifyWarning("Red inestable: Venta guardada offline para reintento automático.");
-          } catch (offlineErr) {
-            Sentry.captureException(offlineErr);
           }
         }
-      })();
+      } else {
+        useSyncStore.getState().addToQueue(salePayload);
+        await registerBackgroundSync();
+      }
 
       notifyInfo("¡Venta procesada exitosamente!");
       setIsProcessing(false);
@@ -264,47 +324,56 @@ export function usePOS() {
     }
   };
 
-  const handleSync = async () => {
-    if (!navigator.onLine) {
-      return;
-    }
+  // handleSync was moved above the first useEffect that uses it (see earlier in the file)
 
-    const pending = useSyncStore.getState().syncQueue;
-    if (pending.length === 0) {
-      return;
-    }
+  // Realtime subscription for products, store_stock, and inventory_items changes to update POS grid instantly
+  useEffect(() => {
+    if (!storeId) return;
 
-    setIsProcessing(true);
-    try {
-      let successCount = 0;
-      for (const order of pending) {
-        try {
-          const { error } = await supabaseRpc('process_sale', {
-            sale_data: order.payload as Record<string, unknown>
-          });
-          if (!error) {
-            useSyncStore.getState().removeFromQueue(order.id);
-            successCount++;
-          }
-        } catch (e) {
-          console.error("Error syncing order:", order.id, e);
+    const channel = supabase
+      .channel(`pos-realtime-sync-${storeId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products',
+          filter: `store_id=eq.${storeId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['products-grid', storeId] });
         }
-      }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'store_stock',
+          filter: `store_id=eq.${storeId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['products-grid', storeId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inventory_items',
+          filter: `store_id=eq.${storeId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['products-grid', storeId] });
+        }
+      )
+      .subscribe();
 
-      if (successCount > 0) {
-        notifyInfo(`Sincronización completada: ${successCount} pedidos subidos.`);
-        Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['tank-status'] }),
-          queryClient.invalidateQueries({ queryKey: ['products-grid'] })
-        ]);
-      }
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Error desconocido";
-      notifyCritical("Error durante la sincronización: " + msg);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [storeId, queryClient]);
 
   return {
     isProcessing,

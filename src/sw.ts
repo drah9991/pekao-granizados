@@ -37,9 +37,10 @@ self.addEventListener('activate', (event) => {
 });
 
 // Background Sync event listener
-self.addEventListener('sync', (event: any) => {
-  if (event.tag === 'sync-orders') {
-    event.waitUntil(syncOrders());
+self.addEventListener('sync', (event: unknown) => {
+  const syncEvent = event as { tag: string; waitUntil: (promise: Promise<void>) => void };
+  if (syncEvent.tag === 'sync-orders') {
+    syncEvent.waitUntil(syncOrders());
   }
 });
 
@@ -58,8 +59,13 @@ async function syncOrders() {
     const rawStore = await db.get('sync_store', 'oasis-eon-sync-queue');
     if (!rawStore) return;
 
+    interface SyncOrder {
+      id: string;
+      payload: unknown;
+    }
+
     const parsed = JSON.parse(rawStore);
-    const queue = parsed.state?.syncQueue || [];
+    const queue = (parsed.state?.syncQueue || []) as SyncOrder[];
     if (queue.length === 0) return;
 
     // Read the active auth session
@@ -94,7 +100,7 @@ async function syncOrders() {
         });
 
         if (response.ok) {
-          const index = remainingQueue.findIndex((o: any) => o.id === order.id);
+          const index = remainingQueue.findIndex((o) => o.id === order.id);
           if (index > -1) {
             remainingQueue.splice(index, 1);
           }
@@ -102,6 +108,36 @@ async function syncOrders() {
         } else {
           const errText = await response.text();
           console.error(`[SW] Order sync failed for order ${order.id}:`, errText);
+          
+          let pgCode = '';
+          try {
+            const parsedErr = JSON.parse(errText);
+            pgCode = String(parsedErr.code || '');
+          } catch (_) {
+            // ignore JSON parse errors
+          }
+
+          const status = response.status;
+          const isValidation = (
+            status === 400 ||
+            status === 409 ||
+            pgCode === 'P0001' ||
+            pgCode.startsWith('23')
+          );
+
+          if (isValidation) {
+            const index = remainingQueue.findIndex((o) => o.id === order.id);
+            if (index > -1) {
+              remainingQueue.splice(index, 1);
+            }
+            successCount++; // Increment to trigger writing queue updates back to IDB
+          } else if (status === 401 || status === 403) {
+            // Keep in queue and stop processing so it can be retried once user logs back in
+            break;
+          } else {
+            // Stop processing for other transient errors
+            break;
+          }
         }
       } catch (err) {
         console.error(`[SW] Network request failed for order ${order.id}:`, err);
@@ -126,7 +162,7 @@ async function syncOrders() {
   }
 }
 
-async function notifyClients(message: any) {
+async function notifyClients(message: unknown) {
   const clients = await self.clients.matchAll();
   for (const client of clients) {
     client.postMessage(message);

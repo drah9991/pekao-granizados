@@ -201,9 +201,8 @@ export default function PrintManagerModule() {
     
     try {
       const { error } = await supabase.rpc('cancel_sale_with_stock_restore', {
-        sale_id_param: job.id,
-        cancellation_reason_param: 'Anulación manual desde Print Center',
-        cancelled_by_param: user?.id || ''
+        p_order_id: job.id,
+        p_reason: 'Anulación manual desde Centro de Copiado'
       });
 
       if (error) throw error;
@@ -213,6 +212,8 @@ export default function PrintManagerModule() {
       // Invalidate global sales query to update dashboard
       queryClient.invalidateQueries({ queryKey: ["dashboard-v2-raw"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["products-grid"] });
+      queryClient.invalidateQueries({ queryKey: ["tank-status"] });
     } catch (err: any) {
       console.error(err);
       toast.error('Error al anular: ' + (err.message || 'Desconocido'));

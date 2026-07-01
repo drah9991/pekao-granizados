@@ -361,6 +361,8 @@ export function useSales() {
       setSelectedOrder(null);
       fetchOrders();
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["products-grid"] });
+      queryClient.invalidateQueries({ queryKey: ["tank-status"] });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error desconocido";
       toast.error("Error al cancelar: " + msg);

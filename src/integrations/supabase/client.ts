@@ -9,9 +9,32 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  // Existing auth config
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
 });
+
+// Workflow CRUD operations
+export const createWorkflow = async (userId: string, name: string, definition: object) => {
+  return supabase.from('workflows').insert({ user_id: userId, name, definition }).single();
+};
+
+export const getWorkflow = async (id: string) => {
+  return supabase.from('workflows').select('*').eq('id', id).single();
+};
+
+export const listWorkflows = async (userId: string) => {
+  return supabase.from('workflows').select('*').eq('user_id', userId);
+};
+
+export const updateWorkflow = async (id: string, updates: Partial<{ name: string; definition: object }>) => {
+  return supabase.from('workflows').update(updates).eq('id', id).single();
+};
+
+export const deleteWorkflow = async (id: string) => {
+  return supabase.from('workflows').delete().eq('id', id);
+};
+

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Plus, Save, Loader2 } from 'lucide-react';
+import { Trash2, Plus, Save, Loader2, Beaker } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface RecipeIngredient {
@@ -41,7 +41,7 @@ export function RecipeBuilder() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_items')
-        .select('id, name, unit_of_measure')
+        .select('id, name, unit')
         .order('name');
       if (error) throw error;
       return data;
@@ -154,7 +154,7 @@ export function RecipeBuilder() {
                     <SelectContent>
                       {inventoryItems?.map(item => (
                         <SelectItem key={item.id} value={item.id}>
-                          {item.name} ({item.unit_of_measure})
+                          {item.name} ({item.unit})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -200,7 +200,7 @@ export function RecipeBuilder() {
                             {itemDetail?.name || 'Cargando...'}
                           </TableCell>
                           <TableCell>
-                            {ing.quantity} {itemDetail?.unit_of_measure}
+                            {ing.quantity} {itemDetail?.unit}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button 

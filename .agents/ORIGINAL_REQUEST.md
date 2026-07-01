@@ -29,3 +29,38 @@ Generar un único archivo Markdown llamado `ui_ux_audit_report.md` que contenga 
 - [ ] El código fuente del proyecto permanece intacto (0 archivos modificados).
 
 ---
+
+## 2026-06-30T15:31:00Z
+
+<USER_REQUEST>
+Realizar una auditoría e implementación holística y profesional para asegurar que todos los elementos del inventario (tanto unidades de stock físico como ingredientes/mezclas de recetas) se descuenten correctamente y en tiempo real al procesar ventas y anulaciones en el POS. El equipo debe construir scripts de prueba automatizados en Bun para validar la lógica.
+
+Working directory: c:\Users\pc\OneDrive - Cuidado Seguro en Casa IPS\Documentos\Codigos\pekao\pekao-granizados
+Integrity mode: demo
+
+## Requirements
+
+### R1. Auditoría del Ciclo de Descuento de Inventario
+Analizar el comportamiento del backend (Supabase RPCs, migraciones y funciones) y el frontend (hooks de POS, IndexedDB offline y componentes) para verificar la consistencia de los descuentos de inventario de unidades (`store_stock`) y mezclas (`inventory_items`, `recipes`, `machine_tanks`).
+
+### R2. Sincronización en Tiempo Real y Robustez
+Garantizar que tras cualquier venta o anulación:
+1. El inventario se actualice en la base de datos de manera atómica (evitando condiciones de carrera).
+2. Los componentes del POS (como indicadores de tanques y grids de stock) reflejen los nuevos niveles en tiempo real sin requerir recargas manuales.
+
+### R3. Scripts de Verificación Automatizados (Bun)
+Desarrollar un conjunto de pruebas automatizadas escritas en TypeScript utilizando la herramienta de ejecución de pruebas de Bun (`bun test`). Las pruebas deben simular ventas (incluyendo productos unitarios, granizados con recetas/toppings y servicios con productos nulos) y anulaciones, y verificar programáticamente que el inventario resultante en la base de datos sea matemáticamente exacto.
+
+## Acceptance Criteria
+
+### Consistencia de Datos e Inventario
+- [ ] La facturación de un producto con receta descuenta de manera exacta el volumen correspondiente en la tabla `machine_tanks` y en `inventory_items`.
+- [ ] La anulación de una venta restaura el inventario exacto a las unidades y mezclas correspondientes.
+- [ ] La interfaz del POS reacciona de forma inmediata a los cambios mediante eventos de Supabase Realtime sin desfases ni bloqueos.
+
+### Pruebas Automatizadas
+- [ ] Existe un archivo de prueba (ej: `src/lib/inventory-sync.test.ts`) ejecutable mediante `bun test`.
+- [ ] La suite de pruebas cubre al menos 3 escenarios: venta unitaria, venta con receta/mezcla y anulación de venta.
+- [ ] Todas las pruebas de la suite de verificación pasan con éxito en el entorno local.
+</USER_REQUEST>
+

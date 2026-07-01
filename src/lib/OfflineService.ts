@@ -86,7 +86,7 @@ class OfflineService {
     await db.delete('sync_store', key);
   }
 
-  async saveAuthSession(session: any) {
+  async saveAuthSession(session: { access_token: string } | null | undefined) {
     const db = await this.db;
     if (session) {
       await db.put('sync_store', {
@@ -98,6 +98,16 @@ class OfflineService {
     } else {
       await db.delete('sync_store', 'auth-session');
     }
+  }
+
+  async saveTanks(tanks: Record<string, unknown>[]) {
+    const db = await this.db;
+    await db.put('sync_store', tanks, 'tanks-status');
+  }
+
+  async getTanks(): Promise<Record<string, unknown>[]> {
+    const db = await this.db;
+    return (await db.get('sync_store', 'tanks-status')) || [];
   }
 
   /**

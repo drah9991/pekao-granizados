@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTurn } from "@/hooks/useTurn";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { offlineService } from "@/lib/OfflineService";
 
 export interface TankStatus {
   id: string;
@@ -48,10 +49,16 @@ export function useTankStatus(customStoreId?: string | null) {
           throw error;
         }
 
-        return data as TankStatus[];
+        const tankData = data as TankStatus[];
+        await offlineService.saveTanks(tankData);
+        return tankData;
       } catch (err) {
         console.error("[useTankStatus Hook] Error fetching tank status:", err);
-        return [];
+        const cached = await offlineService.getTanks();
+        if (cached && cached.length > 0) {
+          return cached as TankStatus[];
+        }
+        throw err;
       }
     },
     enabled: !!storeId,
