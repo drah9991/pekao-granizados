@@ -19,6 +19,9 @@ interface SalesTableProps {
   onViewDetails: (order: OrderWithDetails) => void;
   onConfirmCancel: (order: OrderWithDetails) => void;
   onEdit: (order: OrderWithDetails) => void;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  totalPages: number;
 }
 
 export function SalesTable({
@@ -28,7 +31,10 @@ export function SalesTable({
   statusCounts,
   onViewDetails,
   onConfirmCancel,
-  onEdit
+  onEdit,
+  currentPage,
+  setCurrentPage,
+  totalPages
 }: SalesTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -91,6 +97,31 @@ export function SalesTable({
             </AnimatePresence>
           </TableBody>
         </Table>
+      </div>
+      
+      {/* Pagination Controls */}
+      <div className="p-6 border-t border-border/50 flex items-center justify-between">
+        <span className="text-[11px] font-black text-white/50 uppercase tracking-widest italic">
+          Página {currentPage} de {Math.max(1, totalPages)}
+        </span>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage <= 1}
+            className="h-10 px-6 rounded-full text-[10px] font-black uppercase tracking-widest italic bg-muted/40 border-border/50 hover:bg-muted"
+          >
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage >= totalPages}
+            className="h-10 px-6 rounded-full text-[10px] font-black uppercase tracking-widest italic bg-muted/40 border-border/50 hover:bg-muted"
+          >
+            Siguiente
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -12,6 +12,11 @@ export function useSales() {
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<OrderStatus | "all">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+  const [totalCount, setTotalCount] = useState(0);
+  const [stats, setStats] = useState({ totalRevenue: 0, completedCount: 0, pendingCount: 0, avgTicket: 0, totalCount: 0 });
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({ all: 0 });
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => ({
     from: startOfWeek(new Date(), { weekStartsOn: 1 }),
     to: endOfWeek(new Date(), { weekStartsOn: 1 })
@@ -51,6 +56,54 @@ export function useSales() {
     if (!storeId) return;
     setLoading(true);
     try {
+      // 1. Fetch Aggregates for Stats (Lightweight)
+      let aggQuery = supabase
+        .from("orders")
+        .select("total, status", { count: "exact" })
+        .eq('store_id', storeId);
+
+      if (dateRange?.from) {
+        aggQuery = aggQuery.gte('created_at', startOfDay(dateRange.from).toISOString());
+        if (dateRange.to) {
+          aggQuery = aggQuery.lte('created_at', endOfDay(dateRange.to).toISOString());
+        } else {
+          aggQuery = aggQuery.lte('created_at', endOfDay(dateRange.from).toISOString());
+        }
+      }
+
+      // Local search filtering for aggregates if search query exists
+      // Note: Full text search across relations is complex in PostgREST, so we fetch lightweight rows and filter locally if needed.
+      const { data: aggData, count } = await aggQuery;
+      
+      let filteredAggs = aggData || [];
+      
+      // Compute status counts
+      const sCounts: Record<string, number> = { all: filteredAggs.length };
+      filteredAggs.forEach(o => {
+        sCounts[o.status] = (sCounts[o.status] || 0) + 1;
+      });
+      setStatusCounts(sCounts);
+
+      if (selectedStatusFilter !== "all") {
+        filteredAggs = filteredAggs.filter(o => o.status === selectedStatusFilter);
+      }
+
+      const completed = filteredAggs.filter(o => o.status === 'completed');
+      const totalRevenue = completed.reduce((sum, o) => sum + o.total, 0);
+      const completedCount = completed.length;
+      const pendingCount = filteredAggs.filter(o => o.status === 'pending').length;
+      
+      setStats({
+        totalRevenue,
+        completedCount,
+        pendingCount,
+        avgTicket: completedCount > 0 ? Math.round(totalRevenue / completedCount) : 0,
+        totalCount: filteredAggs.length
+      });
+      
+      setTotalCount(filteredAggs.length);
+
+      // 2. Fetch Paginated Data (Heavy)
       let query = supabase
         .from("orders")
         .select(`
@@ -75,10 +128,14 @@ export function useSales() {
         }
       }
 
-      query = query.limit(100);
+      // Pagination
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
 
       const { data, error } = await query;
       if (error) throw error;
+      
       const fetchedOrders = (data as unknown as OrderWithDetails[]) || [];
       setOrders(fetchedOrders);
     } catch (error: unknown) {
@@ -87,7 +144,7 @@ export function useSales() {
     } finally {
       setLoading(false);
     }
-  }, [storeId, selectedStatusFilter, dateRange]);
+  }, [storeId, selectedStatusFilter, dateRange, currentPage]);
 
   useEffect(() => {
     fetchOrders();
@@ -153,30 +210,9 @@ export function useSales() {
     });
   }, [orders, searchQuery]);
 
-  const stats = useMemo(() => {
-    const filtered = filteredOrders.filter(o => o.status === 'completed');
-    const total = filtered.reduce((sum, o) => sum + o.total, 0);
-    const count = filtered.length;
-    const pendingCount = filteredOrders.filter(o => o.status === 'pending').length;
-    return {
-      totalRevenue: total,
-      completedCount: count,
-      pendingCount,
-      avgTicket: count > 0 ? Math.round(total / count) : 0,
-      totalCount: filteredOrders.length
-    };
-  }, [filteredOrders]);
-
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: filteredOrders.length };
-    filteredOrders.forEach(o => {
-      counts[o.status as string] = (counts[o.status as string] || 0) + 1;
-    });
-    return counts;
-  }, [filteredOrders]);
-
   const handleQuickFilterChange = (value: string) => {
     setQuickFilter(value);
+    setCurrentPage(1); // Reset page on filter change
     const now = new Date();
     switch (value) {
       case "today": setDateRange({ from: startOfDay(now), to: endOfDay(now) }); break;
@@ -256,6 +292,9 @@ export function useSales() {
     handleQuickFilterChange,
     stats,
     statusCounts,
+    currentPage,
+    setCurrentPage,
+    totalPages: Math.ceil(totalCount / pageSize),
     refreshOrders: fetchOrders,
     isAudioEnabled,
     toggleAudio,

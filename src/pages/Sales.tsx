@@ -33,6 +33,9 @@ const Sales = () => {
     handleQuickFilterChange,
     stats,
     statusCounts,
+    currentPage,
+    setCurrentPage,
+    totalPages,
     refreshOrders,
     isAudioEnabled,
     toggleAudio,
@@ -144,6 +147,9 @@ const Sales = () => {
               onViewDetails={dialogs.handleViewDetails}
               onConfirmCancel={dialogs.handleCancelClick}
               onEdit={dialogs.handleEdit}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              totalPages={totalPages}
             />
           )}
         </motion.div>
