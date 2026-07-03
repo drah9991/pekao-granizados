@@ -423,14 +423,18 @@ export default function PrintManagerModule() {
                       <span className="text-[10px] font-mono text-cyan-400 font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20">${(pricing.copy?.cedula ?? 1000).toLocaleString('es-CO')} c/u</span>
                     </div>
                     {isCedula && (
-                      <div className="flex flex-col gap-1.5 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="flex flex-col gap-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                         <label className="text-[9px] font-bold text-slate-400 uppercase">Cantidad de Cédulas</label>
                         <div className="flex items-center justify-between border border-white/5 bg-slate-950/60 rounded-lg overflow-hidden h-9 px-2">
                           <input
-                            type="number"
-                            min="1"
-                            value={cedulaQty}
-                            onChange={(e) => setCedulaQty(Math.max(1, parseInt(e.target.value) || 0))}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={cedulaQty === 0 ? '' : cedulaQty}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '');
+                              setCedulaQty(val === '' ? 0 : Math.max(1, parseInt(val) || 1));
+                            }}
                             className="bg-transparent text-sm font-bold border-none text-white focus:outline-none w-16"
                           />
                           <div className="flex gap-1">
@@ -450,6 +454,19 @@ export default function PrintManagerModule() {
                             </button>
                           </div>
                         </div>
+                        {/* Botones rápidos Cédula */}
+                        <div className="flex gap-1 justify-end">
+                          {[5, 10, 20].map((num) => (
+                            <button
+                              key={num}
+                              type="button"
+                              onClick={() => setCedulaQty(prev => prev + num)}
+                              className="px-1.5 py-0.5 bg-slate-950 hover:bg-slate-800 text-[9px] font-mono font-bold text-cyan-400 rounded border border-white/5"
+                            >
+                              +{num}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -468,14 +485,18 @@ export default function PrintManagerModule() {
                       <span className="text-[10px] font-mono text-cyan-400 font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20">${currentCopyUnitPrice.toLocaleString('es-CO')} c/u</span>
                     </div>
                     {isCopia && (
-                      <div className="flex flex-col gap-1.5 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="flex flex-col gap-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                         <label className="text-[9px] font-bold text-slate-400 uppercase">Cantidad de Copias</label>
                         <div className="flex items-center justify-between border border-white/5 bg-slate-950/60 rounded-lg overflow-hidden h-9 px-2">
                           <input
-                            type="number"
-                            min="1"
-                            value={pages}
-                            onChange={(e) => setPages(Math.max(1, parseInt(e.target.value) || 0))}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={pages === 0 ? '' : pages}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '');
+                              setPages(val === '' ? 0 : Math.max(1, parseInt(val) || 1));
+                            }}
                             className="bg-transparent text-sm font-bold border-none text-white focus:outline-none w-16"
                           />
                           <div className="flex gap-1">
@@ -494,6 +515,19 @@ export default function PrintManagerModule() {
                               +
                             </button>
                           </div>
+                        </div>
+                        {/* Botones rápidos Copia */}
+                        <div className="flex gap-1 justify-end">
+                          {[5, 10, 20].map((num) => (
+                            <button
+                              key={num}
+                              type="button"
+                              onClick={() => setPages(prev => prev + num)}
+                              className="px-1.5 py-0.5 bg-slate-950 hover:bg-slate-800 text-[9px] font-mono font-bold text-cyan-400 rounded border border-white/5"
+                            >
+                              +{num}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     )}
