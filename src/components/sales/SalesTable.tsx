@@ -10,6 +10,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { OrderWithDetails, OrderStatus, orderStatusOptions, OrderItem } from "@/types/sales";
+import { AdvancedPagination } from "@/components/ui/AdvancedPagination";
 
 interface SalesTableProps {
   orders: OrderWithDetails[];
@@ -22,6 +23,9 @@ interface SalesTableProps {
   currentPage: number;
   setCurrentPage: (page: number) => void;
   totalPages: number;
+  pageSize?: number;
+  onPageSizeChange?: (size: number) => void;
+  totalRecords?: number;
 }
 
 export function SalesTable({
@@ -34,7 +38,10 @@ export function SalesTable({
   onEdit,
   currentPage,
   setCurrentPage,
-  totalPages
+  totalPages,
+  pageSize,
+  onPageSizeChange,
+  totalRecords
 }: SalesTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -100,29 +107,14 @@ export function SalesTable({
       </div>
       
       {/* Pagination Controls */}
-      <div className="p-6 border-t border-border/50 flex items-center justify-between">
-        <span className="text-[11px] font-black text-white/50 uppercase tracking-widest italic">
-          Página {currentPage} de {Math.max(1, totalPages)}
-        </span>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage <= 1}
-            className="h-10 px-6 rounded-full text-[10px] font-black uppercase tracking-widest italic bg-muted/40 border-border/50 hover:bg-muted"
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage >= totalPages}
-            className="h-10 px-6 rounded-full text-[10px] font-black uppercase tracking-widest italic bg-muted/40 border-border/50 hover:bg-muted"
-          >
-            Siguiente
-          </Button>
-        </div>
-      </div>
+      <AdvancedPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        pageSize={pageSize}
+        onPageSizeChange={onPageSizeChange}
+        totalRecords={totalRecords}
+      />
     </div>
   );
 }

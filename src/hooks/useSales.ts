@@ -13,7 +13,7 @@ export function useSales() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<OrderStatus | "all">("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
   const [stats, setStats] = useState({ totalRevenue: 0, completedCount: 0, pendingCount: 0, avgTicket: 0, totalCount: 0 });
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({ all: 0 });
@@ -144,11 +144,11 @@ export function useSales() {
     } finally {
       setLoading(false);
     }
-  }, [storeId, selectedStatusFilter, dateRange, currentPage]);
+  }, [storeId, selectedStatusFilter, dateRange, currentPage, pageSize]);
 
   useEffect(() => {
     fetchOrders();
-  }, [storeId, selectedStatusFilter, dateRange, fetchOrders]);
+  }, [storeId, selectedStatusFilter, dateRange, fetchOrders, pageSize]);
 
   // Realtime subscription for incoming orders to trigger KDS audio notifications
   useEffect(() => {
@@ -295,6 +295,9 @@ export function useSales() {
     currentPage,
     setCurrentPage,
     totalPages: Math.ceil(totalCount / pageSize),
+    pageSize,
+    setPageSize,
+    totalRecords: totalCount,
     refreshOrders: fetchOrders,
     isAudioEnabled,
     toggleAudio,

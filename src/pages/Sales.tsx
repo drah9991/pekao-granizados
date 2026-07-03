@@ -36,6 +36,9 @@ const Sales = () => {
     currentPage,
     setCurrentPage,
     totalPages,
+    pageSize,
+    setPageSize,
+    totalRecords,
     refreshOrders,
     isAudioEnabled,
     toggleAudio,
@@ -150,6 +153,9 @@ const Sales = () => {
               currentPage={currentPage}
               setCurrentPage={setCurrentPage}
               totalPages={totalPages}
+              pageSize={pageSize}
+              onPageSizeChange={setPageSize}
+              totalRecords={totalRecords}
             />
           )}
         </motion.div>

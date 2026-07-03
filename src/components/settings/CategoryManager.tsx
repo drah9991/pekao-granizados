@@ -44,6 +44,8 @@ export default function CategoryManager() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   // Dialog & Form state
   const [dialogIsOpen, setDialogIsOpen] = useState(false);
@@ -263,6 +265,22 @@ export default function CategoryManager() {
     (cat.description && cat.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  const totalPages = Math.max(1, Math.ceil(filteredCategories.length / pageSize));
+  const paginatedCategories = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCategories.slice(start, start + pageSize);
+  }, [filteredCategories, currentPage, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > 1 && currentPage > totalPages) {
+      setCurrentPage(Math.max(1, totalPages));
+    }
+  }, [filteredCategories.length, currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 15 }}
@@ -332,7 +350,7 @@ export default function CategoryManager() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCategories.map((cat) => (
+                  paginatedCategories.map((cat) => (
                     <TableRow key={cat.id} className="border-white/5 hover:bg-white/[0.01] transition-colors h-16">
                       <TableCell className="pl-6">
                         <div 
@@ -402,6 +420,17 @@ export default function CategoryManager() {
               </TableBody>
             </Table>
           </div>
+          
+          <AdvancedPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={setPageSize}
+            totalRecords={filteredCategories.length}
+            pageSizeOptions={[5, 10, 20]}
+            className="bg-[#1C1F26]/10 border-t border-white/5"
+          />
         </CardContent>
       </Card>
 

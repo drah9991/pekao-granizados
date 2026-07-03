@@ -9,6 +9,7 @@ import { usePOS } from '@/hooks/usePOS';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AdvancedPagination } from '@/components/ui/AdvancedPagination';
 
 
 // Interfaces estrictas para el módulo
@@ -48,6 +49,10 @@ export default function PrintManagerModule() {
   const [isCopia, setIsCopia] = useState<boolean>(true);
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  
+  // Estados de paginación para el historial
+  const [historyPage, setHistoryPage] = useState<number>(1);
+  const [historyPageSize, setHistoryPageSize] = useState<number>(5);
   
   const queryClient = useQueryClient();
   const { processSale } = usePOS();
@@ -137,9 +142,18 @@ export default function PrintManagerModule() {
     }
   }, [origin]);
 
+  const currentCopyUnitPrice = useMemo(() => {
+    if (!pricing?.copy) return 200;
+    if (colorMode === 'bw') {
+      return paperSize === 'letter' ? pricing.copy.bw_letter : pricing.copy.bw_legal;
+    } else {
+      return paperSize === 'letter' ? pricing.copy.color_letter : pricing.copy.color_legal;
+    }
+  }, [pricing, colorMode, paperSize]);
+
   // OPTIMIZACIÓN: Estado derivado puro y síncrono mediante useMemo
   const { totalImpressions, totalPrice } = useMemo(() => {
-    let pricePerPage = 0;
+    let pricePerPage = currentCopyUnitPrice;
     
     if (origin === 'scanner') {
       pricePerPage = pricing.scanner; // Tarifa dinámica escáner
@@ -182,6 +196,19 @@ export default function PrintManagerModule() {
       .filter(job => job.rawOrder?.status !== 'cancelled')
       .reduce((acc, job) => acc + job.impressions, 0);
   }, [history]);
+
+  // Paginación local del historial
+  const historyTotalPages = Math.max(1, Math.ceil(history.length / historyPageSize));
+  const paginatedHistory = useMemo(() => {
+    const start = (historyPage - 1) * historyPageSize;
+    return history.slice(start, start + historyPageSize);
+  }, [history, historyPage, historyPageSize]);
+
+  React.useEffect(() => {
+    if (historyPage > 1 && historyPage > historyTotalPages) {
+      setHistoryPage(Math.max(1, historyTotalPages));
+    }
+  }, [history.length, historyPage, historyTotalPages]);
 
   // Manejadores de adición rápida (Fast-add)
   const handleFastAdd = (amount: number) => {
@@ -426,19 +453,50 @@ export default function PrintManagerModule() {
                       </div>
                     )}
                   </div>
-
                   {/* Copia Card */}
                   <div className={`bg-slate-900/40 backdrop-blur-md border p-4 rounded-xl flex flex-col gap-3 transition-all ${isCopia ? 'border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-white/5 opacity-70'}`}>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="service-copia"
-                        checked={isCopia}
-                        onCheckedChange={(checked) => setIsCopia(!!checked)}
-                        className="w-5 h-5 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
-                      />
-                      <label htmlFor="service-copia" className="text-xs font-bold uppercase tracking-wider text-slate-200 cursor-pointer select-none">Copia</label>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="service-copia"
+                          checked={isCopia}
+                          onCheckedChange={(checked) => setIsCopia(!!checked)}
+                          className="w-5 h-5 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
+                        />
+                        <label htmlFor="service-copia" className="text-xs font-bold uppercase tracking-wider text-slate-200 cursor-pointer select-none">Copia</label>
+                      </div>
+                      <span className="text-[10px] font-mono text-cyan-400 font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20">${currentCopyUnitPrice.toLocaleString('es-CO')} c/u</span>
                     </div>
-                    <span className="text-[10px] text-slate-500 leading-tight">Habilita la configuración para copias normales (páginas y juegos).</span>
+                    {isCopia && (
+                      <div className="flex flex-col gap-1.5 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Cantidad de Copias</label>
+                        <div className="flex items-center justify-between border border-white/5 bg-slate-950/60 rounded-lg overflow-hidden h-9 px-2">
+                          <input
+                            type="number"
+                            min="1"
+                            value={pages}
+                            onChange={(e) => setPages(Math.max(1, parseInt(e.target.value) || 0))}
+                            className="bg-transparent text-sm font-bold border-none text-white focus:outline-none w-16"
+                          />
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setPages(prev => Math.max(1, prev - 1))}
+                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-xs"
+                            >
+                              -
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPages(prev => prev + 1)}
+                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-xs"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -490,8 +548,9 @@ export default function PrintManagerModule() {
                 </div>
               )}
 
-              {/* Contadores Numéricos */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* Contadores Numéricos (Solo se muestran para Whatsapp y Escáner) */}
+              {origin !== 'physical' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 {/* Páginas */}
                 <div className={`bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2 transition-opacity duration-200 ${origin === 'physical' && !isCopia ? 'opacity-30' : ''}`}>
                   <label className="text-xs font-semibold text-slate-400 uppercase">Cantidad de Páginas</label>
@@ -554,6 +613,7 @@ export default function PrintManagerModule() {
                   </div>
                 </div>
               </div>
+            )}
 
             </div>
           </div>
@@ -644,9 +704,11 @@ export default function PrintManagerModule() {
         </div>
 
         {/* HISTORIAL EN TIEMPO REAL (Fila Inferior Completa) */}
-        <div className="bg-slate-900/20 backdrop-blur-xl border border-white/5 rounded-2xl p-6 mt-2">
-          <h2 className="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-4">Registro de Trabajos Recientes</h2>
-          <div className="overflow-x-auto">
+        <div className="bg-slate-900/20 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden mt-2">
+          <div className="p-6 pb-4">
+            <h2 className="text-xs font-semibold tracking-wider text-slate-400 uppercase">Registro de Trabajos Recientes</h2>
+          </div>
+          <div className="overflow-x-auto px-6">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
@@ -668,7 +730,7 @@ export default function PrintManagerModule() {
                     </td>
                   </tr>
                 ) : (
-                  history.map((job) => {
+                  paginatedHistory.map((job) => {
                     const isCancelled = job.rawOrder?.status === 'cancelled';
                     return (
                       <tr key={job.id} className={`hover:bg-white/[0.02] transition-colors group ${isCancelled ? 'opacity-50 line-through' : ''}`}>
@@ -713,6 +775,17 @@ export default function PrintManagerModule() {
               </tbody>
             </table>
           </div>
+          
+          <AdvancedPagination
+            currentPage={historyPage}
+            totalPages={historyTotalPages}
+            onPageChange={setHistoryPage}
+            pageSize={historyPageSize}
+            onPageSizeChange={setHistoryPageSize}
+            totalRecords={history.length}
+            pageSizeOptions={[5, 10, 20]}
+            className="bg-transparent border-t border-white/5"
+          />
         </div>
 
 
