@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2, Tag, Loader2, Check } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Tag, Loader2, Check, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +21,9 @@ const categoryFormSchema = z.object({
   name: z.string().min(1, "El nombre de la categoría es requerido y obligatorio").max(50, "Máximo 50 caracteres"),
   description: z.string().optional().or(z.literal("")),
   color_hex: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Debe ser un código hexadecimal válido (ej. #06b6d4)"),
-  is_active: z.boolean().default(true)
+  is_active: z.boolean().default(true),
+  image_url: z.string().optional().nullable().or(z.literal("")),
+  sort_order: z.number().int().min(0, "Debe ser un entero mayor o igual a 0").default(0)
 });
 
 type CategoryFormData = z.infer<typeof categoryFormSchema>;
@@ -47,6 +49,7 @@ export default function CategoryManager() {
   const [dialogIsOpen, setDialogIsOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const {
     register,
@@ -61,11 +64,14 @@ export default function CategoryManager() {
       name: "",
       description: "",
       color_hex: "#06b6d4",
-      is_active: true
+      is_active: true,
+      image_url: "",
+      sort_order: 0
     }
   });
 
   const selectedColor = watch("color_hex");
+  const imageUrlValue = watch("image_url");
 
   const fetchCategories = async () => {
     if (!userStoreId) return;
@@ -75,6 +81,7 @@ export default function CategoryManager() {
         .from("categories")
         .select("*")
         .or(`store_id.eq.${userStoreId},store_id.is.null`)
+        .order("sort_order", { ascending: true })
         .order("name", { ascending: true });
 
       if (error) throw error;
@@ -99,7 +106,9 @@ export default function CategoryManager() {
       name: "",
       description: "",
       color_hex: "#06b6d4",
-      is_active: true
+      is_active: true,
+      image_url: "",
+      sort_order: 0
     });
     setDialogIsOpen(true);
   };
@@ -110,9 +119,57 @@ export default function CategoryManager() {
       name: category.name,
       description: category.description || "",
       color_hex: category.color_hex || "#06b6d4",
-      is_active: category.is_active ?? true
+      is_active: category.is_active ?? true,
+      image_url: category.image_url || "",
+      sort_order: category.sort_order ?? 0
     });
     setDialogIsOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, suba únicamente archivos de imagen.");
+      return;
+    }
+
+    // Validar tamaño (máx 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("La imagen debe tener un tamaño inferior a 2MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userStoreId}/${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `category-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("products") // Usamos el bucket de productos existente en lugar de crear uno nuevo para evitar problemas de buckets inexistentes
+        .upload(filePath, file, { cacheControl: "3600", upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("products")
+        .getPublicUrl(filePath);
+
+      setValue("image_url", publicUrl);
+      toast.success("Imagen subida correctamente.");
+    } catch (err: any) {
+      console.error("Error uploading image:", err);
+      toast.error("Error al subir la imagen.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setValue("image_url", "");
   };
 
   const onSubmit = async (data: CategoryFormData) => {
@@ -125,6 +182,8 @@ export default function CategoryManager() {
         description: data.description?.trim() || null,
         color_hex: data.color_hex,
         is_active: data.is_active,
+        image_url: data.image_url || null,
+        sort_order: Number(data.sort_order) || 0,
         store_id: userStoreId
       };
 
@@ -248,8 +307,10 @@ export default function CategoryManager() {
               <TableHeader className="bg-white/[0.02] border-b border-white/5">
                 <TableRow className="hover:bg-transparent border-white/5">
                   <TableHead className="w-16 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">COLOR</TableHead>
+                  <TableHead className="w-16 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">IMAGEN</TableHead>
                   <TableHead className="text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">IDENTIFICADOR (NOMBRE)</TableHead>
                   <TableHead className="text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">DESCRIPCIÓN</TableHead>
+                  <TableHead className="w-20 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk text-center">PRIORIDAD</TableHead>
                   <TableHead className="w-32 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk text-center">ESTADO</TableHead>
                   <TableHead className="w-32 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk text-right pr-6">ACCIONES</TableHead>
                 </TableRow>
@@ -257,7 +318,7 @@ export default function CategoryManager() {
               <TableBody>
                 {loading ? (
                   <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={5} className="py-20 text-center">
+                    <TableCell colSpan={7} className="py-20 text-center">
                       <div className="flex flex-col items-center justify-center gap-4">
                         <Loader2 className="w-8 h-8 animate-spin text-primary shadow-glow-pro" />
                         <span className="text-[9px] font-black uppercase tracking-widest text-primary italic animate-pulse">Sincronizando Archivos...</span>
@@ -266,7 +327,7 @@ export default function CategoryManager() {
                   </TableRow>
                 ) : filteredCategories.length === 0 ? (
                   <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={5} className="py-20 text-center text-muted-foreground font-caveat text-2xl">
+                    <TableCell colSpan={7} className="py-20 text-center text-muted-foreground font-caveat text-2xl">
                       No se encontraron categorías registradas.
                     </TableCell>
                   </TableRow>
@@ -282,11 +343,27 @@ export default function CategoryManager() {
                           }} 
                         />
                       </TableCell>
+                      <TableCell>
+                        {cat.image_url ? (
+                          <img 
+                            src={cat.image_url} 
+                            alt={cat.name} 
+                            className="w-9 h-9 object-cover rounded-lg border border-white/5"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 bg-white/5 border border-white/5 rounded-lg flex items-center justify-center text-[10px] text-muted-foreground/30 font-space-grotesk">
+                            S/I
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-dm-sans font-bold text-xs uppercase text-foreground">
                         {cat.name}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground/80 max-w-xs truncate">
                         {cat.description || "—"}
+                      </TableCell>
+                      <TableCell className="text-center font-mono text-xs font-bold text-primary">
+                        {cat.sort_order ?? 0}
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge 
@@ -363,11 +440,72 @@ export default function CategoryManager() {
               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
                 Descripción
               </Label>
-              <Input
+              <textarea
                 {...register("description")}
                 placeholder="Breve detalle de la categoría..."
-                className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary/50 text-xs text-foreground font-dm-sans"
+                rows={3}
+                className="w-full bg-white/5 border border-white/10 rounded-xl focus:border-primary/50 text-xs text-foreground p-3 focus:outline-none focus:ring-0 font-dm-sans resize-none"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
+                Imagen de Portada (Opcional)
+              </Label>
+              
+              <div className="border border-dashed border-white/10 rounded-xl p-4 bg-white/[0.02] flex flex-col items-center justify-center gap-3">
+                {imageUrlValue ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <img 
+                      src={imageUrlValue} 
+                      alt="Preview" 
+                      className="w-20 h-20 object-cover rounded-xl border border-white/10 shadow-lg"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={removeImage}
+                      className="h-7 px-3 text-[10px] font-black text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg flex items-center gap-1 uppercase tracking-widest font-space-grotesk"
+                    >
+                      <X className="w-3 h-3" />
+                      Eliminar Imagen
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-full flex flex-col items-center gap-2 py-2">
+                    <Upload className="w-6 h-6 text-muted-foreground/60" />
+                    <Label className="cursor-pointer text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors font-space-grotesk">
+                      {isUploading ? "Subiendo..." : "Seleccionar Archivo"}
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
+                        className="hidden" 
+                        disabled={isUploading}
+                      />
+                    </Label>
+                    <span className="text-[9px] text-muted-foreground/40 font-mono">PNG, JPG, WEBP (MÁX. 2MB)</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
+                Prioridad de Orden (Visualización)
+              </Label>
+              <Input
+                type="number"
+                {...register("sort_order", { valueAsNumber: true })}
+                placeholder="0"
+                min={0}
+                className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary/50 text-xs font-mono font-black"
+              />
+              {errors.sort_order && (
+                <p className="text-[10px] font-bold text-destructive uppercase tracking-widest font-space-grotesk italic ml-1 mt-1">
+                  {errors.sort_order.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-3">

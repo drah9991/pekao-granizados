@@ -56,6 +56,8 @@ export interface Category {
   is_active: boolean | null;
   store_id?: string | null;
   created_at?: string | null;
+  image_url?: string | null;
+  sort_order?: number | null;
 }
 
 export interface Size {

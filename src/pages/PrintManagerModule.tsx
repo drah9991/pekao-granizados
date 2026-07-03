@@ -8,6 +8,7 @@ import { useConfigStore } from '@/store/useConfigStore';
 import { usePOS } from '@/hooks/usePOS';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 // Interfaces estrictas para el módulo
@@ -31,8 +32,8 @@ export default function PrintManagerModule() {
   const storeConfig = useConfigStore((state) => state.storeConfig) as Record<string, any>;
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
   const pricing = storeConfig?.copyCenter?.pricing || {
-    print: { bw_letter: 200, bw_legal: 300, color_letter: 1000, color_legal: 1200 },
-    copy: { bw_letter: 200, bw_legal: 300, color_letter: 1000, color_legal: 1200 },
+    print: { bw_letter: 500, bw_legal: 500, color_letter: 1000, color_legal: 1200 },
+    copy: { bw_letter: 300, bw_legal: 500, color_letter: 1000, color_legal: 1200, cedula: 1000 },
     scanner: 500
   };
 
@@ -42,6 +43,7 @@ export default function PrintManagerModule() {
   const [paperSize, setPaperSize] = useState<PaperSize>('letter');
   const [pages, setPages] = useState<number>(1);
   const [sets, setSets] = useState<number>(1);
+  const [cedulaMode, setCedulaMode] = useState<'none' | 'add' | 'only'>('none');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
@@ -125,8 +127,24 @@ export default function PrintManagerModule() {
 
 
 
+  // Reset Cédula check if origin is not physical
+  React.useEffect(() => {
+    if (origin !== 'physical') {
+      setCedulaMode('none');
+    }
+  }, [origin]);
+
   // OPTIMIZACIÓN: Estado derivado puro y síncrono mediante useMemo
   const { totalImpressions, totalPrice } = useMemo(() => {
+    const cedulaPrice = (origin === 'physical' && cedulaMode !== 'none') ? (pricing.copy?.cedula ?? 1000) : 0;
+
+    if (origin === 'physical' && cedulaMode === 'only') {
+      return {
+        totalImpressions: sets, // 1 documento (cédula) por juego/set
+        totalPrice: cedulaPrice * sets
+      };
+    }
+
     let pricePerPage = 0;
     
     if (origin === 'scanner') {
@@ -140,12 +158,13 @@ export default function PrintManagerModule() {
       }
     }
     
-    const impressions = Math.max(0, pages) * Math.max(0, sets);
+    const baseImpressions = Math.max(0, pages) * Math.max(0, sets);
+    
     return {
-      totalImpressions: impressions,
-      totalPrice: impressions * pricePerPage
+      totalImpressions: baseImpressions,
+      totalPrice: (baseImpressions * pricePerPage) + (cedulaMode === 'add' ? cedulaPrice * sets : 0)
     };
-  }, [origin, colorMode, paperSize, pages, sets, pricing]);
+  }, [origin, colorMode, paperSize, pages, sets, pricing, cedulaMode]);
 
   // Rendimiento total acumulado en el turno (excluye anuladas)
   const totalTurnImpressions = useMemo(() => {
@@ -180,11 +199,20 @@ export default function PrintManagerModule() {
     setIsProcessing(true);
 
     try {
+      const formattedOriginName = origin === 'whatsapp' 
+        ? 'Impresión WhatsApp/USB' 
+        : origin === 'physical' 
+          ? (cedulaMode === 'only' 
+            ? 'Copia Solo Cédula' 
+            : cedulaMode === 'add' 
+              ? 'Copia Física + Cédula' 
+              : 'Copia Física') 
+          : 'Escáner';
       const dummyCart = [{
         productId: 'generic-copy-service', 
         quantity: 1, 
         price: totalPrice, 
-        name: `Servicio Centro de Copiado (${origin})`,
+        name: `Servicio Centro de Copiado (${formattedOriginName})`,
         sizeMultiplier: 1,
         baseVolume: 0,
         toppings: []
@@ -200,7 +228,7 @@ export default function PrintManagerModule() {
         totalPrice, // amountReceived
         undefined, // deliveryData
         undefined, // splitDetails
-        { origin: 'print_center', copy_origin: origin, copy_pages: totalImpressions } // metadata
+        { origin: 'print_center', copy_origin: formattedOriginName, copy_pages: totalImpressions, cedula_mode: cedulaMode } // metadata
       );
 
       if (orderResult) {
@@ -293,7 +321,7 @@ export default function PrintManagerModule() {
                   {(['whatsapp', 'physical', 'scanner'] as OriginType[]).map((type) => {
                     const icons = { whatsapp: Smartphone, physical: Copy, scanner: Scan };
                     const Icon = icons[type];
-                    const labels = { whatsapp: 'WhatsApp', physical: 'Copia Física', scanner: 'Escáner' };
+                    const labels = { whatsapp: 'WhatsApp / USB', physical: 'Copias', scanner: 'Escáner' };
                     
                     return (
                       <button
@@ -361,26 +389,63 @@ export default function PrintManagerModule() {
                 </div>
               )}
 
+              {/* Controles de Cédula */}
+              {origin === 'physical' && (
+                <div className="bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-4 transition-all duration-200">
+                  <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
+                    <div className="flex flex-col gap-1">
+                      <label htmlFor="cedula-add-check" className="text-xs font-semibold text-slate-400 uppercase cursor-pointer">¿Cédula Adicional?</label>
+                      <span className="text-[10px] text-slate-500">Suma la tarifa de cédula (+${(pricing.copy?.cedula ?? 1000).toLocaleString('es-CO')} por juego) al valor de la copia</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Checkbox
+                        id="cedula-add-check"
+                        checked={cedulaMode === 'add'}
+                        onCheckedChange={(checked) => setCedulaMode(checked ? 'add' : 'none')}
+                        className="w-6 h-6 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1">
+                      <label htmlFor="cedula-only-check" className="text-xs font-semibold text-slate-400 uppercase cursor-pointer">¿Solo Cédula?</label>
+                      <span className="text-[10px] text-slate-500">Factura únicamente la tarifa de cédula (${(pricing.copy?.cedula ?? 1000).toLocaleString('es-CO')} por juego) y congela páginas</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Checkbox
+                        id="cedula-only-check"
+                        checked={cedulaMode === 'only'}
+                        onCheckedChange={(checked) => setCedulaMode(checked ? 'only' : 'none')}
+                        className="w-6 h-6 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Contadores Numéricos */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 {/* Páginas */}
-                <div className="bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2">
+                <div className={`bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2 transition-opacity duration-200 ${cedulaMode === 'only' ? 'opacity-40' : ''}`}>
                   <label className="text-xs font-semibold text-slate-400 uppercase">Cantidad de Páginas</label>
                   <div className="flex items-center justify-between gap-2">
                     <input
                       type="number"
                       min="1"
-                      value={pages}
+                      disabled={cedulaMode === 'only'}
+                      value={cedulaMode === 'only' ? 1 : pages}
                       onChange={(e) => setPages(Math.max(1, parseInt(e.target.value) || 0))}
-                      className="bg-transparent text-xl font-bold border-none text-white focus:outline-none w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="bg-transparent text-xl font-bold border-none text-white focus:outline-none w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:cursor-not-allowed"
                     />
                     <div className="flex gap-1">
                       {[1, 5, 10, 50].map((val) => (
                         <button
                           key={val}
                           type="button"
+                          disabled={cedulaMode === 'only'}
                           onClick={() => handleFastAdd(val)}
-                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-bold rounded border border-white/5 text-cyan-400 transition-colors"
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-[10px] font-bold rounded border border-white/5 text-cyan-400 transition-colors"
                         >
                           +{val}
                         </button>

@@ -18,16 +18,17 @@ export default function CopyCenterSettings() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Impresiones (Prints)
-  const [printBwLetter, setPrintBwLetter] = useState("200");
-  const [printBwLegal, setPrintBwLegal] = useState("300");
+  const [printBwLetter, setPrintBwLetter] = useState("500");
+  const [printBwLegal, setPrintBwLegal] = useState("500");
   const [printColorLetter, setPrintColorLetter] = useState("1000");
   const [printColorLegal, setPrintColorLegal] = useState("1200");
 
   // Copias (Copies)
-  const [copyBwLetter, setCopyBwLetter] = useState("200");
-  const [copyBwLegal, setCopyBwLegal] = useState("300");
+  const [copyBwLetter, setCopyBwLetter] = useState("300");
+  const [copyBwLegal, setCopyBwLegal] = useState("500");
   const [copyColorLetter, setCopyColorLetter] = useState("1000");
   const [copyColorLegal, setCopyColorLegal] = useState("1200");
+  const [copyCedula, setCopyCedula] = useState("1000");
 
   const [scanner, setScanner] = useState("500");
 
@@ -36,16 +37,17 @@ export default function CopyCenterSettings() {
       const pricing = storeConfig.copyCenter.pricing;
       
       const pPrint = pricing.print || {};
-      setPrintBwLetter(pPrint.bw_letter?.toString() || "200");
-      setPrintBwLegal(pPrint.bw_legal?.toString() || "300");
+      setPrintBwLetter(pPrint.bw_letter?.toString() || "500");
+      setPrintBwLegal(pPrint.bw_legal?.toString() || "500");
       setPrintColorLetter(pPrint.color_letter?.toString() || "1000");
       setPrintColorLegal(pPrint.color_legal?.toString() || "1200");
 
       const pCopy = pricing.copy || {};
-      setCopyBwLetter(pCopy.bw_letter?.toString() || "200");
-      setCopyBwLegal(pCopy.bw_legal?.toString() || "300");
+      setCopyBwLetter(pCopy.bw_letter?.toString() || "300");
+      setCopyBwLegal(pCopy.bw_legal?.toString() || "500");
       setCopyColorLetter(pCopy.color_letter?.toString() || "1000");
       setCopyColorLegal(pCopy.color_legal?.toString() || "1200");
+      setCopyCedula(pCopy.cedula?.toString() || "1000");
 
       setScanner(pricing.scanner?.toString() || "500");
     }
@@ -60,10 +62,10 @@ export default function CopyCenterSettings() {
     setIsLoading(true);
     try {
       const { data: store } = await supabase
-        .from("stores")
-        .select("config")
-        .eq("id", storeId)
-        .single();
+         .from("stores")
+         .select("config")
+         .eq("id", storeId)
+         .single();
 
       const currentConfig = (store?.config as Record<string, any>) || {};
 
@@ -83,6 +85,7 @@ export default function CopyCenterSettings() {
               bw_legal: parseFloat(copyBwLegal) || 0,
               color_letter: parseFloat(copyColorLetter) || 0,
               color_legal: parseFloat(copyColorLegal) || 0,
+              cedula: parseFloat(copyCedula) || 0,
             },
             scanner: parseFloat(scanner) || 0
           }
@@ -204,6 +207,16 @@ export default function CopyCenterSettings() {
                 <div className="space-y-2">
                   <Label className="text-[9px] uppercase tracking-widest text-white/40 italic">Oficio ($)</Label>
                   <Input type="number" value={copyColorLegal} onChange={(e) => setCopyColorLegal(e.target.value)} className="bg-white/5 border-white/10" />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-white/5">
+              <h4 className="text-[10px] font-bold uppercase text-emerald-400 tracking-wider">Servicios Especiales</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[9px] uppercase tracking-widest text-white/40 italic">Cédula ($)</Label>
+                  <Input type="number" value={copyCedula} onChange={(e) => setCopyCedula(e.target.value)} className="bg-white/5 border-white/10" />
                 </div>
               </div>
             </div>
