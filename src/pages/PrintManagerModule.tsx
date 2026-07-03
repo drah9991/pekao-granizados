@@ -43,7 +43,9 @@ export default function PrintManagerModule() {
   const [paperSize, setPaperSize] = useState<PaperSize>('letter');
   const [pages, setPages] = useState<number>(1);
   const [sets, setSets] = useState<number>(1);
-  const [cedulaMode, setCedulaMode] = useState<'none' | 'add' | 'only'>('none');
+  const [isCedula, setIsCedula] = useState<boolean>(false);
+  const [cedulaQty, setCedulaQty] = useState<number>(1);
+  const [isCopia, setIsCopia] = useState<boolean>(true);
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
@@ -127,24 +129,16 @@ export default function PrintManagerModule() {
 
 
 
-  // Reset Cédula check if origin is not physical
+  // Reset Cédula and Copia check if origin is not physical
   React.useEffect(() => {
     if (origin !== 'physical') {
-      setCedulaMode('none');
+      setIsCedula(false);
+      setIsCopia(true);
     }
   }, [origin]);
 
   // OPTIMIZACIÓN: Estado derivado puro y síncrono mediante useMemo
   const { totalImpressions, totalPrice } = useMemo(() => {
-    const cedulaPrice = (origin === 'physical' && cedulaMode !== 'none') ? (pricing.copy?.cedula ?? 1000) : 0;
-
-    if (origin === 'physical' && cedulaMode === 'only') {
-      return {
-        totalImpressions: sets, // 1 documento (cédula) por juego/set
-        totalPrice: cedulaPrice * sets
-      };
-    }
-
     let pricePerPage = 0;
     
     if (origin === 'scanner') {
@@ -158,13 +152,29 @@ export default function PrintManagerModule() {
       }
     }
     
-    const baseImpressions = Math.max(0, pages) * Math.max(0, sets);
-    
+    let impressions = 0;
+    let price = 0;
+
+    if (origin === 'physical') {
+      if (isCopia) {
+        impressions += Math.max(0, pages) * Math.max(0, sets);
+        price += Math.max(0, pages) * Math.max(0, sets) * pricePerPage;
+      }
+      if (isCedula) {
+        impressions += Math.max(0, cedulaQty);
+        price += Math.max(0, cedulaQty) * (pricing.copy?.cedula ?? 1000);
+      }
+    } else {
+      // whatsapp or scanner
+      impressions = Math.max(0, pages) * Math.max(0, sets);
+      price = impressions * pricePerPage;
+    }
+
     return {
-      totalImpressions: baseImpressions,
-      totalPrice: (baseImpressions * pricePerPage) + (cedulaMode === 'add' ? cedulaPrice * sets : 0)
+      totalImpressions: impressions,
+      totalPrice: price
     };
-  }, [origin, colorMode, paperSize, pages, sets, pricing, cedulaMode]);
+  }, [origin, colorMode, paperSize, pages, sets, pricing, isCedula, cedulaQty, isCopia]);
 
   // Rendimiento total acumulado en el turno (excluye anuladas)
   const totalTurnImpressions = useMemo(() => {
@@ -191,23 +201,41 @@ export default function PrintManagerModule() {
       return;
     }
 
-    if (pages <= 0 || sets <= 0) {
-      toast.error('La cantidad de páginas y juegos debe ser mayor a cero.');
-      return;
+    if (origin === 'physical') {
+      if (!isCopia && !isCedula) {
+        toast.error('Debe seleccionar al menos un servicio (Cédula o Copia).');
+        return;
+      }
+      if (isCopia && (pages <= 0 || sets <= 0)) {
+        toast.error('La cantidad de páginas y juegos para copias debe ser mayor a cero.');
+        return;
+      }
+      if (isCedula && cedulaQty <= 0) {
+        toast.error('La cantidad de cédulas debe ser mayor a cero.');
+        return;
+      }
+    } else {
+      if (pages <= 0 || sets <= 0) {
+        toast.error('La cantidad de páginas y juegos debe ser mayor a cero.');
+        return;
+      }
     }
 
     setIsProcessing(true);
 
     try {
-      const formattedOriginName = origin === 'whatsapp' 
-        ? 'Impresión WhatsApp/USB' 
-        : origin === 'physical' 
-          ? (cedulaMode === 'only' 
-            ? 'Copia Solo Cédula' 
-            : cedulaMode === 'add' 
-              ? 'Copia Física + Cédula' 
-              : 'Copia Física') 
-          : 'Escáner';
+      let formattedOriginName = '';
+      if (origin === 'whatsapp') {
+        formattedOriginName = 'Impresión WhatsApp/USB';
+      } else if (origin === 'scanner') {
+        formattedOriginName = 'Escáner';
+      } else {
+        const parts = [];
+        if (isCopia) parts.push('Copia Física');
+        if (isCedula) parts.push(`Cédula (x${cedulaQty})`);
+        formattedOriginName = parts.join(' + ') || 'Copia Vacía';
+      }
+      
       const dummyCart = [{
         productId: 'generic-copy-service', 
         quantity: 1, 
@@ -228,7 +256,14 @@ export default function PrintManagerModule() {
         totalPrice, // amountReceived
         undefined, // deliveryData
         undefined, // splitDetails
-        { origin: 'print_center', copy_origin: formattedOriginName, copy_pages: totalImpressions, cedula_mode: cedulaMode } // metadata
+        { 
+          origin: 'print_center', 
+          copy_origin: formattedOriginName, 
+          copy_pages: totalImpressions, 
+          is_cedula: isCedula, 
+          cedula_qty: isCedula ? cedulaQty : 0, 
+          is_copia: isCopia 
+        } // metadata
       );
 
       if (orderResult) {
@@ -243,6 +278,7 @@ export default function PrintManagerModule() {
         // Resetear formulario
         setPages(1);
         setSets(1);
+        setCedulaQty(1);
         
         // Refrescar historial
         refetchHistory();
@@ -342,9 +378,74 @@ export default function PrintManagerModule() {
                 </div>
               </div>
 
+              {/* Selección de Servicios (Cédula / Copia) */}
+              {origin === 'physical' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Cédula Card */}
+                  <div className={`bg-slate-900/40 backdrop-blur-md border p-4 rounded-xl flex flex-col gap-3 transition-all ${isCedula ? 'border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-white/5 opacity-70'}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="service-cedula"
+                          checked={isCedula}
+                          onCheckedChange={(checked) => setIsCedula(!!checked)}
+                          className="w-5 h-5 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
+                        />
+                        <label htmlFor="service-cedula" className="text-xs font-bold uppercase tracking-wider text-slate-200 cursor-pointer select-none">Cédula</label>
+                      </div>
+                      <span className="text-[10px] font-mono text-cyan-400 font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20">${(pricing.copy?.cedula ?? 1000).toLocaleString('es-CO')} c/u</span>
+                    </div>
+                    {isCedula && (
+                      <div className="flex flex-col gap-1.5 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Cantidad de Cédulas</label>
+                        <div className="flex items-center justify-between border border-white/5 bg-slate-950/60 rounded-lg overflow-hidden h-9 px-2">
+                          <input
+                            type="number"
+                            min="1"
+                            value={cedulaQty}
+                            onChange={(e) => setCedulaQty(Math.max(1, parseInt(e.target.value) || 0))}
+                            className="bg-transparent text-sm font-bold border-none text-white focus:outline-none w-16"
+                          />
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setCedulaQty(prev => Math.max(1, prev - 1))}
+                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-xs"
+                            >
+                              -
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCedulaQty(prev => prev + 1)}
+                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-xs"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Copia Card */}
+                  <div className={`bg-slate-900/40 backdrop-blur-md border p-4 rounded-xl flex flex-col gap-3 transition-all ${isCopia ? 'border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-white/5 opacity-70'}`}>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="service-copia"
+                        checked={isCopia}
+                        onCheckedChange={(checked) => setIsCopia(!!checked)}
+                        className="w-5 h-5 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
+                      />
+                      <label htmlFor="service-copia" className="text-xs font-bold uppercase tracking-wider text-slate-200 cursor-pointer select-none">Copia</label>
+                    </div>
+                    <span className="text-[10px] text-slate-500 leading-tight">Habilita la configuración para copias normales (páginas y juegos).</span>
+                  </div>
+                </div>
+              )}
+
               {/* Atributos (Modo de Color y Tamaño de Papel) */}
               {origin !== 'scanner' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-200 ${origin === 'physical' && !isCopia ? 'opacity-30 pointer-events-none' : ''}`}>
                   {/* Modo de Color */}
                   <div>
                     <label className="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-2 block">Modo de Color</label>
@@ -389,52 +490,17 @@ export default function PrintManagerModule() {
                 </div>
               )}
 
-              {/* Controles de Cédula */}
-              {origin === 'physical' && (
-                <div className="bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-4 transition-all duration-200">
-                  <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
-                    <div className="flex flex-col gap-1">
-                      <label htmlFor="cedula-add-check" className="text-xs font-semibold text-slate-400 uppercase cursor-pointer">¿Cédula Adicional?</label>
-                      <span className="text-[10px] text-slate-500">Suma la tarifa de cédula (+${(pricing.copy?.cedula ?? 1000).toLocaleString('es-CO')} por juego) al valor de la copia</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="cedula-add-check"
-                        checked={cedulaMode === 'add'}
-                        onCheckedChange={(checked) => setCedulaMode(checked ? 'add' : 'none')}
-                        className="w-6 h-6 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex flex-col gap-1">
-                      <label htmlFor="cedula-only-check" className="text-xs font-semibold text-slate-400 uppercase cursor-pointer">¿Solo Cédula?</label>
-                      <span className="text-[10px] text-slate-500">Factura únicamente la tarifa de cédula (${(pricing.copy?.cedula ?? 1000).toLocaleString('es-CO')} por juego) y congela páginas</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="cedula-only-check"
-                        checked={cedulaMode === 'only'}
-                        onCheckedChange={(checked) => setCedulaMode(checked ? 'only' : 'none')}
-                        className="w-6 h-6 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Contadores Numéricos */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 {/* Páginas */}
-                <div className={`bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2 transition-opacity duration-200 ${cedulaMode === 'only' ? 'opacity-40' : ''}`}>
+                <div className={`bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2 transition-opacity duration-200 ${origin === 'physical' && !isCopia ? 'opacity-30' : ''}`}>
                   <label className="text-xs font-semibold text-slate-400 uppercase">Cantidad de Páginas</label>
                   <div className="flex items-center justify-between gap-2">
                     <input
                       type="number"
                       min="1"
-                      disabled={cedulaMode === 'only'}
-                      value={cedulaMode === 'only' ? 1 : pages}
+                      disabled={origin === 'physical' && !isCopia}
+                      value={origin === 'physical' && !isCopia ? 0 : pages}
                       onChange={(e) => setPages(Math.max(1, parseInt(e.target.value) || 0))}
                       className="bg-transparent text-xl font-bold border-none text-white focus:outline-none w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:cursor-not-allowed"
                     />
@@ -443,7 +509,7 @@ export default function PrintManagerModule() {
                         <button
                           key={val}
                           type="button"
-                          disabled={cedulaMode === 'only'}
+                          disabled={origin === 'physical' && !isCopia}
                           onClick={() => handleFastAdd(val)}
                           className="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-[10px] font-bold rounded border border-white/5 text-cyan-400 transition-colors"
                         >
@@ -455,29 +521,32 @@ export default function PrintManagerModule() {
                 </div>
 
                 {/* Juegos / Sets */}
-                <div className="bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2">
+                <div className={`bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2 transition-opacity duration-200 ${origin === 'physical' && !isCopia ? 'opacity-30' : ''}`}>
                   <label className="text-xs font-semibold text-slate-400 uppercase">Número de Juegos (Sets)</label>
                   <div className="flex items-center gap-4 justify-between">
                     <input
                       type="number"
                       min="1"
-                      value={sets}
+                      disabled={origin === 'physical' && !isCopia}
+                      value={origin === 'physical' && !isCopia ? 0 : sets}
                       onChange={(e) => setSets(Math.max(1, parseInt(e.target.value) || 0))}
-                      className="bg-transparent text-xl font-bold border-none text-white focus:outline-none w-20"
+                      className="bg-transparent text-xl font-bold border-none text-white focus:outline-none w-20 disabled:cursor-not-allowed"
                     />
                     <div className="flex items-center border border-white/5 bg-slate-950 rounded-lg overflow-hidden">
                       <button
                         type="button"
+                        disabled={origin === 'physical' && !isCopia}
                         onClick={() => setSets(prev => Math.max(1, prev - 1))}
-                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm"
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         -
                       </button>
-                      <span className="px-4 text-xs font-bold text-slate-200">{sets}</span>
+                      <span className="px-4 text-xs font-bold text-slate-200">{origin === 'physical' && !isCopia ? 0 : sets}</span>
                       <button
                         type="button"
+                        disabled={origin === 'physical' && !isCopia}
                         onClick={() => setSets(prev => prev + 1)}
-                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm"
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         +
                       </button>
