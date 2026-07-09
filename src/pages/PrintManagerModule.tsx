@@ -10,6 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AdvancedPagination } from '@/components/ui/AdvancedPagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 
 // Interfaces estrictas para el módulo
@@ -49,13 +52,38 @@ export default function PrintManagerModule() {
   const [isCopia, setIsCopia] = useState<boolean>(true);
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  
-  // Estados de paginación para el historial
   const [historyPage, setHistoryPage] = useState<number>(1);
-  const [historyPageSize, setHistoryPageSize] = useState<number>(5);
+  const historyPageSize = 10;
   
+  const [selectedTurnId, setSelectedTurnId] = useState<string>("active");
+  const [turnsHistory, setTurnsHistory] = useState<any[]>([]);
+
   const queryClient = useQueryClient();
   const { processSale } = usePOS();
+
+  // Cargar historial de turnos para el selector
+  React.useEffect(() => {
+    const fetchTurns = async () => {
+      if (!user?.store_id) return;
+      const { data, error } = await supabase
+        .from("cash_turns")
+        .select("*, profiles:cashier_id(name)")
+        .eq("store_id", user.store_id)
+        .order("opened_at", { ascending: false })
+        .limit(30);
+      if (!error && data) {
+        setTurnsHistory(data);
+      }
+    };
+    fetchTurns();
+  }, [user?.store_id]);
+
+  const targetTurn = useMemo(() => {
+    if (selectedTurnId === "active") {
+      return activeTurn;
+    }
+    return turnsHistory.find(t => t.id === selectedTurnId);
+  }, [selectedTurnId, activeTurn, turnsHistory]);
 
   // Cargar configuración de la sucursal al montar el módulo
   React.useEffect(() => {
@@ -66,11 +94,11 @@ export default function PrintManagerModule() {
   
   // Historial desde Supabase (sólo las de este turno/tienda y origen print_center)
   const { data: history = [], refetch: refetchHistory } = useQuery({
-    queryKey: ['print-center-history', activeTurn?.id],
+    queryKey: ['print-center-history', targetTurn?.id, selectedTurnId],
     queryFn: async () => {
-      if (!activeTurn) return [];
+      if (!targetTurn) return [];
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('orders')
         .select(`
           id,
@@ -84,8 +112,13 @@ export default function PrintManagerModule() {
           )
         `)
         .eq('store_id', user?.store_id || '')
-        .gte('created_at', activeTurn.opened_at)
-        .order('created_at', { ascending: false });
+        .gte('created_at', targetTurn.opened_at);
+
+      if (targetTurn.closed_at) {
+        query = query.lte('created_at', targetTurn.closed_at);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching print history:", error);
@@ -95,7 +128,7 @@ export default function PrintManagerModule() {
       console.log("DEBUG Print Center: all fetched orders for shift:", data);
 
       // Filtrar por tag metadata (origin: 'print_center')
-      const printOrders = data.filter(order => {
+      const printOrders = (data || []).filter(order => {
         let p = order.payment;
         if (typeof p === 'string') {
           try {
@@ -120,7 +153,7 @@ export default function PrintManagerModule() {
           origin: payObj.copy_origin || 'Desconocido',
           impressions: payObj.copy_pages || 1,
           price: order.total,
-          time: new Date(order.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+          time: new Date(order.created_at).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }),
           rawOrder: {
             ...order,
             payment_method: payObj.method || 'cash', // Se extrae del JSON payment
@@ -142,18 +175,9 @@ export default function PrintManagerModule() {
     }
   }, [origin]);
 
-  const currentCopyUnitPrice = useMemo(() => {
-    if (!pricing?.copy) return 200;
-    if (colorMode === 'bw') {
-      return paperSize === 'letter' ? pricing.copy.bw_letter : pricing.copy.bw_legal;
-    } else {
-      return paperSize === 'letter' ? pricing.copy.color_letter : pricing.copy.color_legal;
-    }
-  }, [pricing, colorMode, paperSize]);
-
   // OPTIMIZACIÓN: Estado derivado puro y síncrono mediante useMemo
   const { totalImpressions, totalPrice } = useMemo(() => {
-    let pricePerPage = currentCopyUnitPrice;
+    let pricePerPage = 0;
     
     if (origin === 'scanner') {
       pricePerPage = pricing.scanner; // Tarifa dinámica escáner
@@ -201,14 +225,17 @@ export default function PrintManagerModule() {
   const historyTotalPages = Math.max(1, Math.ceil(history.length / historyPageSize));
   const paginatedHistory = useMemo(() => {
     const start = (historyPage - 1) * historyPageSize;
+    if (start >= history.length) {
+      return history.slice(0, historyPageSize);
+    }
     return history.slice(start, start + historyPageSize);
   }, [history, historyPage, historyPageSize]);
 
   React.useEffect(() => {
-    if (historyPage > 1 && historyPage > historyTotalPages) {
-      setHistoryPage(Math.max(1, historyTotalPages));
+    if (historyPage > historyTotalPages || historyPage < 1) {
+      setHistoryPage(1);
     }
-  }, [history.length, historyPage, historyTotalPages]);
+  }, [history.length, historyTotalPages, historyPage]);
 
   // Manejadores de adición rápida (Fast-add)
   const handleFastAdd = (amount: number) => {
@@ -343,7 +370,7 @@ export default function PrintManagerModule() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-[#030712] text-slate-100 font-sans p-4 lg:p-6 flex flex-col gap-6 selection:bg-cyan-500/30">
+      <div className="h-[calc(100vh-80px)] overflow-y-auto bg-[#030712] text-slate-100 font-sans p-4 lg:p-6 pb-32 flex flex-col gap-6 selection:bg-cyan-500/30">
         
         {/* Encabezado del Módulo */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -359,14 +386,31 @@ export default function PrintManagerModule() {
             </div>
           </div>
           
-          {/* Indicador de Estado del Turno */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium backdrop-blur-md ${
-            activeTurn && activeTurn.status !== 'paused'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${activeTurn && activeTurn.status !== 'paused' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
-            {activeTurn && activeTurn.status !== 'paused' ? `Turno Activo` : 'Caja Cerrada / Pausada'}
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            {/* Filtro de Turnos */}
+            <Select value={selectedTurnId} onValueChange={setSelectedTurnId}>
+              <SelectTrigger className="w-[200px] h-9 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest italic font-space-grotesk shadow-pro text-white">
+                <SelectValue placeholder="Seleccionar turno..." />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-white/10 rounded-xl">
+                <SelectItem value="active" className="text-[10px] font-black uppercase tracking-widest italic text-white">Turno Actual</SelectItem>
+                {turnsHistory.map(turn => (
+                  <SelectItem key={turn.id} value={turn.id} className="text-[10px] font-black uppercase tracking-widest italic text-white">
+                    {format(new Date(turn.opened_at), "d MMM hh:mm a", { locale: es })} - {(turn.status === 'open' || turn.status === 'paused') ? 'ACTUAL' : 'Cerrado'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Indicador de Estado del Turno */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium backdrop-blur-md h-9 ${
+              activeTurn && activeTurn.status !== 'paused'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${activeTurn && activeTurn.status !== 'paused' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+              {activeTurn && activeTurn.status !== 'paused' ? `Turno Activo` : 'Caja Cerrada / Pausada'}
+            </div>
           </div>
         </div>
 
@@ -423,18 +467,14 @@ export default function PrintManagerModule() {
                       <span className="text-[10px] font-mono text-cyan-400 font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20">${(pricing.copy?.cedula ?? 1000).toLocaleString('es-CO')} c/u</span>
                     </div>
                     {isCedula && (
-                      <div className="flex flex-col gap-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="flex flex-col gap-1.5 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                         <label className="text-[9px] font-bold text-slate-400 uppercase">Cantidad de Cédulas</label>
                         <div className="flex items-center justify-between border border-white/5 bg-slate-950/60 rounded-lg overflow-hidden h-9 px-2">
                           <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={cedulaQty === 0 ? '' : cedulaQty}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '');
-                              setCedulaQty(val === '' ? 0 : Math.max(1, parseInt(val) || 1));
-                            }}
+                            type="number"
+                            min="1"
+                            value={cedulaQty}
+                            onChange={(e) => setCedulaQty(Math.max(1, parseInt(e.target.value) || 0))}
                             className="bg-transparent text-sm font-bold border-none text-white focus:outline-none w-16"
                           />
                           <div className="flex gap-1">
@@ -454,83 +494,22 @@ export default function PrintManagerModule() {
                             </button>
                           </div>
                         </div>
-                        {/* Botones rápidos Cédula */}
-                        <div className="flex gap-1 justify-end">
-                          {[5, 10, 20].map((num) => (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => setCedulaQty(prev => prev + num)}
-                              className="px-1.5 py-0.5 bg-slate-950 hover:bg-slate-800 text-[9px] font-mono font-bold text-cyan-400 rounded border border-white/5"
-                            >
-                              +{num}
-                            </button>
-                          ))}
-                        </div>
                       </div>
                     )}
                   </div>
+
                   {/* Copia Card */}
                   <div className={`bg-slate-900/40 backdrop-blur-md border p-4 rounded-xl flex flex-col gap-3 transition-all ${isCopia ? 'border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-white/5 opacity-70'}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="service-copia"
-                          checked={isCopia}
-                          onCheckedChange={(checked) => setIsCopia(!!checked)}
-                          className="w-5 h-5 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
-                        />
-                        <label htmlFor="service-copia" className="text-xs font-bold uppercase tracking-wider text-slate-200 cursor-pointer select-none">Copia</label>
-                      </div>
-                      <span className="text-[10px] font-mono text-cyan-400 font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20">${currentCopyUnitPrice.toLocaleString('es-CO')} c/u</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="service-copia"
+                        checked={isCopia}
+                        onCheckedChange={(checked) => setIsCopia(!!checked)}
+                        className="w-5 h-5 border-slate-700 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 rounded-md"
+                      />
+                      <label htmlFor="service-copia" className="text-xs font-bold uppercase tracking-wider text-slate-200 cursor-pointer select-none">Copia</label>
                     </div>
-                    {isCopia && (
-                      <div className="flex flex-col gap-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">Cantidad de Copias</label>
-                        <div className="flex items-center justify-between border border-white/5 bg-slate-950/60 rounded-lg overflow-hidden h-9 px-2">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={pages === 0 ? '' : pages}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '');
-                              setPages(val === '' ? 0 : Math.max(1, parseInt(val) || 1));
-                            }}
-                            className="bg-transparent text-sm font-bold border-none text-white focus:outline-none w-16"
-                          />
-                          <div className="flex gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setPages(prev => Math.max(1, prev - 1))}
-                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-xs"
-                            >
-                              -
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPages(prev => prev + 1)}
-                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-xs"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                        {/* Botones rápidos Copia */}
-                        <div className="flex gap-1 justify-end">
-                          {[5, 10, 20].map((num) => (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => setPages(prev => prev + num)}
-                              className="px-1.5 py-0.5 bg-slate-950 hover:bg-slate-800 text-[9px] font-mono font-bold text-cyan-400 rounded border border-white/5"
-                            >
-                              +{num}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <span className="text-[10px] text-slate-500 leading-tight">Habilita la configuración para copias normales (páginas y juegos).</span>
                   </div>
                 </div>
               )}
@@ -582,9 +561,8 @@ export default function PrintManagerModule() {
                 </div>
               )}
 
-              {/* Contadores Numéricos (Solo se muestran para Whatsapp y Escáner) */}
-              {origin !== 'physical' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* Contadores Numéricos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 {/* Páginas */}
                 <div className={`bg-slate-950/40 border border-white/5 p-4 rounded-xl flex flex-col gap-2 transition-opacity duration-200 ${origin === 'physical' && !isCopia ? 'opacity-30' : ''}`}>
                   <label className="text-xs font-semibold text-slate-400 uppercase">Cantidad de Páginas</label>
@@ -647,7 +625,6 @@ export default function PrintManagerModule() {
                   </div>
                 </div>
               </div>
-            )}
 
             </div>
           </div>
@@ -752,7 +729,7 @@ export default function PrintManagerModule() {
                   <th className="pb-3">Medio de Pago</th>
                   <th className="pb-3">Estado</th>
                   <th className="pb-3">Importe</th>
-                  <th className="pb-3 text-right">Hora</th>
+                  <th className="pb-3 text-right">Fecha / Hora</th>
                   <th className="pb-3 text-right pr-2">Acciones</th>
                 </tr>
               </thead>
@@ -815,10 +792,8 @@ export default function PrintManagerModule() {
             totalPages={historyTotalPages}
             onPageChange={setHistoryPage}
             pageSize={historyPageSize}
-            onPageSizeChange={setHistoryPageSize}
             totalRecords={history.length}
-            pageSizeOptions={[5, 10, 20]}
-            className="bg-transparent border-t border-white/5"
+            className="bg-slate-950 border-t border-white/10 py-4 px-6 mt-2 rounded-b-2xl"
           />
         </div>
 

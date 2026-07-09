@@ -9,13 +9,14 @@ import { toast } from "sonner";
 import { useBranding } from "@/context/BrandingContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import BrandingManager from "./BrandingManager";
 
 export interface SettingsBrandingProps {
   className?: string;
 }
 
 export default function SettingsBranding({ className }: SettingsBrandingProps) {
-  const { refreshBranding } = useBranding();
+  const { refreshBranding, themeId } = useBranding();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [currentLogo, setCurrentLogo] = useState<string>("");
@@ -142,10 +143,11 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
           config: {
             ...currentConfig,
             branding: {
-              ...currentConfig.branding,
+              ...(currentConfig.branding as Record<string, any>),
               logo_url: logoUrl,
               primary_color: primaryColor,
               border_color: borderColor,
+              theme_id: themeId
             }
           }
         })
@@ -277,6 +279,9 @@ export default function SettingsBranding({ className }: SettingsBrandingProps) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Selector de Temas Visuales (Bento Full Width) */}
+        <BrandingManager className="lg:col-span-12" />
+
         {/* Logo Card - Bento Half */}
         <Card className="lg:col-span-6 bg-slate-950/40 border border-white/10 rounded-2xl shadow-pro backdrop-blur-md overflow-hidden group p-6 flex flex-col justify-between">
           <div className="absolute top-0 right-0 p-6 opacity-[0.02] pointer-events-none group-hover:scale-125 transition-transform duration-1000">

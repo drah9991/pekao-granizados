@@ -59,7 +59,7 @@ export const useConfigStore = create<ConfigStoreState>((set) => ({
         supabase.from("role_permissions").select("*"),
         supabase.from("receipt_templates").select("*").eq("store_id", storeId).maybeSingle(),
         supabase.from("sizes").select("*").eq("store_id", storeId).order("created_at", { ascending: true }),
-        supabase.from("sku_acronyms").select("*").eq("store_id", storeId).order("type", { ascending: true }),
+        supabase.from("sku_acronyms").select("*").order("type", { ascending: true }),
         supabase.from("notification_settings").select("*").eq("store_id", storeId),
         supabase.from("product_types_config").select("*").order("created_at", { ascending: true })
       ]);

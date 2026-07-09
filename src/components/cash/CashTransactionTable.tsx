@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,6 +6,7 @@ import { Receipt, Clock } from "lucide-react";
 import { formatCOP } from "@/lib/currency";
 import { OrderRecord } from "@/types/cashRegister";
 import { cn } from "@/lib/utils";
+import { AdvancedPagination } from "@/components/ui/AdvancedPagination";
 
 interface CashTransactionTableProps {
   orders: OrderRecord[];
@@ -59,6 +61,21 @@ const getMethodBadge = (method: string) => {
 };
 
 export function CashTransactionTable({ orders, loading, summary }: CashTransactionTableProps) {
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(20);
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(orders.length / pageSize));
+  }, [orders.length, pageSize]);
+
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    if (start >= orders.length && orders.length > 0) {
+      return orders.slice(0, pageSize);
+    }
+    return orders.slice(start, start + pageSize);
+  }, [orders, currentPage, pageSize]);
+
   return (
     <Card className="bg-card border border-white/10 rounded-[3rem] p-10 shadow-pro glass-pro overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -83,7 +100,7 @@ export function CashTransactionTable({ orders, loading, summary }: CashTransacti
           <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.2em] mt-2">No se han reportado ventas en este turno.</p>
         </div>
       ) : (
-        <div className="table-container-pro max-h-[600px]">
+        <div className="table-container-pro max-h-[600px] overflow-y-auto">
           <table className="w-full text-left">
             <thead className="sticky-header-pro">
               <tr className="text-white/30 text-[9px] font-black uppercase tracking-[0.3em] font-space-grotesk italic">
@@ -95,7 +112,7 @@ export function CashTransactionTable({ orders, loading, summary }: CashTransacti
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
-              {orders.map((order, idx) => {
+              {paginatedOrders.map((order, idx) => {
                 const payment = order.payment && typeof order.payment === 'object' ? order.payment : { method: 'cash' };
                 const method = payment.method;
 
@@ -104,7 +121,7 @@ export function CashTransactionTable({ orders, loading, summary }: CashTransacti
                     key={order.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
+                    transition={{ delay: idx * 0.03 }}
                     className="group hover:bg-white/5 p-4 transition-all duration-300 rounded-[1.5rem]"
                   >
                     <td className="py-6 pl-4">
@@ -146,6 +163,18 @@ export function CashTransactionTable({ orders, loading, summary }: CashTransacti
               })}
             </tbody>
           </table>
+
+          {/* Pagination Controls */}
+          <AdvancedPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={setPageSize}
+            totalRecords={orders.length}
+            pageSizeOptions={[10, 20, 50]}
+            className="mt-6 bg-slate-900/60 border border-white/10 rounded-[2rem] py-4 px-6"
+          />
 
           {/* Global Summary Footer */}
           <div className="mt-12 p-8 glass-pro rounded-[2.5rem] border border-white/10 flex flex-col md:flex-row items-center justify-between gap-8 group hover:border-primary/30 transition-all">

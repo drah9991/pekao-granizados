@@ -83,11 +83,19 @@ export default function CategoryManager() {
         .from("categories")
         .select("*")
         .or(`store_id.eq.${userStoreId},store_id.is.null`)
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true });
+        .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      setCategories(data || []);
+      
+      // Ordenar secundariamente por nombre en memoria
+      const sortedData = (data || []).sort((a, b) => {
+        if ((a.sort_order || 0) === (b.sort_order || 0)) {
+          return a.name.localeCompare(b.name);
+        }
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+      
+      setCategories(sortedData);
     } catch (err) {
       console.error("Error fetching categories:", err);
       toast.error("Fallo al sincronizar base de datos de categorías");

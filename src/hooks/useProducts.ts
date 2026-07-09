@@ -120,7 +120,7 @@ export function useProducts() {
     queryKey: ["sku-acronyms", storeId],
     queryFn: async () => {
       if (!storeId) return [];
-      const { data, error } = await supabase.from("sku_acronyms").select("*").eq("store_id", storeId);
+      const { data, error } = await supabase.from("sku_acronyms").select("*");
       if (error) throw error;
       return data || [];
     },

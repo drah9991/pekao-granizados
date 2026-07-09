@@ -4,6 +4,58 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
+export interface AppTheme {
+  id: string;
+  name: string;
+  primaryColor: string;
+  borderColor?: string;
+  description: string;
+  hslBase: { h: number; s: number; l: number };
+}
+
+export const APP_THEMES: AppTheme[] = [
+  { 
+    id: 'pekao-cyber', 
+    name: '🟣 Pekao Cyber', 
+    primaryColor: '#9d00ff', 
+    borderColor: '#ff00aa', 
+    description: 'Estética tecnológica nocturna con acentos violeta y magenta neón',
+    hslBase: { h: 280, s: 100, l: 50 }
+  },
+  { 
+    id: 'click-snack-pro', 
+    name: '🔵 Click & Snack Hub', 
+    primaryColor: '#0ea5e9', 
+    borderColor: '#00e5ff', 
+    description: 'Estética Deep Space, ideal para la zona gamer y centro de copiado',
+    hslBase: { h: 200, s: 95, l: 45 }
+  },
+  { 
+    id: 'sunset-mango', 
+    name: '🍊 Sunset Mango', 
+    primaryColor: '#ff5722', 
+    borderColor: '#ffeb3b', 
+    description: 'Tonos cálidos y veraniegos ideales para jugos y granizados',
+    hslBase: { h: 15, s: 100, l: 55 }
+  },
+  { 
+    id: 'nature-fresh', 
+    name: '🟢 Nature Fresh', 
+    primaryColor: '#10b981', 
+    borderColor: '#84cc16', 
+    description: 'Frescura orgánica con tonos verdes esmeralda y salvia',
+    hslBase: { h: 142, s: 70, l: 45 }
+  },
+  { 
+    id: 'ice-spark', 
+    name: '❄️ Ice Spark', 
+    primaryColor: '#06b6d4', 
+    borderColor: '#3b82f6', 
+    description: 'Estilo frío y refrescante con acentos turquesa ártico',
+    hslBase: { h: 188, s: 90, l: 50 }
+  }
+];
+
 interface BrandingContextType {
   logoUrl: string | null;
   primaryColor: string;
@@ -11,6 +63,9 @@ interface BrandingContextType {
   isLoadingBranding: boolean;
   refreshBranding: () => void;
   brandName: string | null;
+  themeId: string;
+  changeTheme: (themeId: string) => Promise<boolean>;
+  appThemes: AppTheme[];
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
@@ -45,11 +100,18 @@ const hexToHsl = (hex: string): { h: number, s: number, l: number } => {
   return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 };
 
-const applyAtomicPalette = (primaryHex: string, borderHex?: string) => {
-  const { h, s, l } = hexToHsl(primaryHex);
+const applyAtomicPalette = (primaryHex: string, borderHex?: string, selectedThemeId?: string) => {
   const root = document.documentElement;
+  
+  // Buscar el tema correspondiente
+  const theme = APP_THEMES.find(t => t.id === selectedThemeId) || APP_THEMES[0];
+  const { h, s, l } = theme.hslBase;
 
-  // Primary Vars (Raw fragments for Atomic Design)
+  // Inyectar variables requeridas por el usuario
+  root.style.setProperty('--primary-color', primaryHex);
+  root.style.setProperty('--primary-hsl', `${h} ${s}% ${l}%`);
+
+  // Inyectar variables HSL existentes en el proyecto para compatibilidad
   root.style.setProperty('--brand-primary-h', `${h}`);
   root.style.setProperty('--brand-primary-s', `${s}`); // Raw number
   root.style.setProperty('--brand-primary-l', `${l}`); // Raw number
@@ -57,8 +119,18 @@ const applyAtomicPalette = (primaryHex: string, borderHex?: string) => {
   // Secondary (Analogous - 30 degrees shift)
   root.style.setProperty('--brand-secondary-h', `${(h + 30) % 360}`);
   
-  // Accent (Complementary - 180 degrees shift)
-  root.style.setProperty('--brand-accent-h', `${(h + 180) % 360}`);
+  // Accent (Complementary - 180 degrees shift, or theme custom accent)
+  if (selectedThemeId === 'sunset-mango') {
+    root.style.setProperty('--brand-accent-h', '45'); // Naranja-Amarillo cálido
+  } else if (selectedThemeId === 'click-snack-pro') {
+    root.style.setProperty('--brand-accent-h', '180'); // Turquesa
+  } else if (selectedThemeId === 'nature-fresh') {
+    root.style.setProperty('--brand-accent-h', '84'); // Verde manzana
+  } else if (selectedThemeId === 'ice-spark') {
+    root.style.setProperty('--brand-accent-h', '210'); // Azul
+  } else {
+    root.style.setProperty('--brand-accent-h', '320'); // Magenta
+  }
   
   // Surface Tone (Mathematically derived)
   root.style.setProperty('--brand-surface-s', `${Math.min(s, 15)}`);
@@ -72,17 +144,43 @@ const applyAtomicPalette = (primaryHex: string, borderHex?: string) => {
   if (borderHex) {
     root.style.setProperty('--brand-border-color', borderHex);
   } else {
-    // Fallback: Use primary color with low opacity for border
     root.style.setProperty('--brand-border-color', `hsla(${h}, ${s}%, ${l}%, 0.2)`);
+  }
+
+  // Personalización extra para fondos dinámicos (Aurora Mesh Colors)
+  if (selectedThemeId === 'sunset-mango') {
+    root.style.setProperty('--aurora-1', 'hsla(15, 100%, 60%, 0.15)');
+    root.style.setProperty('--aurora-2', 'hsla(45, 100%, 50%, 0.15)');
+    root.style.setProperty('--aurora-3', 'hsla(340, 100%, 60%, 0.10)');
+  } else if (selectedThemeId === 'click-snack-pro') {
+    root.style.setProperty('--aurora-1', 'hsla(200, 100%, 40%, 0.15)');
+    root.style.setProperty('--aurora-2', 'hsla(180, 100%, 50%, 0.12)');
+    root.style.setProperty('--aurora-3', 'hsla(220, 100%, 60%, 0.10)');
+  } else if (selectedThemeId === 'nature-fresh') {
+    root.style.setProperty('--aurora-1', 'hsla(142, 100%, 40%, 0.15)');
+    root.style.setProperty('--aurora-2', 'hsla(84, 100%, 50%, 0.12)');
+    root.style.setProperty('--aurora-3', 'hsla(160, 100%, 45%, 0.10)');
+  } else if (selectedThemeId === 'ice-spark') {
+    root.style.setProperty('--aurora-1', 'hsla(188, 100%, 45%, 0.15)');
+    root.style.setProperty('--aurora-2', 'hsla(210, 100%, 50%, 0.12)');
+    root.style.setProperty('--aurora-3', 'hsla(230, 100%, 60%, 0.10)');
+  } else {
+    // Default Pekao Cyber
+    root.style.setProperty('--aurora-1', 'hsla(280, 100%, 60%, 0.15)');
+    root.style.setProperty('--aurora-2', 'hsla(320, 100%, 50%, 0.12)');
+    root.style.setProperty('--aurora-3', 'hsla(240, 100%, 50%, 0.15)');
   }
 };
 
 export const BrandingProvider = ({ children }: { children: ReactNode }) => {
   const { user, storeId, isLoading: isLoadingAuth } = useAuth();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [primaryColor, setPrimaryColor] = useState<string>("#700de7");
+  const [primaryColor, setPrimaryColor] = useState<string>("#9d00ff");
   const [borderColor, setBorderColor] = useState<string>("");
   const [brandName, setBrandName] = useState<string | null>(null);
+  const [themeId, setThemeIdState] = useState<string>(() => {
+    return localStorage.getItem('pekao-theme-id') || 'pekao-cyber';
+  });
   const [isLoadingBranding, setIsLoadingBranding] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -91,13 +189,13 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (isLoadingAuth) return;
 
-      let finalHex = "#700de7";
+      let finalHex = "#9d00ff";
       let finalBorder = "";
       let finalLogo = null;
+      let finalTheme = "pekao-cyber";
 
       let targetStoreId = storeId;
 
-      // If not logged in, try to fetch the first available store to load default branding
       if (!targetStoreId) {
         try {
           const { data: firstStore } = await supabase
@@ -113,6 +211,8 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
+      let storeData = null;
+
       if (targetStoreId) {
         const { data: store, error: storeError } = await supabase
           .from('stores')
@@ -121,14 +221,16 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
           .maybeSingle();
 
         if (storeError) throw storeError;
+        storeData = store;
 
         if (store?.config) {
-          const config = store.config as Record<string, unknown>;
-          const brandingConfig = config.branding as Record<string, unknown> | undefined;
+          const config = store.config as Record<string, any>;
+          const brandingConfig = config.branding as Record<string, any> | undefined;
           if (brandingConfig) {
-            finalHex = (brandingConfig.primary_color as string) || "#700de7";
-            finalBorder = (brandingConfig.border_color as string) || "";
-            finalLogo = (brandingConfig.logo_url as string) || null;
+            finalHex = brandingConfig.primary_color || "#9d00ff";
+            finalBorder = brandingConfig.border_color || "";
+            finalLogo = brandingConfig.logo_url || null;
+            finalTheme = brandingConfig.theme_id || "pekao-cyber";
           }
         }
       }
@@ -136,16 +238,69 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
       setLogoUrl(finalLogo);
       setPrimaryColor(finalHex);
       setBorderColor(finalBorder);
-      setBrandName(store ? store.name : null);
-      applyAtomicPalette(finalHex, finalBorder);
+      setBrandName(storeData ? storeData.name : null);
+      setThemeIdState(finalTheme);
+      localStorage.setItem('pekao-theme-id', finalTheme);
+      applyAtomicPalette(finalHex, finalBorder, finalTheme);
 
     } catch (error: unknown) {
       console.error('Error loading branding settings:', error);
-      applyAtomicPalette("#700de7");
+      applyAtomicPalette("#9d00ff", "", themeId);
       setBrandName(null);
     } finally {
       setIsLoadingBranding(false);
     }
+  };
+
+  const changeTheme = async (newThemeId: string): Promise<boolean> => {
+    const themeInfo = APP_THEMES.find(t => t.id === newThemeId);
+    if (!themeInfo) return false;
+
+    // 1. Guardar de inmediato localmente para respuesta instantánea
+    setThemeIdState(newThemeId);
+    setPrimaryColor(themeInfo.primaryColor);
+    setBorderColor(themeInfo.borderColor || "");
+    localStorage.setItem('pekao-theme-id', newThemeId);
+    applyAtomicPalette(themeInfo.primaryColor, themeInfo.borderColor || "", newThemeId);
+
+    // 2. Intentar guardar en base de datos si tenemos una tienda cargada
+    const targetStoreId = storeId;
+    if (targetStoreId) {
+      try {
+        const { data: store } = await supabase
+          .from('stores')
+          .select('config')
+          .eq('id', targetStoreId)
+          .maybeSingle();
+        
+        const currentConfig = (store?.config as Record<string, any>) || {};
+        const brandingConfig = (currentConfig.branding as Record<string, any>) || {};
+        
+        const updatedConfig = {
+          ...currentConfig,
+          branding: {
+            ...brandingConfig,
+            theme_id: newThemeId,
+            primary_color: themeInfo.primaryColor,
+            border_color: themeInfo.borderColor || ""
+          }
+        };
+
+        const { error } = await supabase
+          .from('stores')
+          .update({ config: updatedConfig })
+          .eq('id', targetStoreId);
+
+        if (error) throw error;
+        toast.success(`Tema "${themeInfo.name}" guardado con éxito.`);
+        return true;
+      } catch (err) {
+        console.error("Error saving theme to database:", err);
+        toast.error("El tema se aplicó localmente pero no se pudo sincronizar en la nube.");
+        return false;
+      }
+    }
+    return true;
   };
 
   useEffect(() => {
@@ -155,7 +310,6 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey, user, isLoadingAuth]);
 
-  // Actualizar dinámicamente el favicon de la aplicación con la URL del logo de la marca o un emoji 🥤 por defecto
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     const finalFavicon = logoUrl || "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥤</text></svg>";
@@ -175,7 +329,17 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <BrandingContext.Provider value={{ logoUrl, primaryColor, borderColor, isLoadingBranding, refreshBranding, brandName }}>
+    <BrandingContext.Provider value={{ 
+      logoUrl, 
+      primaryColor, 
+      borderColor, 
+      isLoadingBranding, 
+      refreshBranding, 
+      brandName,
+      themeId,
+      changeTheme,
+      appThemes: APP_THEMES
+    }}>
       {children}
     </BrandingContext.Provider>
   );
@@ -187,4 +351,4 @@ export const useBranding = () => {
     throw new Error('useBranding must be used within a BrandingProvider');
   }
   return context;
-};
+};

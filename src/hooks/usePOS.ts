@@ -34,6 +34,8 @@ export function usePOS() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [retryBackoffDelay, setRetryBackoffDelay] = useState(1000);
+  const [consecutiveFailures, setConsecutiveFailures] = useState(0);
   
   const pendingOrders = useSyncStore((state) => state.syncQueue);
   const pendingOrdersCount = pendingOrders.length;
@@ -58,12 +60,16 @@ export function usePOS() {
 
     const pending = useSyncStore.getState().syncQueue;
     if (pending.length === 0) {
+      setConsecutiveFailures(0);
+      setRetryBackoffDelay(1000);
       return;
     }
 
     setIsProcessing(true);
+    let successCount = 0;
+    let hasFailure = false;
+
     try {
-      let successCount = 0;
       for (const order of pending) {
         try {
           const { error } = await supabaseRpc('process_sale', {
@@ -74,6 +80,7 @@ export function usePOS() {
             successCount++;
           } else {
             console.error("Error syncing order:", order.id, error);
+            hasFailure = true;
             const status = error && typeof error === 'object' ? Number((error as Record<string, unknown>).status || 0) : 0;
             if (status === 401 || status === 403) {
               break;
@@ -87,6 +94,7 @@ export function usePOS() {
           }
         } catch (e: unknown) {
           console.error("Error syncing order:", order.id, e);
+          hasFailure = true;
           const err = e as Record<string, unknown>;
           const status = err && typeof err === 'object' ? Number(err.status || 0) : 0;
           if (status === 401 || status === 403) {
@@ -103,10 +111,20 @@ export function usePOS() {
 
       if (successCount > 0) {
         notifyInfo(`Sincronización completada: ${successCount} pedidos subidos.`);
-        Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['tank-status'] }),
-          queryClient.invalidateQueries({ queryKey: ['products-grid'] })
-        ]);
+        queryClient.invalidateQueries({ queryKey: ['tank-status'], refetchType: 'none' });
+        queryClient.invalidateQueries({ queryKey: ['products-grid'], refetchType: 'none' });
+      }
+
+      if (hasFailure) {
+        setConsecutiveFailures(prev => {
+          const next = prev + 1;
+          const nextDelay = Math.min(30000, 1000 * Math.pow(2, next));
+          setRetryBackoffDelay(nextDelay);
+          return next;
+        });
+      } else {
+        setConsecutiveFailures(0);
+        setRetryBackoffDelay(1000);
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error desconocido";
@@ -116,6 +134,19 @@ export function usePOS() {
     }
   }, [queryClient, notifyInfo, notifyWarning, notifyCritical]);
   // ────────────────────────────────────────────────────────────────────────────
+
+  // Reintento periódico con Backoff Exponencial en background
+  useEffect(() => {
+    if (pendingOrdersCount === 0 || consecutiveFailures === 0 || !navigator.onLine) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      handleSync();
+    }, retryBackoffDelay);
+
+    return () => clearTimeout(timer);
+  }, [pendingOrdersCount, consecutiveFailures, retryBackoffDelay, handleSync]);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -141,8 +172,8 @@ export function usePOS() {
     const handleSWMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === 'SYNC_COMPLETED') {
         notifyInfo(`Sincronización en segundo plano: ${Number(event.data.successCount || 0)} pedidos subidos.`);
-        queryClient.invalidateQueries({ queryKey: ['tank-status'] });
-        queryClient.invalidateQueries({ queryKey: ['products-grid'] });
+        queryClient.invalidateQueries({ queryKey: ['tank-status'], refetchType: 'none' });
+        queryClient.invalidateQueries({ queryKey: ['products-grid'], refetchType: 'none' });
       } else if (event.data && event.data.type === 'SYNC_ERROR') {
         notifyWarning(`Error en sincronización en segundo plano: ${String(event.data.message || '')}`);
       }
@@ -225,6 +256,8 @@ export function usePOS() {
         ...metadata
       } : { method, ...metadata };
 
+      const idempotencyKey = crypto.randomUUID();
+
       const salePayload = {
         store_id: storeId,
         employee_id: user.id,
@@ -236,7 +269,8 @@ export function usePOS() {
         delivery_phone: deliveryData?.phone || null,
         total: saleTotal + (deliveryData?.fee || 0),
         payment: paymentData,
-        items: mappedItems
+        items: mappedItems,
+        idempotency_key: idempotencyKey
       };
 
       const optimisticOrderId = `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -291,11 +325,9 @@ export function usePOS() {
             throw rpcError;
           }
           
-          // Revalidación tras éxito
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['products-grid'] }),
-            queryClient.invalidateQueries({ queryKey: ['tank-status'] })
-          ]);
+          // Revalidación silenciosa tras éxito (evita llamadas de red HTTP innecesarias en caliente)
+          queryClient.invalidateQueries({ queryKey: ['products-grid'], refetchType: 'none' });
+          queryClient.invalidateQueries({ queryKey: ['tank-status'], refetchType: 'none' });
         } catch (error: unknown) {
           console.error("Error processing sale online:", error);
           if (isValidationError(error)) {
