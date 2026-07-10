@@ -13,6 +13,35 @@ export interface ReportSummary {
   secondary?: string;
 }
 
+export const columnsByType = {
+  sales: [
+    { header: "ID", dataKey: "ID" },
+    { header: "Fecha", dataKey: "Fecha" },
+    { header: "Cliente", dataKey: "Cliente" },
+    { header: "Empleado", dataKey: "Empleado" },
+    { header: "Medio de Pago", dataKey: "Metodo_Pago" },
+    { header: "Subtotal", dataKey: "Subtotal" },
+    { header: "Total", dataKey: "Total" },
+    { header: "Estado", dataKey: "Estado" }
+  ],
+  inventory: [
+    { header: "Nombre", dataKey: "Nombre" },
+    { header: "SKU", dataKey: "SKU" },
+    { header: "Unidad", dataKey: "Unidad" },
+    { header: "Stock Actual", dataKey: "Stock_Actual" },
+    { header: "Stock Mínimo", dataKey: "Stock_Minimo" },
+    { header: "Estado", dataKey: "Estado" }
+  ],
+  movements: [
+    { header: "Fecha", dataKey: "Fecha" },
+    { header: "Producto", dataKey: "Producto" },
+    { header: "Tipo", dataKey: "Tipo" },
+    { header: "Cantidad", dataKey: "Cantidad" },
+    { header: "Motivo", dataKey: "Motivo" },
+    { header: "Usuario", dataKey: "Usuario" }
+  ]
+};
+
 export function useReports(storeId: string | null) {
   const [reportType, setReportType] = useState<ReportType>("sales");
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({

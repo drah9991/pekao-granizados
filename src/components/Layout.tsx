@@ -7,14 +7,12 @@ import {
   ShoppingCart,
   Settings,
   LogOut,
-  IceCream,
-  Menu,
-  X,
   ChevronDown,
+  ChevronRight,
   Minus,
   Plus,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
-  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download
+  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download, Menu, X, Coins, Gift, Eye, RefreshCw, Bike
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -27,6 +25,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuGroup
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useTurn } from "@/hooks/useTurn";
@@ -38,87 +40,49 @@ import { AlertManager } from "./alerts/AlertManager";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useRealtimeAlerts } from "@/hooks/useRealtimeAlerts";
 import { TankLevelsList } from "@/components/pos/TankLevelIndicator";
+import { useFavoritesStore } from "@/store/useFavoritesStore";
+import { useLowStockCount } from "@/hooks/useLowStockCount";
+import { Badge } from "@/components/ui/badge";
+import { InteractiveCursor } from "./ui/InteractiveCursor";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 interface LayoutProps {
   children: React.ReactNode;
   fullWidth?: boolean;
 }
 
-import { navConfig } from "@/config/navConfig";
-import { CollapsibleNavGroup } from "./CollapsibleNavGroup";
-import { useFavoritesStore } from "@/store/useFavoritesStore";
-import { Star } from "lucide-react";
-import { FloatingFavorites } from "./FloatingFavorites";
-import { useLowStockCount } from "@/hooks/useLowStockCount";
-import { Badge } from "@/components/ui/badge";
-import { InteractiveCursor } from "./ui/InteractiveCursor";
-import { BoneyardSkeleton } from "./ui/BoneyardSkeleton";
-
-import { usePWAInstall } from "@/hooks/usePWAInstall";
-import ErrorBoundary from "@/components/ErrorBoundary";
-
 export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const { isInstallable, installApp } = usePWAInstall();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const [isSidebarOpen, setIsSidebarOpenInternal] = useState(!isMobile);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { favorites, toggleFavorite, isFavorite } = useFavoritesStore();
-  const [isSidebarPending, startSidebarTransition] = useTransition();
-
-  const toggleSidebar = () => {
-    startSidebarTransition(() => {
-      setIsSidebarOpenInternal(prev => !prev);
-    });
-  };
-
-  const allNavItems = navConfig.flatMap(group => {
-    const items: { href?: string; icon?: React.ElementType; label?: string; type?: string; children?: { href?: string; icon?: React.ElementType; label?: string }[] }[] = [];
-    group.items.forEach(item => {
-      if (item.type === 'collapsible' && item.children) {
-        items.push(...item.children);
-      } else {
-        items.push(item);
-      }
-    });
-    return items;
-  });
-
-  const favoriteItems = favorites
-    .map(href => allNavItems.find(item => item.href === href))
-    .filter(Boolean);
-
-  const closeSidebar = () => {
-    startSidebarTransition(() => {
-      setIsSidebarOpenInternal(false);
-    });
-  };
-
+  const { logoUrl } = useBranding();
   const navigate = useNavigate();
-  const [isNavigating, startNavigationTransition] = useTransition();
-
-  const { logoUrl, isLoadingBranding } = useBranding();
-
-  const optimizedLogoUrl = useMemo(() => {
-    if (!logoUrl) return null;
-    try {
-      if (logoUrl.includes('/storage/v1/object/public/')) {
-        const url = new URL(logoUrl);
-        url.searchParams.set('width', '150');
-        url.searchParams.set('format', 'webp');
-        url.searchParams.set('quality', '80');
-        return url.toString();
-      }
-    } catch (e) {
-      return logoUrl;
-    }
-    return logoUrl;
-  }, [logoUrl]);
 
   const { storeId, storeName, switchStore, userRole, isLoading: isLoadingAuth } = useAuth();
   const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
   const [isSwitchingNode, setIsSwitchingNode] = useState(false);
   const canSwitchStore = userRole === "admin" || userRole === "manager" || userRole === "owner";
 
+  const { activeTurn, isLoading: isLoadingTurn } = useTurn();
+  const lowStockCount = useLowStockCount();
+  const { showCriticalBanner, hideCriticalBanner } = useAlerts();
+
+  const [uiScale, setUiScale] = useState(() => {
+    const saved = localStorage.getItem('oasis_ui_scale_v4');
+    return saved ? parseInt(saved, 10) : 100;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('oasis_ui_scale_v4', uiScale.toString());
+  }, [uiScale]);
+
+  // Realtime listeners
+  useRealtimeAlerts();
+
+  // Load stores list for switcher
   useEffect(() => {
     if (canSwitchStore) {
       supabase
@@ -130,6 +94,21 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         });
     }
   }, [userRole, canSwitchStore]);
+
+  // Turn status gating for POS
+  useEffect(() => {
+    if (!isLoadingTurn && !activeTurn && location.pathname === '/pos') {
+      showCriticalBanner(
+        "Punto de Venta Bloqueado: No hay un turno activo para procesar ventas.",
+        "Iniciar Turno Ahora",
+        () => {
+           navigate('/pos');
+        }
+      );
+    } else {
+      hideCriticalBanner();
+    }
+  }, [activeTurn, isLoadingTurn, location.pathname, showCriticalBanner, hideCriticalBanner]);
 
   const handleQuickSwitch = async (newStoreId: string) => {
     if (newStoreId === storeId || isSwitchingNode) return;
@@ -148,39 +127,15 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
       setIsSwitchingNode(false);
     }
   };
-  const { activeTurn, isLoading: isLoadingTurn } = useTurn();
-  const lowStockCount = useLowStockCount();
-  const { showCriticalBanner, hideCriticalBanner } = useAlerts();
 
-  const [uiScale, setUiScale] = useState(() => {
-    const saved = localStorage.getItem('oasis_ui_scale_v4');
-    return saved ? parseInt(saved, 10) : 100;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('oasis_ui_scale_v4', uiScale.toString());
-  }, [uiScale]);
-
-  // Initialize Realtime listeners
-  useRealtimeAlerts();
-
-  // Handle automatic Critical Banner for Turn Status
-  useEffect(() => {
-    if (!isLoadingTurn && !activeTurn && location.pathname === '/pos') {
-      showCriticalBanner(
-        "Punto de Venta Bloqueado: No hay un turno activo para procesar ventas.",
-        "Iniciar Turno Ahora",
-        () => {
-           const sidebarTurnBtn = document.querySelector('[href="/pos"]') as HTMLElement;
-           sidebarTurnBtn?.click();
-        }
-      );
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Error logging out:", error);
     } else {
-      hideCriticalBanner();
+      window.location.href = "/auth";
     }
-  }, [activeTurn, isLoadingTurn, location.pathname, showCriticalBanner, hideCriticalBanner]);
-
-  const effectiveRole = userRole as Role | null;
+  };
 
   const isLinkActive = (href: string) => {
     if (href === "#") return false;
@@ -214,95 +169,242 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
     }
   };
 
-  useEffect(() => {
-    setIsSidebarOpenInternal(!isMobile);
-  }, [isMobile]);
-
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Error logging out:", error);
-    } else {
-      window.location.href = "/auth";
-    }
-  };
-
-  const visibleGroups = useMemo(() => {
-    if (isLoadingAuth || !effectiveRole) return [];
-    return navConfig.filter(group => {
-      return group.roles.includes(effectiveRole);
-    }).map(group => ({
-      ...group,
-      items: group.items.filter(item => item.roles.includes(effectiveRole))
-    })).filter(group => group.items.length > 0);
-  }, [isLoadingAuth, effectiveRole]);
-
-  const getMoodClass = () => {
-    const path = location.pathname;
-    if (path.startsWith('/pos')) return 'mood-pos';
-    if (path.startsWith('/reports') || path.startsWith('/sales') || path.startsWith('/invoices')) return 'mood-reports';
-    if (path.startsWith('/settings') || path.startsWith('/preparation')) return 'mood-settings';
-    return '';
-  };
-
-  const moodClass = getMoodClass();
-
   return (
-    <div className={cn(
-      "flex h-screen bg-background bg-aurora animate-aurora relative overflow-hidden transition-colors duration-1000",
-      moodClass
-    )}>
+    <div className="flex flex-col h-screen bg-[#F8F9FA] dark:bg-slate-950 text-slate-800 dark:text-slate-100 relative overflow-hidden font-sans">
       <InteractiveCursor />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-[60] bg-card/80 backdrop-blur-sm border border-border/50 shadow-md"
-        onClick={toggleSidebar}
-        aria-label={isSidebarOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
-      >
-        {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </Button>
+      
+      {/* 1. HEADER / NAVBAR SUPERIOR (HORIZONTAL EN DESKTOP) */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 z-[60] px-4 md:px-8 flex items-center justify-between shadow-sm select-none">
+        
+        {/* Lado Izquierdo: Logo */}
+        <div className="flex items-center gap-4">
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-2"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            >
+              {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          )}
 
-      {/* Floating Control Center (Top Left) */}
-      <div className={cn(
-        "fixed top-4 z-[60] hidden lg:flex items-center gap-2 p-1.5 bg-slate-950/40 backdrop-blur-xl border border-white/10 rounded-2xl animate-pro-in transition-all duration-500",
-        isSidebarOpen ? "left-[17rem]" : "left-16"
-      )}>
-        <div className="flex items-center gap-3 px-3 h-8 border-r border-border/50 mr-1 hidden sm:flex justify-center">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/10">
-            {userRole?.charAt(0).toUpperCase() || '?'}
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-primary/80 leading-none mb-0.5 font-dm-sans">
-              {isLoadingAuth ? '...' : 'Online'}
-            </span>
-            <span className="text-[11px] font-bold text-foreground leading-none font-dm-sans">
-              {userRole ? userRole.replace('_', ' ') : 'Guest'}
-            </span>
-          </div>
+          <Link to="/dashboard" className="flex items-center gap-2">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="h-9 object-contain" />
+            ) : (
+              <div className="flex items-center gap-1.5 font-space-grotesk font-black text-sm uppercase italic tracking-tighter">
+                <span className="text-rose-600 font-extrabold">loggro</span>
+                <span className="text-slate-400 font-medium">restobar</span>
+              </div>
+            )}
+          </Link>
         </div>
-        {storeId && (
-          <div className="flex items-center gap-2 px-3 h-8 border-r border-border/50 mr-1 justify-center">
-            {canSwitchStore ? (
+
+        {/* Centro: Navegación Horizontal (Solo en Desktop) */}
+        {!isMobile && (
+          <nav className="flex items-center gap-1 md:gap-2">
+            
+            {/* Dashboard */}
+            <Link
+              to="/dashboard"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                isLinkActive("/dashboard") 
+                  ? "bg-rose-50 text-rose-600" 
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+              )}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Dashboard</span>
+            </Link>
+
+            {/* Vender (POS) */}
+            <Link
+              to="/pos"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                isLinkActive("/pos") 
+                  ? "bg-rose-50 text-rose-600" 
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+              )}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>Vender</span>
+            </Link>
+
+            {/* Ventas */}
+            <Link
+              to="/sales"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                isLinkActive("/sales") 
+                  ? "bg-rose-50 text-rose-600" 
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+              )}
+            >
+              <ReceiptText className="w-4 h-4" />
+              <span>Ventas</span>
+            </Link>
+
+            {/* PRODUCTOS & CATEGORÍAS DROPDOWN (Captura 1) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all outline-none cursor-pointer",
+                    location.pathname.startsWith("/products") || location.pathname.includes("tab=categories") || location.pathname.startsWith("/recipes") || location.pathname.startsWith("/inventory")
+                      ? "bg-rose-50 text-rose-600" 
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+                  )}
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>Productos</span>
+                  <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-1.5 rounded-xl shadow-lg mt-1 space-y-0.5">
+                
+                {/* Categorías */}
+                <DropdownMenuItem onClick={() => navigate("/settings?tab=categories")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                  <Tag className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Categorías</span>
+                </DropdownMenuItem>
+
+                {/* Productos */}
+                <DropdownMenuItem onClick={() => navigate("/products")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                  <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Productos</span>
+                </DropdownMenuItem>
+
+                {/* Promociones */}
+                <DropdownMenuItem onClick={() => navigate("/marketing")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                  <Megaphone className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Promociones</span>
+                </DropdownMenuItem>
+
+                {/* Submenú: Inventario */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                    <Database className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span>Inventario</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-1 rounded-lg shadow-md ml-1 space-y-0.5">
+                    
+                    <DropdownMenuItem onClick={() => navigate("/inventory")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Movimiento Inventario
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate("/movements")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Historial de Inventario
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate("/recipes")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Listado de Recetas
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate("/customers")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Proveedores
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate("/preparation")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Ingredientes
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => navigate("/settings?tab=sizes")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Unidades
+                    </DropdownMenuItem>
+
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Domicilios */}
+            <Link
+              to="/digital-menu"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                isLinkActive("/digital-menu") 
+                  ? "bg-rose-50 text-rose-600" 
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+              )}
+            >
+              <Bike className="w-4 h-4" />
+              <span>Domicilios</span>
+            </Link>
+
+            {/* Contabilidad */}
+            <Link
+              to="/cash-register"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                isLinkActive("/cash-register") || isLinkActive("/expenses")
+                  ? "bg-rose-50 text-rose-600" 
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+              )}
+            >
+              <Coins className="w-4 h-4" />
+              <span>Contabilidad</span>
+            </Link>
+
+            {/* Estadísticas */}
+            <Link
+              to="/reports"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                isLinkActive("/reports") 
+                  ? "bg-rose-50 text-rose-600" 
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+              )}
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>Estadísticas</span>
+            </Link>
+
+            {/* Configuración */}
+            <Link
+              to="/settings"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                isLinkActive("/settings") 
+                  ? "bg-rose-50 text-rose-600" 
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+              )}
+            >
+              <Settings className="w-4 h-4" />
+              <span>Configuración</span>
+            </Link>
+
+          </nav>
+        )}
+
+        {/* Lado Derecho: Acciones, Nodo selector, Notificaciones */}
+        <div className="flex items-center gap-3">
+          
+          {/* Nodo Switcher (Solo Desktop) */}
+          {!isMobile && storeId && stores.length > 0 && (
+            <div className="flex items-center gap-2 border-r border-slate-200 dark:border-white/10 pr-3 mr-1">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button 
                     disabled={isSwitchingNode}
-                    className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity focus:outline-none group"
+                    className="flex items-center gap-2 text-left hover:opacity-85 transition-opacity focus:outline-none cursor-pointer group"
                   >
-                    <Building2 className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-                    <div className="flex flex-col items-start">
-                      <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/60 leading-none mb-0.5 flex items-center gap-1">
+                    <Building2 className="w-4 h-4 text-rose-600 group-hover:scale-105 transition-transform" />
+                    <div className="flex flex-col items-start leading-none">
+                      <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-0.5 flex items-center gap-1">
                         NODO <ChevronDown className="w-2.5 h-2.5 text-muted-foreground/40" />
                       </span>
-                      <span className="text-[10px] font-black text-primary leading-none uppercase italic font-space-grotesk max-w-[120px] truncate">
+                      <span className="text-[10px] font-black text-rose-600 uppercase italic font-space-grotesk max-w-[100px] truncate">
                         {storeName || 'CARGANDO...'}
                       </span>
                     </div>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 bg-background/95 backdrop-blur-md border border-border rounded-xl shadow-xl mt-2 p-1.5 space-y-1">
-                  <div className="px-2.5 py-1.5 text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest border-b border-border/30">
+                <DropdownMenuContent className="w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-lg mt-2 p-1.5 space-y-1">
+                  <div className="px-2 py-1 text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest border-b border-border/30">
                     CONMUTAR NODO
                   </div>
                   {stores.map((s) => (
@@ -313,234 +415,13 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                       className={cn(
                         "flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-black uppercase tracking-wider italic cursor-pointer transition-colors",
                         s.id === storeId
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          ? "bg-rose-50 text-rose-600"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
                       )}
                     >
                       <span className="truncate">{s.name}</span>
                       {s.id === storeId && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-glow-pro" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-muted-foreground/40" />
-                <div className="flex flex-col items-start">
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/40 leading-none mb-0.5">
-                    NODO
-                  </span>
-                  <span className="text-[10px] font-black text-muted-foreground/60 leading-none uppercase italic font-space-grotesk max-w-[120px] truncate">
-                    {storeName || 'CARGANDO...'}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        <div className="flex items-center px-1 gap-1 border-r border-white/5 pr-2 mr-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg" onClick={() => setUiScale(s => Math.max(50, s - 10))} aria-label="Disminuir escala de interfaz">
-            <Minus className="w-3 h-3" />
-          </Button>
-          <span className="text-[10px] font-black w-8 text-center tracking-tighter">{uiScale}%</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-foreground hover:bg-muted rounded-lg" onClick={() => setUiScale(s => Math.min(200, s + 10))} aria-label="Aumentar escala de interfaz">
-            <Plus className="w-3 h-3" />
-          </Button>
-        </div>
-        <div className="flex items-center px-1">
-          <NotificationCenter />
-        </div>
-      </div>
-
-      <FloatingFavorites isSidebarOpen={isSidebarOpen} />
-
-      <aside
-        className={cn(
-          "w-64 fixed inset-y-0 left-0 z-50 bg-sidebar-background/60 backdrop-blur-3xl border-r border-sidebar-border flex flex-col transition-all duration-500",
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <SidebarHeader />
-
-        <nav className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
-          {visibleGroups.map((group, groupIdx) => (
-            <div key={group.label} className="space-y-4">
-              <div className="px-4">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/30 font-dm-sans">
-                  {group.label}
-                </span>
-              </div>
-              
-              <div className="space-y-1">
-                {group.items.map((item) => {
-                  const isActive = isLinkActive(item.href);
-
-                  if (!item.type || item.type === "link") {
-                    const isPOS = item.href === "/pos";
-                    const isLocked = isPOS && !activeTurn;
-                    
-                    const linkContent = (
-                      <div
-                        className={cn(
-                          "group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden font-dm-sans",
-                            isActive
-                            ? "text-primary bg-primary/10"
-                            : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
-                          isLocked && "opacity-30 cursor-not-allowed"
-                        )}
-                      >
-                        {isActive && (
-                          <motion.div 
-                            layoutId="sidebar-active-indicator"
-                            className="absolute left-0 w-1 h-5 bg-primary rounded-r-full"
-                            initial={{ scaleY: 0 }}
-                            animate={{ scaleY: 1 }}
-                          />
-                        )}
-                        <item.icon className={cn(
-                          "w-4 h-4 transition-all duration-300 relative z-10",
-                          isActive
-                            ? "text-primary opacity-100"
-                            : "text-sidebar-foreground/50 opacity-30 group-hover:opacity-100 group-hover:text-primary"
-                        )} />
-                        <span className="relative z-10 flex-1">{item.label}</span>
-                        {isLocked && (
-                          <Shield className="ml-auto w-3.5 h-3.5 text-rose-500/30" />
-                        )}
-                        {!isLocked && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavorite(item.href);
-                            }}
-                            className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                            title={isFavorite(item.href) ? "Quitar de favoritos" : "Añadir a favoritos"}
-                          >
-                            <Star 
-                              className={cn(
-                                "w-4 h-4 transition-all duration-300",
-                                isFavorite(item.href) 
-                                  ? "text-amber-500 fill-amber-500 opacity-100" 
-                                  : "text-muted-foreground hover:text-amber-500"
-                              )} 
-                            />
-                          </button>
-                        )}
-                      </div>
-                    );
-
-                    if (isLocked) {
-                      return (
-                        <Tooltip key={item.label} delayDuration={0}>
-                          <TooltipTrigger asChild>
-                            {linkContent}
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="bg-primary border-primary/30 text-primary-foreground text-[10px] font-bold uppercase tracking-wider">
-                            Abre un turno para vender
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    }
-
-                    return (
-                      <div
-                        key={item.label}
-                        className="cursor-pointer"
-                        onClick={() => {
-                          if (isMobile) closeSidebar();
-                          startNavigationTransition(() => {
-                            navigate(item.href);
-                          });
-                        }}
-                      >
-                        {linkContent}
-                      </div>
-                    );
-                  } else if (item.type === "collapsible" && item.children) {
-                    const isMaestros = item.label === "Maestros";
-                    const isConfig = item.label === "Configuración";
-                    const defaultOpen = effectiveRole === "admin" || effectiveRole === "owner";
-                    const storageKey = isMaestros ? "sidebar_maestros_open" : isConfig ? "sidebar_config_open" : undefined;
-
-                    return (
-                      <CollapsibleNavGroup
-                        key={item.label}
-                        label={item.label}
-                        icon={item.icon}
-                        items={item.children}
-                        activeTurn={activeTurn}
-                        isMobile={isMobile}
-                        onNavigate={closeSidebar}
-                        isLinkActive={isLinkActive}
-                        defaultOpen={defaultOpen}
-                        storageKey={storageKey}
-                        badgeContent={isMaestros && lowStockCount > 0 ? (
-                          <Badge variant="destructive" className="bg-amber-500 hover:bg-amber-600 text-[10px] py-0 px-1.5 h-4 min-w-4 flex items-center justify-center animate-pulse border-none">
-                            {lowStockCount} bajo
-                          </Badge>
-                        ) : null}
-                      />
-                    );
-                  }
-                  return null;
-                })}
-              </div>
-            </div>
-          ))}
-          <div className="pt-2">
-            <TankLevelsList />
-          </div>
-        </nav>
-
-        <div className="p-5 border-t border-border/30 bg-muted/40 backdrop-blur-sm">
-          <ActiveShiftCard className="p-0" />
-
-          {/* Store switcher — visible on all screen sizes (especially mobile) */}
-          {canSwitchStore && storeId && stores.length > 0 && (
-            <div className="mb-3 mt-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    disabled={isSwitchingNode}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-all duration-200 focus:outline-none group"
-                  >
-                    <Building2 className="w-4 h-4 text-primary shrink-0 group-hover:scale-110 transition-transform" />
-                    <div className="flex flex-col items-start flex-1 min-w-0">
-                      <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/50 leading-none mb-0.5">
-                        SUCURSAL ACTIVA
-                      </span>
-                      <span className="text-[11px] font-black text-primary leading-none uppercase italic font-space-grotesk truncate w-full text-left">
-                        {isSwitchingNode ? "Cambiando..." : (storeName || "Cargando...")}
-                      </span>
-                    </div>
-                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  side="top"
-                  align="start"
-                  className="w-56 bg-background/95 backdrop-blur-md border border-border rounded-xl shadow-xl mb-1 p-1.5 space-y-1"
-                >
-                  <div className="px-2.5 py-1.5 text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest border-b border-border/30">
-                    CAMBIAR SUCURSAL
-                  </div>
-                  {stores.map((s) => (
-                    <DropdownMenuItem
-                      key={s.id}
-                      onClick={() => handleQuickSwitch(s.id)}
-                      disabled={s.id === storeId || isSwitchingNode}
-                      className={cn(
-                        "flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-black uppercase tracking-wider italic cursor-pointer transition-colors",
-                        s.id === storeId
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
-                    >
-                      <span className="truncate">{s.name}</span>
-                      {s.id === storeId && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-glow-pro shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shadow-glow-pro" />
                       )}
                     </DropdownMenuItem>
                   ))}
@@ -549,51 +430,129 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-3 mt-2">
-            <span className="text-sm font-medium text-sidebar-foreground/60">Modo Oscuro</span>
+          {/* Notificaciones y Tema */}
+          <div className="flex items-center gap-2">
+            <NotificationCenter />
             <ThemeToggle />
           </div>
-          {isInstallable && (
+
+          {/* Recomienda y Gana (Destacado Captura 1) */}
+          {!isMobile && (
             <Button
-              variant="outline"
-              onClick={installApp}
-              className="w-full justify-start border-primary/30 text-[#00F3FF] hover:text-[#00F3FF]/80 hover:bg-primary/10 transition-all duration-300 rounded-xl py-3 mb-2 shadow-glow-pro gap-3 font-space-grotesk italic font-bold uppercase tracking-wider text-[10px]"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider px-5 h-9 rounded-full border-none shadow-sm flex items-center gap-1.5 cursor-pointer ml-1"
             >
-              <Download className="w-4 h-4 text-[#00F3FF]" />
-              <span>Instalar POS</span>
+              <Gift className="w-4 h-4" />
+              Recomienda y Gana
             </Button>
           )}
+
+          {/* Logout */}
           <Button
             variant="ghost"
-            className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-300 rounded-xl py-3 group"
+            size="icon"
+            className="h-9 w-9 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-full"
             onClick={handleLogout}
+            title="Cerrar Sesión"
           >
-            <LogOut className="w-5 h-5 mr-3 transition-transform duration-300 group-hover:scale-110 group-hover:text-destructive" />
-            <span>Cerrar Sesión</span>
+            <LogOut className="w-4 h-4" />
           </Button>
         </div>
-      </aside>
+      </header>
 
-      {isMobile && isSidebarOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
-            onClick={closeSidebar}
-          />
+      {/* 2. MENU LATERAL CAJÓN (SOLO EN MÓVIL) */}
+      <AnimatePresence>
+        {isMobile && isSidebarOpen && (
+          <>
+            {/* Backdrop overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="w-64 fixed inset-y-0 left-0 z-50 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-white/10 flex flex-col pt-16 shadow-2xl"
+            >
+              <SidebarHeader />
+
+              <nav className="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar">
+                
+                {/* Enlaces Rápidos Móviles */}
+                <div className="space-y-1">
+                  {[
+                    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+                    { label: "POS", href: "/pos", icon: ShoppingCart },
+                    { label: "Ventas", href: "/sales", icon: ReceiptText },
+                    { label: "Productos", href: "/products", icon: Tag },
+                    { label: "Categorías", href: "/settings?tab=categories", icon: Tag },
+                    { label: "Recetas", href: "/recipes", icon: FileText },
+                    { label: "Inventario", href: "/inventory", icon: Package },
+                    { label: "Menú Digital", href: "/digital-menu", icon: Bike },
+                    { label: "Configuración", href: "/settings", icon: Settings }
+                  ].map((item) => {
+                    const active = isLinkActive(item.href);
+                    return (
+                      <Link
+                        key={item.label}
+                        to={item.href}
+                        onClick={() => setIsSidebarOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
+                          active
+                            ? "bg-rose-50 text-rose-600"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+                        )}
+                      >
+                        <item.icon className="w-4 h-4 shrink-0" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2">
+                  <TankLevelsList />
+                </div>
+              </nav>
+
+              <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]">
+                <ActiveShiftCard className="p-0 mb-3" />
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-xs font-bold uppercase tracking-wider text-rose-500 hover:bg-rose-50 rounded-xl"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  <span>Cerrar Sesión</span>
+                </Button>
+              </div>
+            </motion.aside>
+          </>
         )}
+      </AnimatePresence>
 
+      {/* 3. CONTENEDOR PRINCIPAL */}
       <main className={cn(
-        "flex-1 min-h-0 flex flex-col transition-all duration-700 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] pt-16 md:pt-20 relative z-10 h-full",
-        fullWidth ? "overflow-hidden" : "overflow-y-auto",
-        !isMobile && isSidebarOpen && "pl-64"
+        "flex-1 min-h-0 flex flex-col pt-16 relative z-10 h-full",
+        fullWidth ? "overflow-hidden" : "overflow-y-auto"
       )}>
-        <div className={cn(
-          "animate-pro-in perspective-1000 flex-1 min-h-0 flex flex-col overflow-x-hidden",
-          fullWidth ? "p-0 overflow-hidden h-full" : "p-0"
-        )} style={{ zoom: `${uiScale * 0.8}%` } as React.CSSProperties}>
-            <AlertManager />
-            <ErrorBoundary fallbackTitle="Módulo Temporalmente No Disponible">
-              {children}
-            </ErrorBoundary>
+        <div 
+          className={cn(
+            "flex-1 min-h-0 flex flex-col overflow-x-hidden",
+            fullWidth ? "p-0 overflow-hidden h-full" : "p-4 md:p-8"
+          )} 
+          style={{ zoom: `${uiScale * 0.85}%` } as React.CSSProperties}
+        >
+          <AlertManager />
+          <ErrorBoundary fallbackTitle="Módulo Temporalmente No Disponible">
+            {children}
+          </ErrorBoundary>
         </div>
       </main>
     </div>

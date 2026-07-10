@@ -1,12 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Edit, Trash2, Eye, IceCream, Cherry, Wine, Candy, Tag } from "lucide-react";
-import { formatCOP } from "@/lib/currency";
-import { Tables, Enums } from "@/integrations/supabase/types";
+import { Switch } from "@/components/ui/switch";
+import { Edit2, Trash2, Globe } from "lucide-react";
+import { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
-import React from "react";
-import { motion, Variants } from "framer-motion";
+import React, { useState } from "react";
 
 interface Product extends Tables<'products'> {
   stock?: number;
@@ -14,21 +13,12 @@ interface Product extends Tables<'products'> {
   has_recipe?: boolean;
 }
 
-type ProductType = Enums<'product_type'>;
-
-const productTypeOptions: { value: ProductType; label: string; icon: React.ElementType }[] = [
-  { value: "granizado", label: "Granizado", icon: IceCream },
-  { value: "topping", label: "Topping", icon: Cherry },
-  { value: "sachet", label: "Sachet", icon: Wine },
-  { value: "sweet", label: "Dulce", icon: Candy },
-];
-
 interface ProductGridDisplayProps {
   products: Product[];
   loading: boolean;
   searchQuery: string;
   filterActive: string;
-  filterType: ProductType | "all";
+  filterType: string;
   openCreateDialog: () => void;
   openEditDialog: (product: Product) => void;
   openDetailsDialog: (product: Product) => void;
@@ -48,204 +38,263 @@ export default function ProductGridDisplay({
   handleDeleteProduct,
   userStoreId,
 }: ProductGridDisplayProps) {
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 space-y-8 animate-pro-in">
-        <div className="relative">
-          <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin shadow-glow-pro" />
-          <div className="absolute inset-0 bg-primary/20 blur-2xl animate-pulse rounded-full" />
-        </div>
-        <div className="text-center space-y-2">
-            <p className="text-white font-black font-space-grotesk italic tracking-[0.4em] text-xs animate-pulse">INDEXANDO CATÁLOGO</p>
-            <p className="text-[10px] text-primary/40 font-black uppercase tracking-widest">Data Stream Logic v2.0</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-24 space-y-4">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin shadow-glow-pro" />
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-primary animate-pulse">Cargando catálogo...</p>
       </div>
     );
   }
 
-  if (products.length === 0) {
-    return (
-      <Card className="glass-pro shadow-pro border-dashed border-white/5 bg-transparent rounded-[3rem] animate-pro-in overflow-hidden">
-        <CardContent className="text-center py-24 relative">
-          <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-50" />
-          <div className="relative z-10">
-            <div className="p-8 bg-white/5 rounded-[3rem] w-fit mx-auto mb-10 border border-white/10 shadow-inner group transition-all hover:rotate-6 hover:scale-110">
-                <Package className="w-20 h-20 text-white/20 group-hover:text-primary transition-colors duration-500 drop-shadow-glow" />
-            </div>
-            <h3 className="text-4xl font-black font-space-grotesk italic uppercase tracking-tighter mb-4 text-white">CATÁLOGO VACÍO</h3>
-            <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.2em] mb-12 max-w-sm mx-auto leading-relaxed italic">
-                {searchQuery || filterActive !== "all" || filterType !== "all"
-                ? "No se detectaron registros bajo los parámetros de búsqueda actuales."
-                : "La base de datos maestra no contiene registros. Inicialice el catálogo operativo."}
-            </p>
-            {!searchQuery && filterActive === "all" && filterType === "all" && (
-                <Button 
-                onClick={openCreateDialog} 
-                className="rounded-2xl bg-white text-black hover:bg-primary hover:text-white font-black italic uppercase tracking-widest text-xs px-12 h-16 shadow-glow-pro active:scale-95 transition-all group overflow-hidden relative"
-                disabled={!userStoreId}
-                >
-                <Plus className="mr-3 w-5 h-5 relative z-10" />
-                <span className="relative z-10">REGISTRAR PRODUCTO MAESTRO</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/20 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const filteredProducts = products.filter(p => {
+    if (filterActive === "active" && !p.active) return false;
+    if (filterActive === "inactive" && p.active) return false;
+    
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const nameMatch = p.name?.toLowerCase().includes(q);
+      const skuMatch = p.sku?.toLowerCase().includes(q);
+      const categoryMatch = p.category?.toLowerCase().includes(q);
+      if (!nameMatch && !skuMatch && !categoryMatch) return false;
+    }
+    
+    return true;
+  });
 
-  const container: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const activePage = Math.min(currentPage, totalPages);
+  
+  const startIndex = (activePage - 1) * itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(paginatedProducts.map(p => p.id));
+    } else {
+      setSelectedIds([]);
     }
   };
 
-  const item: Variants = {
-    hidden: { opacity: 0, y: 30, scale: 0.95 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } }
+  const handleSelectOne = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds(prev => [...prev, id]);
+    } else {
+      setSelectedIds(prev => prev.filter(item => item !== id));
+    }
   };
 
+  const isAllSelected = paginatedProducts.length > 0 && paginatedProducts.every(p => selectedIds.includes(p.id));
+
   return (
-    <motion.div 
-      variants={container}
-      initial="hidden"
-      animate="visible"
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-    >
-      {products.map((product) => {
-        const ProductIcon = productTypeOptions.find(opt => opt.value === product.type)?.icon || Package;
-        return (
-          <motion.div key={product.id} variants={item}>
-            <Card 
-              className={cn(
-                "glass-pro transition-all duration-700 group relative overflow-hidden shadow-pro dim-layering rounded-[2.5rem] h-full flex flex-col hover:bg-surface-active",
-                !product.active && "opacity-40 grayscale-[0.8]"
-              )}
-            >
-              {product.is_starred && (
-                <div className="absolute top-4 left-4 p-2 bg-amber-500 text-white rounded-xl shadow-glow border border-amber-400/20 z-20 animate-pulse-subtle flex items-center justify-center">
-                  <span className="text-xs">⭐</span>
+    <div className="w-full space-y-6 bg-slate-950/40 border border-white/10 rounded-3xl shadow-pro backdrop-blur-md overflow-hidden p-6 font-space-grotesk italic">
+      
+      {/* Table Container */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-white/5 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-white/[0.01]">
+              <th className="py-4 px-4 w-28 text-center">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-[9px] text-muted-foreground/60 font-bold lowercase">Seleccionar</span>
+                  <Switch 
+                    checked={isAllSelected}
+                    onCheckedChange={handleSelectAll}
+                    className="data-[state=checked]:bg-primary scale-75"
+                  />
+                  <span className="text-[9px] text-muted-foreground/60 font-bold lowercase">Todos</span>
                 </div>
-              )}
+              </th>
+              <th className="py-4 px-4">Categoría</th>
+              <th className="py-4 px-4">Nombre</th>
+              <th className="py-4 px-4 text-right">Precio</th>
+              <th className="py-4 px-4 text-right">Costo</th>
+              <th className="py-4 px-4 text-right font-mono">Utilidad</th>
+              <th className="py-4 px-4 text-center">Variantes</th>
+              <th className="py-4 px-4 text-center">Estado</th>
+              <th className="py-4 px-4 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5 text-[11px] font-bold text-slate-300">
+            {paginatedProducts.map((product) => {
+              const price = product.price || 0;
+              const cost = parseFloat(product.cost as string) || 0;
+              const utility = price - cost;
+              const utilityPercent = price > 0 ? (utility / price) * 100 : 0;
+              const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
 
-              <div className="absolute -right-10 -top-10 p-14 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-125 transition-all duration-1000 rotate-12">
-                  <ProductIcon className="w-40 h-40 text-primary" />
-              </div>
+              return (
+                <tr key={product.id} className="hover:bg-white/[0.02] transition-colors relative group">
+                  {/* Select Toggle */}
+                  <td className="py-4 px-4 text-center">
+                    <Switch
+                      checked={selectedIds.includes(product.id)}
+                      onCheckedChange={(checked) => handleSelectOne(product.id, checked)}
+                      className="data-[state=checked]:bg-primary scale-75"
+                    />
+                  </td>
+                  
+                  {/* Categoría */}
+                  <td className="py-4 px-4">
+                    <span className="inline-block text-[9px] font-black uppercase tracking-widest px-3 py-1 bg-white/5 text-primary rounded-full border border-white/5">
+                      {product.category || "General"}
+                    </span>
+                  </td>
 
-              {/* Decorative side accent */}
-              <div className="absolute left-0 top-1/4 bottom-1/4 w-0.5 bg-primary/0 group-hover:bg-primary/50 transition-all rounded-full" />
-              
-              <CardContent className="p-8 relative z-10 flex flex-col h-full">
-                {/* Header actions */}
-                <div className={cn("flex items-start justify-between mb-8", product.is_starred && "pl-8")}>
-                  <div className="flex flex-col gap-2">
-                    <Badge className={cn(
-                      "w-fit font-black text-[8px] uppercase tracking-[0.3em] font-space-grotesk italic border-none shadow-glow-pro px-3 h-6",
-                      product.active ? "bg-primary text-white" : "bg-neutral-800 text-neutral-400"
-                    )}>
-                      {product.active ? "STATUS: OPERATIVO" : "STATUS: INACTIVO"}
-                    </Badge>
-                    {product.sku && (
-                      <span className="text-[9px] font-black font-space-grotesk tracking-[0.3em] text-primary/60 italic px-1 uppercase">
-                        SKU • {product.sku}
+                  {/* Nombre con imagen */}
+                  <td className="py-4 px-4 font-black uppercase text-slate-200">
+                    <div className="flex items-center gap-3">
+                      {product.images && product.images.length > 0 ? (
+                        <img 
+                          src={product.images[0]} 
+                          alt={product.name}
+                          className="w-9 h-9 object-cover rounded-xl border border-white/10 bg-black/40"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm">
+                          🍹
+                        </div>
+                      )}
+                      <span className="group-hover:text-primary transition-colors">{product.name}</span>
+                    </div>
+                  </td>
+
+                  {/* Precio */}
+                  <td className="py-4 px-4 text-right text-glow text-slate-100">
+                    $ {price.toLocaleString('es-CO')}
+                  </td>
+
+                  {/* Costo */}
+                  <td className="py-4 px-4 text-right text-muted-foreground/80">
+                    $ {cost.toLocaleString('es-CO')}
+                  </td>
+
+                  {/* Utilidad */}
+                  <td className="py-4 px-4 text-right">
+                    <div className="flex flex-col items-end leading-tight">
+                      <span className="font-black text-slate-200 text-glow">
+                        $ {utility.toLocaleString('es-CO')}
+                      </span>
+                      <span className="text-[9px] text-primary/60 font-mono">
+                        {utilityPercent.toFixed(1)}%
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Tiene variantes */}
+                  <td className="py-4 px-4 text-center text-muted-foreground">
+                    {hasVariants ? "Sí" : "-"}
+                  </td>
+
+                  {/* Estado */}
+                  <td className="py-4 px-4 text-center">
+                    {product.active ? (
+                      <span className="inline-block text-[9px] font-black uppercase px-2 py-0.5 bg-primary/20 text-primary border border-primary/30 rounded font-mono shadow-glow-pro">
+                        Activo
+                      </span>
+                    ) : (
+                      <span className="inline-block text-[9px] font-black uppercase px-2 py-0.5 bg-neutral-800 text-neutral-400 border border-neutral-700 rounded font-mono">
+                        Inactivo
                       </span>
                     )}
-                  </div>
-                  <div className="flex gap-2 transition-all duration-700">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-10 w-10 glass-pro rounded-xl text-muted-foreground/60 hover:text-primary hover:bg-primary/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); openDetailsDialog(product); }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-10 w-10 glass-pro rounded-xl text-muted-foreground/60 hover:text-emerald-500 hover:bg-emerald-500/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEditDialog(product); }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-10 w-10 glass-pro rounded-xl text-muted-foreground/60 hover:text-rose-500 hover:bg-rose-500/20 shadow-pro transition-all hover:-translate-y-1 active:scale-90 border-none"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProduct(product); }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                  </td>
 
-                {/* Product main info */}
-                <div className="mb-6 flex-1">
-                  <h3 className="text-2xl font-black font-space-grotesk italic uppercase tracking-tighter mb-2 group-hover:text-primary transition-colors leading-tight drop-shadow-glow">
-                    {product.name}
-                  </h3>
-                  {product.description && (
-                    <p className="text-[10px] text-white/40 font-dm-sans line-clamp-2 leading-relaxed italic group-hover:text-white/60 transition-colors">
-                      {product.description}
-                    </p>
-                  )}
-                </div>
-                
-                <div className="mt-auto space-y-6">
-                  <div className="flex items-end justify-between py-6 border-y border-border/50 relative overflow-hidden group/price">
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent scale-x-0 group-hover/price:scale-x-100 transition-transform duration-700" />
-                    <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary/40 font-space-grotesk italic mb-1">VALOR MAESTRO</span>
-                        <div className="flex items-center gap-1.5">
-                            <p className="text-4xl font-black font-space-grotesk italic text-foreground tracking-tighter drop-shadow-glow-pro text-glow">
-                                {formatCOP(product.price || 0).replace("$", "")}
-                            </p>
-                            <span className="text-[10px] font-black text-primary/40 mb-1 font-space-grotesk italic tracking-widest">COP</span>
-                        </div>
+                  {/* Acciones */}
+                  <td className="py-4 px-4 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(product)}
+                        className="h-8 border border-primary/20 text-primary hover:bg-primary/20 text-[10px] font-black uppercase tracking-wider rounded-xl px-3 flex items-center gap-1 bg-transparent"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                        Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleDeleteProduct(product)}
+                        className="h-8 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white text-[10px] font-black uppercase tracking-wider rounded-xl px-3 flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Eliminar
+                      </Button>
                     </div>
-                  </div>
+                  </td>
+                </tr>
+              );
+            })}
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl text-primary border border-primary/20 group-hover:bg-primary/20 transition-colors">
-                            <ProductIcon className="w-4 h-4" />
-                        </div>
-                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] italic font-space-grotesk transition-colors group-hover:text-primary">
-                            {productTypeOptions.find(opt => opt.value === product.type)?.label}
-                        </span>
-                    </div>
+            {paginatedProducts.length === 0 && (
+              <tr>
+                <td colSpan={9} className="py-12 text-center text-muted-foreground/40 italic text-xs uppercase tracking-widest">
+                  No se encontraron productos coincidentes en el catálogo.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-                    <Badge 
-                      className={cn(
-                        "font-black text-[10px] uppercase tracking-widest italic border-none bg-muted/50 px-3 h-7 shadow-pro",
-                        ((product.mixtureStock ?? 0) > 0 || ((product.stock ?? 0) > 0)) ? "text-emerald-500" : "text-rose-500 shadow-glow-pro animate-pulse"
-                      )}
-                    >
-                      {(product.type === 'granizado' || product.category === 'Granizado') ? (
-                          <span>{((product.mixtureStock ?? 0) / 1000).toFixed(1)}L DISP</span>
-                      ) : (
-                        `STK: ${product.stock ?? product.mixtureStock ?? 0} UNI`
-                      )}
-                    </Badge>
-                  </div>
-                  
-                  {product.category && (
-                    <div className="pt-4 flex items-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity">
-                        <Tag className="w-3 h-3 text-primary" />
-                        <span className="text-[8px] font-black uppercase tracking-[0.4em] text-white">CATEGORY • {product.category.toUpperCase()}</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        );
-      })}
-    </motion.div>
+      {/* Pagination Footer */}
+      <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+        
+        {/* Total Label */}
+        <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-slate-300">
+          Total: {totalItems} • Página: {activePage} / {totalPages}
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="flex items-center gap-1 bg-white/5 border border-white/10 p-1.5 rounded-xl">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentPage(1)}
+            disabled={activePage === 1}
+            className="h-8 px-2 font-black hover:bg-white/5 text-[9px] rounded-lg"
+          >
+            Primero
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={activePage === 1}
+            className="h-8 px-2 font-black hover:bg-white/5 text-[9px] rounded-lg"
+          >
+            Anterior
+          </Button>
+
+          <span className="h-8 w-8 flex items-center justify-center bg-primary text-white rounded-lg text-xs font-black shadow-glow-pro">
+            {activePage}
+          </span>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={activePage === totalPages}
+            className="h-8 px-2 font-black hover:bg-white/5 text-[9px] rounded-lg"
+          >
+            Siguiente
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={activePage === totalPages}
+            className="h-8 px-2 font-black hover:bg-white/5 text-[9px] rounded-lg"
+          >
+            Último
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

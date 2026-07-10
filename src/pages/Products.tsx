@@ -1,32 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
-import ProductStats from "@/components/products/ProductStats";
-import ProductFiltersAndSearch from "@/components/products/ProductFiltersAndSearch";
 import ProductGridDisplay from "@/components/products/ProductGridDisplay";
 import ProductFormDialog from "@/components/products/ProductFormDialog";
 import ProductDetailsDialog from "@/components/products/ProductDetailsDialog";
 import ProductImportExportButtons from "@/components/products/ProductImportExportButtons";
 import Layout from "@/components/Layout";
-import { motion, Variants } from "framer-motion";
-import { IceCream, Cherry, Wine, Candy, Globe, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-const productTypeOptions: { value: string; label: string; icon: React.ElementType }[] = [
-  { value: "granizado", label: "Granizado", icon: IceCream },
-  { value: "topping", label: "Topping", icon: Cherry },
-  { value: "sachet", label: "Sachet", icon: Wine },
-  { value: "sweet", label: "Dulce", icon: Candy },
-];
-
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-};
-
-const itemVariants: Variants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 15 } }
-};
+import { Settings, Upload, Camera, Plus, History, Search, Zap, Globe } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Products() {
   const { storeId } = useAuth();
@@ -36,7 +20,6 @@ export default function Products() {
     isLoading,
     searchQuery, setSearchQuery,
     filterActive, setFilterActive,
-    filterType, setFilterType,
     isProcessing,
     productDialogIsOpen, setProductDialogIsOpen,
     editingProduct,
@@ -47,7 +30,6 @@ export default function Products() {
     importFile, setImportFile,
     isImporting,
     formData, setFormData,
-    stats,
     handleSaveProduct,
     handleDeleteProduct,
     handleImportProducts,
@@ -58,94 +40,149 @@ export default function Products() {
     setProductStock
   } = useProducts();
 
+  // Dynamic Unique Categories for pills
+  const categories = ["Todos", ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+  const [selectedCategory, setSelectedCategory] = useState("Todos");
+
+  // Filter products by the selected category pill
+  const categoryFilteredProducts = selectedCategory === "Todos" 
+    ? products 
+    : products.filter(p => p.category === selectedCategory);
+
   return (
     <Layout>
-      <div className="min-h-screen bg-transparent p-6 lg:p-10 space-y-10">
-        <motion.div 
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="space-y-10"
-        >
-        <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-            <div className="flex items-center gap-6">
-                <div className="w-20 h-20 rounded-[2rem] bg-primary/10 border border-primary/20 flex items-center justify-center shadow-glow-pro group-hover:scale-110 transition-all duration-700 overflow-hidden relative">
-                    <Zap className="w-10 h-10 text-primary relative z-10" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
-                </div>
-                <div>
-                    <h1 className="text-4xl lg:text-5xl font-black tracking-tighter mb-1 bg-gradient-to-r from-foreground via-foreground/80 to-foreground/40 bg-clip-text text-transparent italic uppercase font-space-grotesk">
-                    Master Catalog
-                    </h1>
-                    <p className="text-primary font-black uppercase tracking-[0.3em] text-[10px] italic font-space-grotesk">
-                    Catering Intelligence • Global Assets Management v2.0
-                    </p>
-                </div>
+      <div className="min-h-screen p-6 lg:p-10 space-y-10 font-space-grotesk italic">
+        
+        {/* Page Title */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-6 pb-6 border-b border-white/5 relative">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-[1.8rem] bg-primary/10 border border-primary/20 flex items-center justify-center shadow-glow-pro relative overflow-hidden">
+              <Zap className="w-8 h-8 text-primary relative z-10" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
             </div>
-            
-            <div className="flex flex-wrap gap-4">
-                <ProductImportExportButtons
-                    onExport={handleExportProducts}
-                    onImport={handleImportProducts}
-                    onImportFileChange={(e) => {
-                        if (e.target.files && e.target.files[0]) setImportFile(e.target.files[0]);
-                    }}
-                    importFile={importFile}
-                    isImporting={isImporting}
-                    importDialogIsOpen={importDialogIsOpen}
-                    setImportDialogIsOpen={setImportDialogIsOpen}
-                    userStoreId={storeId}
-                    loading={isLoading}
-                    products={products}
-                    openCreateDialog={openCreateDialog}
-                />
+            <div>
+              <h1 
+                className="text-3xl lg:text-4xl font-black tracking-tighter uppercase text-foreground mb-1"
+                style={{ textShadow: "0 0 15px rgba(var(--brand-primary-h), 100%, 60%, 0.4)" }}
+              >
+                Productos
+              </h1>
+              <p className="text-primary font-black uppercase tracking-[0.3em] text-[9px]">
+                Catálogo Operativo & Control de Activos
+              </p>
             </div>
-        </motion.div>
+          </div>
+          <div className="flex items-center gap-2 bg-white/5 px-4 h-9 rounded-full border border-white/10 font-black text-[9px] text-muted-foreground uppercase tracking-widest">
+            <Globe className="w-3.5 h-3.5 text-primary" /> Ecosistema Global
+          </div>
+        </div>
 
-        <motion.div variants={itemVariants}>
-          <ProductStats {...stats} />
-        </motion.div>
+        {/* Filter controls, search bar & action buttons (Dark themed) */}
+        <div className="flex flex-col xl:flex-row gap-4 items-center justify-between bg-slate-950/40 border border-white/10 p-5 rounded-2xl shadow-pro backdrop-blur-md">
+          
+          {/* Left search bar */}
+          <div className="relative w-full xl:w-72">
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-primary w-4 h-4" />
+            <Input
+              placeholder="Buscar producto"
+              className="pl-10 h-10 bg-white/5 border-white/10 rounded-lg text-xs font-black uppercase tracking-widest placeholder:text-muted-foreground/30 focus:border-primary text-white"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-        <motion.div variants={itemVariants}>
-          <ProductFiltersAndSearch
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            filterType={filterType}
-            setFilterType={setFilterType}
-            filterActive={filterActive}
-            setFilterActive={setFilterActive}
-            productTypeOptions={productTypeOptions}
-          />
-        </motion.div>
+          {/* Center Category Pills */}
+          <div className="flex flex-wrap items-center gap-1.5 w-full xl:w-auto">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-black rounded-lg border uppercase tracking-widest transition-all cursor-pointer",
+                  selectedCategory === cat
+                    ? "bg-primary text-white border-primary shadow-glow-pro"
+                    : "bg-white/5 border-white/10 text-muted-foreground hover:text-white hover:border-white/20"
+                )}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
 
-        <motion.div variants={itemVariants}>
-           <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl font-black italic uppercase font-space-grotesk tracking-tight text-foreground leading-none">Activos de Venta</h2>
-              <div className="flex items-center gap-3 bg-muted/30 px-4 h-9 rounded-full border border-border font-black text-[10px] text-muted-foreground italic uppercase">
-                 <Globe className="w-3.5 h-3.5" /> Ecosistema Global
-              </div>
-           </div>
+          {/* Right Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 border-white/10 bg-white/5 hover:bg-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest"
+            >
+              <Settings className="w-3.5 h-3.5 text-primary" />
+              Config
+            </Button>
 
-           <ProductGridDisplay
-            products={products}
+            <Button
+              onClick={() => setImportDialogIsOpen(true)}
+              size="sm"
+              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest"
+            >
+              <Upload className="w-3.5 h-3.5 text-primary" />
+              Importar
+            </Button>
+
+            <Button
+              size="sm"
+              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest"
+            >
+              <Camera className="w-3.5 h-3.5 text-primary" />
+              Foto Menú
+            </Button>
+
+            <Button
+              onClick={openCreateDialog}
+              size="sm"
+              className="h-9 bg-primary hover:bg-primary/80 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest shadow-glow-pro"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Nuevo
+            </Button>
+
+            <Button
+              size="sm"
+              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest"
+            >
+              <History className="w-3.5 h-3.5 text-primary" />
+              Historial
+            </Button>
+          </div>
+        </div>
+
+        {/* Product Table Grid Display */}
+        <div className="w-full">
+          <ProductGridDisplay
+            products={categoryFilteredProducts}
             loading={isLoading}
             searchQuery={searchQuery}
             filterActive={filterActive}
-            filterType={filterType}
+            filterType="all"
             openCreateDialog={openCreateDialog}
             openEditDialog={openEditDialog}
             openDetailsDialog={async (p) => {
-                setViewingProduct(p);
-                setDetailsDialogIsOpen(true);
-                const { data } = await supabase.from('store_stock').select('qty, min_qty, stores(name)').eq('product_id', p.id);
-                setProductStock((data || []).map((item: Record<string, unknown>) => ({ store_name: (item.stores as Record<string, unknown>).name as string, qty: item.qty as number, min_qty: item.min_qty as number })));
+              setViewingProduct(p);
+              setDetailsDialogIsOpen(true);
+              const { data } = await supabase.from('store_stock').select('qty, min_qty, stores(name)').eq('product_id', p.id);
+              setProductStock((data || []).map((item: any) => ({ 
+                store_name: item.stores.name, 
+                qty: item.qty, 
+                min_qty: item.min_qty 
+              })));
             }}
             handleDeleteProduct={handleDeleteProduct}
             userStoreId={storeId}
           />
-        </motion.div>
-        </motion.div>
+        </div>
 
+        {/* Form Dialog */}
         <ProductFormDialog
           isOpen={productDialogIsOpen}
           onClose={() => setProductDialogIsOpen(false)}
@@ -154,17 +191,41 @@ export default function Products() {
           setFormData={setFormData}
           onSave={handleSaveProduct}
           isProcessing={isProcessing}
-          productTypeOptions={productTypeOptions}
+          productTypeOptions={[
+            { value: "granizado", label: "Granizado", icon: Plus },
+            { value: "topping", label: "Topping", icon: Plus },
+            { value: "sachet", label: "Sachet", icon: Plus },
+            { value: "sweet", label: "Dulce", icon: Plus },
+          ]}
           skuAcronyms={skuAcronyms}
           storeId={storeId}
         />
 
+        {/* Details Dialog */}
         <ProductDetailsDialog
           isOpen={detailsDialogIsOpen}
           onClose={() => setDetailsDialogIsOpen(false)}
           viewingProduct={viewingProduct}
           productStock={productStock}
         />
+
+        {/* CSV Import/Export Buttons */}
+        <ProductImportExportButtons
+          onExport={handleExportProducts}
+          onImport={handleImportProducts}
+          onImportFileChange={(e) => {
+            if (e.target.files && e.target.files[0]) setImportFile(e.target.files[0]);
+          }}
+          importFile={importFile}
+          isImporting={isImporting}
+          importDialogIsOpen={importDialogIsOpen}
+          setImportDialogIsOpen={setImportDialogIsOpen}
+          userStoreId={storeId}
+          loading={isLoading}
+          products={products}
+          openCreateDialog={openCreateDialog}
+        />
+
       </div>
     </Layout>
   );

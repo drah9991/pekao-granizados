@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2, Tag, Loader2, Check, Upload, X } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Tag, Loader2, Check, Upload, X, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -28,24 +28,13 @@ const categoryFormSchema = z.object({
 
 type CategoryFormData = z.infer<typeof categoryFormSchema>;
 
-const COLOR_PALETTE = [
-  { value: "#06b6d4", name: "Cian Neón", shadow: "shadow-[0_0_15px_rgba(6,182,212,0.5)] bg-[#06b6d4]" },
-  { value: "#d946ef", name: "Magenta Pro", shadow: "shadow-[0_0_15px_rgba(217,70,239,0.5)] bg-[#d946ef]" },
-  { value: "#f97316", name: "Naranja Sol", shadow: "shadow-[0_0_15px_rgba(249,115,22,0.5)] bg-[#f97316]" },
-  { value: "#84cc16", name: "Lime Glow", shadow: "shadow-[0_0_15px_rgba(132,204,22,0.5)] bg-[#84cc16]" },
-  { value: "#eab308", name: "Yellow Acid", shadow: "shadow-[0_0_15px_rgba(234,179,8,0.5)] bg-[#eab308]" },
-  { value: "#ef4444", name: "Red Warning", shadow: "shadow-[0_0_15px_rgba(239,68,68,0.5)] bg-[#ef4444]" },
-  { value: "#3b82f6", name: "Blue Aurora", shadow: "shadow-[0_0_15px_rgba(59,130,246,0.5)] bg-[#3b82f6]" },
-  { value: "#a855f7", name: "Purple Void", shadow: "shadow-[0_0_15px_rgba(168,85,247,0.5)] bg-[#a855f7]" }
-];
-
 export default function CategoryManager() {
   const { storeId: userStoreId } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
 
   // Dialog & Form state
   const [dialogIsOpen, setDialogIsOpen] = useState(false);
@@ -65,14 +54,13 @@ export default function CategoryManager() {
     defaultValues: {
       name: "",
       description: "",
-      color_hex: "#06b6d4",
+      color_hex: "#ef4444",
       is_active: true,
       image_url: "",
       sort_order: 0
     }
   });
 
-  const selectedColor = watch("color_hex");
   const imageUrlValue = watch("image_url");
 
   const fetchCategories = async () => {
@@ -87,7 +75,6 @@ export default function CategoryManager() {
 
       if (error) throw error;
       
-      // Ordenar secundariamente por nombre en memoria
       const sortedData = (data || []).sort((a, b) => {
         if ((a.sort_order || 0) === (b.sort_order || 0)) {
           return a.name.localeCompare(b.name);
@@ -98,7 +85,7 @@ export default function CategoryManager() {
       setCategories(sortedData);
     } catch (err) {
       console.error("Error fetching categories:", err);
-      toast.error("Fallo al sincronizar base de datos de categorías");
+      toast.error("Fallo al sincronizar categorías.");
     } finally {
       setLoading(false);
     }
@@ -115,7 +102,7 @@ export default function CategoryManager() {
     reset({
       name: "",
       description: "",
-      color_hex: "#06b6d4",
+      color_hex: "#ef4444",
       is_active: true,
       image_url: "",
       sort_order: 0
@@ -128,7 +115,7 @@ export default function CategoryManager() {
     reset({
       name: category.name,
       description: category.description || "",
-      color_hex: category.color_hex || "#06b6d4",
+      color_hex: category.color_hex || "#ef4444",
       is_active: category.is_active ?? true,
       image_url: category.image_url || "",
       sort_order: category.sort_order ?? 0
@@ -140,13 +127,11 @@ export default function CategoryManager() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tipo de archivo
     if (!file.type.startsWith("image/")) {
       toast.error("Por favor, suba únicamente archivos de imagen.");
       return;
     }
 
-    // Validar tamaño (máx 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error("La imagen debe tener un tamaño inferior a 2MB.");
       return;
@@ -159,7 +144,7 @@ export default function CategoryManager() {
       const filePath = `category-images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("products") // Usamos el bucket de productos existente en lugar de crear uno nuevo para evitar problemas de buckets inexistentes
+        .from("products")
         .upload(filePath, file, { cacheControl: "3600", upsert: true });
 
       if (uploadError) throw uploadError;
@@ -204,14 +189,14 @@ export default function CategoryManager() {
           .eq("id", editingCategory.id);
 
         if (error) throw error;
-        toast.success("Estructura de categoría actualizada con éxito.");
+        toast.success("Categoría actualizada con éxito.");
       } else {
         const { error } = await supabase
           .from("categories")
           .insert([payload]);
 
         if (error) throw error;
-        toast.success("Nueva categoría incorporada al registro.");
+        toast.success("Categoría creada con éxito.");
       }
 
       setDialogIsOpen(false);
@@ -221,7 +206,7 @@ export default function CategoryManager() {
       if (err.code === "23505") {
         toast.error("Ya existe una categoría registrada con este nombre.");
       } else {
-        toast.error("Fallo de red en la persistencia de la categoría.");
+        toast.error("Error al guardar la categoría.");
       }
     } finally {
       setIsProcessing(false);
@@ -229,7 +214,6 @@ export default function CategoryManager() {
   };
 
   const handleDeleteCategory = async (category: Category) => {
-    // Check if category has dependent products
     try {
       const { count, error: countError } = await supabase
         .from("products")
@@ -239,7 +223,7 @@ export default function CategoryManager() {
       if (countError) throw countError;
 
       if (count && count > 0) {
-        toast.error(`No es posible eliminar. Existen ${count} productos enlazados a esta categoría.`);
+        toast.error(`No es posible eliminar. Existen ${count} productos asociados a esta categoría.`);
         return;
       }
     } catch (err) {
@@ -258,11 +242,11 @@ export default function CategoryManager() {
         .eq("id", category.id);
 
       if (error) throw error;
-      toast.success("Categoría eliminada del catálogo.");
+      toast.success("Categoría eliminada con éxito.");
       fetchCategories();
     } catch (err) {
       console.error("Error deleting category:", err);
-      toast.error("Error de exclusión física en base de datos.");
+      toast.error("Error al eliminar la categoría.");
     } finally {
       setIsProcessing(false);
     }
@@ -290,137 +274,138 @@ export default function CategoryManager() {
   }, [searchQuery]);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-10"
-    >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black font-space-grotesk tracking-wide uppercase text-foreground flex items-center gap-3">
-            <Tag className="w-6 h-6 text-primary" />
-            Category Engine Master
-          </h2>
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mt-1 italic font-space-grotesk">
-            Clasificación y Agrupación Comercial ERP
-          </p>
-        </div>
-
-        <Button
-          onClick={openCreateDialog}
-          className="h-12 px-6 rounded-2xl bg-primary text-primary-foreground font-black font-space-grotesk italic text-[11px] tracking-widest uppercase hover:bg-primary/95 transition-all shadow-glow-pro group shrink-0"
-        >
-          <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
-          Nueva Categoría
-        </Button>
+    <div className="space-y-6 w-full animate-pro-in text-slate-800 dark:text-slate-100">
+      
+      {/* Título Centrado */}
+      <div className="text-center py-4">
+        <h2 className="text-xl sm:text-2xl font-black font-space-grotesk tracking-widest uppercase text-slate-900 dark:text-white">
+          Categorías
+        </h2>
       </div>
 
-      <Card className="glass-pro border-white/5 shadow-pro overflow-hidden">
-        <CardHeader className="border-b border-white/5 py-5 px-6">
-          <div className="relative w-full max-w-md group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 group-focus-within:text-primary transition-all duration-300" />
+      {/* Controles de Búsqueda y Botones de Creación */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Label htmlFor="search-cat" className="text-xs font-bold uppercase tracking-wider text-slate-500 shrink-0">Buscar:</Label>
+          <div className="relative flex-1 sm:w-64">
             <Input
-              placeholder="BUSCAR CATEGORÍA..."
+              id="search-cat"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-11 h-11 bg-white/5 border-white/10 rounded-xl focus:border-primary/40 focus:ring-0 text-xs font-black font-space-grotesk tracking-wider italic placeholder:text-muted-foreground/30 uppercase"
+              className="h-9 bg-slate-900/10 dark:bg-white/5 border-white/10 rounded-lg text-xs"
+              placeholder=""
             />
           </div>
-        </CardHeader>
+        </div>
+
+        <div className="flex gap-2 w-full sm:w-auto justify-end">
+          <Button
+            onClick={openCreateDialog}
+            className="h-9 px-5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-full border-none shadow-sm cursor-pointer"
+          >
+            Nueva
+          </Button>
+          <Button
+            variant="outline"
+            className="h-9 px-5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-full border-none shadow-sm cursor-pointer"
+            onClick={fetchCategories}
+          >
+            <RotateCcw className="w-3.5 h-3.5 mr-1" />
+            Ver Historial
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabla de Categorías Rediseñada */}
+      <Card className="bg-transparent border-0 shadow-none overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-white/[0.02] border-b border-white/5">
+            <Table className="border-0">
+              <TableHeader className="bg-slate-900/5 dark:bg-white/[0.02] border-b border-white/10">
                 <TableRow className="hover:bg-transparent border-white/5">
-                  <TableHead className="w-16 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">COLOR</TableHead>
-                  <TableHead className="w-16 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">IMAGEN</TableHead>
-                  <TableHead className="text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">IDENTIFICADOR (NOMBRE)</TableHead>
-                  <TableHead className="text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk">DESCRIPCIÓN</TableHead>
-                  <TableHead className="w-20 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk text-center">PRIORIDAD</TableHead>
-                  <TableHead className="w-32 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk text-center">ESTADO</TableHead>
-                  <TableHead className="w-32 text-[9px] font-black uppercase tracking-widest text-primary/60 h-14 font-space-grotesk text-right pr-6">ACCIONES</TableHead>
+                  <TableHead className="w-20"></TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-500 h-11">Nombre</TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-500 h-11">Descripción</TableHead>
+                  <TableHead className="w-24 text-xs font-bold uppercase tracking-wider text-slate-500 h-11 text-center">Estado</TableHead>
+                  <TableHead className="w-48 h-11"></TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                 {loading ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={7} className="py-20 text-center">
-                      <div className="flex flex-col items-center justify-center gap-4">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary shadow-glow-pro" />
-                        <span className="text-[9px] font-black uppercase tracking-widest text-primary italic animate-pulse">Sincronizando Archivos...</span>
+                  <TableRow className="hover:bg-transparent border-0">
+                    <TableCell colSpan={5} className="py-20 text-center">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <Loader2 className="w-6 h-6 animate-spin text-rose-600" />
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest animate-pulse">Cargando Categorías...</span>
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : filteredCategories.length === 0 ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={7} className="py-20 text-center text-muted-foreground font-caveat text-2xl">
-                      No se encontraron categorías registradas.
+                  <TableRow className="hover:bg-transparent border-0">
+                    <TableCell colSpan={5} className="py-20 text-center text-slate-400 font-medium text-sm">
+                      No hay categorías registradas que coincidan con la búsqueda.
                     </TableCell>
                   </TableRow>
                 ) : (
                   paginatedCategories.map((cat) => (
-                    <TableRow key={cat.id} className="border-white/5 hover:bg-white/[0.01] transition-colors h-16">
-                      <TableCell className="pl-6">
-                        <div 
-                          className="w-5 h-5 rounded-full border border-white/10" 
-                          style={{ 
-                            backgroundColor: cat.color_hex || "#06b6d4",
-                            boxShadow: `0 0 10px ${cat.color_hex || "#06b6d4"}80`
-                          }} 
-                        />
+                    <TableRow key={cat.id} className="border-0 hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors h-14">
+                      
+                      {/* Imagen Miniatura Circular */}
+                      <TableCell className="py-2.5 pl-4">
+                        <div className="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center overflow-hidden bg-slate-900/50">
+                          {cat.image_url ? (
+                            <img 
+                              src={cat.image_url} 
+                              alt={cat.name} 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-sm">🍔</span>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        {cat.image_url ? (
-                          <img 
-                            src={cat.image_url} 
-                            alt={cat.name} 
-                            className="w-9 h-9 object-cover rounded-lg border border-white/5"
-                          />
-                        ) : (
-                          <div className="w-9 h-9 bg-white/5 border border-white/5 rounded-lg flex items-center justify-center text-[10px] text-muted-foreground/30 font-space-grotesk">
-                            S/I
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-dm-sans font-bold text-xs uppercase text-foreground">
+
+                      {/* Nombre */}
+                      <td className="py-2.5 font-semibold text-xs text-slate-900 dark:text-slate-100">
                         {cat.name}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground/80 max-w-xs truncate">
+                      </td>
+
+                      {/* Descripción */}
+                      <td className="py-2.5 text-xs text-slate-500 dark:text-slate-400 max-w-xs truncate">
                         {cat.description || "—"}
-                      </TableCell>
-                      <TableCell className="text-center font-mono text-xs font-bold text-primary">
-                        {cat.sort_order ?? 0}
-                      </TableCell>
-                      <TableCell className="text-center">
+                      </td>
+
+                      {/* Estado rectangular verde/rojo */}
+                      <TableCell className="py-2.5 text-center">
                         <Badge 
                           className={cn(
-                            "rounded-md text-[8px] font-black uppercase tracking-wider px-2 py-0.5",
+                            "rounded-sm text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border-0 text-white",
                             cat.is_active 
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
-                              : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                              ? "bg-emerald-600" 
+                              : "bg-rose-600"
                           )}
                         >
-                          {cat.is_active ? "Activo" : "Inactivo"}
+                          {cat.is_active ? "Activa" : "Inactiva"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right pr-6 space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(cat)}
-                          className="h-8 w-8 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-primary transition-all"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteCategory(cat)}
-                          className="h-8 w-8 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-400 transition-all"
-                          disabled={isProcessing}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+
+                      {/* Acciones */}
+                      <TableCell className="py-2.5 text-right pr-4">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            onClick={() => openEditDialog(cat)}
+                            className="h-8 px-3 rounded-full border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-bold text-rose-600 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Edit className="w-3 h-3" /> Editar
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteCategory(cat)}
+                            className="h-8 px-3 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer border-none shadow-sm"
+                          >
+                            <Trash2 className="w-3 h-3" /> Eliminar
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -428,185 +413,154 @@ export default function CategoryManager() {
               </TableBody>
             </Table>
           </div>
-          
-          <AdvancedPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            pageSize={pageSize}
-            onPageSizeChange={setPageSize}
-            totalRecords={filteredCategories.length}
-            pageSizeOptions={[5, 10, 20]}
-            className="bg-[#1C1F26]/10 border-t border-white/5"
-          />
+
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between py-4 border-t border-slate-100 dark:border-white/5 px-4">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Página {currentPage} de {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  className="h-8 rounded-lg text-xs"
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  className="h-8 rounded-lg text-xs"
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
+      {/* Modal para Crear/Editar Categoría */}
       <Dialog open={dialogIsOpen} onOpenChange={setDialogIsOpen}>
-        <DialogContent className="sm:max-w-lg bg-card/95 border border-white/10 backdrop-blur-2xl p-6 rounded-2xl shadow-glow-pro animate-in fade-in zoom-in-95 duration-200 glass-pro">
-          <DialogHeader className="border-b border-white/5 pb-3">
-            <DialogTitle className="text-lg font-black font-space-grotesk tracking-wide uppercase text-primary">
-              {editingCategory ? "EDITAR CATEGORÍA" : "REGISTRAR CATEGORÍA"}
+        <DialogContent className="bg-slate-900 border border-white/10 text-white rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-black uppercase tracking-widest font-space-grotesk text-white">
+              {editingCategory ? "Modificar Categoría" : "Agregar Categoría"}
             </DialogTitle>
-            <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">
-              Category Engine Master • Clasificación Comercial
+            <DialogDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+              Define los atributos operacionales de la categoría
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
-                Identificador (Nombre)
-              </Label>
+              <Label htmlFor="cat-name" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Nombre Comercial *</Label>
               <Input
+                id="cat-name"
                 {...register("name")}
-                placeholder="EJ. COCTELES, ENTRADAS..."
-                className={cn(
-                  "h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary/50 text-xs font-black uppercase tracking-wider font-space-grotesk",
-                  errors.name && "border-destructive/50 focus:border-destructive/50"
-                )}
+                className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                placeholder="Ej: Acompañantes"
               />
               {errors.name && (
-                <p className="text-[10px] font-bold text-destructive uppercase tracking-widest font-space-grotesk italic ml-1 mt-1">
-                  {errors.name.message}
-                </p>
+                <p className="text-[10px] text-rose-500 font-bold uppercase">{errors.name.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
-                Descripción
-              </Label>
-              <textarea
-                {...register("description")}
-                placeholder="Breve detalle de la categoría..."
-                rows={3}
-                className="w-full bg-white/5 border border-white/10 rounded-xl focus:border-primary/50 text-xs text-foreground p-3 focus:outline-none focus:ring-0 font-dm-sans resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
-                Imagen de Portada (Opcional)
-              </Label>
-              
-              <div className="border border-dashed border-white/10 rounded-xl p-4 bg-white/[0.02] flex flex-col items-center justify-center gap-3">
-                {imageUrlValue ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <img 
-                      src={imageUrlValue} 
-                      alt="Preview" 
-                      className="w-20 h-20 object-cover rounded-xl border border-white/10 shadow-lg"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={removeImage}
-                      className="h-7 px-3 text-[10px] font-black text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg flex items-center gap-1 uppercase tracking-widest font-space-grotesk"
-                    >
-                      <X className="w-3 h-3" />
-                      Eliminar Imagen
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="w-full flex flex-col items-center gap-2 py-2">
-                    <Upload className="w-6 h-6 text-muted-foreground/60" />
-                    <Label className="cursor-pointer text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors font-space-grotesk">
-                      {isUploading ? "Subiendo..." : "Seleccionar Archivo"}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleImageUpload} 
-                        className="hidden" 
-                        disabled={isUploading}
-                      />
-                    </Label>
-                    <span className="text-[9px] text-muted-foreground/40 font-mono">PNG, JPG, WEBP (MÁX. 2MB)</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
-                Prioridad de Orden (Visualización)
-              </Label>
+              <Label htmlFor="cat-desc" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Descripción</Label>
               <Input
-                type="number"
-                {...register("sort_order", { valueAsNumber: true })}
-                placeholder="0"
-                min={0}
-                className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary/50 text-xs font-mono font-black"
+                id="cat-desc"
+                {...register("description")}
+                className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                placeholder="Breve reseña de la categoría"
               />
-              {errors.sort_order && (
-                <p className="text-[10px] font-bold text-destructive uppercase tracking-widest font-space-grotesk italic ml-1 mt-1">
-                  {errors.sort_order.message}
-                </p>
-              )}
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-space-grotesk italic ml-1">
-                Color de Asignación (Paleta POS)
-              </Label>
-              
-              <div className="grid grid-cols-4 gap-3">
-                {COLOR_PALETTE.map((color) => {
-                  const isActive = selectedColor === color.value;
-                  return (
-                    <button
-                      key={color.value}
-                      type="button"
-                      onClick={() => setValue("color_hex", color.value)}
-                      className={cn(
-                        "h-10 rounded-xl border border-white/10 relative transition-all duration-300 flex items-center justify-center",
-                        color.shadow,
-                        isActive ? "scale-105 border-white/50" : "opacity-60 hover:opacity-100 hover:scale-[1.02]"
-                      )}
-                      title={color.name}
-                    >
-                      {isActive && (
-                        <Check className="w-4 h-4 text-zinc-950 font-black" />
-                      )}
-                    </button>
-                  );
-                })}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cat-color" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Color Hexadecimal</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="cat-color"
+                    type="color"
+                    {...register("color_hex")}
+                    className="w-8 h-8 p-0 rounded-md border-0 cursor-pointer"
+                  />
+                  <span className="text-[10px] font-mono uppercase font-bold">{watch("color_hex")}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cat-order" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Prioridad / Orden</Label>
+                <Input
+                  id="cat-order"
+                  type="number"
+                  {...register("sort_order", { valueAsNumber: true })}
+                  className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                />
               </div>
             </div>
 
-            <div className="flex items-center space-x-3 bg-white/5 p-4 rounded-xl border border-white/5">
-              <input
-                id="is_active"
-                type="checkbox"
-                {...register("is_active")}
-                className="w-4 h-4 rounded border-white/10 text-primary bg-zinc-950 focus:ring-0 focus:ring-offset-0 focus:outline-none transition-colors"
-              />
-              <Label htmlFor="is_active" className="text-[10px] font-black uppercase tracking-wider text-foreground cursor-pointer select-none">
-                Categoría Activa (Visible en POS y menú digital)
-              </Label>
+            {/* Cargar Imagen */}
+            <div className="space-y-2 pt-2 border-t border-white/5">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-300">Miniatura Ilustrativa</Label>
+              <div className="flex items-center gap-3">
+                <Input 
+                  type="file" 
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                  className="bg-slate-950 border-white/10 rounded-lg text-xs file:bg-primary file:text-white file:border-0"
+                />
+                {isUploading && <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />}
+              </div>
+              {imageUrlValue && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/5 mt-2">
+                  <img src={imageUrlValue} alt="Preview" className="w-10 h-10 object-cover rounded-lg" />
+                  <span className="text-[9px] text-muted-foreground truncate flex-1">{imageUrlValue}</span>
+                  <Button type="button" size="icon" variant="ghost" onClick={removeImage} className="h-6 w-6 text-rose-500">
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
             </div>
 
-            <DialogFooter className="pt-4 border-t border-white/5 gap-3">
+            {/* Checkbox de Activa */}
+            <div className="flex items-center gap-3 pt-2">
+              <input
+                type="checkbox"
+                id="cat-active"
+                onChange={(e) => setValue("is_active", e.target.checked)}
+                checked={watch("is_active")}
+                className="w-4 h-4 rounded border-white/10 bg-slate-950 text-primary cursor-pointer"
+              />
+              <Label htmlFor="cat-active" className="text-xs text-slate-300 cursor-pointer font-bold">Categoría activa en catálogo</Label>
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-white/5 gap-2">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setDialogIsOpen(false)}
-                className="h-11 rounded-xl text-xs font-black font-space-grotesk tracking-widest uppercase hover:bg-white/5"
+                className="text-xs font-bold uppercase tracking-widest"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={isProcessing}
-                className="h-11 rounded-xl bg-primary text-primary-foreground font-black font-space-grotesk italic text-[11px] tracking-widest uppercase hover:bg-primary/95 transition-all shadow-glow-pro px-6"
+                disabled={isProcessing || isUploading}
+                className="bg-rose-600 text-white font-bold text-xs uppercase tracking-widest px-6"
               >
-                {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Guardar Cambios
+                {isProcessing ? "Guardando..." : "Guardar Categoría"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 }

@@ -10,7 +10,7 @@ export type MenuCategory = Tables<"product_types_config"> & {
   items: MenuItem[];
 };
 
-export function useDigitalMenu(storeId: string | null) {
+export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = false) {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,11 +30,18 @@ export function useDigitalMenu(storeId: string | null) {
           .or(`store_id.eq.${storeId},store_id.is.null`);
 
         // Fetch products
-        const { data: productsData } = await supabase
+        let query = supabase
           .from("products")
           .select("*")
           .eq("active", true)
           .or(`store_id.eq.${storeId},store_id.is.null`);
+
+        // Si no está en modo admin, filtrar por los productos marcados como públicos (is_public = true)
+        if (!isAdminMode) {
+          query = query.eq("is_public", true);
+        }
+
+        const { data: productsData } = await query;
 
         // Fetch machine tanks (liquids)
         const { data: tanksData } = await supabase
@@ -59,18 +66,9 @@ export function useDigitalMenu(storeId: string | null) {
 
             // Check if it relies on tanks (liquids)
             if (cat.track_mixture_inventory) {
-               // Find associated tank via recipe or inventory_items logic
-               // Simplified for prototype: we assume product relies on tanks if it's a liquid
-               // In pekao, recipes map products to inventory_items, and tanks map to inventory_items
-               // If a tank is low, stock is low.
-               // We will use a mock logic here based on tanks for demonstration if recipe mapping isn't fully pulled:
                const relatedTanks = (tanksData || []).filter(t => t.current_volume_ml <= 1000); 
                if (relatedTanks.length > 0) {
                   stock_status = 'low_stock';
-               }
-               const emptyTanks = (tanksData || []).filter(t => t.current_volume_ml <= 200);
-               if (emptyTanks.length > 0) {
-                 // stock_status = 'out_of_stock'; // Real logic would map specific tank to specific product
                }
             } else {
                // Check store_stock
@@ -132,7 +130,7 @@ export function useDigitalMenu(storeId: string | null) {
       isMounted = false;
       supabase.removeChannel(channel);
     };
-  }, [storeId]);
+  }, [storeId, isAdminMode]);
 
   const reorderCategories = (newCategories: MenuCategory[]) => {
     setCategories(newCategories);
@@ -140,5 +138,20 @@ export function useDigitalMenu(storeId: string | null) {
     localStorage.setItem("pekao_menu_categories_order", JSON.stringify(codes));
   };
 
-  return { categories, reorderCategories, loading };
+  const toggleProductVisibility = async (productId: string, currentStatus: boolean): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("products")
+        .update({ is_public: !currentStatus })
+        .eq("id", productId);
+        
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error("Error toggling product visibility:", err);
+      return false;
+    }
+  };
+
+  return { categories, reorderCategories, toggleProductVisibility, loading };
 }
