@@ -12,7 +12,7 @@ import {
   Minus,
   Plus,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
-  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download, Menu, X, Coins, Gift, Eye, RefreshCw, Bike
+  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download, Menu, X, Coins, Gift, Eye, RefreshCw, Bike, Printer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -335,6 +335,20 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               <span>Domicilios</span>
             </Link>
 
+            {/* Copiado */}
+            <Link
+              to="/print-center"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                isLinkActive("/print-center") 
+                  ? "bg-rose-50 text-rose-600" 
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+              )}
+            >
+              <Printer className="w-4 h-4" />
+              <span>Copiado</span>
+            </Link>
+
             {/* Contabilidad */}
             <Link
               to="/cash-register"
@@ -545,6 +559,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                     { label: "Recetas", href: "/recipes", icon: FileText },
                     { label: "Inventario", href: "/inventory", icon: Package },
                     { label: "Menú Digital", href: "/digital-menu", icon: Bike },
+                    { label: "Copiado", href: "/print-center", icon: Printer },
                     { label: "Configuración", href: "/settings", icon: Settings }
                   ].map((item) => {
                     const active = isLinkActive(item.href);
