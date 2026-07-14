@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist, StateStorage } from "zustand/middleware";
+import { persist, StateStorage, createJSONStorage } from "zustand/middleware";
 import { offlineService } from "@/lib/OfflineService";
 
 export interface SyncOrder {
@@ -50,7 +50,8 @@ export const useSyncStore = create<SyncStoreState>()(
     }),
     {
       name: "oasis-eon-sync-queue",
-      storage: indexedDBStorage,
+      storage: createJSONStorage(() => indexedDBStorage),
+      partialize: (state) => ({ syncQueue: state.syncQueue }) as any,
     }
   )
 );

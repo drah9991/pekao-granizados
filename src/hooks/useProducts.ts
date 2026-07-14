@@ -141,7 +141,7 @@ export function useProducts() {
         sku: formData.sku || null,
         description: formData.description || null,
         price: parseFloat(formData.price),
-        cost: formData.cost ? parseFloat(formData.cost) : null,
+        cost: (formData.cost !== "" && formData.cost !== null && formData.cost !== undefined) ? parseFloat(formData.cost) : null,
         active: formData.active,
         category: formData.category ? formData.category.toUpperCase() : null,
         is_public: formData.is_public,
@@ -204,6 +204,7 @@ export function useProducts() {
       toast.success("Producto guardado exitosamente");
       setProductDialogIsOpen(false);
       queryClient.invalidateQueries({ queryKey: ["products-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["products-grid"] });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error desconocido";
       toast.error("Error al guardar: " + msg);
@@ -220,6 +221,7 @@ export function useProducts() {
       if (error) throw error;
       toast.success("Producto eliminado");
       queryClient.invalidateQueries({ queryKey: ["products-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["products-grid"] });
     } catch (error: unknown) {
       console.error("Error deleting product:", error);
       toast.error("Error al eliminar");
@@ -244,6 +246,7 @@ export function useProducts() {
       toast.success("Importación exitosa");
       setImportDialogIsOpen(false);
       queryClient.invalidateQueries({ queryKey: ["products-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["products-grid"] });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error desconocido";
       toast.error("Error en importación: " + msg);

@@ -388,12 +388,15 @@ export default function ProductFormDialog({
                   </Select>
                 </div>
 
-                {/* Costo de producción (read only) */}
-                <div className="space-y-1">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Costo de producción</span>
-                  <span className="text-sm font-black text-slate-200">
-                    $ {costVal.toLocaleString('es-CO')}
-                  </span>
+                {/* Costo de producción */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Costo de producción</Label>
+                  <Input
+                    type="number"
+                    value={formData.cost}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cost: e.target.value }))}
+                    className="h-11 bg-white/5 border-white/10 rounded-lg text-xs font-black text-white focus:border-primary/50"
+                  />
                 </div>
 
                 {/* Utilidad (read only) */}

@@ -267,6 +267,7 @@ const ProductGrid = memo(function ProductGrid({ onProductSelect, searchRef, acti
             )
           `)
           .eq('active', true)
+          .eq('store_id', storeId)
           .order("name", { ascending: true });
 
         if (error) throw error;
