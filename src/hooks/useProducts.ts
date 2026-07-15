@@ -43,6 +43,7 @@ export function useProducts() {
     cost: "",
     active: true,
     category: "",
+    category_id: null as string | null,
     is_public: true,
     images: [] as string[],
     variants: null as Json | null,
@@ -54,6 +55,7 @@ export function useProducts() {
     margin_target: "60.0",
     commission_rate: "0.0",
     supplier_name: "",
+    supplier_id: null as string | null,
     is_starred: false,
   });
 
@@ -144,6 +146,7 @@ export function useProducts() {
         cost: (formData.cost !== "" && formData.cost !== null && formData.cost !== undefined) ? parseFloat(formData.cost) : null,
         active: formData.active,
         category: formData.category ? formData.category.toUpperCase() : null,
+        category_id: formData.category_id || null,
         is_public: formData.is_public,
         images: formData.images,
         variants: formData.variants,
@@ -155,6 +158,7 @@ export function useProducts() {
         margin_target: formData.margin_target ? parseFloat(formData.margin_target) : null,
         commission_rate: formData.commission_rate ? parseFloat(formData.commission_rate) : null,
         supplier_name: formData.supplier_name || null,
+        supplier_id: formData.supplier_id || null,
         is_starred: formData.is_starred,
       };
 
@@ -281,9 +285,9 @@ export function useProducts() {
     setEditingProduct(null);
     setFormData({
       name: "", sku: "", description: "", price: "", cost: "", active: true,
-      category: "", is_public: true, images: [], variants: null, recipe: null,
+      category: "", category_id: null, is_public: true, images: [], variants: null, recipe: null,
       type: "granizado", stock: "", base_volume: "", unit_measure: "oz",
-      margin_target: "60.0", commission_rate: "0.0", supplier_name: "", is_starred: false,
+      margin_target: "60.0", commission_rate: "0.0", supplier_name: "", supplier_id: null, is_starred: false,
     });
     setProductDialogIsOpen(true);
     toast.success("Abriendo modal de creación...");
@@ -307,7 +311,7 @@ export function useProducts() {
     setFormData({
       name: product.name, sku: product.sku || "", description: product.description || "",
       price: product.price.toString(), cost: product.cost?.toString() || "", active: product.active,
-      category: product.category || "", is_public: product.is_public ?? true,
+      category: product.category || "", category_id: product.category_id || null, is_public: product.is_public ?? true,
       images:    (product.images as string[]) || [], 
       variants: product.variants as Json | null, 
       recipe: product.recipe ? (Array.isArray(product.recipe) ? product.recipe : []) : null,
@@ -318,6 +322,7 @@ export function useProducts() {
       margin_target: product.margin_target?.toString() || "60.0",
       commission_rate: product.commission_rate?.toString() || "0.0",
       supplier_name: product.supplier_name || "",
+      supplier_id: (product as any).supplier_id || null,
       is_starred: product.is_starred ?? false,
     });
     setProductDialogIsOpen(true);

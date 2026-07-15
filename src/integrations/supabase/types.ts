@@ -25,6 +25,7 @@ export type Database = {
           name: string | null
           phone: string | null
           total_spent: number | null
+          profile_id: string | null
         }
         Insert: {
           addresses?: Json | null
@@ -35,6 +36,7 @@ export type Database = {
           name?: string | null
           phone?: string | null
           total_spent?: number | null
+          profile_id?: string | null
         }
         Update: {
           addresses?: Json | null
@@ -45,8 +47,17 @@ export type Database = {
           name?: string | null
           phone?: string | null
           total_spent?: number | null
+          profile_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       invoices: {
         Row: {
@@ -93,6 +104,13 @@ export type Database = {
           store_id: string
           type: string
           user_id: string
+          invoice_no: string | null
+          supplier_name: string | null
+          total_price: number | null
+          total_paid: number | null
+          debe: number | null
+          sale_from_cash: boolean | null
+          movement_date: string | null
         }
         Insert: {
           created_at?: string | null
@@ -103,6 +121,13 @@ export type Database = {
           store_id: string
           type: string
           user_id: string
+          invoice_no?: string | null
+          supplier_name?: string | null
+          total_price?: number | null
+          total_paid?: number | null
+          debe?: number | null
+          sale_from_cash?: boolean | null
+          movement_date?: string | null
         }
         Update: {
           created_at?: string | null
@@ -113,6 +138,13 @@ export type Database = {
           store_id?: string
           type?: string
           user_id?: string
+          invoice_no?: string | null
+          supplier_name?: string | null
+          total_price?: number | null
+          total_paid?: number | null
+          debe?: number | null
+          sale_from_cash?: boolean | null
+          movement_date?: string | null
         }
         Relationships: [
           {
@@ -346,6 +378,7 @@ export type Database = {
           commission_rate: number | null
           supplier_name: string | null
           is_starred: boolean | null
+          supplier_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -367,6 +400,7 @@ export type Database = {
           commission_rate?: number | null
           supplier_name?: string | null
           is_starred?: boolean | null
+          supplier_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -388,6 +422,7 @@ export type Database = {
           commission_rate?: number | null
           supplier_name?: string | null
           is_starred?: boolean | null
+          supplier_id?: string | null
         }
         Relationships: [
           {
@@ -397,6 +432,13 @@ export type Database = {
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          }
         ]
       }
       profiles: {
@@ -632,6 +674,51 @@ export type Database = {
         }
         Relationships: []
       }
+      units: {
+        Row: {
+          id: string
+          name: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          id: string
+          name: string
+          phone: string | null
+          email: string | null
+          address: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          phone?: string | null
+          email?: string | null
+          address?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          phone?: string | null
+          email?: string | null
+          address?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -748,7 +835,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "cashier" | "driver" | "owner" | "store_manager"
-      product_type: "granizado" | "topping" | "sachet" | "sweet" | "other"
+      product_type: "granizado" | "topping" | "sachet" | "sweet" | "other" | "combo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -877,7 +964,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "cashier", "driver", "owner", "store_manager"],
-      product_type: ["granizado", "topping", "sachet", "sweet", "other"],
+      product_type: ["granizado", "topping", "sachet", "sweet", "other", "combo"],
     },
   },
 } as const

@@ -25,7 +25,8 @@ import {
   FlaskConical,
   CreditCard,
   MonitorPlay,
-  Printer
+  Printer,
+  Truck
 } from "lucide-react";
 import { NavGroup } from "@/types/navigation";
 
@@ -65,10 +66,9 @@ export const navConfig: NavGroup[] = [
         roles: ["admin", "owner", "manager"],
         children: [
           { label: "Productos", href: "/products", icon: Tag, roles: ["admin", "owner", "manager"] },
-          { label: "Clientes", href: "/customers", icon: UsersIcon, roles: ["admin", "owner", "manager"] },
+          { label: "Proveedores", href: "/catalog/inventory/suppliers", icon: Truck, roles: ["admin", "owner", "manager"] },
           { label: "Inventario", href: "/inventory", icon: Package, roles: ["admin", "owner", "manager"] },
           { label: "Recetas", href: "/recipes", icon: FileText, roles: ["admin", "owner", "manager"] },
-          { label: "Usuarios", href: "/users", icon: UserCog, roles: ["admin", "owner"] },
           { label: "Sucursales", href: "/stores", icon: StoreIcon, roles: ["admin", "owner"] },
           { label: "Kardex", href: "/movements", icon: ClipboardList, roles: ["admin", "owner", "manager"] },
         ]
@@ -89,6 +89,8 @@ export const navConfig: NavGroup[] = [
           { label: "Tipos Operativos", href: "/settings?tab=product_types", icon: Package, roles: ["admin", "owner"] },
           { label: "Categorías ERP", href: "/settings?tab=categories", icon: Tag, roles: ["admin", "owner", "manager"] },
           { label: "Alertas y Notificaciones", href: "/settings?tab=notifications", icon: Bell, roles: ["admin", "owner", "manager"] },
+          { label: "Usuarios del Sistema", href: "/users", icon: UserCog, roles: ["admin", "owner"] },
+          { label: "Clientes CRM", href: "/customers", icon: UsersIcon, roles: ["admin", "owner", "manager"] },
         ]
       }
     ]

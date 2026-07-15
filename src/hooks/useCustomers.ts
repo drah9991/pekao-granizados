@@ -50,12 +50,14 @@ export function useCustomers() {
             const phone = typeof formData.phone === 'string' ? formData.phone.trim() : '';
             const document_id = typeof formData.document_id === 'string' ? formData.document_id.trim() : '';
             const consent_habeas_data = Boolean(formData.consent_habeas_data);
+            const profile_id = typeof formData.profile_id === 'string' ? formData.profile_id : null;
             const customerData = {
             name,
             email: email || null,
             phone: phone || null,
             document_id: document_id || null,
             consent_habeas_data,
+            profile_id,
         };
 
         if (editingCustomer) {

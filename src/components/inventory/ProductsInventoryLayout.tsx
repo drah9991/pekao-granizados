@@ -14,69 +14,47 @@ import {
 import { cn } from '@/lib/utils';
 
 export function ProductsInventoryLayout() {
-  const menuSections = [
-    {
-      title: 'Catálogo',
-      items: [
-        { name: 'Categorías', icon: Tags, path: '/catalog/categories' },
-        { name: 'Productos', icon: Package, path: '/catalog/products' },
-        { name: 'Promociones', icon: Percent, path: '/catalog/promotions' },
-      ],
-    },
-    {
-      title: 'Inventario',
-      items: [
-        { name: 'Movimientos de Inventario', icon: ArrowRightLeft, path: '/catalog/inventory/movements' },
-        { name: 'Historial', icon: History, path: '/catalog/inventory/history' },
-        { name: 'Listado de Recetas', icon: FileText, path: '/catalog/inventory/recipes' },
-        { name: 'Proveedores', icon: Truck, path: '/catalog/inventory/suppliers' },
-        { name: 'Ingredientes', icon: Beaker, path: '/catalog/inventory/ingredients' },
-        { name: 'Unidades', icon: Scale, path: '/catalog/inventory/units' },
-      ],
-    },
+  const menuItems = [
+    { name: 'Categorías', icon: Tags, path: '/catalog/categories' },
+    { name: 'Productos', icon: Package, path: '/catalog/products' },
+    { name: 'Promociones', icon: Percent, path: '/catalog/promotions' },
+    { name: 'Movimientos de Inventario', icon: ArrowRightLeft, path: '/catalog/inventory/movements' },
+    { name: 'Historial', icon: History, path: '/catalog/inventory/history' },
+    { name: 'Listado de Recetas', icon: FileText, path: '/catalog/inventory/recipes' },
+    { name: 'Proveedores', icon: Truck, path: '/catalog/inventory/suppliers' },
+    { name: 'Ingredientes', icon: Beaker, path: '/catalog/inventory/ingredients' },
+    { name: 'Unidades', icon: Scale, path: '/catalog/inventory/units' },
   ];
 
   return (
-    <div className="flex h-full w-full bg-background rounded-lg border overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 border-r bg-muted/30">
-        <div className="h-full py-6 px-4 overflow-y-auto">
-          {menuSections.map((section, idx) => (
-            <div key={idx} className="mb-6 last:mb-0">
-              <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {section.title}
-              </h3>
-              <nav className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <NavLink
-                      key={item.name}
-                      to={item.path}
-                      className={({ isActive }) =>
-                        cn(
-                          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                          isActive
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        )
-                      }
-                    >
-                      <Icon className="h-4 w-4" />
-                      {item.name}
-                    </NavLink>
-                  );
-                })}
-              </nav>
-            </div>
-          ))}
-        </div>
-      </aside>
+    <div className="flex flex-col h-full w-full bg-transparent overflow-hidden">
+      {/* Horizontal Submenu Navbar */}
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-white/5 bg-white/[0.01] overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 shrink-0">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-2 rounded-2xl px-5 py-3 text-[10px] font-black uppercase tracking-wider italic transition-all font-space-grotesk whitespace-nowrap border shrink-0",
+                  isActive
+                    ? "bg-primary text-white border-primary shadow-glow-pro"
+                    : "text-slate-400 border-white/5 bg-white/5 hover:bg-white/10 hover:text-white"
+                )
+              }
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {item.name}
+            </NavLink>
+          );
+        })}
+      </div>
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto">
         <div className="p-6 h-full">
-          {/* Outlet para renderizar la página correspondiente a la ruta hija */}
           <Outlet />
         </div>
       </main>

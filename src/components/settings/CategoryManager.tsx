@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Edit, Trash2, Tag, Loader2, Check, Upload, X, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,13 +18,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { Category } from "@/lib/pos-types";
 
+
+
 const categoryFormSchema = z.object({
   name: z.string().min(1, "El nombre de la categoría es requerido y obligatorio").max(50, "Máximo 50 caracteres"),
   description: z.string().optional().or(z.literal("")),
   color_hex: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Debe ser un código hexadecimal válido (ej. #06b6d4)"),
   is_active: z.boolean().default(true),
   image_url: z.string().optional().nullable().or(z.literal("")),
-  sort_order: z.number().int().min(0, "Debe ser un entero mayor o igual a 0").default(0)
+  sort_order: z.number().int().min(0, "Debe ser un entero mayor o igual a 0").default(0),
+  requires_recipe: z.boolean().default(false),
+  sales_mode: z.enum(["sizes", "unit", "weight"]).default("unit"),
+  track_mixture_inventory: z.boolean().default(false),
+  inventory_unit: z.string().default("un"),
+  allow_toppings: z.boolean().default(false),
+  emoji_icon: z.string().default("📦"),
+  color_theme: z.string().default("bg-slate-500"),
+  tax_rate: z.number().default(0),
+  alert_threshold: z.number().default(10)
 });
 
 type CategoryFormData = z.infer<typeof categoryFormSchema>;
@@ -57,7 +69,16 @@ export default function CategoryManager() {
       color_hex: "#ef4444",
       is_active: true,
       image_url: "",
-      sort_order: 0
+      sort_order: 0,
+      requires_recipe: false,
+      sales_mode: "unit",
+      track_mixture_inventory: false,
+      inventory_unit: "un",
+      allow_toppings: false,
+      emoji_icon: "📦",
+      color_theme: "bg-slate-500",
+      tax_rate: 0,
+      alert_threshold: 10
     }
   });
 
@@ -105,7 +126,16 @@ export default function CategoryManager() {
       color_hex: "#ef4444",
       is_active: true,
       image_url: "",
-      sort_order: 0
+      sort_order: 0,
+      requires_recipe: false,
+      sales_mode: "unit",
+      track_mixture_inventory: false,
+      inventory_unit: "un",
+      allow_toppings: false,
+      emoji_icon: "📦",
+      color_theme: "bg-slate-500",
+      tax_rate: 0,
+      alert_threshold: 10
     });
     setDialogIsOpen(true);
   };
@@ -118,7 +148,16 @@ export default function CategoryManager() {
       color_hex: category.color_hex || "#ef4444",
       is_active: category.is_active ?? true,
       image_url: category.image_url || "",
-      sort_order: category.sort_order ?? 0
+      sort_order: category.sort_order ?? 0,
+      requires_recipe: category.requires_recipe ?? false,
+      sales_mode: (category.sales_mode as any) ?? "unit",
+      track_mixture_inventory: category.track_mixture_inventory ?? false,
+      inventory_unit: category.inventory_unit ?? "un",
+      allow_toppings: category.allow_toppings ?? false,
+      emoji_icon: category.emoji_icon ?? "📦",
+      color_theme: category.color_theme ?? "bg-slate-500",
+      tax_rate: Number(category.tax_rate) ?? 0,
+      alert_threshold: category.alert_threshold ?? 10
     });
     setDialogIsOpen(true);
   };
@@ -179,7 +218,16 @@ export default function CategoryManager() {
         is_active: data.is_active,
         image_url: data.image_url || null,
         sort_order: Number(data.sort_order) || 0,
-        store_id: userStoreId
+        store_id: userStoreId,
+        requires_recipe: data.requires_recipe,
+        sales_mode: data.sales_mode,
+        track_mixture_inventory: data.track_mixture_inventory,
+        inventory_unit: data.inventory_unit,
+        allow_toppings: data.allow_toppings,
+        emoji_icon: data.emoji_icon,
+        color_theme: data.color_theme,
+        tax_rate: Number(data.tax_rate) || 0,
+        alert_threshold: Number(data.alert_threshold) || 10
       };
 
       if (editingCategory) {
@@ -447,98 +495,216 @@ export default function CategoryManager() {
 
       {/* Modal para Crear/Editar Categoría */}
       <Dialog open={dialogIsOpen} onOpenChange={setDialogIsOpen}>
-        <DialogContent className="bg-slate-900 border border-white/10 text-white rounded-2xl max-w-md">
+        <DialogContent className="bg-slate-900 border border-white/10 text-white rounded-2xl max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-sm font-black uppercase tracking-widest font-space-grotesk text-white">
               {editingCategory ? "Modificar Categoría" : "Agregar Categoría"}
             </DialogTitle>
             <DialogDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              Define los atributos operacionales de la categoría
+              Define los atributos de visualización y operacionales de la categoría
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="cat-name" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Nombre Comercial *</Label>
-              <Input
-                id="cat-name"
-                {...register("name")}
-                className="bg-slate-950 border-white/10 rounded-lg text-xs"
-                placeholder="Ej: Acompañantes"
-              />
-              {errors.name && (
-                <p className="text-[10px] text-rose-500 font-bold uppercase">{errors.name.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cat-desc" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Descripción</Label>
-              <Input
-                id="cat-desc"
-                {...register("description")}
-                className="bg-slate-950 border-white/10 rounded-lg text-xs"
-                placeholder="Breve reseña de la categoría"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="cat-color" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Color Hexadecimal</Label>
-                <div className="flex items-center gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              {/* Left Side: General Info */}
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary font-space-grotesk italic">Datos Generales</h4>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="cat-name" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Nombre Comercial *</Label>
                   <Input
-                    id="cat-color"
-                    type="color"
-                    {...register("color_hex")}
-                    className="w-8 h-8 p-0 rounded-md border-0 cursor-pointer"
+                    id="cat-name"
+                    {...register("name")}
+                    className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                    placeholder="Ej: Acompañantes"
                   />
-                  <span className="text-[10px] font-mono uppercase font-bold">{watch("color_hex")}</span>
+                  {errors.name && (
+                    <p className="text-[10px] text-rose-500 font-bold uppercase">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cat-desc" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Descripción</Label>
+                  <Input
+                    id="cat-desc"
+                    {...register("description")}
+                    className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                    placeholder="Breve reseña de la categoría"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cat-color" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Color Hexadecimal</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="cat-color"
+                        type="color"
+                        {...register("color_hex")}
+                        className="w-8 h-8 p-0 rounded-md border-0 cursor-pointer"
+                      />
+                      <span className="text-[10px] font-mono uppercase font-bold">{watch("color_hex")}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cat-order" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Prioridad / Orden</Label>
+                    <Input
+                      id="cat-order"
+                      type="number"
+                      {...register("sort_order", { valueAsNumber: true })}
+                      className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Cargar Imagen */}
+                <div className="space-y-2 pt-2 border-t border-white/5">
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-300">Miniatura Ilustrativa</Label>
+                  <div className="flex items-center gap-3">
+                    <Input 
+                      type="file" 
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                      className="bg-slate-950 border-white/10 rounded-lg text-xs file:bg-primary file:text-white file:border-0"
+                    />
+                    {isUploading && <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />}
+                  </div>
+                  {imageUrlValue && (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/5 mt-2">
+                      <img src={imageUrlValue} alt="Preview" className="w-10 h-10 object-cover rounded-lg" />
+                      <span className="text-[9px] text-muted-foreground truncate flex-1">{imageUrlValue}</span>
+                      <Button type="button" size="icon" variant="ghost" onClick={removeImage} className="h-6 w-6 text-rose-500">
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Checkbox de Activa */}
+                <div className="flex items-center gap-3 pt-2">
+                  <input
+                    type="checkbox"
+                    id="cat-active"
+                    onChange={(e) => setValue("is_active", e.target.checked)}
+                    checked={watch("is_active")}
+                    className="w-4 h-4 rounded border-white/10 bg-slate-950 text-primary cursor-pointer"
+                  />
+                  <Label htmlFor="cat-active" className="text-xs text-slate-300 cursor-pointer font-bold">Categoría activa en catálogo</Label>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="cat-order" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Prioridad / Orden</Label>
-                <Input
-                  id="cat-order"
-                  type="number"
-                  {...register("sort_order", { valueAsNumber: true })}
-                  className="bg-slate-950 border-white/10 rounded-lg text-xs"
-                />
-              </div>
-            </div>
+              {/* Right Side: Operational Rules */}
+              <div className="space-y-4 border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary font-space-grotesk italic">Reglas Operativas</h4>
 
-            {/* Cargar Imagen */}
-            <div className="space-y-2 pt-2 border-t border-white/5">
-              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-300">Miniatura Ilustrativa</Label>
-              <div className="flex items-center gap-3">
-                <Input 
-                  type="file" 
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                  className="bg-slate-950 border-white/10 rounded-lg text-xs file:bg-primary file:text-white file:border-0"
-                />
-                {isUploading && <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />}
-              </div>
-              {imageUrlValue && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/5 mt-2">
-                  <img src={imageUrlValue} alt="Preview" className="w-10 h-10 object-cover rounded-lg" />
-                  <span className="text-[9px] text-muted-foreground truncate flex-1">{imageUrlValue}</span>
-                  <Button type="button" size="icon" variant="ghost" onClick={removeImage} className="h-6 w-6 text-rose-500">
-                    <X className="w-3.5 h-3.5" />
-                  </Button>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cat-emoji" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Emoji Icono</Label>
+                    <Input
+                      id="cat-emoji"
+                      {...register("emoji_icon")}
+                      className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                      placeholder="Ej: 🍧"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cat-theme" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Color Tema CSS</Label>
+                    <Input
+                      id="cat-theme"
+                      {...register("color_theme")}
+                      className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                      placeholder="Ej: bg-cyan-500"
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* Checkbox de Activa */}
-            <div className="flex items-center gap-3 pt-2">
-              <input
-                type="checkbox"
-                id="cat-active"
-                onChange={(e) => setValue("is_active", e.target.checked)}
-                checked={watch("is_active")}
-                className="w-4 h-4 rounded border-white/10 bg-slate-950 text-primary cursor-pointer"
-              />
-              <Label htmlFor="cat-active" className="text-xs text-slate-300 cursor-pointer font-bold">Categoría activa en catálogo</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-300">Modo de Venta</Label>
+                    <Select
+                      value={watch("sales_mode")}
+                      onValueChange={(val: any) => setValue("sales_mode", val)}
+                    >
+                      <SelectTrigger className="h-9 bg-slate-950 border-white/10 rounded-lg text-xs font-bold text-white">
+                        <SelectValue placeholder="Seleccionar modo" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-950 border-white/10 text-white text-xs">
+                        <SelectItem value="unit">Por Unidad</SelectItem>
+                        <SelectItem value="sizes">Por Tamaños</SelectItem>
+                        <SelectItem value="weight">Por Peso</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cat-unit" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Unidad Inventario</Label>
+                    <Input
+                      id="cat-unit"
+                      {...register("inventory_unit")}
+                      className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                      placeholder="Ej: ml, un, gr"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cat-tax" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Impuesto (%)</Label>
+                    <Input
+                      id="cat-tax"
+                      type="number"
+                      step="0.01"
+                      {...register("tax_rate", { valueAsNumber: true })}
+                      className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cat-alert" className="text-[9px] font-black uppercase tracking-widest text-slate-300">Alerta Stock Mínimo</Label>
+                    <Input
+                      id="cat-alert"
+                      type="number"
+                      {...register("alert_threshold", { valueAsNumber: true })}
+                      className="bg-slate-950 border-white/10 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2 border-t border-white/5 flex flex-col gap-1">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="cat-recipe"
+                      onChange={(e) => setValue("requires_recipe", e.target.checked)}
+                      checked={watch("requires_recipe")}
+                      className="w-4 h-4 rounded border-white/10 bg-slate-950 text-primary cursor-pointer"
+                    />
+                    <Label htmlFor="cat-recipe" className="text-xs text-slate-300 cursor-pointer font-bold">Requiere receta ingred.</Label>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="cat-mixture"
+                      onChange={(e) => setValue("track_mixture_inventory", e.target.checked)}
+                      checked={watch("track_mixture_inventory")}
+                      className="w-4 h-4 rounded border-white/10 bg-slate-950 text-primary cursor-pointer"
+                    />
+                    <Label htmlFor="cat-mixture" className="text-xs text-slate-300 cursor-pointer font-bold">Control Mezcla (Tanques)</Label>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="cat-toppings"
+                      onChange={(e) => setValue("allow_toppings", e.target.checked)}
+                      checked={watch("allow_toppings")}
+                      className="w-4 h-4 rounded border-white/10 bg-slate-950 text-primary cursor-pointer"
+                    />
+                    <Label htmlFor="cat-toppings" className="text-xs text-slate-300 cursor-pointer font-bold">Permitir Toppings</Label>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <DialogFooter className="pt-4 border-t border-white/5 gap-2">

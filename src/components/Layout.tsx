@@ -102,7 +102,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         "Punto de Venta Bloqueado: No hay un turno activo para procesar ventas.",
         "Iniciar Turno Ahora",
         () => {
-           navigate('/pos');
+           navigate('/cash-register');
         }
       );
     } else {
@@ -317,9 +317,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                       Listado de Recetas
                     </DropdownMenuItem>
                     
-                    <DropdownMenuItem onClick={() => navigate("/customers")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate("/catalog/inventory/suppliers")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
                       Proveedores
                     </DropdownMenuItem>
+
+
                     
                     <DropdownMenuItem onClick={() => navigate("/preparation")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
                       Ingredientes

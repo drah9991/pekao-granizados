@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tables, Json, Enums } from "@/integrations/supabase/types";
-import React, { useState } from "react"; 
+import React, { useState, useEffect } from "react"; 
 import { supabase } from "@/integrations/supabase/client";
 import { X, Plus, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,7 @@ interface ProductFormDialogProps {
     cost: string;
     active: boolean;
     category: string;
+    category_id: string | null;
     is_public: boolean;
     images: string[];
     variants: Json | null;
@@ -39,6 +40,7 @@ interface ProductFormDialogProps {
     margin_target: string;
     commission_rate: string;
     supplier_name: string;
+    supplier_id: string | null;
     is_starred: boolean;
   };
   setFormData: React.Dispatch<React.SetStateAction<{
@@ -49,6 +51,7 @@ interface ProductFormDialogProps {
     cost: string;
     active: boolean;
     category: string;
+    category_id: string | null;
     is_public: boolean;
     images: string[];
     variants: Json | null;
@@ -60,6 +63,7 @@ interface ProductFormDialogProps {
     margin_target: string;
     commission_rate: string;
     supplier_name: string;
+    supplier_id: string | null;
     is_starred: boolean;
   }>>;
   onSave: () => void;
@@ -69,7 +73,21 @@ interface ProductFormDialogProps {
   storeId: string | null;
 }
 
-type TabType = "datos" | "impuestos" | "variante" | "inventario" | "adicionales" | "precios" | "avanzado" | "integraciones";
+type TabType = "datos" | "impuestos" | "variante" | "inventario" | "adicionales" | "precios" | "avanzado" | "integraciones" | "productos_combo";
+
+interface ComboProduct {
+  id: string;
+  name: string;
+  qty: number;
+}
+
+interface ComboOption {
+  name: string;
+  selection_type: "all" | "single" | "multiple";
+  products: ComboProduct[];
+  selectable: boolean;
+  hide_quantity: boolean;
+}
 
 export default function ProductFormDialog({
   isOpen,
@@ -86,13 +104,99 @@ export default function ProductFormDialog({
   
   const [activeTab, setActiveTab] = useState<TabType>("datos");
   const [sizes, setSizes] = useState<{ id: string; name: string; multiplier: number }[]>([]);
-  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
+  const [suppliersList, setSuppliersList] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      const { data } = await supabase.from("suppliers").select("id, name").order("name");
+      setSuppliersList(data || []);
+    };
+    if (isOpen) {
+      fetchSuppliers();
+    }
+  }, [isOpen]);
   
   // Custom mock inputs inside additional tabs
   const [selectedTax, setSelectedTax] = useState("");
   const [variantShortName, setVariantShortName] = useState("");
   const [variantPrice, setVariantPrice] = useState("");
   const [inventoryMode, setInventoryMode] = useState<"ingredients" | "none" | "mixed" | "no_ingredients">("none");
+
+  // Combo States
+  const [comboOptions, setComboOptions] = useState<ComboOption[]>([]);
+  const [showDetailsInReports, setShowDetailsInReports] = useState(false);
+  const [allProductsList, setAllProductsList] = useState<any[]>([]);
+  const [searchQueries, setSearchQueries] = useState<Record<number, string>>({});
+
+  const isCombo = formData.type === "combo";
+  const displayType = isCombo ? "combo" : "normal";
+
+  const handleTypeChange = (val: string) => {
+    if (val === "combo") {
+      setFormData(prev => ({ ...prev, type: "combo" }));
+    } else {
+      const prevNormalType = editingProduct && editingProduct.type !== "combo" ? editingProduct.type : "granizado";
+      setFormData(prev => ({ ...prev, type: prevNormalType as ProductType }));
+    }
+  };
+
+  // Load from recipe when open
+  React.useEffect(() => {
+    if (isOpen) {
+      if (formData.type === "combo" && formData.recipe) {
+        try {
+          const comboData = typeof formData.recipe === 'string' ? JSON.parse(formData.recipe) : formData.recipe;
+          const parsedOptions = Array.isArray((comboData as any)?.options) ? (comboData as any).options : [];
+          setComboOptions(parsedOptions);
+          setShowDetailsInReports((comboData as any)?.show_details_in_reports || false);
+        } catch (e) {
+          console.error("Error parsing combo recipe:", e);
+        }
+      } else {
+        setComboOptions([]);
+        setShowDetailsInReports(false);
+      }
+    }
+  }, [isOpen, formData.recipe, formData.type]);
+
+  // Sync back to recipe
+  const updateComboRecipe = (newOptions: ComboOption[], newShowDetails: boolean) => {
+    setComboOptions(newOptions);
+    setShowDetailsInReports(newShowDetails);
+    setFormData(prev => ({
+      ...prev,
+      recipe: {
+        options: newOptions,
+        show_details_in_reports: newShowDetails
+      } as any
+    }));
+  };
+
+  // Fetch all products for search list
+  React.useEffect(() => {
+    if (isOpen && storeId) {
+      const fetchAllProducts = async () => {
+        const { data } = await supabase
+          .from("products")
+          .select("id, name, price, type, category")
+          .eq("store_id", storeId)
+          .eq("active", true)
+          .order("name", { ascending: true });
+        setAllProductsList(data || []);
+      };
+      fetchAllProducts();
+    }
+  }, [isOpen, storeId]);
+
+  // Handle active tab reset when type changes
+  React.useEffect(() => {
+    if (isCombo && (activeTab === "variante" || activeTab === "inventario")) {
+      setActiveTab("datos");
+    } else if (!isCombo && activeTab === "productos_combo") {
+      setActiveTab("datos");
+    }
+  }, [formData.type, activeTab]);
 
   React.useEffect(() => {
     if (storeId && isOpen) {
@@ -107,11 +211,12 @@ export default function ProductFormDialog({
       
       const fetchCategories = async () => {
         const { data } = await supabase
-          .from("products")
-          .select("category")
-          .eq("store_id", storeId);
-        const unique = Array.from(new Set((data || []).map(p => p.category).filter(Boolean)));
-        setCategoriesList(unique);
+          .from("categories")
+          .select("id, name")
+          .or(`store_id.eq.${storeId},store_id.is.null`)
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        setCategoriesList(data || []);
       };
 
       fetchSizes();
@@ -185,8 +290,12 @@ export default function ProductFormDialog({
           {[
             { id: "datos", label: "Datos" },
             { id: "impuestos", label: "Impuestos" },
-            { id: "variante", label: "Variante" },
-            { id: "inventario", label: "Inventario" },
+            ...(!isCombo ? [
+              { id: "variante", label: "Variante" },
+              { id: "inventario", label: "Inventario" }
+            ] : [
+              { id: "productos_combo", label: "Productos Combo" }
+            ]),
             { id: "adicionales", label: "Adicionales" },
             { id: "precios", label: "$ Variante de precios" },
             { id: "avanzado", label: "Avanzado" },
@@ -258,17 +367,15 @@ export default function ProductFormDialog({
                 <div className="space-y-2">
                   <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tipo*</Label>
                   <Select
-                    value={formData.type}
-                    onValueChange={(value: ProductType) => setFormData(prev => ({ ...prev, type: value }))}
+                    value={displayType}
+                    onValueChange={handleTypeChange}
                   >
                     <SelectTrigger className="h-11 bg-white/5 border-white/10 rounded-lg text-xs font-black uppercase text-white">
                       <SelectValue placeholder="Normal" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-950 border-white/10">
-                      <SelectItem value="granizado" className="text-xs font-black uppercase">Granizado</SelectItem>
-                      <SelectItem value="topping" className="text-xs font-black uppercase">Topping</SelectItem>
-                      <SelectItem value="sachet" className="text-xs font-black uppercase">Sachet</SelectItem>
-                      <SelectItem value="sweet" className="text-xs font-black uppercase">Dulce</SelectItem>
+                      <SelectItem value="normal" className="text-xs font-black uppercase">Normal</SelectItem>
+                      <SelectItem value="combo" className="text-xs font-black uppercase">Combo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -277,19 +384,23 @@ export default function ProductFormDialog({
                 <div className="space-y-2">
                   <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categoría*</Label>
                   <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                    value={formData.category_id || ""}
+                    onValueChange={(value) => {
+                      const selected = categoriesList.find(c => c.id === value);
+                      setFormData(prev => ({
+                        ...prev,
+                        category_id: value,
+                        category: selected ? selected.name : ""
+                      }));
+                    }}
                   >
                     <SelectTrigger className="h-11 bg-white/5 border-white/10 rounded-lg text-xs font-black uppercase text-white">
                       <SelectValue placeholder="--- Seleccione ---" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-950 border-white/10">
                       {categoriesList.map(cat => (
-                        <SelectItem key={cat} value={cat} className="text-xs font-black uppercase">{cat}</SelectItem>
+                        <SelectItem key={cat.id} value={cat.id} className="text-xs font-black uppercase">{cat.name}</SelectItem>
                       ))}
-                      <SelectItem value="Acompañantes" className="text-xs font-black uppercase">Acompañantes</SelectItem>
-                      <SelectItem value="Cócteles" className="text-xs font-black uppercase">Cócteles</SelectItem>
-                      <SelectItem value="Fuertes" className="text-xs font-black uppercase">Fuertes</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -593,11 +704,27 @@ export default function ProductFormDialog({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Proveedor</Label>
-                  <Input
-                    value={formData.supplier_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, supplier_name: e.target.value }))}
-                    className="h-11 bg-white/5 border-white/10 rounded-lg text-white"
-                  />
+                  <Select
+                    value={formData.supplier_id || "none"}
+                    onValueChange={(val) => {
+                      const selectedSup = suppliersList.find(s => s.id === val);
+                      setFormData(prev => ({
+                        ...prev,
+                        supplier_id: val === "none" ? null : val,
+                        supplier_name: val === "none" ? "" : (selectedSup?.name || "")
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="h-11 bg-white/5 border-white/10 rounded-lg text-white text-xs font-bold">
+                      <SelectValue placeholder="Seleccione un proveedor" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-950 border-white/10 text-white">
+                      <SelectItem value="none" className="text-xs font-bold uppercase">Sin proveedor / Ninguno</SelectItem>
+                      {suppliersList.map(s => (
+                        <SelectItem key={s.id} value={s.id} className="text-xs font-bold uppercase">{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -613,6 +740,238 @@ export default function ProductFormDialog({
                 </div>
                 <Switch className="data-[state=checked]:bg-primary" />
               </div>
+            </div>
+          )}
+
+          {/* TAB 9: PRODUCTOS COMBO */}
+          {activeTab === "productos_combo" && (
+            <div className="space-y-6 py-4 animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <h3 className="text-xs font-black text-slate-300 uppercase tracking-widest">
+                  Configuración de Combos
+                </h3>
+              </div>
+
+              {comboOptions.map((opt, i) => (
+                <div key={i} className="relative bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+                  {/* Remove option button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = comboOptions.filter((_, idx) => idx !== i);
+                      updateComboRecipe(updated, showDetailsInReports);
+                    }}
+                    className="absolute top-4 right-4 text-rose-500 hover:text-rose-600 font-black text-xs uppercase"
+                  >
+                    Eliminar Opción
+                  </button>
+
+                  <h4 className="text-[10px] font-black text-primary uppercase tracking-widest mb-2 font-space-grotesk italic">
+                    Configuración opción
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Nombre */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre</Label>
+                      <Input
+                        value={opt.name}
+                        onChange={(e) => {
+                          const updated = [...comboOptions];
+                          updated[i].name = e.target.value;
+                          updateComboRecipe(updated, showDetailsInReports);
+                        }}
+                        placeholder="Ej: Bebida"
+                        className="h-11 bg-white/5 border-white/10 rounded-lg text-xs font-black text-white focus:border-primary/50"
+                      />
+                    </div>
+
+                    {/* Tipo* */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tipo*</Label>
+                      <Select
+                        value={opt.selection_type}
+                        onValueChange={(val: any) => {
+                          const updated = [...comboOptions];
+                          updated[i].selection_type = val;
+                          updateComboRecipe(updated, showDetailsInReports);
+                        }}
+                      >
+                        <SelectTrigger className="h-11 bg-white/5 border-white/10 rounded-lg text-xs font-black uppercase text-white">
+                          <SelectValue placeholder="Seleccionar" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-950 border-white/10">
+                          <SelectItem value="all" className="text-xs font-black uppercase">Marcar Todos</SelectItem>
+                          <SelectItem value="single" className="text-xs font-black uppercase">Seleccionar Uno (Única)</SelectItem>
+                          <SelectItem value="multiple" className="text-xs font-black uppercase">Seleccionar Múltiples</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Buscar producto */}
+                  <div className="space-y-2 relative">
+                    <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Buscar producto para añadir
+                    </Label>
+                    <Input
+                      value={searchQueries[i] || ""}
+                      onChange={(e) => {
+                        setSearchQueries(prev => ({ ...prev, [i]: e.target.value }));
+                      }}
+                      placeholder="Ej: Coca-Cola"
+                      className="h-11 bg-white/5 border-white/10 rounded-lg text-xs text-white focus:border-primary/50"
+                    />
+
+                    {/* Dropdown search results */}
+                    {(searchQueries[i] || "").trim() !== "" && (
+                      <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-slate-950 border border-white/15 rounded-xl z-50 p-1 shadow-2xl custom-scrollbar">
+                        {allProductsList
+                          .filter(p => p.name.toLowerCase().includes((searchQueries[i] || "").toLowerCase()))
+                          .slice(0, 10)
+                          .map(p => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => {
+                                const updated = [...comboOptions];
+                                if (!updated[i].products.find(item => item.id === p.id)) {
+                                  updated[i].products.push({ id: p.id, name: p.name, qty: 1 });
+                                }
+                                updateComboRecipe(updated, showDetailsInReports);
+                                setSearchQueries(prev => ({ ...prev, [i]: "" }));
+                              }}
+                              className="w-full text-left rounded-lg px-3 py-2 text-xs font-bold text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                            >
+                              {p.name}
+                            </button>
+                          ))}
+                        {allProductsList.filter(p => p.name.toLowerCase().includes((searchQueries[i] || "").toLowerCase())).length === 0 && (
+                          <div className="px-3 py-2 text-xs text-muted-foreground italic text-center">
+                            No se encontraron productos
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Added products table */}
+                  {opt.products.length > 0 && (
+                    <div className="border border-white/5 rounded-xl overflow-hidden bg-slate-950/40">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-white/[0.02] border-b border-white/5 text-[9px] font-black uppercase text-slate-400 tracking-wider">
+                            <th className="py-2 px-4">Producto</th>
+                            <th className="py-2 px-4 w-28 text-center">Cantidad</th>
+                            <th className="py-2 px-4 w-16 text-center"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {opt.products.map((item, itemIdx) => (
+                            <tr key={item.id} className="border-b border-white/5 text-xs">
+                              <td className="py-2 px-4 font-bold text-slate-200">{item.name}</td>
+                              <td className="py-2 px-4 text-center">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.qty}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value) || 1;
+                                    const updated = [...comboOptions];
+                                    updated[i].products[itemIdx].qty = val;
+                                    updateComboRecipe(updated, showDetailsInReports);
+                                  }}
+                                  className="h-8 w-20 text-center mx-auto bg-white/5 border-white/10 rounded-md text-xs font-bold text-white focus:border-primary/50"
+                                />
+                              </td>
+                              <td className="py-2 px-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...comboOptions];
+                                    updated[i].products.splice(itemIdx, 1);
+                                    updateComboRecipe(updated, showDetailsInReports);
+                                  }}
+                                  className="text-rose-500 hover:text-rose-600 font-bold"
+                                >
+                                  ×
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Checkboxes Row */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-6 pt-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-slate-400 hover:text-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={opt.selectable}
+                        onChange={(e) => {
+                          const updated = [...comboOptions];
+                          updated[i].selectable = e.target.checked;
+                          updateComboRecipe(updated, showDetailsInReports);
+                        }}
+                        className="rounded border-white/10 bg-white/5 text-primary focus:ring-0 focus:ring-offset-0"
+                      />
+                      <span>Productos seleccionables</span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-slate-400 hover:text-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={opt.hide_quantity}
+                        onChange={(e) => {
+                          const updated = [...comboOptions];
+                          updated[i].hide_quantity = e.target.checked;
+                          updateComboRecipe(updated, showDetailsInReports);
+                        }}
+                        className="rounded border-white/10 bg-white/5 text-primary focus:ring-0 focus:ring-offset-0"
+                      />
+                      <span>No mostrar cantidades al vender</span>
+                    </label>
+                  </div>
+                </div>
+              ))}
+
+              {/* Root settings */}
+              <div className="pt-2 border-t border-white/5">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-slate-400 hover:text-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={showDetailsInReports}
+                    onChange={(e) => {
+                      updateComboRecipe(comboOptions, e.target.checked);
+                    }}
+                    className="rounded border-white/10 bg-white/5 text-primary focus:ring-0 focus:ring-offset-0"
+                  />
+                  <span>Productos del combo se deben mostrar en detalle en informes</span>
+                </label>
+              </div>
+
+              {/* Agregar otra button */}
+              <Button
+                type="button"
+                onClick={() => {
+                  const updated = [
+                    ...comboOptions,
+                    {
+                      name: "",
+                      selection_type: "single" as const,
+                      products: [],
+                      selectable: false,
+                      hide_quantity: false
+                    }
+                  ];
+                  updateComboRecipe(updated, showDetailsInReports);
+                }}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase px-5 py-2.5 rounded-xl border-none shadow-md flex items-center gap-1.5 cursor-pointer mt-2"
+              >
+                Agregar otra
+              </Button>
             </div>
           )}
 

@@ -58,6 +58,15 @@ export interface Category {
   created_at?: string | null;
   image_url?: string | null;
   sort_order?: number | null;
+  requires_recipe?: boolean | null;
+  sales_mode?: string | null;
+  track_mixture_inventory?: boolean | null;
+  inventory_unit?: string | null;
+  allow_toppings?: boolean | null;
+  emoji_icon?: string | null;
+  color_theme?: string | null;
+  tax_rate?: number | null;
+  alert_threshold?: number | null;
 }
 
 export interface Size {

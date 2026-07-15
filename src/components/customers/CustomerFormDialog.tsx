@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Customer } from "@/hooks/useCustomers";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 const customerSchema = z.object({
   name: z.string().min(1, "El nombre completo es requerido").transform((v) => v.toUpperCase()),
@@ -15,6 +17,7 @@ const customerSchema = z.object({
   email: z.string().email("Formato de correo inválido").or(z.literal("")),
   phone: z.string().optional(),
   consent_habeas_data: z.boolean().refine((val) => val === true, "Debe autorizar el tratamiento de datos"),
+  profile_id: z.string().optional().nullable(),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -28,11 +31,14 @@ interface CustomerFormDialogProps {
 }
 
 export default function CustomerFormDialog({ isOpen, onClose, editingCustomer, onSave, isProcessing }: CustomerFormDialogProps) {
+  const [profiles, setProfiles] = useState<{ id: string; name: string | null }[]>([]);
+
   const {
     register,
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isValid }
   } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
@@ -43,12 +49,24 @@ export default function CustomerFormDialog({ isOpen, onClose, editingCustomer, o
       email: "",
       phone: "",
       consent_habeas_data: false,
+      profile_id: null,
     }
   });
 
   const watchName = watch("name");
   const watchDoc = watch("document_id");
   const watchConsent = watch("consent_habeas_data");
+  const watchProfileId = watch("profile_id");
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const { data } = await supabase.from("profiles").select("id, name");
+      setProfiles(data || []);
+    };
+    if (isOpen) {
+      fetchProfiles();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (editingCustomer) {
@@ -58,6 +76,7 @@ export default function CustomerFormDialog({ isOpen, onClose, editingCustomer, o
         email: editingCustomer.email || "",
         phone: editingCustomer.phone || "",
         consent_habeas_data: editingCustomer.consent_habeas_data || false,
+        profile_id: editingCustomer.profile_id || null,
       });
     } else {
       reset({
@@ -65,7 +84,8 @@ export default function CustomerFormDialog({ isOpen, onClose, editingCustomer, o
         document_id: "",
         email: "",
         phone: "",
-        consent_habeas_data: false
+        consent_habeas_data: false,
+        profile_id: null,
       });
     }
   }, [editingCustomer, isOpen, reset]);
@@ -140,6 +160,24 @@ export default function CustomerFormDialog({ isOpen, onClose, editingCustomer, o
                         {errors.phone && (
                           <span className="text-[9px] font-bold text-rose-500 px-2 block">{errors.phone.message}</span>
                         )}
+                    </div>
+                    {/* Usuario del Sistema (Opcional) */}
+                    <div className="space-y-2 md:col-span-2">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic px-2">USUARIO DEL SISTEMA VINCULADO (OPCIONAL)</Label>
+                        <Select
+                          value={watchProfileId || "none"}
+                          onValueChange={(val) => setValue("profile_id", val === "none" ? null : val, { shouldValidate: true })}
+                        >
+                          <SelectTrigger className="h-14 bg-white/5 border-white/10 rounded-2xl text-xs text-white">
+                            <SelectValue placeholder="Seleccione un usuario" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-950 border-white/10 text-white">
+                            <SelectItem value="none" className="text-xs uppercase">No vinculado / Cliente normal</SelectItem>
+                            {profiles.map(p => (
+                              <SelectItem key={p.id} value={p.id} className="text-xs uppercase">{p.name || "Sin nombre"}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                     </div>
                 </div>
 

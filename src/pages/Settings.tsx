@@ -51,7 +51,7 @@ export default function Settings() {
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.set("tab", value);
     
-    const validTabs = ["branding", "roles", "business", "receipts", "sizes", "sku", "notifications", "product_types", "categories", "print_center"];
+    const validTabs = ["branding", "roles", "business", "receipts", "sizes", "sku", "notifications", "categories", "print_center"];
     if (!validTabs.includes(value)) {
       newSearchParams.delete("tab");
     }
@@ -89,8 +89,7 @@ export default function Settings() {
                   { value: "sizes", label: "Tamaños", icon: Ruler },
                   { value: "sku", label: "Acrónimos", icon: Tag },
                   { value: "notifications", label: "Alertas", icon: Bell },
-                  { value: "product_types", label: "Tipos Operativos", icon: Box },
-                  { value: "categories", label: "Categorías ERP", icon: Tag },
+                  { value: "categories", label: "Categorías", icon: Tag },
                   { value: "print_center", label: "Centro de Copiado", icon: Printer },
                 ].map((tab) => (
                   <TabsTrigger
@@ -136,10 +135,6 @@ export default function Settings() {
 
                         <TabsContent value="notifications" className="m-0 animate-pro-in">
                             <NotificationSettings />
-                        </TabsContent>
-
-                        <TabsContent value="product_types" className="m-0 animate-pro-in">
-                            <ProductTypesMaster />
                         </TabsContent>
 
                         <TabsContent value="categories" className="m-0 animate-pro-in">

@@ -37,6 +37,8 @@ const Stores = lazy(() => import("./pages/Stores"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Preparation = lazy(() => import("./pages/Preparation"));
 const Inventory = lazy(() => import("./pages/Inventory"));
+const Units = lazy(() => import("./pages/Units"));
+const Suppliers = lazy(() => import("./pages/Suppliers"));
 const InventoryManagement = lazy(() => import("./components/settings/InventoryManagement").then(m => ({ default: m.InventoryManagement })));
 
 const RecipeManagement = lazy(() => import("./components/settings/RecipeManagement").then(m => ({ default: m.RecipeManagement })));
@@ -259,6 +261,8 @@ const App = () => {
                 }
               >
                 <Route path="inventory/recipes" element={<RecipeBuilder />} />
+                <Route path="inventory/units" element={<Units />} />
+                <Route path="inventory/suppliers" element={<Suppliers />} />
               </Route>
               <Route
                 path="/recipes"
