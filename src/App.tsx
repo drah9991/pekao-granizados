@@ -39,6 +39,8 @@ const Preparation = lazy(() => import("./pages/Preparation"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const Units = lazy(() => import("./pages/Units"));
 const Suppliers = lazy(() => import("./pages/Suppliers"));
+const CashReconciliations = lazy(() => import("./pages/CashReconciliations"));
+const CanceledOrders = lazy(() => import("./pages/CanceledOrders"));
 const InventoryManagement = lazy(() => import("./components/settings/InventoryManagement").then(m => ({ default: m.InventoryManagement })));
 
 const RecipeManagement = lazy(() => import("./components/settings/RecipeManagement").then(m => ({ default: m.RecipeManagement })));
@@ -141,6 +143,18 @@ const App = () => {
                 }
               />
               <Route
+                path="/sales/canceled"
+                element={
+                  <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
+                    <ErrorBoundary fallbackTitle="Error en Pedidos Cancelados">
+                      <Suspense fallback={<PageLoader />}>
+                        <CanceledOrders />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/invoices"
                 element={
                   <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
@@ -195,6 +209,18 @@ const App = () => {
                     <ErrorBoundary fallbackTitle="Error en Arqueo de Caja">
                       <Suspense fallback={<PageLoader />}>
                         <CashRegister />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cash-reconciliations"
+                element={
+                  <ProtectedRoute requiredRole={["admin", "manager", "cashier"]}>
+                    <ErrorBoundary fallbackTitle="Error en Cuadre de Caja">
+                      <Suspense fallback={<PageLoader />}>
+                        <CashReconciliations />
                       </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>

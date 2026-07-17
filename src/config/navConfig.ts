@@ -26,7 +26,8 @@ import {
   CreditCard,
   MonitorPlay,
   Printer,
-  Truck
+  Truck,
+  XCircle
 } from "lucide-react";
 import { NavGroup } from "@/types/navigation";
 
@@ -38,9 +39,10 @@ export const navConfig: NavGroup[] = [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "POS", href: "/pos", icon: ShoppingCart, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Menú Digital", href: "/digital-menu", icon: MonitorPlay, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
-      { label: "Arqueo de Caja", href: "/cash-register", icon: Calculator, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
+      { label: "Cuadre de Caja", href: "/cash-reconciliations", icon: Calculator, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Gastos", href: "/expenses", icon: CreditCard, roles: ["admin", "owner", "manager"] },
       { label: "Ventas", href: "/sales", icon: ReceiptText, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
+      { label: "Pedidos Cancelados", href: "/sales/canceled", icon: XCircle, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Preparación", href: "/preparation", icon: FlaskConical, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Copiado", href: "/print-center", icon: Printer, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },
       { label: "Facturas", href: "/invoices", icon: FileText, roles: ["admin", "cashier", "owner", "manager", "store_manager"] },

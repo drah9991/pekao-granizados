@@ -12,7 +12,7 @@ import {
   Minus,
   Plus,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
-  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download, Menu, X, Coins, Gift, Eye, RefreshCw, Bike, Printer, FlaskConical
+  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download, Menu, X, Coins, Gift, Eye, RefreshCw, Bike, Percent, Users, Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -247,27 +247,13 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               <span>Ventas</span>
             </Link>
 
-            {/* Preparación */}
-            <Link
-              to="/preparation"
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
-                isLinkActive("/preparation") 
-                  ? "bg-rose-50 text-rose-600" 
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
-              )}
-            >
-              <FlaskConical className="w-4 h-4" />
-              <span>Preparación</span>
-            </Link>
-
-            {/* PRODUCTOS & CATEGORÍAS DROPDOWN (Captura 1) */}
+            {/* PRODUCTOS & CATEGORÍAS DROPDOWN (Captura 1 del paso anterior) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all outline-none cursor-pointer",
-                    location.pathname.startsWith("/products") || location.pathname.includes("tab=categories") || location.pathname.startsWith("/recipes") || location.pathname.startsWith("/inventory")
+                    location.pathname.startsWith("/products") || location.pathname.includes("tab=categories") || location.pathname.startsWith("/recipes") || location.pathname.startsWith("/inventory") || location.pathname.startsWith("/suppliers")
                       ? "bg-rose-50 text-rose-600" 
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
                   )}
@@ -317,11 +303,9 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                       Listado de Recetas
                     </DropdownMenuItem>
                     
-                    <DropdownMenuItem onClick={() => navigate("/catalog/inventory/suppliers")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate("/inventory/suppliers")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
                       Proveedores
                     </DropdownMenuItem>
-
-
                     
                     <DropdownMenuItem onClick={() => navigate("/preparation")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
                       Ingredientes
@@ -351,33 +335,103 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               <span>Domicilios</span>
             </Link>
 
-            {/* Copiado */}
-            <Link
-              to="/print-center"
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
-                isLinkActive("/print-center") 
-                  ? "bg-rose-50 text-rose-600" 
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
-              )}
-            >
-              <Printer className="w-4 h-4" />
-              <span>Copiado</span>
-            </Link>
+            {/* CONTABILIDAD DROPDOWN (Captura 1) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all outline-none cursor-pointer",
+                    location.pathname.startsWith("/expenses") || location.pathname.startsWith("/cash-register") || location.pathname.startsWith("/customers")
+                      ? "bg-rose-50 text-rose-600" 
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+                  )}
+                >
+                  <Coins className="w-4 h-4" />
+                  <span>Contabilidad</span>
+                  <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-1.5 rounded-xl shadow-lg mt-1 space-y-0.5">
+                
+                {/* Gastos */}
+                <DropdownMenuItem onClick={() => navigate("/expenses")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                  <Coins className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Gastos</span>
+                </DropdownMenuItem>
 
-            {/* Contabilidad */}
-            <Link
-              to="/cash-register"
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
-                isLinkActive("/cash-register") || isLinkActive("/expenses")
-                  ? "bg-rose-50 text-rose-600" 
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
-              )}
-            >
-              <Coins className="w-4 h-4" />
-              <span>Contabilidad</span>
-            </Link>
+                {/* Tipos de gasto */}
+                <DropdownMenuItem onClick={() => navigate("/expenses")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                  <Settings className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Tipos de gasto</span>
+                </DropdownMenuItem>
+
+                {/* Impuestos */}
+                <DropdownMenuItem onClick={() => navigate("/settings?tab=business")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                  <Percent className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Impuestos</span>
+                </DropdownMenuItem>
+
+                {/* Clientes */}
+                <DropdownMenuItem onClick={() => navigate("/customers")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                  <Users className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Clientes</span>
+                </DropdownMenuItem>
+
+                {/* Créditos a Clientes */}
+                <DropdownMenuItem onClick={() => navigate("/customers")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                  <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Créditos a Clientes</span>
+                </DropdownMenuItem>
+
+                {/* Submenú: Informes */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                    <BarChart3 className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span>Informes</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-1 rounded-lg shadow-md ml-1 space-y-0.5">
+                    
+                    <DropdownMenuItem onClick={() => navigate("/reports?type=sales")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Ventas por documentos
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate("/reports?type=sales&group=category")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Ventas por Categorías
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate("/reports?type=sales&group=product")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Ventas por productos
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate("/reports?type=inventory")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Compras de inventario
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => navigate("/movements")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Producciones
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => navigate("/movements")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Traslados
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => navigate("/movements")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Mermas
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => navigate("/reports?type=expenses")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Gastos
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => navigate("/reports?type=sales")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                      Utilidad de productos
+                    </DropdownMenuItem>
+
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Estadísticas */}
             <Link
@@ -511,57 +565,6 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             >
               <SidebarHeader />
 
-              {/* Selector de Sucursal/Nodo para Móvil */}
-              {canSwitchStore && stores.length > 0 && (
-                <div className="px-6 py-3 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 block mb-1.5">
-                    SUCURSAL / NODO
-                  </span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button 
-                        disabled={isSwitchingNode}
-                        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition-all focus:outline-none cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Building2 className="w-4 h-4 text-rose-600 shrink-0" />
-                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase italic truncate">
-                            {storeName || 'CARGANDO...'}
-                          </span>
-                        </div>
-                        <ChevronDown className="w-4 h-4 text-slate-400 group-hover:translate-y-0.5 transition-transform" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[calc(16rem-3rem)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-lg mt-1 p-1.5 space-y-1 z-[70]">
-                      <div className="px-2 py-1 text-[8px] font-bold text-muted-foreground/40 uppercase tracking-widest border-b border-border/30">
-                        CONMUTAR NODO
-                      </div>
-                      {stores.map((s) => (
-                        <DropdownMenuItem
-                          key={s.id}
-                          onClick={() => {
-                            handleQuickSwitch(s.id);
-                            setIsSidebarOpen(false);
-                          }}
-                          disabled={s.id === storeId || isSwitchingNode}
-                          className={cn(
-                            "flex items-center justify-between rounded-lg px-2.5 py-2.5 text-xs font-black uppercase tracking-wider italic cursor-pointer transition-colors",
-                            s.id === storeId
-                              ? "bg-rose-50 text-rose-600"
-                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
-                          )}
-                        >
-                          <span className="truncate">{s.name}</span>
-                          {s.id === storeId && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
-
               <nav className="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar">
                 
                 {/* Enlaces Rápidos Móviles */}
@@ -575,8 +578,6 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                     { label: "Recetas", href: "/recipes", icon: FileText },
                     { label: "Inventario", href: "/inventory", icon: Package },
                     { label: "Menú Digital", href: "/digital-menu", icon: Bike },
-                    { label: "Copiado", href: "/print-center", icon: Printer },
-                    { label: "Preparación", href: "/preparation", icon: FlaskConical },
                     { label: "Configuración", href: "/settings", icon: Settings }
                   ].map((item) => {
                     const active = isLinkActive(item.href);
