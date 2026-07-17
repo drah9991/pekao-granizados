@@ -12,7 +12,7 @@ import {
   Minus,
   Plus,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
-  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download, Menu, X, Coins, Gift, Eye, RefreshCw, Bike, Percent, Users, Truck
+  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download, Menu, X, Coins, Gift, Eye, RefreshCw, Bike, Percent, Users, Truck, MonitorPlay
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -303,7 +303,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                       Listado de Recetas
                     </DropdownMenuItem>
                     
-                    <DropdownMenuItem onClick={() => navigate("/inventory/suppliers")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate("/catalog/inventory/suppliers")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
                       Proveedores
                     </DropdownMenuItem>
                     
@@ -311,7 +311,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                       Ingredientes
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem onClick={() => navigate("/settings?tab=sizes")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate("/catalog/inventory/units")} className="text-xs font-bold py-2 px-2.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
                       Unidades
                     </DropdownMenuItem>
 
@@ -321,7 +321,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Domicilios */}
+            {/* Menú Digital */}
             <Link
               to="/digital-menu"
               className={cn(
@@ -331,8 +331,8 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
               )}
             >
-              <Bike className="w-4 h-4" />
-              <span>Domicilios</span>
+              <MonitorPlay className="w-4 h-4" />
+              <span>Menú Digital</span>
             </Link>
 
             {/* CONTABILIDAD DROPDOWN (Captura 1) */}
