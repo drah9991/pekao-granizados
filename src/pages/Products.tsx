@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
 import ProductGridDisplay from "@/components/products/ProductGridDisplay";
-import ProductFormDialog from "@/components/products/ProductFormDialog";
 import ProductDetailsDialog from "@/components/products/ProductDetailsDialog";
+import ProductFormDialog from "@/components/products/ProductFormDialog";
 import ProductImportExportButtons from "@/components/products/ProductImportExportButtons";
+import AdvancedConfigDialog from "@/components/products/AdvancedConfigDialog";
+import MenuPhotoDialog from "@/components/products/MenuPhotoDialog";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +55,8 @@ export default function Products() {
 
   const categories = ["Todos", ...rawCategories];
   const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [advancedDialogIsOpen, setAdvancedDialogIsOpen] = useState(false);
+  const [menuPhotoDialogIsOpen, setMenuPhotoDialogIsOpen] = useState(false);
 
   // Filter products by the selected category pill
   const categoryFilteredProducts = selectedCategory === "Todos" 
@@ -123,9 +127,10 @@ export default function Products() {
           {/* Right Action Buttons */}
           <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto xl:justify-end">
             <Button
+              onClick={() => setAdvancedDialogIsOpen(true)}
               variant="outline"
               size="sm"
-              className="h-9 border-white/10 bg-white/5 hover:bg-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest"
+              className="h-9 border-white/10 bg-white/5 hover:bg-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
             >
               <Settings className="w-3.5 h-3.5 text-primary" />
               Config
@@ -150,8 +155,9 @@ export default function Products() {
             </Button>
 
             <Button
+              onClick={() => setMenuPhotoDialogIsOpen(true)}
               size="sm"
-              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest"
+              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
             >
               <Camera className="w-3.5 h-3.5 text-primary" />
               Foto Menú
@@ -243,6 +249,21 @@ export default function Products() {
           loading={isLoading}
           products={products}
           openCreateDialog={openCreateDialog}
+        />
+
+        {/* Advanced Config Dialog */}
+        <AdvancedConfigDialog
+          isOpen={advancedDialogIsOpen}
+          onClose={() => setAdvancedDialogIsOpen(false)}
+          categories={dbCategories || []}
+          storeId={storeId}
+        />
+
+        {/* Menu Photo Dialog */}
+        <MenuPhotoDialog
+          isOpen={menuPhotoDialogIsOpen}
+          onClose={() => setMenuPhotoDialogIsOpen(false)}
+          storeId={storeId}
         />
 
       </div>
