@@ -2,7 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Edit2, Trash2, Globe } from "lucide-react";
+import { Edit2, Trash2, Globe, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import React, { useState } from "react";
@@ -40,7 +41,7 @@ export default function ProductGridDisplay({
 }: ProductGridDisplayProps) {
   
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(20);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   if (loading) {
@@ -68,11 +69,19 @@ export default function ProductGridDisplay({
   });
 
   const totalItems = filteredProducts.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const effectivePerPage = itemsPerPage === -1 ? (totalItems || 1) : itemsPerPage;
+  const totalPages = Math.max(1, Math.ceil(totalItems / effectivePerPage));
   const activePage = Math.min(currentPage, totalPages);
   
-  const startIndex = (activePage - 1) * itemsPerPage;
-  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+  const startIndex = (activePage - 1) * effectivePerPage;
+  const endIndex = Math.min(startIndex + effectivePerPage, totalItems);
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  const handleItemsPerPageChange = (val: string) => {
+    const num = parseInt(val, 10);
+    setItemsPerPage(num);
+    setCurrentPage(1);
+  };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -212,7 +221,7 @@ export default function ProductGridDisplay({
                         variant="ghost"
                         size="sm"
                         onClick={() => openEditDialog(product)}
-                        className="h-8 border border-primary/20 text-primary hover:bg-primary/20 text-[10px] font-black uppercase tracking-wider rounded-xl px-3 flex items-center gap-1 bg-transparent"
+                        className="h-8 border border-primary/20 text-primary hover:bg-primary/20 text-[10px] font-black uppercase tracking-wider rounded-xl px-3 flex items-center gap-1 bg-transparent cursor-pointer"
                       >
                         <Edit2 className="w-3 h-3" />
                         Editar
@@ -220,7 +229,7 @@ export default function ProductGridDisplay({
                       <Button
                         size="sm"
                         onClick={() => handleDeleteProduct(product)}
-                        className="h-8 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white text-[10px] font-black uppercase tracking-wider rounded-xl px-3 flex items-center gap-1"
+                        className="h-8 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white text-[10px] font-black uppercase tracking-wider rounded-xl px-3 flex items-center gap-1 cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                         Eliminar
@@ -242,23 +251,52 @@ export default function ProductGridDisplay({
         </table>
       </div>
 
-      {/* Pagination Footer */}
-      <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+      {/* Advanced Pagination Footer (20, 50, 100 filtering) */}
+      <div className="pt-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
         
-        {/* Total Label */}
-        <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-slate-300">
-          Total: {totalItems} • Página: {activePage} / {totalPages}
+        {/* Left: Rows Per Page Selector & Count */}
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
+            <span className="text-slate-400 font-bold">Mostrar:</span>
+            <Select 
+              value={itemsPerPage.toString()} 
+              onValueChange={handleItemsPerPageChange}
+            >
+              <SelectTrigger className="h-7 w-[75px] bg-slate-900 border-white/10 text-primary font-black text-[10px] rounded-lg">
+                <SelectValue placeholder="20" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-950 border-white/10 text-white rounded-xl">
+                <SelectItem value="10" className="text-xs font-bold">10</SelectItem>
+                <SelectItem value="20" className="text-xs font-bold">20</SelectItem>
+                <SelectItem value="50" className="text-xs font-bold">50</SelectItem>
+                <SelectItem value="100" className="text-xs font-bold">100</SelectItem>
+                <SelectItem value="200" className="text-xs font-bold">200</SelectItem>
+                <SelectItem value="-1" className="text-xs font-bold">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-slate-400 font-bold">por pág.</span>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-slate-300">
+            {totalItems > 0 ? (
+              <>Mostrando <span className="text-primary font-bold">{startIndex + 1} - {endIndex}</span> de <span className="text-white font-bold">{totalItems}</span> productos</>
+            ) : (
+              <>0 productos encontrados</>
+            )}
+          </div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex items-center gap-1 bg-white/5 border border-white/10 p-1.5 rounded-xl">
+        {/* Right: Page Navigation Controls */}
+        <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 p-1.5 rounded-xl w-full md:w-auto justify-center">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setCurrentPage(1)}
             disabled={activePage === 1}
-            className="h-8 px-2 font-black hover:bg-white/5 text-[9px] rounded-lg"
+            className="h-8 px-2 font-black hover:bg-white/10 text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
+            title="Primera página"
           >
+            <ChevronsLeft className="w-3.5 h-3.5 mr-1" />
             Primero
           </Button>
           <Button
@@ -266,13 +304,15 @@ export default function ProductGridDisplay({
             size="sm"
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={activePage === 1}
-            className="h-8 px-2 font-black hover:bg-white/5 text-[9px] rounded-lg"
+            className="h-8 px-2 font-black hover:bg-white/10 text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
+            title="Página anterior"
           >
+            <ChevronLeft className="w-3.5 h-3.5 mr-1" />
             Anterior
           </Button>
 
-          <span className="h-8 w-8 flex items-center justify-center bg-primary text-white rounded-lg text-xs font-black shadow-glow-pro">
-            {activePage}
+          <span className="h-8 px-3 flex items-center justify-center bg-primary text-white rounded-lg text-xs font-black shadow-glow-pro min-w-[32px]">
+            {activePage} / {totalPages}
           </span>
 
           <Button
@@ -280,18 +320,22 @@ export default function ProductGridDisplay({
             size="sm"
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={activePage === totalPages}
-            className="h-8 px-2 font-black hover:bg-white/5 text-[9px] rounded-lg"
+            className="h-8 px-2 font-black hover:bg-white/10 text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
+            title="Página siguiente"
           >
             Siguiente
+            <ChevronRight className="w-3.5 h-3.5 ml-1" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setCurrentPage(totalPages)}
             disabled={activePage === totalPages}
-            className="h-8 px-2 font-black hover:bg-white/5 text-[9px] rounded-lg"
+            className="h-8 px-2 font-black hover:bg-white/10 text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
+            title="Última página"
           >
             Último
+            <ChevronsRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </div>
       </div>

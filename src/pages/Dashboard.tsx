@@ -1,20 +1,21 @@
 import React from "react";
 import Layout from "@/components/Layout";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ShoppingCart, DollarSign, Package, Database, BarChart3, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useDashboard } from "@/hooks/useDashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
-import { DashboardSkeleton, WidgetSkeleton } from "@/components/dashboard/DashboardSkeletons";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardGrid from "@/components/dashboard/DashboardGrid";
 import { FavoritesWidget } from "@/components/dashboard/FavoritesWidget";
 import { cn } from "@/lib/utils";
 import { BoneyardSkeleton } from "@/components/ui/BoneyardSkeleton";
 import { useBoneyardLoad } from "@/hooks/useBoneyardLoad";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const { storeId } = useAuth();
+  const navigate = useNavigate();
   const {
     period, setPeriod, uiConfig, setUiConfig, isSavingConfig, isLoading, isPending, error,
     dashboardData, comparisonLabel, handleSaveConfig
@@ -22,7 +23,6 @@ export default function Dashboard() {
 
   const isBoneyardLoading = useBoneyardLoad(isLoading);
 
-  // Ya no usamos el esqueleto manual, dejamos que boneyard actúe.
   if (error) {
     return (
       <Layout>
@@ -44,12 +44,21 @@ export default function Dashboard() {
     );
   }
 
+  const quickActions = [
+    { title: "Vender (POS)", path: "/pos", icon: ShoppingCart, color: "text-rose-500 bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20" },
+    { title: "Arqueo Caja", path: "/cash-register", icon: DollarSign, color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20" },
+    { title: "Productos", path: "/products", icon: Package, color: "text-amber-500 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20" },
+    { title: "Inventario", path: "/inventory", icon: Database, color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/20" },
+    { title: "Estadísticas", path: "/reports", icon: BarChart3, color: "text-purple-500 bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20" },
+  ];
+
   return (
     <Layout>
       <div className={cn(
-        "min-h-screen p-6 lg:p-8 space-y-12 animate-pro-in transition-all duration-300",
-        isPending && "opacity-50 pointer-events-none filter blur-[1px]"
+        "min-h-screen p-4 md:p-8 space-y-8 animate-pro-in transition-all duration-200",
+        isPending && "opacity-80"
       )}>
+        {/* Header con selectores de período */}
         <DashboardHeader 
           period={period}
           setPeriod={setPeriod}
@@ -59,8 +68,30 @@ export default function Dashboard() {
           handleSaveConfig={handleSaveConfig}
         />
 
+        {/* Quick Actions Panel */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {quickActions.map((action) => (
+            <button
+              key={action.path}
+              onClick={() => navigate(action.path)}
+              className={cn(
+                "flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300 font-space-grotesk italic text-left group cursor-pointer shadow-sm",
+                action.color
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <action.icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
+                <span className="text-xs font-black uppercase tracking-wider">{action.title}</span>
+              </div>
+              <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            </button>
+          ))}
+        </div>
+
+        {/* Widget de Favoritos */}
         <FavoritesWidget />
 
+        {/* Rejilla Principal con Caché Optimizado */}
         <BoneyardSkeleton name="pekao-dashboard-grid" isLoading={isBoneyardLoading} animate="wave">
           {dashboardData && (
             <DashboardGrid 

@@ -212,11 +212,39 @@ export default function ProductFormDialog({
       const fetchCategories = async () => {
         const { data } = await supabase
           .from("categories")
-          .select("id, name")
+          .select("id, name, store_id")
           .or(`store_id.eq.${storeId},store_id.is.null`)
           .eq("is_active", true)
-          .order("sort_order", { ascending: true });
-        setCategoriesList(data || []);
+          .order("name", { ascending: true });
+        
+        if (data) {
+          const seen = new Set<string>();
+          const unique: { id: string; name: string }[] = [];
+
+          // Sort prioritizing store-specific categories first over global ones
+          const sorted = [...data].sort((a, b) => {
+            if (a.store_id === storeId && b.store_id !== storeId) return -1;
+            if (a.store_id !== storeId && b.store_id === storeId) return 1;
+            return 0;
+          });
+
+          for (const cat of sorted) {
+            const normalized = cat.name.trim().toUpperCase();
+            // Ignore test categories or duplicates
+            if (normalized === "TEST" || normalized === "PRUEBA" || normalized === "DEMO") continue;
+            
+            if (!seen.has(normalized)) {
+              seen.add(normalized);
+              unique.push({ id: cat.id, name: cat.name.trim().toUpperCase() });
+            }
+          }
+
+          // Sort alphabetically
+          unique.sort((a, b) => a.name.localeCompare(b.name));
+          setCategoriesList(unique);
+        } else {
+          setCategoriesList([]);
+        }
       };
 
       fetchSizes();
@@ -269,20 +297,13 @@ export default function ProductFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[95dvh] overflow-y-auto bg-[#0d0d12] border border-white/10 shadow-pro p-0 rounded-3xl text-slate-300 font-space-grotesk italic">
+      <DialogContent className="sm:max-w-4xl max-h-[95dvh] overflow-y-auto bg-[#0d0d12] border border-white/10 shadow-pro p-0 rounded-3xl text-slate-300 font-space-grotesk italic dialog-cyberpunk">
         
         {/* Header containing name title & close option */}
-        <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-white/[0.01]">
-          <h2 className="text-lg font-black tracking-widest text-slate-100 uppercase">
+        <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-white/[0.01] dialog-cyberpunk-header">
+          <h2 className="text-lg font-black tracking-widest text-slate-100 uppercase dialog-cyberpunk-title">
             {formData.name || (editingProduct ? "Editar Producto" : "Nuevo Producto")}
           </h2>
-          <button 
-            type="button" 
-            onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Tab Headers navigation bar */}
@@ -984,17 +1005,17 @@ export default function ProductFormDialog({
             variant="outline"
             onClick={onClose}
             disabled={isProcessing}
-            className="flex-1 h-11 border-white/10 text-slate-300 hover:bg-white/10 text-xs font-black uppercase tracking-widest rounded-xl bg-transparent"
+            className="flex-1 h-11 text-xs font-black uppercase tracking-widest rounded-xl dialog-cyberpunk-close-btn"
           >
-            Cerrar
+            Cerrar // Discard
           </Button>
           <Button
             type="submit"
             form="product-form-modal"
             disabled={isProcessing || !formData.name || !formData.price}
-            className="flex-1 h-11 bg-primary hover:bg-primary/80 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-glow-pro active:scale-[0.98] transition-all border-none"
+            className="flex-1 h-11 text-white text-xs font-black uppercase tracking-widest rounded-xl active:scale-[0.98] transition-all border-none dialog-cyberpunk-save-btn"
           >
-            {isProcessing ? "Guardando..." : "Guardar cambios"}
+            {isProcessing ? "Guardando..." : "Guardar cambios // Commit"}
           </Button>
         </DialogFooter>
 

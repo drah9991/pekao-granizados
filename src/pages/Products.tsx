@@ -17,6 +17,7 @@ export default function Products() {
   const {
     products,
     skuAcronyms,
+    dbCategories,
     isLoading,
     searchQuery, setSearchQuery,
     filterActive, setFilterActive,
@@ -40,14 +41,23 @@ export default function Products() {
     setProductStock
   } = useProducts();
 
-  // Dynamic Unique Categories for pills
-  const categories = ["Todos", ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+  // Dynamic Unique Categories combining Master DB Categories + Existing Product Categories
+  const dbCategoryNames = (dbCategories || []).map(c => c.name?.trim().toUpperCase()).filter(Boolean);
+  const productCategoryNames = products.map(p => p.category?.trim().toUpperCase()).filter(Boolean);
+
+  const rawCategories = Array.from(
+    new Set([...dbCategoryNames, ...productCategoryNames])
+  )
+  .filter(c => c !== "TEST" && c !== "PRUEBA" && c !== "DEMO")
+  .sort();
+
+  const categories = ["Todos", ...rawCategories];
   const [selectedCategory, setSelectedCategory] = useState("Todos");
 
   // Filter products by the selected category pill
   const categoryFilteredProducts = selectedCategory === "Todos" 
     ? products 
-    : products.filter(p => p.category === selectedCategory);
+    : products.filter(p => p.category?.trim().toUpperCase() === selectedCategory);
 
   return (
     <Layout>

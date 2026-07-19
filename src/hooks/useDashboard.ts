@@ -113,7 +113,8 @@ export function useDashboard(storeId: string | null) {
     },
     enabled: !!storeId,
     refetchInterval: 1000 * 60 * 5, // Fallback polling every 5 minutes
-    staleTime: 0, // Force refetch on mount to show fresh POS sales
+    staleTime: 30_000, // 30s cache for fast tab switching
+    placeholderData: (previousData) => previousData,
   });
 
   // Sincronizar configuración guardada solo cuando cambia el store o carga inicial

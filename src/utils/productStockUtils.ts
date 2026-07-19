@@ -2,7 +2,7 @@ export const mapProductStock = (p: Record<string, unknown>, typesData: Record<st
   let stock = p.store_stock?.[0]?.qty ?? 0;
   let mixtureStock = 0;
 
-  const typeCfg = (typesData || []).find((t: Record<string, unknown>) => t.code === p.type);
+  const typeCfg = (typesData || []).find((t: Record<string, unknown>) => t.code === p.category_id || t.code === p.type);
   const isMixtureTracked = typeCfg?.track_mixture_inventory ?? (p.type === "granizado" || p.category === "Granizado");
 
   if (isMixtureTracked) {

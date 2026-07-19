@@ -221,20 +221,8 @@ const ProductGrid = memo(function ProductGrid({ onProductSelect, searchRef, acti
   }, [storeId]);
 
   const categories = useMemo(() => {
-    const prodTypes = new Set((products || []).map(p => p.type || "other"));
-    const knownOrder = types.map(t => t.code);
-    const sorted = Array.from(prodTypes).sort(
-      (a, b) => {
-        const ia = knownOrder.indexOf(a);
-        const ib = knownOrder.indexOf(b);
-        if (ia === -1 && ib === -1) return a.localeCompare(b);
-        if (ia === -1) return 1;
-        if (ib === -1) return -1;
-        return ia - ib;
-      }
-    );
-    return ["all", ...sorted];
-  }, [products, types]);
+    return ["all", ...types.map(t => t.code)];
+  }, [types]);
 
   useEffect(() => {
     if (activeCategoryIndex !== undefined) {
@@ -272,12 +260,27 @@ const ProductGrid = memo(function ProductGrid({ onProductSelect, searchRef, acti
 
         if (error) throw error;
 
-        const { data: typesData } = await supabase.from("product_types_config").select("*").eq('active', true).order("created_at", { ascending: true });
+        const { data: categoriesData } = await supabase
+          .from("categories")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
 
-        const productsWithStock = (data || []).map((p: Record<string, unknown>) => mapProductStock(p, typesData || []));
+        const mappedCategories = (categoriesData || []).map(cat => ({
+          code: cat.id,
+          label: cat.name,
+          emoji_icon: cat.emoji_icon || "📦",
+          color_theme: cat.color_theme || "bg-slate-500",
+          track_mixture_inventory: cat.track_mixture_inventory || false,
+          sales_mode: cat.sales_mode || "unit",
+          id: cat.id
+        }));
 
-        const { data: sizesData } = await supabase.from("sizes").select("name, multiplier, id").eq("store_id", storeId);            await offlineService.saveProducts(productsWithStock as Record<string, unknown>[]);
-        return { products: productsWithStock, sizes: sizesData || [], types: typesData || [] };
+        const productsWithStock = (data || []).map((p: Record<string, unknown>) => mapProductStock(p, mappedCategories || []));
+
+        const { data: sizesData } = await supabase.from("sizes").select("name, multiplier, id").eq("store_id", storeId);
+        await offlineService.saveProducts(productsWithStock as Record<string, unknown>[]);
+        return { products: productsWithStock, sizes: sizesData || [], types: mappedCategories || [] };
       } catch (error: unknown) {
         console.error("Error fetching products, checking offline:", error);
         const cached = await offlineService.getProducts();
@@ -313,27 +316,53 @@ const ProductGrid = memo(function ProductGrid({ onProductSelect, searchRef, acti
     return { label: typeCode.charAt(0).toUpperCase() + typeCode.slice(1), emoji: "📦", color: "bg-slate-600", track_mixture_inventory: false, sales_mode: "unit" };
   }, [types]);
 
+  const getCategoryName = useCallback((catId: string) => {
+    const t = types.find(t => t.id === catId || t.code === catId);
+    return t ? t.label : catId;
+  }, [types]);
+
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: products.length };
+    
+    // Initialize counts for all categories in types to 0
+    types.forEach(t => {
+      counts[t.code] = 0;
+    });
+
     products.forEach(p => {
-      const type = p.type || "other";
-      counts[type] = (counts[type] || 0) + 1;
+      const matchedCat = types.find(t => 
+        (p.category_id && t.id === p.category_id) ||
+        (p.category && t.label.toLowerCase() === p.category.toLowerCase()) ||
+        (p.type && (t.code === p.type || t.label.toLowerCase() === p.type.toLowerCase()))
+      );
+      if (matchedCat) {
+        counts[matchedCat.code] = (counts[matchedCat.code] || 0) + 1;
+      } else {
+        counts["other"] = (counts["other"] || 0) + 1;
+      }
     });
     return counts;
-  }, [products]);
+  }, [products, types]);
 
   const filteredProducts = useMemo(() => {
+    const catName = getCategoryName(activeCategory);
     return products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.category?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = activeCategory === "all" || product.type === activeCategory;
+      
+      const matchesCategory = activeCategory === "all" || 
+        product.category_id === activeCategory || 
+        product.type === activeCategory ||
+        (product.category && product.category.toLowerCase() === catName.toLowerCase()) ||
+        (product.type && (product.type.toLowerCase() === activeCategory.toLowerCase() || product.type.toLowerCase() === catName.toLowerCase()));
+
       return matchesSearch && matchesCategory;
     }).sort((a, b) => {
       const aStarred = a.is_starred ? 1 : 0;
       const bStarred = b.is_starred ? 1 : 0;
       return bStarred - aStarred; // Starred first
     });
-  }, [products, searchQuery, activeCategory]);
+  }, [products, searchQuery, activeCategory, getCategoryName]);
 
   const [isCategoryPending, startCategoryTransition] = useTransition();
 
@@ -401,23 +430,25 @@ const ProductGrid = memo(function ProductGrid({ onProductSelect, searchRef, acti
               })}
             </div>
 
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              className="products-grid pb-24"
-            >
-              <AnimatePresence mode="popLayout">
-                {(filteredProducts || []).map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onProductSelect={onProductSelect}
-                    getTypeConfig={getTypeConfig}
-                  />
-                ))}
-              </AnimatePresence>
-            </motion.div>
+            <BoneyardSkeleton name="pos-products-grid" isLoading={isBoneyardLoading} animate="wave">
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="products-grid pb-24"
+              >
+                <AnimatePresence mode="popLayout">
+                  {(filteredProducts || []).map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onProductSelect={onProductSelect}
+                      getTypeConfig={getTypeConfig}
+                    />
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            </BoneyardSkeleton>
 
             {filteredProducts.length === 0 && !loading && (
               <div className="text-center py-20 bg-muted/40 rounded-[3rem] border border-dashed border-border shrink-0">

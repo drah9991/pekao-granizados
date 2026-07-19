@@ -66,6 +66,7 @@ export function useProducts() {
         .from("products")
         .select(`
           *,
+          categories ( id, name, color_theme, emoji_icon ),
           store_stock ( qty, min_qty ),
           recipes (
             inventory_item_id,
@@ -84,7 +85,15 @@ export function useProducts() {
       // Fetch types config to determine stock tracking
       const { data: typesData } = await supabase.from("product_types_config").select("*").eq('active', true);
 
-      const mapped = (data || []).map((p) => mapProductStock(p, typesData || []));
+      const mapped = (data || []).map((p: any) => {
+        const mappedStock = mapProductStock(p, typesData || []);
+        const relCategoryName = p.categories?.name || p.category || "General";
+        return {
+          ...mappedStock,
+          category: relCategoryName.toUpperCase(),
+          category_id: p.category_id || p.categories?.id || null
+        };
+      });
       
       // Sort starred/featured products first, maintaining name alphabetical order
       return mapped.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
@@ -127,6 +136,23 @@ export function useProducts() {
       return data || [];
     },
     staleTime: 5 * 60_000, // 5 min — acrónimos SKU, casi nunca cambian
+    enabled: !!storeId,
+  });
+
+  const { data: dbCategories = [] } = useQuery({
+    queryKey: ["categories-master", storeId],
+    queryFn: async () => {
+      if (!storeId) return [];
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, color_theme, emoji_icon")
+        .or(`store_id.eq.${storeId},store_id.is.null`)
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30_000,
     enabled: !!storeId,
   });
 
@@ -331,6 +357,7 @@ export function useProducts() {
   return {
     products: filteredProducts,
     skuAcronyms,
+    dbCategories,
     isLoading: isLoadingProducts,
     searchQuery, setSearchQuery,
     filterActive, setFilterActive,
