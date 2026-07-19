@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Settings, Upload, Camera, Plus, History, Search, Zap, Globe } from "lucide-react";
+import { Settings, Upload, Download, Camera, Plus, History, Search, Zap, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Products() {
@@ -132,9 +132,18 @@ export default function Products() {
             </Button>
 
             <Button
+              onClick={handleExportProducts}
+              size="sm"
+              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-primary" />
+              Exportar
+            </Button>
+
+            <Button
               onClick={() => setImportDialogIsOpen(true)}
               size="sm"
-              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest"
+              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-primary" />
               Importar

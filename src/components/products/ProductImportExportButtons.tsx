@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Download, Plus } from "lucide-react";
+import { Upload, Plus } from "lucide-react";
 import React from "react";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -23,47 +23,15 @@ interface ProductImportExportButtonsProps {
 }
 
 export default function ProductImportExportButtons({
-  onExport,
   onImport,
   onImportFileChange,
   importFile,
   isImporting,
   importDialogIsOpen,
   setImportDialogIsOpen,
-  userStoreId,
-  loading,
-  products,
-  openCreateDialog,
 }: ProductImportExportButtonsProps) {
   return (
-    <div className="flex flex-wrap md:flex-nowrap gap-3">
-      <Button 
-        variant="ghost"
-        className="glass-pro border-white/10 shadow-pro w-full md:w-auto h-12 rounded-xl font-black font-space-grotesk italic text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all hover:-translate-y-1"
-        onClick={onExport}
-        disabled={loading || products.length === 0}
-      >
-        <Download className="mr-2 w-4 h-4 text-primary" />
-        EXPORTAR CATÁLOGO
-      </Button>
-      <Button 
-        variant="ghost"
-        className="glass-pro border-white/10 shadow-pro w-full md:w-auto h-12 rounded-xl font-black font-space-grotesk italic text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all hover:-translate-y-1"
-        onClick={() => setImportDialogIsOpen(true)}
-        disabled={!userStoreId}
-      >
-        <Upload className="mr-2 w-4 h-4 text-primary" />
-        IMPORTAR DATA
-      </Button>
-      <Button 
-        className="bg-primary text-white shadow-glow-pro w-full md:w-auto h-12 rounded-xl font-black font-space-grotesk italic text-[10px] tracking-widest uppercase active:scale-95 transition-all border-2 border-white/20 hover:brightness-110"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); openCreateDialog(); }}
-        disabled={!userStoreId}
-      >
-        <Plus className="mr-2 w-5 h-5" />
-        NUEVO REGISTRO
-      </Button>
-
+    <>
       {/* Import Products Dialog */}
       <Dialog open={importDialogIsOpen} onOpenChange={setImportDialogIsOpen}>
         <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto custom-scrollbar bg-background border-white/20 shadow-pro overflow-hidden p-0 rounded-[2.5rem]">
@@ -125,14 +93,14 @@ export default function ProductImportExportButtons({
               variant="ghost"
               onClick={() => setImportDialogIsOpen(false)}
               disabled={isImporting}
-              className="flex-1 rounded-[1.5rem] appetite-accent-muted border-none font-black uppercase tracking-widest text-[10px] h-14 font-space-grotesk italic"
+              className="flex-1 rounded-[1.5rem] appetite-accent-muted border-none font-black uppercase tracking-widest text-[10px] h-14 font-space-grotesk italic cursor-pointer"
             >
               CANCELAR
             </Button>
             <Button
               onClick={onImport}
               disabled={isImporting || !importFile}
-              className="flex-1 rounded-[1.5rem] bg-white text-black hover:bg-primary hover:text-white font-black uppercase tracking-widest text-[10px] shadow-glow-pro active:scale-95 transition-all h-14 font-space-grotesk italic border-none"
+              className="flex-1 rounded-[1.5rem] bg-white text-black hover:bg-primary hover:text-white font-black uppercase tracking-widest text-[10px] shadow-glow-pro active:scale-95 transition-all h-14 font-space-grotesk italic border-none cursor-pointer"
             >
               {isImporting ? (
                   <div className="flex items-center gap-2">
@@ -144,6 +112,6 @@ export default function ProductImportExportButtons({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
