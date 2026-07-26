@@ -18,7 +18,7 @@ describe("Currency Utilities (COP)", () => {
     it("rounds decimal amounts (no fractional pesos)", () => {
       // Should not contain a comma or dot followed by digits for decimals
       const result = formatCOP(1000.9);
-      expect(result).not.toMatch(/[,\.]\d{2}$/);
+      expect(result).not.toMatch(/[,.]\d{2}$/);
       // Rounds to 1001
       expect(result).toContain("1");
     });

@@ -11,6 +11,20 @@ type Product = Tables<'products'>;
 type ProductType = Enums<'product_type'>;
 type SkuAcronym = Tables<'sku_acronyms'>;
 
+interface ProductRecord extends Product {
+  categories?: { id: string; name: string; color_theme?: string; emoji_icon?: string } | null;
+  store_stock?: Array<{ qty: number; min_qty: number }>;
+  recipes?: Array<{
+    inventory_item_id: string;
+    quantity: number;
+    inventory_items?: {
+      id: string;
+      stock: number;
+      is_mixture: boolean;
+    };
+  }>;
+}
+
 interface StockInfo {
   store_name: string;
   qty: number;
@@ -85,7 +99,7 @@ export function useProducts() {
       // Fetch types config to determine stock tracking
       const { data: typesData } = await supabase.from("product_types_config").select("*").eq('active', true);
 
-      const mapped = (data || []).map((p: any) => {
+      const mapped = ((data || []) as ProductRecord[]).map((p: ProductRecord) => {
         const mappedStock = mapProductStock(p, typesData || []);
         const relCategoryName = p.categories?.name || p.category || "General";
         return {

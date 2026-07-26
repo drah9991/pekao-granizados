@@ -130,7 +130,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     // 1. Register listener BEFORE getSession()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: authData } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted.current) return;
 
@@ -157,7 +157,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // 2. Initial load (controls isLoading)
     const initializeAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: sessionData, error } = await supabase.auth.getSession();
+        const session = sessionData?.session;
 
         if (error || !session?.user) {
           if (isMounted.current) {
@@ -185,7 +186,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initializeAuth();
 
     return () => {
-      subscription.unsubscribe();
+      authData.subscription.unsubscribe();
     };
   }, []);
 
