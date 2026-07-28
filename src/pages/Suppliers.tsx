@@ -98,6 +98,10 @@ export default function Suppliers() {
       toast.error("El Documento (NIT/Cédula) del proveedor es obligatorio");
       return;
     }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("El correo electrónico ingresado no tiene un formato válido");
+      return;
+    }
 
     const payload = {
       name: name.trim(),

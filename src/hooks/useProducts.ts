@@ -177,13 +177,35 @@ export function useProducts() {
     }
 
     setIsProcessing(true);
+    if (!formData.name || !formData.name.trim()) {
+      toast.error("El nombre del producto es obligatorio");
+      setIsProcessing(false);
+      return;
+    }
+
+    const priceVal = parseFloat(formData.price);
+    if (isNaN(priceVal) || priceVal < 0) {
+      toast.error("El precio debe ser un número mayor o igual a 0");
+      setIsProcessing(false);
+      return;
+    }
+
+    const costVal = (formData.cost !== "" && formData.cost !== null && formData.cost !== undefined) 
+      ? parseFloat(formData.cost) 
+      : null;
+    if (costVal !== null && (isNaN(costVal) || costVal < 0)) {
+      toast.error("El costo debe ser un número mayor o igual a 0");
+      setIsProcessing(false);
+      return;
+    }
+
     try {
       const productData: Record<string, unknown> = {
-        name: formData.name.toUpperCase(),
-        sku: formData.sku || null,
-        description: formData.description || null,
-        price: parseFloat(formData.price),
-        cost: (formData.cost !== "" && formData.cost !== null && formData.cost !== undefined) ? parseFloat(formData.cost) : null,
+        name: formData.name.trim().toUpperCase(),
+        sku: formData.sku?.trim() || null,
+        description: formData.description?.trim() || null,
+        price: priceVal,
+        cost: costVal,
         active: formData.active,
         category: formData.category ? formData.category.toUpperCase() : null,
         category_id: formData.category_id || null,
