@@ -4,6 +4,8 @@ import { Tables } from "@/integrations/supabase/types";
 
 export type MenuItem = Tables<"products"> & {
   stock_status: 'available' | 'low_stock' | 'out_of_stock';
+  available_qty: number;
+  min_qty?: number;
 };
 
 export type MenuCategory = Tables<"product_types_config"> & {
@@ -29,10 +31,21 @@ export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = fa
           .eq("active", true)
           .or(`store_id.eq.${storeId},store_id.is.null`);
 
-        // Fetch products
+        // Fetch products with recipes & inventory_items
         let query = supabase
           .from("products")
-          .select("*")
+          .select(`
+            *,
+            recipes (
+              inventory_item_id,
+              quantity_required,
+              inventory_items (
+                id,
+                stock,
+                is_mixture
+              )
+            )
+          `)
           .eq("active", true)
           .or(`store_id.eq.${storeId},store_id.is.null`);
 
@@ -63,6 +76,19 @@ export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = fa
           
           const items: MenuItem[] = catProducts.map(prod => {
             let stock_status: 'available' | 'low_stock' | 'out_of_stock' = 'available';
+            let available_qty = 0;
+
+            const prodStock = (stockData || []).find(s => s.product_id === prod.id);
+            const min_qty = prodStock?.min_qty || 10;
+
+            if (prodStock && prodStock.qty !== undefined && prodStock.qty !== null) {
+              available_qty = prodStock.qty;
+            } else if (prod.recipes && Array.isArray(prod.recipes) && prod.recipes.length > 0) {
+              const recipe = prod.recipes[0] as any;
+              if (recipe?.inventory_items?.stock !== undefined) {
+                available_qty = recipe.inventory_items.stock;
+              }
+            }
 
             // Check if it relies on tanks (liquids)
             if (cat.track_mixture_inventory) {
@@ -70,18 +96,19 @@ export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = fa
                if (relatedTanks.length > 0) {
                   stock_status = 'low_stock';
                }
-            } else {
-               // Check store_stock
-               const prodStock = (stockData || []).find(s => s.product_id === prod.id);
-               if (prodStock) {
-                 if (prodStock.qty === 0) stock_status = 'out_of_stock';
-                 else if (prodStock.qty! <= (prodStock.min_qty || 10)) stock_status = 'low_stock';
+               if (available_qty <= 0 && prodStock) {
+                  stock_status = 'out_of_stock';
                }
+            } else {
+               if (available_qty <= 0) stock_status = 'out_of_stock';
+               else if (available_qty <= min_qty) stock_status = 'low_stock';
             }
 
             return {
               ...prod,
-              stock_status
+              stock_status,
+              available_qty,
+              min_qty
             };
           });
 

@@ -69,9 +69,21 @@ export function OasisMenuItem({ item, theme = 'classic' }: OasisMenuItemProps) {
           </div>
 
           <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100">
-            <span className="text-xs md:text-sm font-black font-space-grotesk text-slate-800">
-              $ {item.price.toLocaleString('es-CO')}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs md:text-sm font-black font-space-grotesk text-slate-800">
+                $ {item.price.toLocaleString('es-CO')}
+              </span>
+              <span className={cn(
+                "text-[9px] font-extrabold px-2 py-0.5 rounded-full font-space-grotesk tracking-wider",
+                isOutOfStock
+                  ? "bg-rose-100 text-rose-700"
+                  : isLowStock
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-emerald-100 text-emerald-800"
+              )}>
+                {isOutOfStock ? "0 disp." : `${item.available_qty ?? 0} disp.`}
+              </span>
+            </div>
 
             <button 
               type="button"
@@ -84,7 +96,7 @@ export function OasisMenuItem({ item, theme = 'classic' }: OasisMenuItemProps) {
           {isLowStock && !isOutOfStock && (
             <p className="text-amber-500 text-[9px] font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
               <span className="w-1 h-1 rounded-full bg-amber-500 animate-pulse"></span>
-              Pocas unidades
+              Pocas unidades ({item.available_qty ?? 0})
             </p>
           )}
         </div>
@@ -140,9 +152,19 @@ export function OasisMenuItem({ item, theme = 'classic' }: OasisMenuItemProps) {
               </Badge>
             )}
           </div>
-          <div className="text-right shrink-0 ml-4">
+          <div className="text-right shrink-0 ml-4 flex flex-col items-end">
             <span className="text-xl md:text-2xl font-black font-space-grotesk text-orange-400">
               ${item.price.toLocaleString()}
+            </span>
+            <span className={cn(
+              "text-[9px] font-bold uppercase tracking-widest font-space-grotesk mt-0.5 px-2 py-0.5 rounded-full border",
+              isOutOfStock 
+                ? "bg-rose-500/10 text-rose-400 border-rose-500/20" 
+                : isLowStock 
+                ? "bg-amber-500/10 text-amber-400 border-amber-500/20" 
+                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+            )}>
+              {isOutOfStock ? "Agotado (0 disp.)" : `${item.available_qty ?? 0} disp.`}
             </span>
           </div>
         </div>
@@ -156,7 +178,7 @@ export function OasisMenuItem({ item, theme = 'classic' }: OasisMenuItemProps) {
         {isLowStock && !isOutOfStock && (
           <p className="text-yellow-500/80 text-[10px] font-bold uppercase tracking-widest mt-3 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
-            Pocas unidades
+            Pocas unidades ({item.available_qty ?? 0} disp.)
           </p>
         )}
       </div>

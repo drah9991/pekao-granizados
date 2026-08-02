@@ -627,8 +627,8 @@ export default function DigitalMenu() {
                           <span className="text-[9px] font-black" style={{ color: activeStyles.primary }}>
                             $8.500
                           </span>
-                          <span className="text-[7px] bg-emerald-500/10 text-emerald-400 px-1 py-0.5 rounded font-black uppercase">
-                            Disponible
+                          <span className="text-[7px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded font-black uppercase">
+                            15 Disp.
                           </span>
                         </div>
                       </div>
@@ -988,9 +988,21 @@ export default function DigitalMenu() {
                           </div>
 
                           <div className="flex items-center gap-6 shrink-0">
-                            <span className="text-xs font-bold text-primary">
-                              ${Number(product.price).toLocaleString('es-CO')}
-                            </span>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-xs font-bold text-primary">
+                                ${Number(product.price).toLocaleString('es-CO')}
+                              </span>
+                              <span className={cn(
+                                "text-[9px] font-extrabold px-2 py-0.5 rounded-full border tracking-wider font-space-grotesk",
+                                (product.available_qty ?? 0) === 0 
+                                  ? "bg-rose-500/10 text-rose-400 border-rose-500/20" 
+                                  : (product.available_qty ?? 0) <= (product.min_qty || 10)
+                                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                  : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              )}>
+                                Disp: {product.available_qty ?? 0} un.
+                              </span>
+                            </div>
                             
                             <div className="flex items-center gap-2">
                               <span className="text-[9px] text-muted-foreground font-black uppercase tracking-wider">
