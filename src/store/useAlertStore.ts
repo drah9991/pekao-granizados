@@ -43,7 +43,7 @@ interface AlertState {
 export const useAlertStore = create<AlertState>((set) => ({
   toasts: [],
   addToast: (toast) => {
-    const id = Math.random().toString(36).substring(2, 9);
+    const id = crypto.randomUUID();
     set((state) => ({
       toasts: [...state.toasts, { ...toast, id }].sort((a, b) => {
         const priority = { CRITICAL: 0, WARNING: 1, INFO: 2 };
