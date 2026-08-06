@@ -32,10 +32,9 @@ class OfflineService {
   async saveProducts(products: Record<string, unknown>[]) {
     const db = await this.db;
     const tx = db.transaction('products', 'readwrite');
-    await tx.objectStore('products').clear();
-    for (const product of products) {
-      await tx.objectStore('products').put(product);
-    }
+    const store = tx.objectStore('products');
+    await store.clear();
+    await Promise.all(products.map(product => store.put(product)));
     await tx.done;
   }
 
@@ -47,7 +46,7 @@ class OfflineService {
   async saveOfflineOrder(order: Record<string, unknown>) {
     const db = await this.db;
     const offlineOrder: OfflineOrder = {
-      id: order.id || crypto.randomUUID(),
+      id: (order.id as string) || crypto.randomUUID(),
       payload: order,
       timestamp: new Date().toISOString(),
       synced: false
