@@ -264,6 +264,7 @@ const ProductGrid = memo(function ProductGrid({ onProductSelect, searchRef, acti
           .from("categories")
           .select("*")
           .eq("is_active", true)
+          .or(`store_id.eq.${storeId},store_id.is.null`)
           .order("sort_order", { ascending: true });
 
         const mappedCategories = (categoriesData || []).map(cat => ({

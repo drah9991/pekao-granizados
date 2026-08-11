@@ -26,11 +26,15 @@ export default function DigitalMenu() {
   const [searchParams] = useSearchParams();
   const isPreviewMode = searchParams.get("preview") === "true";
 
+  // Si se pasa 'store' en la URL (cliente), usar ese storeId; si no, usar el del contexto de autenticación
+  const queryStoreId = searchParams.get("store");
+  const effectiveStoreId = queryStoreId || storeId;
+
   // Si no hay usuario autenticado o está en modo vista previa, renderizar la carta digital de cliente
   const showClientView = !user || isPreviewMode;
 
   const { categories, reorderCategories, toggleProductVisibility, loading } = useDigitalMenu(
-    storeId, 
+    effectiveStoreId, 
     !showClientView
   );
 
@@ -58,8 +62,6 @@ export default function DigitalMenu() {
   const [deliveryMinOrder, setDeliveryMinOrder] = useState<string>("");
   const [pickupTime, setPickupTime] = useState<string>("15 min");
   const [pickupCost, setPickupCost] = useState<string>("");
-
-  // Horarios
   const [hours, setHours] = useState<Record<string, { open: string; close: string }>>({
     lunes: { open: "08:00", close: "22:00" },
     martes: { open: "08:00", close: "22:00" },
@@ -85,16 +87,17 @@ export default function DigitalMenu() {
   // Categorías colapsadas para la tab de productos
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
+  // Cargar configuración de la sucursal activa
   useEffect(() => {
-    if (storeId) {
-      fetchConfig(storeId);
+    if (effectiveStoreId) {
+      fetchConfig(effectiveStoreId);
       const fetchProfiles = async () => {
         const { data } = await supabase.from("profiles").select("id, full_name, email");
         if (data) setProfiles(data);
       };
       fetchProfiles();
     }
-  }, [storeId, fetchConfig]);
+  }, [effectiveStoreId, fetchConfig]);
 
   // Cargar valores de configuración iniciales
   useEffect(() => {
@@ -169,7 +172,7 @@ export default function DigitalMenu() {
   const activeStyles = getThemeStyles(formTheme);
 
   const handleSaveConfig = async () => {
-    if (!storeId) return;
+    if (!effectiveStoreId) return;
     setIsSaving(true);
 
     const updatedConfig = {
@@ -209,7 +212,7 @@ export default function DigitalMenu() {
     };
 
     try {
-      await updateStoreConfig(storeId, updatedConfig);
+      await updateStoreConfig(effectiveStoreId, updatedConfig);
       toast.success("Configuración del Menú Digital guardada con éxito.");
     } catch (err) {
       console.error("Error saving digital menu config:", err);
@@ -233,13 +236,14 @@ export default function DigitalMenu() {
     setNotifiedUsers(prev => prev.filter(uId => uId !== id));
   };
 
-  const businessUrl = `${window.location.origin}/digital-menu?preview=true`;
+  const businessUrl = `${window.location.origin}/digital-menu?preview=true${effectiveStoreId ? `&store=${effectiveStoreId}` : ""}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(businessUrl)}`;
 
   // VISTA DEL CLIENTE (CARTA DIGITAL PÚBLICA CON ESTILOS DINÁMICOS)
   if (showClientView) {
     const isChalkboard = activeStyles.style === "classic";
     const fontClass = activeStyles.font;
+    const [clientTheme, setClientTheme] = useState<'classic' | 'loggro'>(formTheme === "tema-2" || formTheme === "tema-4" || formTheme === "tema-5" ? 'loggro' : 'classic');
 
     return (
       <div 
@@ -270,9 +274,9 @@ export default function DigitalMenu() {
 
         <OasisMenuHeader 
           storeName={commercialName || storeName} 
-          theme="classic" // bypass default headers to force injected theme
-          onThemeChange={() => {}} 
-          canChangeTheme={false} 
+          theme={clientTheme}
+          onThemeChange={(newTheme) => setClientTheme(newTheme)} 
+          canChangeTheme={true} 
         />
 
         <main className="container max-w-7xl mx-auto px-4 md:px-8 pb-24 relative z-10">
@@ -292,7 +296,7 @@ export default function DigitalMenu() {
           ) : (
             <div className="space-y-4">
               {categories.map((category) => (
-                <OasisMenuCategory key={category.code} category={category} theme="classic" />
+                <OasisMenuCategory key={category.code} category={category} theme={clientTheme} />
               ))}
               
               {categories.length === 0 && (
