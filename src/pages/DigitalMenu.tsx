@@ -23,12 +23,31 @@ import { Switch } from "@/components/ui/switch";
 
 export default function DigitalMenu() {
   const { storeId, storeName, user, userRole } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isPreviewMode = searchParams.get("preview") === "true";
 
   // Si se pasa 'store' en la URL (cliente), usar ese storeId; si no, usar el del contexto de autenticación
   const queryStoreId = searchParams.get("store");
   const effectiveStoreId = queryStoreId || storeId;
+
+  // Lista de sucursales para el alternador responsive de cliente
+  const [storesList, setStoresList] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      const { data } = await supabase.from("stores").select("id, name").order("name");
+      if (data) {
+        setStoresList(data);
+      }
+    };
+    fetchStores();
+  }, []);
+
+  const handleStoreChange = (newStoreId: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("store", newStoreId);
+    setSearchParams(newParams);
+  };
 
   // Si no hay usuario autenticado o está en modo vista previa, renderizar la carta digital de cliente
   const showClientView = !user || isPreviewMode;
@@ -277,6 +296,9 @@ export default function DigitalMenu() {
           theme={clientTheme}
           onThemeChange={(newTheme) => setClientTheme(newTheme)} 
           canChangeTheme={true} 
+          stores={storesList}
+          activeStoreId={effectiveStoreId}
+          onStoreChange={handleStoreChange}
         />
 
         <main className="container max-w-7xl mx-auto px-4 md:px-8 pb-24 relative z-10">
