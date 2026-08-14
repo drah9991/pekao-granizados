@@ -1,4 +1,4 @@
-﻿-- Crear tabla de turnos de caja
+-- Crear tabla de turnos de caja
 CREATE TABLE IF NOT EXISTS public.cash_turns (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   store_id UUID NOT NULL REFERENCES public.stores(id) ON DELETE CASCADE,
