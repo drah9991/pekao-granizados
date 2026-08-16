@@ -12,9 +12,36 @@ export type MenuCategory = Tables<"product_types_config"> & {
   items: MenuItem[];
 };
 
+export type StoreOption = { id: string; name: string };
+export type ProfileOption = { id: string; full_name: string | null; email: string | null };
+
 export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = false) {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [storesList, setStoresList] = useState<StoreOption[]>([]);
+  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
+
+  // Lista de sucursales para el alternador responsive de cliente
+  useEffect(() => {
+    const fetchStores = async () => {
+      const { data } = await supabase.from("stores").select("id, name").order("name");
+      if (data) {
+        setStoresList(data);
+      }
+    };
+    fetchStores();
+  }, []);
+
+  // Perfiles de usuario disponibles para asignar notificaciones de pedidos
+  useEffect(() => {
+    if (!storeId) return;
+
+    const fetchProfiles = async () => {
+      const { data } = await supabase.from("profiles").select("id, full_name, email");
+      if (data) setProfiles(data);
+    };
+    fetchProfiles();
+  }, [storeId]);
 
   useEffect(() => {
     if (!storeId) return;
@@ -180,5 +207,5 @@ export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = fa
     }
   };
 
-  return { categories, reorderCategories, toggleProductVisibility, loading };
+  return { categories, reorderCategories, toggleProductVisibility, loading, storesList, profiles };
 }

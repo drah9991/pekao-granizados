@@ -1,106 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { Plus, Edit2, Trash2, History } from "lucide-react";
 import { motion } from "framer-motion";
-
-interface Unit {
-  id: string;
-  name: string;
-  created_at: string | null;
-}
+import { useUnits } from "@/hooks/useUnits";
 
 export default function Units() {
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
-  const [unitName, setUnitName] = useState("");
-
-  const fetchUnits = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("units")
-        .select("*")
-        .order("name", { ascending: true });
-      if (error) throw error;
-      setUnits(data || []);
-    } catch (err) {
-      console.error("Error fetching units:", err);
-      toast.error("Error al cargar unidades");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUnits();
-  }, []);
-
-  const handleOpenCreate = () => {
-    setSelectedUnit(null);
-    setUnitName("");
-    setDialogOpen(true);
-  };
-
-  const handleOpenEdit = (unit: Unit) => {
-    setSelectedUnit(unit);
-    setUnitName(unit.name);
-    setDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!unitName.trim()) {
-      toast.error("El nombre no puede estar vacío");
-      return;
-    }
-
-    try {
-      if (selectedUnit) {
-        // Edit
-        const { error } = await supabase
-          .from("units")
-          .update({ name: unitName.trim() })
-          .eq("id", selectedUnit.id);
-        if (error) throw error;
-        toast.success("Unidad actualizada");
-      } else {
-        // Create
-        const { error } = await supabase
-          .from("units")
-          .insert([{ name: unitName.trim() }]);
-        if (error) throw error;
-        toast.success("Unidad creada");
-      }
-      setDialogOpen(false);
-      fetchUnits();
-    } catch (err: any) {
-      console.error("Error saving unit:", err);
-      toast.error(err.message || "Error al guardar la unidad");
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Está seguro de eliminar esta unidad?")) return;
-
-    try {
-      const { error } = await supabase
-        .from("units")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-      toast.success("Unidad eliminada");
-      fetchUnits();
-    } catch (err: any) {
-      console.error("Error deleting unit:", err);
-      toast.error("Error al eliminar la unidad");
-    }
-  };
+  const {
+    units,
+    loading,
+    dialogOpen,
+    setDialogOpen,
+    selectedUnit,
+    unitName,
+    setUnitName,
+    handleOpenCreate,
+    handleOpenEdit,
+    handleSave,
+    handleDelete,
+  } = useUnits();
 
   return (
     <Layout>

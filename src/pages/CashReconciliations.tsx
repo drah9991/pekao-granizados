@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 import { useTurn } from "@/hooks/useTurn";
+import { useCashReconciliations } from "@/hooks/useCashReconciliations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,32 +10,30 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { Printer, Search, Plus, Calendar, RotateCcw, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function CashReconciliations() {
-  const { storeId, user } = useAuth();
-  const { activeTurn, openTurn, closeTurn } = useTurn();
+  const { activeTurn, openTurn } = useTurn();
   const navigate = useNavigate();
 
-  // Filters
-  const [fromDate, setFromDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30); // 30 days ago
-    return d.toISOString().split("T")[0];
-  });
-  const [toDate, setToDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
-  const [selectedCaja, setSelectedCaja] = useState<string>("all");
-  const [selectedResponsable, setSelectedResponsable] = useState<string>("all");
-  const [selectedState, setSelectedState] = useState<string>("all");
+  const {
+    fromDate, setFromDate,
+    toDate, setToDate,
+    selectedCaja, setSelectedCaja,
+    selectedResponsable, setSelectedResponsable,
+    cashiers,
+    stores,
+    turns,
+    loading,
+    currentPage, setCurrentPage,
+    pageSize, setPageSize,
+    totalPages,
+    fetchReconciliations,
+    closeTurnById
+  } = useCashReconciliations();
 
-  // Data State
-  const [turns, setTurns] = useState<any[]>([]);
-  const [cashiers, setCashiers] = useState<any[]>([]);
-  const [stores, setStores] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [digitalMenuOpen, setDigitalMenuOpen] = useState(false);
 
   // Turn Dialogs
@@ -46,75 +43,6 @@ export default function CashReconciliations() {
   const [closingAmount, setClosingAmount] = useState("");
   const [closingNotes, setClosingNotes] = useState("");
   const [turnToCloseId, setTurnToCloseId] = useState<string | null>(null);
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalCount, setTotalCount] = useState(0);
-
-  // Fetch Filters Metadata
-  useEffect(() => {
-    const fetchMetadata = async () => {
-      // Cashiers (profiles)
-      const { data: cashierData } = await supabase.from("profiles").select("id, name");
-      if (cashierData) setCashiers(cashierData);
-
-      // Stores
-      const { data: storeData } = await supabase.from("stores").select("id, name");
-      if (storeData) setStores(storeData);
-    };
-    fetchMetadata();
-  }, []);
-
-  // Fetch Reconciliations
-  const fetchReconciliations = async () => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from("cash_turns")
-        .select(`
-          *,
-          profile:cashier_id(name),
-          store:store_id(name)
-        `, { count: "exact" });
-
-      if (fromDate) {
-        query = query.gte("opened_at", `${fromDate}T00:00:00Z`);
-      }
-      if (toDate) {
-        query = query.lte("opened_at", `${toDate}T23:59:59Z`);
-      }
-      if (selectedCaja !== "all") {
-        query = query.eq("store_id", selectedCaja);
-      }
-      if (selectedResponsable !== "all") {
-        query = query.eq("cashier_id", selectedResponsable);
-      }
-      if (selectedState !== "all") {
-        query = query.eq("status", selectedState);
-      }
-
-      // Pagination
-      const from = (currentPage - 1) * pageSize;
-      const to = from + pageSize - 1;
-      
-      const { data, count, error } = await query
-        .order("opened_at", { ascending: false })
-        .range(from, to);
-
-      if (error) throw error;
-      setTurns(data || []);
-      setTotalCount(count || 0);
-    } catch (e: any) {
-      toast.error("Error al cargar cuadres de caja: " + e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchReconciliations();
-  }, [currentPage, pageSize, selectedCaja, selectedResponsable, selectedState]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +65,6 @@ export default function CashReconciliations() {
       await openTurn(amount);
       setIsOpeningDialog(false);
       fetchReconciliations();
-      toast.success("Turno abierto exitosamente");
     } catch (e: any) {
       toast.error("Error al abrir turno: " + e.message);
     }
@@ -151,29 +78,12 @@ export default function CashReconciliations() {
   };
 
   const executeCloseTurn = async () => {
-    try {
-      if (!turnToCloseId) return;
-      const amount = parseFloat(closingAmount) || 0;
-      
-      // Update turn using RPC or standard query
-      const { error } = await supabase
-        .from("cash_turns")
-        .update({
-          status: "closed",
-          closing_amount: amount,
-          closed_at: new Date().toISOString(),
-          notes: closingNotes
-        })
-        .eq("id", turnToCloseId);
-
-      if (error) throw error;
-
+    if (!turnToCloseId) return;
+    const amount = parseFloat(closingAmount) || 0;
+    const success = await closeTurnById(turnToCloseId, amount, closingNotes);
+    if (success) {
       setIsClosingDialog(false);
       setTurnToCloseId(null);
-      fetchReconciliations();
-      toast.success("Turno cerrado exitosamente");
-    } catch (e: any) {
-      toast.error("Error al cerrar turno: " + e.message);
     }
   };
 
@@ -205,7 +115,7 @@ export default function CashReconciliations() {
           <div class="row"><strong>Fecha Fin:</strong> <span>${turn.closed_at ? format(new Date(turn.closed_at), "dd/MM/yyyy HH:mm") : "ACTIVO"}</span></div>
           <div class="row"><strong>Responsable:</strong> <span>${turn.profile?.name || "Desconocido"}</span></div>
           <div class="row"><strong>Estado:</strong> <span>${turn.status === "closed" ? "Cerrado" : "Abierto"}</span></div>
-          
+
           <div class="totals">
             <div class="row"><strong>Monto Inicial:</strong> <span>$${Number(turn.opening_amount || 0).toLocaleString()}</span></div>
             <div class="row"><strong>Monto Cierre:</strong> <span>$${turn.closing_amount !== null ? "$" + Number(turn.closing_amount).toLocaleString() : "N/A"}</span></div>
@@ -220,12 +130,10 @@ export default function CashReconciliations() {
     printWindow.document.close();
   };
 
-  const totalPages = Math.ceil(totalCount / pageSize);
-
   return (
     <Layout>
       <div className="min-h-screen bg-background text-foreground p-6 lg:p-10 space-y-8">
-        
+
         {/* Header Title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/5 pb-6">
           <div>
@@ -363,7 +271,7 @@ export default function CashReconciliations() {
                       ) : (
                         <span className="text-[10px] font-black uppercase text-slate-500 mr-2 italic">Finalizado</span>
                       )}
-                      
+
                       <Button variant="outline" onClick={() => navigate(`/invoices?turn=${turn.id}`)} className="border-rose-500/20 hover:bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-wider rounded-xl px-4 py-1.5 h-8 bg-transparent">
                         Ver facturas
                       </Button>
@@ -397,7 +305,7 @@ export default function CashReconciliations() {
             <div className="flex items-center gap-1.5">
               <Button size="sm" variant="ghost" onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="text-[9px] font-black uppercase tracking-widest rounded-lg">Primero</Button>
               <Button size="sm" variant="ghost" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="text-[9px] font-black uppercase tracking-widest rounded-lg">Anterior</Button>
-              
+
               <div className="bg-primary text-white text-xs font-black uppercase h-7 w-7 flex items-center justify-center rounded-lg italic font-space-grotesk shadow-glow-pro">
                 {currentPage}
               </div>
@@ -422,10 +330,10 @@ export default function CashReconciliations() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label className="text-[9px] font-black uppercase tracking-[0.2em] font-space-grotesk">Base Inicial ($)</Label>
-              <Input 
-                type="number" 
-                placeholder="Ej: 50000" 
-                value={openingAmount} 
+              <Input
+                type="number"
+                placeholder="Ej: 50000"
+                value={openingAmount}
                 onChange={(e) => setOpeningAmount(e.target.value)}
                 className="bg-white/5 border-white/10 rounded-2xl h-12 text-sm font-bold font-space-grotesk"
               />
@@ -457,19 +365,19 @@ export default function CashReconciliations() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label className="text-[9px] font-black uppercase tracking-[0.2em] font-space-grotesk">Monto Entregado ($)</Label>
-              <Input 
-                type="number" 
-                placeholder="Ej: 120000" 
-                value={closingAmount} 
+              <Input
+                type="number"
+                placeholder="Ej: 120000"
+                value={closingAmount}
                 onChange={(e) => setClosingAmount(e.target.value)}
                 className="bg-white/5 border-white/10 rounded-2xl h-12 text-sm font-bold font-space-grotesk"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[9px] font-black uppercase tracking-[0.2em] font-space-grotesk">Notas / Observaciones</Label>
-              <Input 
-                placeholder="Ej: Todo cuadrado sin novedades" 
-                value={closingNotes} 
+              <Input
+                placeholder="Ej: Todo cuadrado sin novedades"
+                value={closingNotes}
                 onChange={(e) => setClosingNotes(e.target.value)}
                 className="bg-white/5 border-white/10 rounded-2xl h-12 text-xs"
               />

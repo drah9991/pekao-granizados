@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Tables, TablesInsert, Json, Enums } from "@/integrations/supabase/types";
 import { exportToCsv, importFromCsv, downloadFile } from "@/lib/csv-utils";
 import { mapProductStock } from "@/utils/productStockUtils";
+import { syncRecipeStock } from "@/lib/recipe-stock-sync";
 
 type Product = Tables<'products'>;
 type ProductType = Enums<'product_type'>;
@@ -234,6 +235,14 @@ export function useProducts() {
         // Si se especificó stock durante la edición, lo actualizamos o insertamos en store_stock
         if (formData.stock !== "" && !isNaN(parseFloat(formData.stock)) && storeId) {
             const qty = parseFloat(formData.stock);
+
+            const { data: existingStock } = await supabase
+                .from('store_stock')
+                .select('qty')
+                .eq('product_id', editingProduct.id)
+                .eq('store_id', storeId)
+                .maybeSingle();
+
             const { error: stockError } = await supabase
                 .from('store_stock')
                 .upsert({
@@ -245,8 +254,13 @@ export function useProducts() {
                 }, {
                     onConflict: 'product_id,store_id'
                 });
-            
-            if (stockError) console.error("Error updating stock during product edit:", stockError);
+
+            if (stockError) {
+              console.error("Error updating stock during product edit:", stockError);
+            } else {
+              // Keep mixture/tank inventory (recipes) in sync with this manual stock edit
+              await syncRecipeStock(editingProduct.id, storeId, qty - Number(existingStock?.qty || 0));
+            }
         }
       } else {
         const { data: newProd, error: insError } = await supabase
@@ -258,12 +272,20 @@ export function useProducts() {
         if (insError) throw insError;
 
         if (formData.stock && parseFloat(formData.stock) > 0 && storeId) {
-            await supabase.from('store_stock').insert({
+            const initialQty = parseFloat(formData.stock);
+            const { error: stockError } = await supabase.from('store_stock').insert({
                 product_id: newProd.id,
                 store_id: storeId,
-                qty: parseFloat(formData.stock),
+                qty: initialQty,
                 min_qty: 10
             });
+
+            if (stockError) {
+              console.error("Error setting initial stock for new product:", stockError);
+            } else {
+              // Keep mixture/tank inventory (recipes) in sync with this initial stock
+              await syncRecipeStock(newProd.id, storeId, initialQty);
+            }
         }
       }
 
@@ -390,6 +412,22 @@ export function useProducts() {
     setProductDialogIsOpen(true);
   };
 
+  const openDetailsDialog = async (product: Product) => {
+    setViewingProduct(product);
+    setDetailsDialogIsOpen(true);
+    const { data } = await supabase
+      .from('store_stock')
+      .select('qty, min_qty, stores(name)')
+      .eq('product_id', product.id);
+    setProductStock(
+      (data || []).map((item) => ({
+        store_name: (item.stores as { name: string } | null)?.name || '',
+        qty: item.qty,
+        min_qty: item.min_qty,
+      }))
+    );
+  };
+
   return {
     products: filteredProducts,
     skuAcronyms,
@@ -415,6 +453,7 @@ export function useProducts() {
     handleExportProducts,
     openCreateDialog,
     openEditDialog,
+    openDetailsDialog,
     setViewingProduct,
     setProductStock
   };

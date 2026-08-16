@@ -10,7 +10,6 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Settings, Upload, Download, Camera, Plus, History, Search, Zap, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,8 +38,7 @@ export default function Products() {
     handleExportProducts,
     openCreateDialog,
     openEditDialog,
-    setViewingProduct,
-    setProductStock
+    openDetailsDialog,
   } = useProducts();
 
   // Dynamic Unique Categories combining Master DB Categories + Existing Product Categories
@@ -192,16 +190,7 @@ export default function Products() {
             filterType="all"
             openCreateDialog={openCreateDialog}
             openEditDialog={openEditDialog}
-            openDetailsDialog={async (p) => {
-              setViewingProduct(p);
-              setDetailsDialogIsOpen(true);
-              const { data } = await supabase.from('store_stock').select('qty, min_qty, stores(name)').eq('product_id', p.id);
-              setProductStock((data || []).map((item: any) => ({ 
-                store_name: item.stores.name, 
-                qty: item.qty, 
-                min_qty: item.min_qty 
-              })));
-            }}
+            openDetailsDialog={openDetailsDialog}
             handleDeleteProduct={handleDeleteProduct}
             userStoreId={storeId}
           />

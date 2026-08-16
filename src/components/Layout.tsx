@@ -40,7 +40,6 @@ import { AlertManager } from "./alerts/AlertManager";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useRealtimeAlerts } from "@/hooks/useRealtimeAlerts";
 import { TankLevelsList } from "@/components/pos/TankLevelIndicator";
-import { useFavoritesStore } from "@/store/useFavoritesStore";
 import { useLowStockCount } from "@/hooks/useLowStockCount";
 import { Badge } from "@/components/ui/badge";
 import { InteractiveCursor } from "./ui/InteractiveCursor";
@@ -57,7 +56,6 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { favorites, toggleFavorite, isFavorite } = useFavoritesStore();
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
 

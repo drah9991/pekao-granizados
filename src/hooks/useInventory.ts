@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { StockItem, Store } from "@/types/inventory";
 import { Enums } from "@/integrations/supabase/types";
 import { useAuth } from "@/context/AuthContext";
+import { syncRecipeStock } from "@/lib/recipe-stock-sync";
 
 interface Movement {
   id: string;
@@ -31,32 +32,6 @@ interface PurchaseLineItem {
   name: string;
   qty: number;
   total: number;
-}
-
-/**
- * Syncs mixture/tank stock (inventory_items) for a product's recipe, mirroring
- * the pattern used by InventoryEntry.tsx and MixReloadDialog.tsx. Non-blocking:
- * a missing/failed recipe sync must not roll back the store_stock movement.
- */
-async function syncRecipeStock(productId: string, storeId: string, qtyDelta: number) {
-  try {
-    const { data: recipes } = await supabase
-      .from("recipes")
-      .select("inventory_item_id, quantity_required")
-      .eq("product_id", productId);
-
-    if (!recipes || recipes.length === 0) return;
-
-    for (const recipe of recipes) {
-      await supabase.rpc("increment_inventory_stock", {
-        p_item_id: recipe.inventory_item_id,
-        p_store_id: storeId,
-        p_amount: qtyDelta * (recipe.quantity_required || 1),
-      });
-    }
-  } catch (error) {
-    console.error("Recipe stock sync error (non-critical):", error);
-  }
 }
 
 export function useInventory() {

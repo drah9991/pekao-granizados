@@ -4,30 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { Plus, Edit2, Trash2, Phone, Mail, MapPin, Globe, UserCheck, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Supplier {
-  id: string;
-  name: string;
-  commercial_name: string | null;
-  nit_doc: string | null;
-  phone: string | null;
-  email: string | null;
-  address: string | null;
-  website: string | null;
-  contact_name: string | null;
-  notes: string | null;
-  created_at: string | null;
-}
+import { useSuppliers } from "@/hooks/useSuppliers";
 
 export default function Suppliers() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const {
+    suppliers,
+    loading,
+    dialogOpen,
+    setDialogOpen,
+    selectedSupplier,
+    openCreateDialog,
+    openEditDialog,
+    handleSave,
+    handleDelete,
+  } = useSuppliers();
 
   // Form Inputs (matching Screenshot 2)
   const [name, setName] = useState("");
@@ -40,121 +32,50 @@ export default function Suppliers() {
   const [contactName, setContactName] = useState("");
   const [notes, setNotes] = useState("");
 
-  const fetchSuppliers = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("suppliers")
-        .select("*")
-        .order("name", { ascending: true });
-      if (error) throw error;
-      setSuppliers(data || []);
-    } catch (err) {
-      console.error("Error fetching suppliers:", err);
-      toast.error("Error al cargar proveedores");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchSuppliers();
-  }, []);
+    if (selectedSupplier) {
+      setName(selectedSupplier.name);
+      setCommercialName(selectedSupplier.commercial_name || "");
+      setNitDoc(selectedSupplier.nit_doc || "");
+      setEmail(selectedSupplier.email || "");
+      setPhone(selectedSupplier.phone || "");
+      setAddress(selectedSupplier.address || "");
+      setWebsite(selectedSupplier.website || "");
+      setContactName(selectedSupplier.contact_name || "");
+      setNotes(selectedSupplier.notes || "");
+    } else {
+      setName("");
+      setCommercialName("");
+      setNitDoc("");
+      setEmail("");
+      setPhone("");
+      setAddress("");
+      setWebsite("");
+      setContactName("");
+      setNotes("");
+    }
+  }, [selectedSupplier, dialogOpen]);
 
   const handleOpenCreate = () => {
-    setSelectedSupplier(null);
-    setName("");
-    setCommercialName("");
-    setNitDoc("");
-    setEmail("");
-    setPhone("");
-    setAddress("");
-    setWebsite("");
-    setContactName("");
-    setNotes("");
-    setDialogOpen(true);
+    openCreateDialog();
   };
 
-  const handleOpenEdit = (sup: Supplier) => {
-    setSelectedSupplier(sup);
-    setName(sup.name);
-    setCommercialName(sup.commercial_name || "");
-    setNitDoc(sup.nit_doc || "");
-    setEmail(sup.email || "");
-    setPhone(sup.phone || "");
-    setAddress(sup.address || "");
-    setWebsite(sup.website || "");
-    setContactName(sup.contact_name || "");
-    setNotes(sup.notes || "");
-    setDialogOpen(true);
+  const handleOpenEdit = (sup: typeof suppliers[number]) => {
+    openEditDialog(sup);
   };
 
-  const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error("El Nombre del proveedor es obligatorio");
-      return;
-    }
-    if (!nitDoc.trim()) {
-      toast.error("El Documento (NIT/Cédula) del proveedor es obligatorio");
-      return;
-    }
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      toast.error("El correo electrónico ingresado no tiene un formato válido");
-      return;
-    }
-
-    const payload = {
-      name: name.trim(),
-      commercial_name: commercialName.trim() || null,
-      nit_doc: nitDoc.trim() || null,
-      email: email.trim() || null,
-      phone: phone.trim() || null,
-      address: address.trim() || null,
-      website: website.trim() || null,
-      contact_name: contactName.trim() || null,
-      notes: notes.trim() || null
-    };
-
-    try {
-      if (selectedSupplier) {
-        // Edit
-        const { error } = await supabase
-          .from("suppliers")
-          .update(payload)
-          .eq("id", selectedSupplier.id);
-        if (error) throw error;
-        toast.success("Proveedor actualizado");
-      } else {
-        // Create
-        const { error } = await supabase
-          .from("suppliers")
-          .insert([payload]);
-        if (error) throw error;
-        toast.success("Proveedor registrado");
-      }
-      setDialogOpen(false);
-      fetchSuppliers();
-    } catch (err: any) {
-      console.error("Error saving supplier:", err);
-      toast.error(err.message || "Error al guardar el proveedor");
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Está seguro de eliminar este proveedor?")) return;
-
-    try {
-      const { error } = await supabase
-        .from("suppliers")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-      toast.success("Proveedor eliminado");
-      fetchSuppliers();
-    } catch (err: any) {
-      console.error("Error deleting supplier:", err);
-      toast.error("Error al eliminar el proveedor (puede estar relacionado con productos o compras)");
-    }
+  const handleSaveClick = () => {
+    handleSave({
+      name,
+      commercialName,
+      nitDoc,
+      email,
+      phone,
+      address,
+      website,
+      contactName,
+      notes,
+    });
   };
 
   return (
@@ -240,9 +161,9 @@ export default function Suppliers() {
                           </div>
                         )}
                         {sup.website && (
-                          <a 
+                          <a
                             href={sup.website.startsWith("http") ? sup.website : `https://${sup.website}`}
-                            target="_blank" 
+                            target="_blank"
                             rel="noreferrer"
                             className="text-rose-600 hover:underline flex items-center gap-1.5 truncate"
                           >
@@ -391,7 +312,7 @@ export default function Suppliers() {
                 Cerrar
               </Button>
               <Button
-                onClick={handleSave}
+                onClick={handleSaveClick}
                 className="bg-rose-600 hover:bg-rose-700 text-white h-10 px-6 rounded-lg text-xs font-bold cursor-pointer border-none shadow-sm"
               >
                 Guardar cambios
