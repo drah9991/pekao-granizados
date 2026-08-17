@@ -367,25 +367,49 @@ export function usePOS() {
       .on(
         'postgres_changes',
         {
-          event: '*',
-          schema: 'public',
-          table: 'products',
-          filter: `store_id=eq.${storeId}`
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['products-grid', storeId] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'store_stock',
           filter: `store_id=eq.${storeId}`
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['products-grid', storeId] });
+        (payload) => {
+          const updatedStock = payload.new as { product_id: string; qty: number };
+          queryClient.setQueryData(['products-grid', storeId], (oldData: any) => {
+            if (!oldData || !oldData.products) return oldData;
+            return {
+              ...oldData,
+              products: oldData.products.map((prod: any) =>
+                prod.id === updatedStock.product_id ? { ...prod, stock: updatedStock.qty } : prod
+              )
+            };
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'inventory_items',
+          filter: `store_id=eq.${storeId}`
+        },
+        (payload) => {
+          const updatedItem = payload.new as { id: string; stock: number };
+          queryClient.setQueryData(['products-grid', storeId], (oldData: any) => {
+            if (!oldData || !oldData.products) return oldData;
+            return {
+              ...oldData,
+              products: oldData.products.map((prod: any) => {
+                const hasIngredient = prod.recipes?.some(
+                  (r: any) => r.inventory_item_id === updatedItem.id
+                );
+                if (hasIngredient) {
+                  return { ...prod, mixtureStock: updatedItem.stock };
+                }
+                return prod;
+              })
+            };
+          });
         }
       )
       .on(
@@ -393,7 +417,7 @@ export function usePOS() {
         {
           event: '*',
           schema: 'public',
-          table: 'inventory_items',
+          table: 'products',
           filter: `store_id=eq.${storeId}`
         },
         () => {
