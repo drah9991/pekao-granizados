@@ -24,7 +24,11 @@ export function initSentry() {
       "is not a valid JavaScript MIME type",
       "Failed to fetch dynamically imported module",
       "ChunkLoadError",
-      "favorites is not defined"
+      "favorites is not defined",
+      "Unexpected token '<'",
+      "Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON",
+      "Unexpected token '<', \"<html>\"... is not valid JSON",
+      "SyntaxError: Unexpected token '<'"
     ],
     // Performance monitoring
     tracesSampleRate: 0.3,  // 30% of transactions

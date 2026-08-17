@@ -22,23 +22,49 @@ registerSW({ immediate: true });
 initSentry();
 initPostHog();
 
+// Rate-limited auto reload helper for stale build chunks / HTML response errors
+const handleChunkOrHtmlError = (reasonOrMessage?: string): boolean => {
+  if (!reasonOrMessage) return false;
+  const str = String(reasonOrMessage);
+  const isChunkError = 
+    str.includes('Failed to fetch dynamically imported module') ||
+    str.includes('is not a valid JavaScript MIME type') ||
+    str.includes('Unexpected token \'<\'') ||
+    str.includes('Unexpected token <') ||
+    str.includes('ChunkLoadError');
+
+  if (isChunkError) {
+    const lastReload = sessionStorage.getItem('pekao_last_chunk_reload');
+    const now = Date.now();
+    if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+      sessionStorage.setItem('pekao_last_chunk_reload', now.toString());
+      console.warn('Stale build chunk or HTML fallback error detected, reloading page...', str);
+      window.location.reload();
+      return true;
+    }
+  }
+  return false;
+};
+
 // Global handler for Vite dynamic import errors (e.g., when a new version is deployed)
 window.addEventListener('vite:preloadError', (event) => {
   console.warn('Vite preload error, reloading page to get new assets...', event);
-  window.location.reload();
+  handleChunkOrHtmlError('Failed to fetch dynamically imported module');
+});
+
+// Global error handler for uncaught runtime errors
+window.addEventListener('error', (event) => {
+  const msg = event.message || event.error?.message || '';
+  if (handleChunkOrHtmlError(msg)) {
+    event.preventDefault();
+  }
 });
 
 // Global error handler for unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
-  if (
-    event.reason && 
-    event.reason.message && 
-    (event.reason.message.includes('Failed to fetch dynamically imported module') ||
-     event.reason.message.includes('is not a valid JavaScript MIME type') ||
-     event.reason.name === 'ChunkLoadError')
-  ) {
-    console.warn('Chunk load error detected, reloading page...', event.reason);
-    window.location.reload();
+  const reasonMsg = event.reason?.message || event.reason?.name || String(event.reason || '');
+  if (handleChunkOrHtmlError(reasonMsg)) {
+    event.preventDefault();
     return;
   }
   console.error('Unhandled Promise Rejection:', event.reason);
