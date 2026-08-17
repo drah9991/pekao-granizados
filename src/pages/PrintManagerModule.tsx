@@ -145,7 +145,10 @@ export default function PrintManagerModule() {
         if (typeof p === 'string') {
           try {
             p = JSON.parse(p);
-          } catch (_) {}
+          } catch (parseError) {
+            console.error("Error parsing payment metadata for order", order.id, parseError);
+            p = {};
+          }
         }
         const payObj = (p || {}) as any;
         return {
