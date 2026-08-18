@@ -50,6 +50,7 @@ const PrintManagerModule = lazy(() => import("./pages/PrintManagerModule"));
 const Workflow = lazy(() => import("./pages/Workflow"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const LoyaltyCRM = lazy(() => import("./pages/CRM/Loyalty"));
+const Affiliates = lazy(() => import("./pages/Affiliates"));
 
 // Free Tools (SEO Lead Magnets)
 const BarcodeGenerator = lazy(() => import("./pages/Tools/BarcodeGenerator"));
@@ -282,6 +283,18 @@ const App = () => {
                     <ErrorBoundary fallbackTitle="Error en Configuración">
                       <Suspense fallback={<PageLoader />}>
                         <Settings />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings/affiliates"
+                element={
+                  <ProtectedRoute requiredRole={["admin", "owner"]}>
+                    <ErrorBoundary fallbackTitle="Error en Afiliados">
+                      <Suspense fallback={<PageLoader />}>
+                        <Affiliates />
                       </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>

@@ -93,6 +93,12 @@ export const printReceipt = (order: OrderWithDetails, storeName?: string) => {
         <div>PAGO: ${safePayment}</div>
         <div class="border-bottom"></div>
         <div class="text-center bold">¡GRACIAS POR SU COMPRA!</div>
+        
+        <!-- Firma Viral (SaaS Product-Led Growth) -->
+        <div class="text-center" style="margin-top: 15px; font-size: 10px; font-style: italic;">
+          Recibo generado con Pekao Central<br/>
+          Crea tu cuenta gratis en pekao.com
+        </div>
         <script>
           window.onload = () => {
             window.print();
