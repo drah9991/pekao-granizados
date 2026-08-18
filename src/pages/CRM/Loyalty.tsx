@@ -21,55 +21,23 @@ export default function LoyaltyCRM() {
   const fetchLoyaltyData = async () => {
     setLoading(true);
     try {
-      // 1. Obtener todos los clientes
-      const { data: customersData, error: customersError } = await supabase
-        .from('customers')
-        .select('*');
+      const { data, error } = await supabase
+        .from('vw_customer_loyalty' as any)
+        .select('*')
+        .eq('store_id', storeId)
+        .order('total_spent', { ascending: false });
         
-      if (customersError) throw customersError;
-
-      // 2. Obtener todas las órdenes completadas para calcular LTV (Life Time Value) y frecuencia
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select('customer_id, total, created_at')
-        .eq('status', 'completed')
-        .not('customer_id', 'is', null);
-
-      if (ordersError) throw ordersError;
-
-      // 3. Procesar y agrupar datos localmente
-      const loyaltyMap = new Map();
+      if (error) throw error;
       
-      customersData.forEach(c => {
-        loyaltyMap.set(c.id, {
-          ...c,
-          totalSpent: 0,
-          purchaseCount: 0,
-          lastPurchase: null,
-          category: 'Nuevo'
-        });
-      });
+      // Aseguramos de parsear los números que PostgreSQL podría devolver como strings (sum/count)
+      const formattedData = data?.map((c: any) => ({
+        ...c,
+        totalSpent: Number(c.total_spent),
+        purchaseCount: Number(c.purchase_count),
+        lastPurchase: c.last_purchase
+      })) || [];
 
-      ordersData?.forEach(o => {
-        if (loyaltyMap.has(o.customer_id)) {
-          const c = loyaltyMap.get(o.customer_id);
-          c.totalSpent += Number(o.total);
-          c.purchaseCount += 1;
-          
-          if (!c.lastPurchase || new Date(o.created_at) > new Date(c.lastPurchase)) {
-            c.lastPurchase = o.created_at;
-          }
-        }
-      });
-
-      // Categorización simple
-      const processed = Array.from(loyaltyMap.values()).map(c => {
-        if (c.purchaseCount >= 10) c.category = 'VIP 🌟';
-        else if (c.purchaseCount >= 3) c.category = 'Recurrente';
-        return c;
-      }).sort((a, b) => b.totalSpent - a.totalSpent); // Sort by highest LTV
-
-      setCustomers(processed);
+      setCustomers(formattedData);
     } catch (err: any) {
       toast.error('Error cargando datos del CRM: ' + err.message);
     } finally {

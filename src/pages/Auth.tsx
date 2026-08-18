@@ -9,7 +9,7 @@ import LoginForm from "@/components/auth/LoginForm";
 import SignupForm from "@/components/auth/SignupForm";
 import { StoreSelectorDialog } from "@/components/auth/StoreSelectorDialog";
 import { MagneticButton } from "@/components/ui/MagneticButton";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Auth() {
   const { logoUrl, brandName, isLoadingBranding } = useBranding();
