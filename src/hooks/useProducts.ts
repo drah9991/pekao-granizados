@@ -345,10 +345,11 @@ export function useProducts() {
 
   const openCreateDialog = () => {
     setEditingProduct(null);
+    const initialType = (filterType !== "all" ? filterType : "granizado") as ProductType;
     setFormData({
       name: "", sku: "", description: "", price: "", cost: "", active: true,
       category: "", category_id: null, is_public: true, images: [], variants: null, recipe: null,
-      type: "granizado", stock: "", base_volume: "", unit_measure: "oz",
+      type: initialType, stock: "", base_volume: "", unit_measure: "oz",
       margin_target: "60.0", commission_rate: "0.0", supplier_name: "", supplier_id: null, is_starred: false,
     });
     setProductDialogIsOpen(true);

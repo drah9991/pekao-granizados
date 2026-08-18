@@ -76,19 +76,25 @@ export function DatosTab({
       {/* Form Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {/* Tipo* */}
+        {/* Tipo Operativo del Producto* */}
         <div className="space-y-2">
-          <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tipo*</Label>
+          <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tipo Operativo*</Label>
           <Select
-            value={displayType}
-            onValueChange={onTypeChange}
+            value={formData.type || "granizado"}
+            onValueChange={(val) => {
+              setFormData(prev => ({ ...prev, type: val }));
+            }}
           >
             <SelectTrigger className="h-11 bg-white/5 border-white/10 rounded-lg text-xs font-black uppercase text-white">
-              <SelectValue placeholder="Normal" />
+              <SelectValue placeholder="Seleccione Tipo" />
             </SelectTrigger>
             <SelectContent className="bg-slate-950 border-white/10">
-              <SelectItem value="normal" className="text-xs font-black uppercase">Normal</SelectItem>
-              <SelectItem value="combo" className="text-xs font-black uppercase">Combo</SelectItem>
+              <SelectItem value="granizado" className="text-xs font-black uppercase">🍹 Granizado (Receta / Varias Tallas)</SelectItem>
+              <SelectItem value="sachet" className="text-xs font-black uppercase">📦 Sachet (Unidad Única / Precio Fijo)</SelectItem>
+              <SelectItem value="sweet" className="text-xs font-black uppercase">🍭 Dulce / Snack (Unidad Única)</SelectItem>
+              <SelectItem value="topping" className="text-xs font-black uppercase">🍬 Topping / Adicional</SelectItem>
+              <SelectItem value="combo" className="text-xs font-black uppercase">🍱 Combo / Paquete</SelectItem>
+              <SelectItem value="other" className="text-xs font-black uppercase">🏷️ Otro / General</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -100,10 +106,26 @@ export function DatosTab({
             value={formData.category_id || ""}
             onValueChange={(value) => {
               const selected = categoriesList.find(c => c.id === value);
+              const catName = selected ? selected.name : "";
+              const catUpper = catName.toUpperCase();
+              
+              // Smart auto-detection of product type from category name
+              let autoType = formData.type;
+              if (catUpper.includes("SACHET")) {
+                autoType = "sachet";
+              } else if (catUpper.includes("DULCE") || catUpper.includes("SNACK")) {
+                autoType = "sweet";
+              } else if (catUpper.includes("TOPPING") || catUpper.includes("ADICIONAL")) {
+                autoType = "topping";
+              } else if (catUpper.includes("GRANIZADO") || catUpper.includes("BEBIDA")) {
+                autoType = "granizado";
+              }
+
               setFormData(prev => ({
                 ...prev,
                 category_id: value,
-                category: selected ? selected.name : ""
+                category: catName,
+                type: autoType
               }));
             }}
           >
