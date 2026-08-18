@@ -16,6 +16,7 @@ interface AuthContextType {
   storeId: string | null;
   storeName: string | null;
   subscriptionStatus: 'active' | 'inactive' | 'trial' | null;
+  isSuperAdmin: boolean;
   switchStore: (newStoreId: string) => Promise<void>;
 }
 
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   storeId: null,
   storeName: null,
   subscriptionStatus: null,
+  isSuperAdmin: false,
   switchStore: async () => {},
 });
 
@@ -41,6 +43,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     storeId: string | null;
     storeName: string | null;
     subscriptionStatus: 'active' | 'inactive' | 'trial' | null;
+    isSuperAdmin: boolean;
   }>({
     user: null,
     session: null,
@@ -49,6 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     storeId: null,
     storeName: null,
     subscriptionStatus: null,
+    isSuperAdmin: false,
   });
 
   const isMounted = React.useRef(true);
@@ -106,6 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         storeId: profile.store_id,
         storeName,
         subscriptionStatus: subscriptionStatus as any,
+        isSuperAdmin: profile.is_superadmin === true,
       }));
 
       // Identify user in Sentry for error context

@@ -33,6 +33,9 @@ const cleanCartItems = (cartItems: CartItem[]): CartItem[] => {
 };
 
 export interface CartStoreState {
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
+  
   cart: CartItem[];
   discount: number;
   discountType: "percent" | "fixed";
@@ -87,6 +90,9 @@ export interface CartStoreState {
 export const useCartStore = create<CartStoreState>()(
   persist(
     (set, get) => ({
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
+      
       cart: [],
       discount: 0,
       discountType: "percent",
@@ -339,6 +345,11 @@ export const useCartStore = create<CartStoreState>()(
     }),
     {
       name: "pekao-cart-storage",
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.setHasHydrated(true);
+        }
+      },
       partialize: (state) => ({
         cart: state.cart,
         discount: state.discount,
@@ -348,3 +359,15 @@ export const useCartStore = create<CartStoreState>()(
     }
   )
 );
+
+// --- Granular Selectors para evitar Re-Renders ---
+export const useCartItems = () => useCartStore((state) => state.cart);
+export const useCartCustomer = () => useCartStore((state) => state.selectedCustomer);
+export const useCartDiscount = () => useCartStore((state) => ({ discount: state.discount, discountType: state.discountType }));
+export const useCartHydrated = () => useCartStore((state) => state._hasHydrated);
+
+// Hook para componentes que deben esperar a la hidratación
+export const useHydratedCartStore = () => {
+  const hasHydrated = useCartStore((state) => state._hasHydrated);
+  return hasHydrated;
+};

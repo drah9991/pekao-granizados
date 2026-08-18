@@ -125,7 +125,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
       {activeTurn ? (
         activeTurn.status === 'paused' ? (
           /* PAUSED SHIFT CARD */
-          <div className="bg-muted/40 border border-amber-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-900/40 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(245,158,11,0.05)]">
+          <div className="bg-muted/40 border border-amber-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-muted/60 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(245,158,11,0.05)]">
             <div className="flex items-center gap-3 mb-3">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
@@ -167,7 +167,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
           </div>
         ) : (
           /* ACTIVE SHIFT CARD (OPEN) */
-          <div className="bg-muted/40 border border-emerald-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-900/40 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(16,185,129,0.05)]">
+          <div className="bg-muted/40 border border-emerald-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-muted/60 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(16,185,129,0.05)]">
             <div className="flex items-center gap-3 mb-3">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -209,7 +209,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
         )
       ) : (
         /* NO ACTIVE SHIFT CARD (LOCKED) */
-        <div className="bg-muted/40 border border-rose-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-900/40 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(239,68,68,0.05)]">
+        <div className="bg-muted/40 border border-rose-500/20 rounded-2xl p-4 transition-all duration-300 hover:bg-muted/60 relative overflow-hidden backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_0_15px_rgba(239,68,68,0.05)]">
           <div className="flex items-center gap-3 mb-3">
             <span className="relative flex h-2.5 w-2.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-rose-400/30 animate-pulse" />
@@ -234,7 +234,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
 
       {/* Opening Dialog */}
       <Dialog open={isOpening} onOpenChange={setIsOpening}>
-        <DialogContent className="bg-background/95 backdrop-blur-md border border-white/10 text-foreground max-w-sm rounded-[2rem]">
+        <DialogContent className="bg-background/95 backdrop-blur-md border border-border text-foreground max-w-sm rounded-[2rem]">
           <DialogHeader>
             <DialogTitle className="font-space-grotesk font-black uppercase italic tracking-wider text-primary text-glow text-lg">Apertura de Turno</DialogTitle>
             <DialogDescription className="text-muted-foreground text-xs uppercase tracking-wide">

@@ -48,6 +48,11 @@ const RecipeManagement = lazy(() => import("./components/settings/RecipeManageme
 const DigitalMenu = lazy(() => import("./pages/DigitalMenu"));
 const PrintManagerModule = lazy(() => import("./pages/PrintManagerModule"));
 const Workflow = lazy(() => import("./pages/Workflow"));
+const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
+
+// Free Tools (SEO Lead Magnets)
+const BarcodeGenerator = lazy(() => import("./pages/Tools/BarcodeGenerator"));
+const MarginCalculator = lazy(() => import("./pages/Tools/MarginCalculator"));
 
 const ProductsInventoryLayout = lazy(() => import("./components/inventory/ProductsInventoryLayout").then(m => ({ default: m.ProductsInventoryLayout })));
 const RecipeBuilder = lazy(() => import("./components/inventory/RecipeBuilder").then(m => ({ default: m.RecipeBuilder })));
@@ -93,6 +98,19 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              
+              {/* Free Tools Routes */}
+              <Route path="/tools/generador-codigos-de-barras" element={
+                <Suspense fallback={<PageLoader />}>
+                  <BarcodeGenerator />
+                </Suspense>
+              } />
+              <Route path="/tools/calculadora-margen-ganancia" element={
+                <Suspense fallback={<PageLoader />}>
+                  <MarginCalculator />
+                </Suspense>
+              } />
+
               <Route path="/onboarding" element={
                 <ProtectedRoute>
                   <Onboarding />
@@ -381,6 +399,20 @@ const App = () => {
     </ProtectedRoute>
   }
 />
+
+<Route
+  path="/super-admin"
+  element={
+    <ProtectedRoute>
+      <ErrorBoundary fallbackTitle="Error en Panel Maestro">
+        <Suspense fallback={<PageLoader />}> 
+          <SuperAdmin />
+        </Suspense>
+      </ErrorBoundary>
+    </ProtectedRoute>
+  }
+/>
+
 {/* Catch-all route */}
 <Route path="*" element={<NotFound />} />
             </Routes>

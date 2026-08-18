@@ -66,7 +66,11 @@
     --sidebar-background: 1.0 0.0 0;
     --sidebar-foreground: 0.21 0.04 250;
     --sidebar-primary: 0.58 0.23 250;
+    --sidebar-primary-foreground: 0.99 0.0 0;
+    --sidebar-accent: 0.96 0.01 240;
+    --sidebar-accent-foreground: 0.21 0.04 250;
     --sidebar-border: 0.92 0.01 220;
+    --sidebar-ring: 0.58 0.23 250;
 
     --glass-bg: rgba(255, 255, 255, 0.6);
     --glass-border: rgba(0, 0, 0, 0.05);
@@ -114,7 +118,12 @@
 
     --sidebar-background: 0.15 0.02 250;
     --sidebar-foreground: 0.95 0.01 250;
+    --sidebar-primary: 0.55 0.20 260;
+    --sidebar-primary-foreground: 1.0 0.0 0;
+    --sidebar-accent: 0.22 0.02 240;
+    --sidebar-accent-foreground: 0.95 0.01 250;
     --sidebar-border: 0.24 0.02 250;
+    --sidebar-ring: 0.55 0.20 260;
 
     --glass-bg: rgba(15, 17, 23, 0.7);
     --glass-border: rgba(255, 255, 255, 0.08);
@@ -292,10 +301,10 @@
   .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    grid-template-rows: auto repeat(2, 1fr);
+    grid-template-rows: auto;
     gap: 1.5rem;
     height: auto;
-    min-height: 700px;
+    min-height: auto;
   }
 
   @media (max-width: 1024px) {

@@ -170,11 +170,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F9FA] dark:bg-slate-950 text-slate-800 dark:text-slate-100 relative overflow-hidden font-sans">
+    <div className="flex flex-col h-screen bg-background text-foreground relative overflow-hidden font-sans">
       <InteractiveCursor />
       
       {/* 1. HEADER / NAVBAR SUPERIOR (HORIZONTAL EN DESKTOP) */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 z-[60] px-4 md:px-8 flex items-center justify-between shadow-sm select-none">
+      <header className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-[60] px-4 md:px-8 flex items-center justify-between shadow-sm select-none">
         
         {/* Lado Izquierdo: Logo */}
         <div className="flex items-center gap-4">

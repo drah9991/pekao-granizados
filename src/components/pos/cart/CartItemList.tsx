@@ -94,7 +94,7 @@ export function CartItemList({
                             </button>
                           </PopoverTrigger>
                           <PopoverContent className="w-64 bg-popover/95 border-border backdrop-blur-md p-3 text-popover-foreground rounded-xl shadow-xl z-50">
-                            <h4 className="font-bold text-xs uppercase tracking-wider mb-2 text-white/60 font-dm-sans">Agregar Toppings</h4>
+                            <h4 className="font-bold text-xs uppercase tracking-wider mb-2 text-muted-foreground font-dm-sans">Agregar Toppings</h4>
                             <div className="space-y-1 max-h-48 overflow-y-auto no-scrollbar">
                               {availableToppings.map((topping) => {
                                 const isSelected = item.toppings?.some(t => t.id === topping.id) || false;
@@ -122,7 +122,7 @@ export function CartItemList({
                                     )}
                                   >
                                     <span>{topping.name}</span>
-                                    <span className={isSelected ? "text-primary-foreground font-black" : "text-white/40"}>
+                                    <span className={isSelected ? "text-primary font-black" : "text-muted-foreground"}>
                                       +{formatCOP(topping.price)}
                                     </span>
                                   </button>

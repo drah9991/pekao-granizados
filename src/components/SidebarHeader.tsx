@@ -27,10 +27,10 @@ export function SidebarHeader({ className }: SidebarHeaderProps) {
   }, []);
 
   return (
-    <div className={cn("p-6 border-b border-white/10 relative overflow-hidden bg-slate-950/20 backdrop-blur-md", className)}>
+    <div className={cn("p-6 border-b border-border/50 relative overflow-hidden bg-muted/20 backdrop-blur-md", className)}>
       <div className="flex items-center gap-4 relative z-10">
         {/* Isotype with Glowing Neon Border */}
-        <div className="relative w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 hover:border-primary/50 transition-all duration-300 hover:scale-105 shadow-[0_0_15px_rgba(236,72,153,0.15)] group shrink-0">
+        <div className="relative w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center border border-border/50 hover:border-primary/50 transition-all duration-300 hover:scale-105 shadow-[0_0_15px_rgba(236,72,153,0.15)] group shrink-0">
           <div className="absolute inset-0 bg-primary/5 rounded-xl blur-md group-hover:bg-primary/10 transition-colors" />
           {isLoadingBranding ? (
             <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
