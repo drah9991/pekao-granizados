@@ -5,10 +5,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
+export interface StoreOption {
+  id: string;
+  name: string;
+  address?: string | null;
+  city?: string | null;
+}
+
 export function useAuthPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+
+  // Multi-store selection modal state
+  const [storeModalIsOpen, setStoreModalIsOpen] = useState(false);
+  const [availableStores, setAvailableStores] = useState<StoreOption[]>([]);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
   const handleLogin = async (email: string, password: string) => {
     setIsLoading(true);
@@ -28,14 +40,33 @@ export function useAuthPage() {
         );
       }
 
-      const { error } = await clientToUse.auth.signInWithPassword({
+      const { data: authData, error } = await clientToUse.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      toast.success("¡Bienvenido a Punto Play Pausa!");
+      const user = authData?.user;
+      if (user) {
+        // Fetch active stores
+        const { data: stores } = await supabase
+          .from("stores")
+          .select("id, name, address, city")
+          .order("name", { ascending: true });
+
+        if (stores && stores.length > 1) {
+          setAvailableStores(stores);
+          setPendingUserId(user.id);
+          setStoreModalIsOpen(true);
+          toast.success("Credenciales validadas. Elige tu sucursal para continuar.");
+          return true;
+        } else if (stores && stores.length === 1) {
+          await supabase.from("profiles").update({ store_id: stores[0].id }).eq("id", user.id);
+        }
+      }
+
+      toast.success("¡Bienvenido al sistema!");
       navigate("/dashboard");
       return true;
     } catch (error: unknown) {
@@ -43,6 +74,27 @@ export function useAuthPage() {
       console.error("Error logging in:", error);
       toast.error("Error al iniciar sesión: " + msg);
       return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelectStoreAndProceed = async (storeId: string) => {
+    setIsLoading(true);
+    try {
+      if (pendingUserId) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ store_id: storeId })
+          .eq("id", pendingUserId);
+        if (error) throw error;
+      }
+      toast.success("Sucursal conectada con éxito.");
+      setStoreModalIsOpen(false);
+      navigate("/dashboard");
+    } catch (err: any) {
+      console.error("Error selecting store:", err);
+      toast.error("Error al seleccionar la sucursal.");
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +138,10 @@ export function useAuthPage() {
     isLoading,
     rememberMe,
     setRememberMe,
+    storeModalIsOpen,
+    setStoreModalIsOpen,
+    availableStores,
+    handleSelectStoreAndProceed,
     handleLogin,
     handleSignup
   };

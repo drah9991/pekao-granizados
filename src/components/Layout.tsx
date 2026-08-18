@@ -481,8 +481,8 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                       <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-0.5 flex items-center gap-1">
                         NODO <ChevronDown className="w-2.5 h-2.5 text-muted-foreground/40" />
                       </span>
-                      <span className="text-[10px] font-black text-rose-600 uppercase italic font-space-grotesk max-w-[100px] truncate">
-                        {storeName || 'CARGANDO...'}
+                      <span className="text-[10px] font-black text-rose-600 uppercase italic font-space-grotesk max-w-[120px] truncate">
+                        {stores.find(s => s.id === storeId)?.name || storeName || (isLoadingAuth ? 'CARGANDO...' : 'SUCURSAL PRINCIPAL')}
                       </span>
                     </div>
                   </button>

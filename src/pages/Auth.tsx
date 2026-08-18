@@ -7,18 +7,36 @@ import { InteractiveCursor } from "@/components/ui/InteractiveCursor";
 import { useAuthPage } from "@/hooks/useAuthPage";
 import LoginForm from "@/components/auth/LoginForm";
 import SignupForm from "@/components/auth/SignupForm";
+import { StoreSelectorDialog } from "@/components/auth/StoreSelectorDialog";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Auth() {
   const { logoUrl, brandName, isLoadingBranding } = useBranding();
   const { 
-    isLoading, rememberMe, setRememberMe, handleLogin, handleSignup 
+    isLoading, 
+    rememberMe, 
+    setRememberMe, 
+    storeModalIsOpen, 
+    setStoreModalIsOpen, 
+    availableStores, 
+    handleSelectStoreAndProceed, 
+    handleLogin, 
+    handleSignup 
   } = useAuthPage();
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden bg-background bg-aurora animate-aurora">
       <InteractiveCursor />
+      
+      {/* Multi-Store Selection Dialog on Login */}
+      <StoreSelectorDialog
+        isOpen={storeModalIsOpen}
+        onClose={() => setStoreModalIsOpen(false)}
+        stores={availableStores}
+        onSelectStore={handleSelectStoreAndProceed}
+        isProcessing={isLoading}
+      />
       
       {/* Top Bar with Theme Toggle */}
       <div className="absolute top-6 right-6 z-20 flex items-center gap-3">
@@ -44,48 +62,55 @@ export default function Auth() {
                 )}
               </div>
               <div>
-                <h1 className="text-2xl lg:text-3xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground">
+                <h1 className="text-2xl font-black font-space-grotesk italic tracking-tighter uppercase text-foreground">
                   {brandName ? brandName.toUpperCase() : "PEKAO CENTRAL"}
                 </h1>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary font-space-grotesk italic">
-                  Intelligence Design • Enterprise OS
+                  POS & Inventory Operating System
                 </p>
               </div>
             </div>
 
             {/* Main Headline */}
-            <h2 className="text-3xl xl:text-4xl font-black font-space-grotesk tracking-tight text-foreground uppercase italic leading-tight mb-4">
-              Sistema Operativo de <span className="text-primary text-glow">Punto de Venta</span>
-            </h2>
-            <p className="text-xs text-muted-foreground font-medium leading-relaxed max-w-md">
-              Control unificado de inventario, recetas por gramaje/ml, libro de turnos y facturación en tiempo real.
-            </p>
+            <div className="space-y-3 mb-8">
+              <h2 className="text-3xl xl:text-4xl font-black font-space-grotesk italic tracking-tight uppercase leading-none text-foreground">
+                Control Total de tu <br />
+                <span className="text-primary drop-shadow-glow">Negocio en Tiempo Real</span>
+              </h2>
+              <p className="text-xs text-muted-foreground font-medium max-w-md leading-relaxed">
+                Facturación ultra-rápida, control automático de inventario por mezcla y tanques, analíticas en vivo y gestión multitienda.
+              </p>
+            </div>
 
-            {/* Feature Cards Grid */}
-            <div className="grid grid-cols-2 gap-3 mt-8">
-              <div className="bg-card/40 border border-border/60 rounded-2xl p-3.5 backdrop-blur-md space-y-1">
-                <div className="flex items-center gap-2 text-primary font-extrabold text-xs font-space-grotesk uppercase">
-                  <Zap className="w-4 h-4 text-primary" />
-                  <span>Ventas Ultra-Rápidas</span>
+            {/* Feature Pills */}
+            <div className="grid grid-cols-2 gap-3 max-w-md">
+              <div className="glass-pro p-3.5 rounded-2xl border border-border/50 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                  <Zap className="w-4 h-4" />
                 </div>
-                <p className="text-[10px] text-muted-foreground font-medium">Facturación POS con atajos de teclado e impresión.</p>
+                <div>
+                  <h4 className="text-[11px] font-black uppercase tracking-wider font-space-grotesk italic text-foreground">Ventas Ultra-Rápidas</h4>
+                  <p className="text-[10px] text-muted-foreground">POS táctil optimizado</p>
+                </div>
               </div>
 
-              <div className="bg-card/40 border border-border/60 rounded-2xl p-3.5 backdrop-blur-md space-y-1">
-                <div className="flex items-center gap-2 text-primary font-extrabold text-xs font-space-grotesk uppercase">
-                  <Layers className="w-4 h-4 text-primary" />
-                  <span>Control de Mezclas</span>
+              <div className="glass-pro p-3.5 rounded-2xl border border-border/50 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+                  <Layers className="w-4 h-4" />
                 </div>
-                <p className="text-[10px] text-muted-foreground font-medium">Descuento automático de tanques e insumos.</p>
+                <div>
+                  <h4 className="text-[11px] font-black uppercase tracking-wider font-space-grotesk italic text-foreground">Control Mezclas</h4>
+                  <p className="text-[10px] text-muted-foreground">Descuento milimétrico</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Live Status Indicators */}
-          <div className="pt-6 border-t border-border/40 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider font-space-grotesk text-muted-foreground">
+          {/* Bottom Security / Status Footer */}
+          <div className="pt-6 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground font-space-grotesk font-bold uppercase tracking-wider">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Conexión Supabase Realtime</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>Sistema Operativo Online</span>
             </div>
             <div className="flex items-center gap-1.5 text-primary">
               <ShieldCheck className="w-4 h-4" />
@@ -138,9 +163,9 @@ export default function Auth() {
                 <TabsContent value="login" className="mt-0">
                   <LoginForm 
                     isLoading={isLoading}
-                    onLogin={handleLogin}
                     rememberMe={rememberMe}
                     onRememberMeChange={setRememberMe}
+                    onLogin={handleLogin}
                   />
                 </TabsContent>
 
