@@ -15,6 +15,7 @@ interface AuthContextType {
   userRole: AppRole | null;
   storeId: string | null;
   storeName: string | null;
+  subscriptionStatus: 'active' | 'inactive' | 'trial' | null;
   switchStore: (newStoreId: string) => Promise<void>;
 }
 
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   userRole: null,
   storeId: null,
   storeName: null,
+  subscriptionStatus: null,
   switchStore: async () => {},
 });
 
@@ -38,6 +40,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     userRole: AppRole | null;
     storeId: string | null;
     storeName: string | null;
+    subscriptionStatus: 'active' | 'inactive' | 'trial' | null;
   }>({
     user: null,
     session: null,
@@ -45,6 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     userRole: null,
     storeId: null,
     storeName: null,
+    subscriptionStatus: null,
   });
 
   const isMounted = React.useRef(true);
@@ -81,14 +85,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     let storeName = null;
+    let subscriptionStatus = null;
     if (profile.store_id) {
       const { data: storeData } = await supabase
         .from('stores')
-        .select('name')
+        .select('name, subscription_status')
         .eq('id', profile.store_id)
         .maybeSingle();
       if (storeData) {
         storeName = storeData.name;
+        subscriptionStatus = storeData.subscription_status || 'active';
       }
     }
 
@@ -99,6 +105,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         userRole: (roleData?.role as AppRole) || null,
         storeId: profile.store_id,
         storeName,
+        subscriptionStatus: subscriptionStatus as any,
       }));
 
       // Identify user in Sentry for error context

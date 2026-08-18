@@ -169,6 +169,7 @@ export default function POS() {
           isOpen={paymentDialogIsOpen}
           onClose={() => setPaymentDialogIsOpen(false)}
           subtotal={total}
+          cart={cart}
           onConfirmPayment={onConfirmSale}
           isProcessing={isProcessing}
           defaultMethod={defaultPaymentMethod}

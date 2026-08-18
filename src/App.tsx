@@ -19,6 +19,7 @@ import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Onboarding from "./pages/Onboarding";
 
 // Lazy imports — code-split per route
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -92,6 +93,11 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding" element={
+                <ProtectedRoute>
+                  <Onboarding />
+                </ProtectedRoute>
+              } />
 
               {/* Protected Routes — each with its own Suspense + ErrorBoundary */}
               <Route

@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import type { Enums } from '@/integrations/supabase/types';
 import { Loader2 } from 'lucide-react';
+import { SubscriptionLock } from './SubscriptionLock';
 
 type AppRole = Enums<'app_role'>;
 
@@ -33,7 +34,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     }
   }
 
-  return <>{children}</>;
+  return (
+    <SubscriptionLock>
+      {children}
+    </SubscriptionLock>
+  );
 };
 
 export default ProtectedRoute;

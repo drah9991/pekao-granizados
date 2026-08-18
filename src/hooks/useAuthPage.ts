@@ -70,7 +70,7 @@ export function useAuthPage() {
       }
 
       toast.success("¡Cuenta creada exitosamente!");
-      navigate("/dashboard"); 
+      navigate("/onboarding"); 
       return true;
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error desconocido";

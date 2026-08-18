@@ -3,11 +3,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { CreditCard, DollarSign, Smartphone, QrCode, Heart, X, Edit2, Truck, Home } from "lucide-react";
+import { CreditCard, DollarSign, Smartphone, QrCode, Heart, X, Edit2, Truck, Home, ShoppingBag, ChevronDown, ChevronUp } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatCOP } from "@/lib/currency";
 import { cn } from "@/lib/utils";
+import type { CartItem } from "@/lib/pos-types";
 
 export type PaymentMethod = "cash" | "card" | "transfer" | "qr" | "split";
 
@@ -15,6 +16,7 @@ interface PaymentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   subtotal: number; // The cart total before tip
+  cart?: CartItem[];
   onConfirmPayment: (
     method: PaymentMethod, 
     amountReceived: number, 
@@ -42,12 +44,14 @@ export default function PaymentDialog({
   isOpen,
   onClose,
   subtotal,
+  cart,
   onConfirmPayment,
   isProcessing,
   defaultMethod = "cash",
 }: PaymentDialogProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(defaultMethod);
   const [amountReceived, setAmountReceived] = useState("");
+  const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   
   // Delivery State
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>("pickup");
@@ -74,6 +78,7 @@ export default function PaymentDialog({
       setSplitCash("");
       setSplitTransfer("");
       setHasTypedAmount(false);
+      setIsDetailsOpen(true);
     }
   }, [isOpen, subtotal, defaultMethod]);
 
@@ -130,6 +135,61 @@ export default function PaymentDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-2">
+          {/* Purchase Details Breakdown */}
+          {cart && cart.length > 0 && (
+            <div className="bg-muted/30 border border-border/60 rounded-xl p-3.5 space-y-2 font-space-grotesk shadow-sm">
+              <button
+                type="button"
+                onClick={() => setIsDetailsOpen(prev => !prev)}
+                className="w-full flex items-center justify-between text-xs font-bold uppercase tracking-wider text-primary hover:text-primary/80 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-primary" />
+                  <span>Detalle del Pedido ({cart.reduce((acc, item) => acc + item.quantity, 0)} ítems)</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-extrabold">
+                    {cart.length} prod.
+                  </span>
+                  {isDetailsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
+
+              {isDetailsOpen && (
+                <div className="mt-2 pt-2 border-t border-border/40 max-h-40 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar animate-in fade-in duration-200">
+                  {cart.map((item) => (
+                    <div key={item.id} className="flex justify-between items-start text-xs bg-background/60 p-2 rounded-lg border border-border/40 gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-black text-primary shrink-0">{item.quantity}x</span>
+                          <span className="font-bold text-foreground truncate uppercase">{item.name}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {item.size && (
+                            <span className="text-[9px] font-extrabold bg-primary/15 text-primary px-1.5 py-0.5 rounded border border-primary/20 uppercase">
+                              {item.size}
+                            </span>
+                          )}
+                          {item.toppings?.map(t => (
+                            <span key={t.id} className="text-[9px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase">
+                              +{t.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="font-black text-foreground">{formatCOP(item.price * item.quantity)}</span>
+                        {item.quantity > 1 && (
+                          <p className="text-[9px] text-muted-foreground font-medium">{formatCOP(item.price)} c/u</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Order Type Section */}
           <div className="space-y-3">
             <Label className="text-base font-semibold block">Tipo de Pedido</Label>
