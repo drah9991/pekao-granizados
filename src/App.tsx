@@ -49,6 +49,7 @@ const DigitalMenu = lazy(() => import("./pages/DigitalMenu"));
 const PrintManagerModule = lazy(() => import("./pages/PrintManagerModule"));
 const Workflow = lazy(() => import("./pages/Workflow"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
+const LoyaltyCRM = lazy(() => import("./pages/CRM/Loyalty"));
 
 // Free Tools (SEO Lead Magnets)
 const BarcodeGenerator = lazy(() => import("./pages/Tools/BarcodeGenerator"));
@@ -221,6 +222,18 @@ const App = () => {
                     <ErrorBoundary fallbackTitle="Error en Marketing">
                       <Suspense fallback={<PageLoader />}>
                         <Marketing />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/crm/loyalty"
+                element={
+                  <ProtectedRoute requiredRole={["admin", "manager", "owner"]}>
+                    <ErrorBoundary fallbackTitle="Error en Fidelización (CRM)">
+                      <Suspense fallback={<PageLoader />}>
+                        <LoyaltyCRM />
                       </Suspense>
                     </ErrorBoundary>
                   </ProtectedRoute>
