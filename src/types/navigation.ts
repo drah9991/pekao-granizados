@@ -1,6 +1,6 @@
 import type React from "react";
 
-export type Role = 'admin' | 'cashier' | 'owner' | 'manager' | 'store_manager' | 'driver' | 'customer';
+export type Role = 'admin' | 'cashier' | 'owner' | 'manager' | 'store_manager' | 'driver' | 'customer' | 'superadmin';
 
 export interface NavItem {
   label: string;

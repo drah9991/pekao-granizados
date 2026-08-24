@@ -43,7 +43,7 @@
     --input: 0.92 0.01 240;
     --ring: 0.58 0.23 260;
 
-    --radius: 1rem; /* 16px */
+    --radius: 1.25rem; /* 20px - Premium soft UI */
 
     /* Pro Max Gradients - Light Adaptive */
     --gradient-pro: linear-gradient(135deg, hsla(var(--brand-primary-h), 89%, 47%, 1) 0%, hsla(calc(var(--brand-primary-h) + 40), 90%, 60%, 1) 50%, hsla(calc(var(--brand-primary-h) + 180), 100%, 50%, 1) 100%);

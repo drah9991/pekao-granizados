@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDigitalMenu } from "@/hooks/useDigitalMenu";
 import { useAuth } from "@/context/AuthContext";
+import { useSEO } from "@/hooks/useSEO";
 import { useDigitalMenuConfigForm } from "@/hooks/useDigitalMenuConfigForm";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
@@ -55,6 +56,14 @@ export default function DigitalMenu() {
 
   // Estado y lógica del formulario de configuración del Menú Digital
   const form = useDigitalMenuConfigForm(effectiveStoreId, storeName);
+
+  const currentStoreObj = storesList.find(s => s.id === effectiveStoreId);
+  const titleName = currentStoreObj?.name || storeName || "Pekao";
+
+  useSEO({
+    title: showClientView ? `Menú Digital - ${titleName}` : `Configuración de Menú - ${titleName}`,
+    description: `Explora el menú digital de ${titleName}.`
+  });
 
   const businessUrl = `${window.location.origin}/digital-menu?preview=true${effectiveStoreId ? `&store=${effectiveStoreId}` : ""}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(businessUrl)}`;

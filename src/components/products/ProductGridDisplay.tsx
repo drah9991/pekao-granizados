@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import React, { useState } from "react";
+import { toast } from "sonner";
 
 interface Product extends Tables<'products'> {
   stock?: number;
@@ -102,13 +103,13 @@ export default function ProductGridDisplay({
   const isAllSelected = paginatedProducts.length > 0 && paginatedProducts.every(p => selectedIds.includes(p.id));
 
   return (
-    <div className="w-full space-y-6 bg-slate-950/40 border border-white/10 rounded-3xl shadow-pro backdrop-blur-md overflow-hidden p-6 font-space-grotesk italic">
+    <div className="w-full space-y-6 glass-pro border border-border rounded-3xl overflow-hidden p-6 font-space-grotesk italic">
       
       {/* Table Container */}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-white/5 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-white/[0.01]">
+            <tr className="border-b border-border text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-surface-subtle/50">
               <th className="py-4 px-4 w-28 text-center">
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-[9px] text-muted-foreground/60 font-bold lowercase">Seleccionar</span>
@@ -130,7 +131,7 @@ export default function ProductGridDisplay({
               <th className="py-4 px-4 text-center">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5 text-[11px] font-bold text-slate-300">
+          <tbody className="divide-y divide-border text-[11px] font-bold text-foreground">
             {paginatedProducts.map((product) => {
               const price = product.price || 0;
               const cost = parseFloat(product.cost as string) || 0;
@@ -139,7 +140,7 @@ export default function ProductGridDisplay({
               const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
 
               return (
-                <tr key={product.id} className="hover:bg-white/[0.02] transition-colors relative group">
+                <tr key={product.id} className="hover:bg-surface-active transition-colors relative group">
                   {/* Select Toggle */}
                   <td className="py-4 px-4 text-center">
                     <Switch
@@ -157,25 +158,56 @@ export default function ProductGridDisplay({
                   </td>
 
                   {/* Nombre con imagen */}
-                  <td className="py-4 px-4 font-black uppercase text-slate-200">
+                  <td className="py-4 px-4 font-black uppercase text-foreground">
                     <div className="flex items-center gap-3">
-                      {product.images && product.images.length > 0 ? (
-                        <img 
-                          src={product.images[0]} 
-                          alt={product.name}
-                          className="w-9 h-9 object-cover rounded-xl border border-white/10 bg-black/40"
-                        />
-                      ) : (
-                        <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm">
-                          🍹
+                      <label className="relative group/img cursor-pointer shrink-0">
+                        {product.images && product.images.length > 0 ? (
+                          <img 
+                            src={product.images[0]} 
+                            alt={product.name}
+                            className="w-9 h-9 object-cover rounded-xl border border-border bg-muted group-hover/img:opacity-50 transition-opacity"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-xl bg-surface-subtle border border-border flex items-center justify-center text-sm group-hover/img:bg-surface-active transition-colors">
+                            🍹
+                          </div>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                          <span className="text-[8px] bg-black/60 text-white px-1 py-0.5 rounded backdrop-blur-sm">Subir</span>
                         </div>
-                      )}
-                      <span className="group-hover:text-primary transition-colors">{product.name}</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const toastId = toast.loading("Subiendo imagen...");
+                            try {
+                              const { supabase } = await import('@/integrations/supabase/client');
+                              const fileExt = file.name.split('.').pop();
+                              const fileName = `${userStoreId || 'global'}/product-${product.id}-${crypto.randomUUID()}.${fileExt}`;
+                              const { error: uploadError } = await supabase.storage.from("products").upload(`product-images/${fileName}`, file, { upsert: true });
+                              if (uploadError) throw uploadError;
+                              const { data: { publicUrl } } = supabase.storage.from("products").getPublicUrl(`product-images/${fileName}`);
+                              const { error: updateError } = await supabase.from('products').update({ images: [publicUrl] }).eq('id', product.id);
+                              if (updateError) throw updateError;
+                              toast.success("Imagen actualizada", { id: toastId });
+                              // Forzar recarga sutil (en React real esto se haría vía mutación de SWR/React Query, esto recarga si es necesario o confía en real-time)
+                              setTimeout(() => window.location.reload(), 1000);
+                            } catch(err: any) {
+                              toast.error(`Error: ${err.message || "al subir la imagen"}`, { id: toastId });
+                              console.error(err);
+                            }
+                          }}
+                        />
+                      </label>
+                      <span className="group-hover:text-primary transition-colors truncate max-w-[150px] sm:max-w-[200px]" title={product.name}>{product.name}</span>
                     </div>
                   </td>
 
                   {/* Precio */}
-                  <td className="py-4 px-4 text-right text-glow text-slate-100">
+                  <td className="py-4 px-4 text-right text-glow text-foreground">
                     $ {price.toLocaleString('es-CO')}
                   </td>
 
@@ -187,7 +219,7 @@ export default function ProductGridDisplay({
                   {/* Utilidad */}
                   <td className="py-4 px-4 text-right">
                     <div className="flex flex-col items-end leading-tight">
-                      <span className="font-black text-slate-200 text-glow">
+                      <span className="font-black text-foreground text-glow">
                         $ {utility.toLocaleString('es-CO')}
                       </span>
                       <span className="text-[9px] text-primary/60 font-mono">
@@ -252,20 +284,20 @@ export default function ProductGridDisplay({
       </div>
 
       {/* Advanced Pagination Footer (20, 50, 100 filtering) */}
-      <div className="pt-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+      <div className="pt-4 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
         
         {/* Left: Rows Per Page Selector & Count */}
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
-            <span className="text-slate-400 font-bold">Mostrar:</span>
+          <div className="flex items-center gap-2 bg-surface-subtle border border-border px-3 py-1.5 rounded-xl">
+            <span className="text-muted-foreground font-bold">Mostrar:</span>
             <Select 
               value={itemsPerPage.toString()} 
               onValueChange={handleItemsPerPageChange}
             >
-              <SelectTrigger className="h-7 w-[75px] bg-slate-900 border-white/10 text-primary font-black text-[10px] rounded-lg">
+              <SelectTrigger className="h-7 w-[75px] bg-background border-border text-primary font-black text-[10px] rounded-lg">
                 <SelectValue placeholder="20" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-950 border-white/10 text-white rounded-xl">
+              <SelectContent className="bg-popover border-border text-popover-foreground rounded-xl">
                 <SelectItem value="10" className="text-xs font-bold">10</SelectItem>
                 <SelectItem value="20" className="text-xs font-bold">20</SelectItem>
                 <SelectItem value="50" className="text-xs font-bold">50</SelectItem>
@@ -274,12 +306,12 @@ export default function ProductGridDisplay({
                 <SelectItem value="-1" className="text-xs font-bold">Todos</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-slate-400 font-bold">por pág.</span>
+            <span className="text-muted-foreground font-bold">por pág.</span>
           </div>
 
-          <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-slate-300">
+          <div className="bg-surface-subtle border border-border px-4 py-2 rounded-xl text-foreground">
             {totalItems > 0 ? (
-              <>Mostrando <span className="text-primary font-bold">{startIndex + 1} - {endIndex}</span> de <span className="text-white font-bold">{totalItems}</span> productos</>
+              <>Mostrando <span className="text-primary font-bold">{startIndex + 1} - {endIndex}</span> de <span className="text-foreground font-bold">{totalItems}</span> productos</>
             ) : (
               <>0 productos encontrados</>
             )}
@@ -287,13 +319,13 @@ export default function ProductGridDisplay({
         </div>
 
         {/* Right: Page Navigation Controls */}
-        <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 p-1.5 rounded-xl w-full md:w-auto justify-center">
+        <div className="flex items-center gap-1.5 bg-surface-subtle border border-border p-1.5 rounded-xl w-full md:w-auto justify-center">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setCurrentPage(1)}
             disabled={activePage === 1}
-            className="h-8 px-2 font-black hover:bg-white/10 text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
+            className="h-8 px-2 font-black hover:bg-surface-active text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
             title="Primera página"
           >
             <ChevronsLeft className="w-3.5 h-3.5 mr-1" />
@@ -304,14 +336,14 @@ export default function ProductGridDisplay({
             size="sm"
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={activePage === 1}
-            className="h-8 px-2 font-black hover:bg-white/10 text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
+            className="h-8 px-2 font-black hover:bg-surface-active text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
             title="Página anterior"
           >
             <ChevronLeft className="w-3.5 h-3.5 mr-1" />
             Anterior
           </Button>
 
-          <span className="h-8 px-3 flex items-center justify-center bg-primary text-white rounded-lg text-xs font-black shadow-glow-pro min-w-[32px]">
+          <span className="h-8 px-3 flex items-center justify-center bg-primary text-primary-foreground rounded-lg text-xs font-black shadow-glow-pro min-w-[32px]">
             {activePage} / {totalPages}
           </span>
 
@@ -320,7 +352,7 @@ export default function ProductGridDisplay({
             size="sm"
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={activePage === totalPages}
-            className="h-8 px-2 font-black hover:bg-white/10 text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
+            className="h-8 px-2 font-black hover:bg-surface-active text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
             title="Página siguiente"
           >
             Siguiente
@@ -331,7 +363,7 @@ export default function ProductGridDisplay({
             size="sm"
             onClick={() => setCurrentPage(totalPages)}
             disabled={activePage === totalPages}
-            className="h-8 px-2 font-black hover:bg-white/10 text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
+            className="h-8 px-2 font-black hover:bg-surface-active text-[9px] rounded-lg disabled:opacity-30 cursor-pointer"
             title="Última página"
           >
             Último

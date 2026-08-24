@@ -17,6 +17,8 @@ interface DatosTabProps {
   displayType: "combo" | "normal";
   onTypeChange: (val: string) => void;
   onImageUrlChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onImageUpload?: (e: ChangeEvent<HTMLInputElement>) => void;
+  isUploading?: boolean;
   onRemoveImage: () => void;
   utility: number;
   utilityPercent: number;
@@ -34,6 +36,8 @@ export function DatosTab({
   displayType,
   onTypeChange,
   onImageUrlChange,
+  onImageUpload,
+  isUploading,
   onRemoveImage,
   utility,
   utilityPercent,
@@ -42,7 +46,12 @@ export function DatosTab({
     <div className="space-y-6 animate-fadeIn">
       {/* Product Image Section */}
       <div className="flex flex-col items-center justify-center space-y-2.5 pb-4 border-b border-white/5">
-        {formData.images && formData.images.length > 0 ? (
+        {isUploading ? (
+          <div className="w-28 h-28 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center text-primary gap-2">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-[9px] font-black uppercase tracking-widest">Subiendo...</span>
+          </div>
+        ) : formData.images && formData.images.length > 0 ? (
           <div className="relative">
             <img
               src={formData.images[0]}
@@ -171,15 +180,27 @@ export function DatosTab({
           />
         </div>
 
-        {/* Imagen URL */}
+        {/* Imagen */}
         <div className="space-y-2">
-          <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Imagen (URL)</Label>
-          <Input
-            value={formData.images[0] || ""}
-            onChange={onImageUrlChange}
-            placeholder="URL de la imagen"
-            className="h-11 bg-white/5 border-white/10 rounded-lg text-xs text-white focus:border-primary/50"
-          />
+          <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Imagen del Producto</Label>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={onImageUpload}
+                disabled={isUploading}
+                className="h-11 bg-white/5 border-white/10 rounded-lg text-xs text-white focus:border-primary/50 file:bg-white/10 file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3 cursor-pointer"
+              />
+            </div>
+            <Input
+              value={formData.images[0] || ""}
+              onChange={onImageUrlChange}
+              placeholder="O pega una URL de imagen aquí"
+              disabled={isUploading}
+              className="h-11 bg-white/5 border-white/10 rounded-lg text-xs text-white focus:border-primary/50"
+            />
+          </div>
         </div>
 
         {/* Precio de venta */}

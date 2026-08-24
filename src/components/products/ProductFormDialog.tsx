@@ -6,6 +6,7 @@ import { Tables, Json, Enums } from "@/integrations/supabase/types";
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useProductComboOptions } from "@/hooks/useProductComboOptions";
 import { DatosTab } from "@/components/products/DatosTab";
 import { PreciosTab } from "@/components/products/PreciosTab";
@@ -189,10 +190,52 @@ export default function ProductFormDialog({
     }
   }, [storeId, isOpen]);
 
+  const [isUploading, setIsUploading] = useState(false);
+
   // Image helpers
   const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
       setFormData(prev => ({ ...prev, images: [e.target.value] }));
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, suba únicamente archivos de imagen.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("La imagen debe tener un tamaño inferior a 2MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${storeId || 'global'}/product-${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `product-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("products")
+        .upload(filePath, file, { cacheControl: "3600", upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("products")
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, images: [publicUrl] }));
+      toast.success("Imagen cargada correctamente");
+    } catch (err: any) {
+      console.error("Error uploading image:", err);
+      toast.error(`Error al subir: ${err.message || "desconocido"}`);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -292,6 +335,8 @@ export default function ProductFormDialog({
               displayType={displayType}
               onTypeChange={handleTypeChange}
               onImageUrlChange={handleImageUrlChange}
+              onImageUpload={handleImageUpload}
+              isUploading={isUploading}
               onRemoveImage={handleRemoveImage}
               utility={utility}
               utilityPercent={utilityPercent}

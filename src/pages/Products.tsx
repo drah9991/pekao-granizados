@@ -91,15 +91,15 @@ export default function Products() {
           </div>
         </div>
 
-        {/* Filter controls, search bar & action buttons (Dark themed) */}
-        <div className="flex flex-col xl:flex-row gap-4 items-center justify-between bg-slate-950/40 border border-white/10 p-5 rounded-2xl shadow-pro backdrop-blur-md">
+        {/* Filter controls, search bar & action buttons */}
+        <div className="flex flex-col xl:flex-row gap-4 items-center justify-between glass-pro border border-border p-5 rounded-2xl">
           
           {/* Left search bar */}
           <div className="relative w-full xl:w-72">
             <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-primary w-4 h-4" />
             <Input
               placeholder="Buscar producto"
-              className="pl-10 h-10 bg-white/5 border-white/10 rounded-lg text-xs font-black uppercase tracking-widest placeholder:text-muted-foreground/30 focus:border-primary text-white"
+              className="pl-10 h-10 bg-surface-subtle border-border rounded-lg text-xs font-black uppercase tracking-widest placeholder:text-muted-foreground/50 focus:border-primary text-foreground"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -115,8 +115,8 @@ export default function Products() {
                 className={cn(
                   "px-4 py-1.5 text-xs font-black rounded-lg border uppercase tracking-widest transition-all cursor-pointer",
                   selectedCategory === cat
-                    ? "bg-primary text-white border-primary shadow-glow-pro"
-                    : "bg-white/5 border-white/10 text-muted-foreground hover:text-white hover:border-white/20"
+                    ? "bg-primary text-primary-foreground border-primary shadow-glow-pro"
+                    : "bg-surface-subtle border-border text-muted-foreground hover:text-foreground hover:bg-surface-active"
                 )}
               >
                 {cat}
@@ -130,7 +130,7 @@ export default function Products() {
               onClick={() => setAdvancedDialogIsOpen(true)}
               variant="outline"
               size="sm"
-              className="h-9 border-white/10 bg-white/5 hover:bg-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
+              className="h-9 border-border bg-surface-subtle hover:bg-surface-active text-foreground font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
             >
               <Settings className="w-3.5 h-3.5 text-primary" />
               Config
@@ -139,7 +139,7 @@ export default function Products() {
             <Button
               onClick={handleExportProducts}
               size="sm"
-              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
+              className="h-9 bg-surface-subtle hover:bg-surface-active border border-border text-foreground font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-primary" />
               Exportar
@@ -148,7 +148,7 @@ export default function Products() {
             <Button
               onClick={() => setImportDialogIsOpen(true)}
               size="sm"
-              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
+              className="h-9 bg-surface-subtle hover:bg-surface-active border border-border text-foreground font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-primary" />
               Importar
@@ -157,7 +157,7 @@ export default function Products() {
             <Button
               onClick={() => setMenuPhotoDialogIsOpen(true)}
               size="sm"
-              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
+              className="h-9 bg-surface-subtle hover:bg-surface-active border border-border text-foreground font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest cursor-pointer"
             >
               <Camera className="w-3.5 h-3.5 text-primary" />
               Foto Menú
@@ -166,7 +166,7 @@ export default function Products() {
             <Button
               onClick={openCreateDialog}
               size="sm"
-              className="h-9 bg-primary hover:bg-primary/80 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest shadow-glow-pro"
+              className="h-9 bg-primary hover:bg-primary/80 text-primary-foreground font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest shadow-glow-pro"
             >
               <Plus className="w-3.5 h-3.5" />
               Nuevo
@@ -174,7 +174,7 @@ export default function Products() {
 
             <Button
               size="sm"
-              className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest"
+              className="h-9 bg-surface-subtle hover:bg-surface-active border border-border text-foreground font-black rounded-lg px-4 flex items-center gap-1.5 text-xs uppercase tracking-widest"
             >
               <History className="w-3.5 h-3.5 text-primary" />
               Historial

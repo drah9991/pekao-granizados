@@ -130,10 +130,18 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
         <div className="product-card-header p-5 pb-0 w-full flex items-start justify-between z-10">
           <div className="flex gap-2">
             <div className={cn(
-              "product-card-emoji-wrapper w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm relative",
+              "product-card-emoji-wrapper w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm relative overflow-hidden",
               isOutOfStock ? "bg-muted" : "bg-surface-active border border-border/50 group-hover:scale-110 group-hover:rotate-3"
             )}>
-              <span className="product-card-emoji text-3xl lg:text-4xl filter drop-shadow-lg">{emoji}</span>
+              {product.images && product.images.length > 0 ? (
+                <img 
+                  src={product.images[0]} 
+                  alt={product.name} 
+                  className="w-full h-full object-cover" 
+                />
+              ) : (
+                <span className="product-card-emoji text-3xl lg:text-4xl filter drop-shadow-lg">{emoji}</span>
+              )}
             </div>
             {product.is_starred && (
               <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500 text-xs shadow-glow shrink-0 animate-pulse-subtle">

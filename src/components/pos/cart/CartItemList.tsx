@@ -54,10 +54,18 @@ export function CartItemList({
                 className="group relative bg-surface-subtle border border-border/50 rounded-2xl p-4 transition-colors duration-300 hover:bg-surface-active hover:border-primary/40 hover:shadow-[0_0_20px_rgba(var(--primary),0.1)] backdrop-blur-md"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1 min-w-0 pr-3">
-                    <p className="font-bold text-foreground text-base mb-1.5 font-dm-sans leading-tight break-words drop-shadow-sm">{item.name}</p>
-                    
-                    {/* Badges/Toppings display row */}
+                  <div className="flex-1 min-w-0 pr-3 flex gap-3">
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="w-10 h-10 object-cover rounded-xl border border-border shadow-sm shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-surface-subtle border border-border flex items-center justify-center text-lg shrink-0">
+                        🍹
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-foreground text-base mb-1.5 font-dm-sans leading-tight break-words drop-shadow-sm">{item.name}</p>
+                      
+                      {/* Badges/Toppings display row */}
                     <div className="flex flex-wrap gap-1.5 mt-1">
                       {item.size && !showSizeOptions && (
                         <span className="bg-primary/20 text-primary-foreground text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-primary/30 font-dm-sans shadow-sm">
@@ -177,6 +185,7 @@ export function CartItemList({
                       </div>
                     )}
                   </div>
+                </div>
                   
                   <div className="text-right whitespace-nowrap pl-2 flex flex-col items-end justify-start">
                     <p className="font-black text-lg text-foreground font-dm-sans drop-shadow-sm tabular-nums">

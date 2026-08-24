@@ -41,9 +41,17 @@ export const SubscriptionLock: React.FC<{ children: React.ReactNode }> = ({ chil
 
         <div className="flex flex-col gap-3 pt-4">
           {userRole === 'owner' || userRole === 'admin' ? (
-            <Button className="w-full gap-2" size="lg">
+            <Button 
+              className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white" 
+              size="lg"
+              onClick={() => {
+                // TODO: Reemplazar "TU_LINK_WOMPI" por el código de tu link de pago de Wompi de 50.000 COP
+                const wompiLink = `https://checkout.wompi.co/l/TU_LINK_WOMPI?referencia=${storeId}_${Date.now()}`;
+                window.open(wompiLink, '_blank');
+              }}
+            >
               <CreditCard className="w-4 h-4" />
-              Renovar Suscripción
+              Renovar Suscripción (Pagar)
             </Button>
           ) : (
             <p className="text-sm text-amber-600 dark:text-amber-400 font-medium pb-2">

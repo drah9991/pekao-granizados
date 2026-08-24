@@ -196,7 +196,8 @@ export const useCartStore = create<CartStoreState>()(
             productPrice: pricingResult.basePrice,
             productType: product.type,
             productCategory: product.category,
-            variants: product.variants
+            variants: product.variants,
+            image: product.images?.[0] || undefined
           };
 
           return { cart: cleanCartItems([...state.cart, newItem]) };

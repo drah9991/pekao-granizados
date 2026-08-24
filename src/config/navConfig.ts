@@ -27,7 +27,9 @@ import {
   MonitorPlay,
   Printer,
   Truck,
-  XCircle
+  XCircle,
+  Gift,
+  Heart
 } from "lucide-react";
 import { NavGroup } from "@/types/navigation";
 
@@ -54,6 +56,8 @@ export const navConfig: NavGroup[] = [
     items: [
       { label: "Reportes", href: "/reports", icon: BarChart3, roles: ["admin", "owner", "manager"] },
       { label: "Marketing", href: "/marketing", icon: Megaphone, roles: ["admin", "owner", "manager"] },
+      { label: "Fidelización", href: "/crm/loyalty", icon: Heart, roles: ["admin", "owner", "manager"] },
+      { label: "Embajadores", href: "/settings/affiliates", icon: Gift, roles: ["owner"] },
     ]
   },
   {
@@ -95,6 +99,13 @@ export const navConfig: NavGroup[] = [
           { label: "Clientes CRM", href: "/customers", icon: UsersIcon, roles: ["admin", "owner", "manager"] },
         ]
       }
+    ]
+  },
+  {
+    label: "Panel Maestro",
+    roles: ["superadmin"],
+    items: [
+      { label: "Panel SaaS", href: "/superadmin", icon: Shield, roles: ["superadmin"] },
     ]
   }
 ];

@@ -25,9 +25,9 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'placeholder.svg', 'pwa-192.png', 'pwa-512.png'],
       manifest: {
-        name: 'Pekao Granizados',
-        short_name: 'Pekao',
-        description: 'Sistema de Punto de Venta para Pekao Granizados',
+        name: 'Pekao Central',
+        short_name: 'Pekao Central',
+        description: 'Punto de Venta Multi-Tenant SaaS',
         theme_color: '#0F1117',
         background_color: '#0F1117',
         display: 'standalone',

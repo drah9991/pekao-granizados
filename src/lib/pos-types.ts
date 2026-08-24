@@ -21,6 +21,7 @@ export interface CartItem {
   productType?: string;
   productCategory?: string | null;
   variants?: any;
+  image?: string;
 }
 
 export interface Product {

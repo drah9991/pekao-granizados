@@ -12,7 +12,7 @@ import {
   Minus,
   Plus,
   Package, ClipboardList, Users as UsersIcon, Store as StoreIcon, Database, Ruler, ReceiptText, FileText, Activity, Calculator,
-  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download, Menu, X, Coins, Gift, Eye, RefreshCw, Bike, Percent, Users, Truck, MonitorPlay
+  Palette, Shield, Building2, Receipt, Tag, Megaphone, Bell, BarChart3, Download, Menu, X, Coins, Gift, Eye, RefreshCw, Bike, Percent, Users, Truck, MonitorPlay, UserCog
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -61,7 +61,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
 
-  const { storeId, storeName, switchStore, userRole, isLoading: isLoadingAuth } = useAuth();
+  const { storeId, storeName, switchStore, userRole, isLoading: isLoadingAuth, isSuperAdmin } = useAuth();
   const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
   const [isSwitchingNode, setIsSwitchingNode] = useState(false);
   const canSwitchStore = userRole === "admin" || userRole === "manager" || userRole === "owner";
@@ -174,7 +174,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
       <InteractiveCursor />
       
       {/* 1. HEADER / NAVBAR SUPERIOR (HORIZONTAL EN DESKTOP) */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-[60] px-4 md:px-8 flex items-center justify-between shadow-sm select-none">
+      <header className="fixed top-0 left-0 right-0 h-16 bg-background/70 backdrop-blur-md border-b border-border/50 z-[60] px-4 md:px-8 flex items-center justify-between shadow-sm select-none transition-all duration-300">
         
         {/* Lado Izquierdo: Logo */}
         <div className="flex items-center gap-4">
@@ -447,19 +447,51 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               <span>Estadísticas</span>
             </Link>
 
-            {/* Configuración */}
-            <Link
-              to="/settings"
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
-                isLinkActive("/settings") 
-                  ? "bg-rose-50 text-rose-600" 
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
-              )}
-            >
-              <Settings className="w-4 h-4" />
-              <span>Configuración</span>
-            </Link>
+            {/* Configuración Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all outline-none cursor-pointer",
+                    location.pathname.startsWith("/settings") || location.pathname.startsWith("/users") || location.pathname.startsWith("/superadmin")
+                      ? "bg-rose-50 text-rose-600" 
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
+                  )}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Configuración</span>
+                  <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-1.5 rounded-xl shadow-lg mt-1 space-y-0.5">
+                
+                <DropdownMenuItem onClick={() => navigate("/settings")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                  <Settings className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Ajustes Generales</span>
+                </DropdownMenuItem>
+
+                {(userRole === "admin" || userRole === "owner") && (
+                  <DropdownMenuItem onClick={() => navigate("/users")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                    <UserCog className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span>Usuarios del Sistema</span>
+                  </DropdownMenuItem>
+                )}
+
+                {(userRole === "owner" || userRole === "admin") && (
+                  <DropdownMenuItem onClick={() => navigate("/settings/affiliates")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5">
+                    <Gift className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span>Embajadores</span>
+                  </DropdownMenuItem>
+                )}
+
+                {isSuperAdmin && (
+                  <DropdownMenuItem onClick={() => navigate("/superadmin")} className="flex items-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5 border-t border-slate-100 dark:border-white/5 mt-1 pt-2 text-rose-600">
+                    <Shield className="w-4 h-4 shrink-0" />
+                    <span>Panel SaaS Master</span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
           </nav>
         )}
@@ -578,7 +610,10 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                     { label: "Recetas", href: "/recipes", icon: FileText },
                     { label: "Inventario", href: "/inventory", icon: Package },
                     { label: "Menú Digital", href: "/digital-menu", icon: Bike },
-                    { label: "Configuración", href: "/settings", icon: Settings }
+                    { label: "Configuración", href: "/settings", icon: Settings },
+                    ...(userRole === "admin" || userRole === "owner" ? [{ label: "Usuarios", href: "/users", icon: UserCog }] : []),
+                    ...(userRole === "admin" || userRole === "owner" ? [{ label: "Embajadores", href: "/settings/affiliates", icon: Gift }] : []),
+                    ...(isSuperAdmin ? [{ label: "Panel SaaS", href: "/superadmin", icon: Shield }] : [])
                   ].map((item) => {
                     const active = isLinkActive(item.href);
                     return (
