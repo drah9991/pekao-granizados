@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IceCream, ShieldCheck, Zap, Layers } from "lucide-react";
@@ -24,6 +25,14 @@ export default function Auth() {
     handleLogin, 
     handleSignup 
   } = useAuthPage();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      localStorage.setItem("referred_by", ref);
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden bg-background bg-aurora animate-aurora">

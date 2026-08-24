@@ -1,5 +1,5 @@
--- View to calculate customer loyalty metrics per store
-CREATE OR REPLACE VIEW vw_customer_loyalty AS
+-- View to calculate customer loyalty metrics per store with SECURITY INVOKER
+CREATE OR REPLACE VIEW vw_customer_loyalty WITH (security_invoker = on) AS
 SELECT 
   c.id,
   c.name,
@@ -21,4 +21,3 @@ GROUP BY c.id, c.name, c.email, c.phone, o.store_id;
 
 -- Grant permissions to authenticated users to select from this view
 GRANT SELECT ON vw_customer_loyalty TO authenticated;
-GRANT SELECT ON vw_customer_loyalty TO anon;
