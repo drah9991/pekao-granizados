@@ -4,13 +4,18 @@ import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Lock, Unlock, Store, Activity, DollarSign } from 'lucide-react';
+import { Shield, Lock, Unlock, Store, Activity, DollarSign, Edit } from 'lucide-react';
 import { toast } from 'sonner';
+import { EditStoreDialog } from '@/components/superadmin/EditStoreDialog';
+
+import { useNavigate } from 'react-router-dom';
 
 export default function SuperAdmin() {
   const { isSuperAdmin, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [stores, setStores] = useState<any[]>([]);
   const [loadingStores, setLoadingStores] = useState(true);
+  const [storeToEdit, setStoreToEdit] = useState<any | null>(null);
 
   const fetchStores = async () => {
     setLoadingStores(true);
@@ -35,20 +40,36 @@ export default function SuperAdmin() {
     }
   }, [isSuperAdmin]);
 
-  const toggleSubscription = async (storeId: string, currentStatus: string) => {
+  const getStoreStatus = (s: any) => s.subscription_status || s.config?.subscription_status || 'active';
+
+  const toggleSubscription = async (storeId: string, rawStatus: string) => {
+    const currentStatus = getStoreStatus(stores.find(s => s.id === storeId) || { subscription_status: rawStatus });
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     try {
-      const { error } = await supabase
+      // Intentar actualizar la columna directa
+      const { error: colError } = await supabase
         .from('stores')
         .update({ subscription_status: newStatus })
         .eq('id', storeId);
 
-      if (error) throw error;
+      if (colError) {
+        console.warn("Columna subscription_status ausente en caché de esquema, usando respaldo config JSON:", colError);
+        // Fallback a config JSON si el caché de Supabase PostgREST está desactualizado
+        const targetStore = stores.find(s => s.id === storeId);
+        const currentConfig = (targetStore?.config as Record<string, any>) || {};
+        const { error: cfgError } = await supabase
+          .from('stores')
+          .update({ config: { ...currentConfig, subscription_status: newStatus } })
+          .eq('id', storeId);
+
+        if (cfgError) throw colError;
+      }
       
-      toast.success(`Suscripción cambiada a ${newStatus}`);
+      toast.success(`Suscripción cambiada a ${newStatus.toUpperCase()}`);
       fetchStores();
     } catch (err: any) {
-      toast.error('Error actualizando suscripción: ' + err.message);
+      console.error("Error updating subscription:", err);
+      toast.error('Error actualizando suscripción: ' + (err.message || 'Verifica la migración en Supabase'));
     }
   };
 
@@ -58,20 +79,30 @@ export default function SuperAdmin() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const activeStores = stores.filter(s => s.subscription_status === 'active' || !s.subscription_status);
-  const inactiveStores = stores.filter(s => s.subscription_status === 'inactive');
+  const activeStores = stores.filter(s => getStoreStatus(s) === 'active');
+  const inactiveStores = stores.filter(s => getStoreStatus(s) === 'inactive');
   const estimatedRevenue = activeStores.length * 50000;
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in zoom-in-95">
-      <div className="flex items-center gap-4 border-b pb-6">
-        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-          <Shield className="w-8 h-8 text-primary" />
+      <div className="flex items-center justify-between border-b pb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+            <Shield className="w-8 h-8 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Panel SaaS Master</h1>
+            <p className="text-muted-foreground">Centro de comando para administrar Pekao Central</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Panel SaaS Master</h1>
-          <p className="text-muted-foreground">Centro de comando para administrar Pekao Central</p>
-        </div>
+        
+        <Button 
+          variant="outline" 
+          onClick={() => navigate('/dashboard')}
+          className="gap-2"
+        >
+          Volver al Dashboard
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -136,7 +167,16 @@ export default function SuperAdmin() {
                         {isActive ? 'Activo' : 'Bloqueado'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => setStoreToEdit(store)}
+                      >
+                        <Edit className="w-4 h-4" />
+                        Editar
+                      </Button>
                       <Button 
                         variant={isActive ? "destructive" : "default"} 
                         size="sm"
@@ -154,6 +194,13 @@ export default function SuperAdmin() {
           </table>
         </div>
       </div>
+      
+      <EditStoreDialog
+        store={storeToEdit}
+        isOpen={!!storeToEdit}
+        onClose={() => setStoreToEdit(null)}
+        onSuccess={fetchStores}
+      />
     </div>
   );
 }

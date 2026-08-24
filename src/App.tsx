@@ -427,7 +427,7 @@ const App = () => {
 />
 
 <Route
-  path="/super-admin"
+  path="/superadmin"
   element={
     <ProtectedRoute>
       <ErrorBoundary fallbackTitle="Error en Panel Maestro">

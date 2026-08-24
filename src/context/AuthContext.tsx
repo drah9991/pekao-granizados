@@ -93,12 +93,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (profile.store_id) {
       const { data: storeData } = await supabase
         .from('stores')
-        .select('name, subscription_status')
+        .select('name, config, subscription_status')
         .eq('id', profile.store_id)
         .maybeSingle();
       if (storeData) {
         storeName = storeData.name;
-        subscriptionStatus = storeData.subscription_status || 'active';
+        subscriptionStatus = storeData.subscription_status || (storeData.config as Record<string, any>)?.subscription_status || 'active';
       }
     }
 

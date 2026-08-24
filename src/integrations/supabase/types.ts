@@ -652,6 +652,8 @@ export type Database = {
           currency: string | null
           id: string
           name: string
+          subscription_status: string | null
+          subscription_end_date: string | null
           tax_rate: number | null
         }
         Insert: {
@@ -661,6 +663,8 @@ export type Database = {
           currency?: string | null
           id?: string
           name: string
+          subscription_status?: string | null
+          subscription_end_date?: string | null
           tax_rate?: number | null
         }
         Update: {
@@ -670,6 +674,8 @@ export type Database = {
           currency?: string | null
           id?: string
           name?: string
+          subscription_status?: string | null
+          subscription_end_date?: string | null
           tax_rate?: number | null
         }
         Relationships: []
