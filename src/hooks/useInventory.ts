@@ -43,6 +43,8 @@ export interface AddedItem {
   name: string;
   qty: number;
   total: number;
+  category?: string | null;
+  unit_measure?: string | null;
 }
 
 /**
@@ -125,56 +127,7 @@ export function useInventory() {
 
       setStockItems(formattedStock);
 
-      // Extract unique categories
-      const cats = Array.from(new Set(formattedStock.map(i => i.products?.category || i.products?.type || "OTROS").filter(Boolean)));
-      setCategories(cats);
-
-      // 2. Fetch Movements
-      const { data: moveData, error: moveErr } = await supabase
-        .from("movements")
-        .select(`
-          id,
-          created_at,
-          movement_date,
-          type,
-          qty,
-          reason,
-          invoice_no,
-          supplier_name,
-          total_price,
-          total_paid,
-          debe,
-          products:product_id (
-            name
-          )
-        `)
-        .eq("store_id", storeId)
-        .order("created_at", { ascending: false });
-
-      if (moveErr) throw moveErr;
-
-      const formattedMove = (moveData || []).map(item => ({
-        id: item.id,
-        created_at: item.created_at,
-        movement_date: item.movement_date,
-        type: item.type,
-        qty: Number(item.qty),
-        reason: item.reason,
-        invoice_no: item.invoice_no,
-        supplier_name: item.supplier_name,
-        total_price: Number(item.total_price || 0),
-        total_paid: Number(item.total_paid || 0),
-        debe: Number(item.debe || 0),
-        products: Array.isArray(item.products) ? item.products[0] : item.products
-      })) as unknown as Movement[];
-
-      setMovements(formattedMove);
-
-      // Extract unique suppliers
-      const sups = Array.from(new Set(formattedMove.map(m => m.supplier_name).filter(Boolean)));
-      setSuppliers(sups as string[]);
-
-      // 3. Fetch all active products (for dropdown select)
+      // 3. Fetch all active products (for dropdown select and category catalog)
       const { data: prodData } = await supabase
         .from("products")
         .select("id, name, type, category, price, cost, unit_measure")
@@ -189,6 +142,18 @@ export function useInventory() {
         .select("id, name")
         .order("name", { ascending: true });
       setDbSuppliers(supsData || []);
+
+      // Extract unique categories normalized from stock AND products catalog
+      const stockCats = formattedStock.map(i => (i.products?.category || i.products?.type || "OTROS").trim().toUpperCase());
+      const prodCats = (prodData || []).map(p => (p.category || p.type || "OTROS").trim().toUpperCase());
+      const cats = Array.from(new Set([...stockCats, ...prodCats].filter(Boolean))).sort();
+      setCategories(cats);
+
+      // Extract unique suppliers from movements AND database suppliers
+      const moveSups = (formattedMove || []).map(m => m.supplier_name?.trim()).filter(Boolean) as string[];
+      const dbSupNames = (supsData || []).map(s => s.name?.trim()).filter(Boolean) as string[];
+      const sups = Array.from(new Set([...moveSups, ...dbSupNames])).sort();
+      setSuppliers(sups);
     } catch (err) {
       console.error("Error loading inventory:", err);
       toast.error("Error al cargar datos de inventario");
@@ -202,20 +167,43 @@ export function useInventory() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
-  // Filtering Stock
+  // Reset pagination on filter change
+  useEffect(() => {
+    setStockPage(1);
+  }, [selectedCategory, searchQuery]);
+
+  // Filtering Stock (Robust & Safe)
   const filteredStock = stockItems.filter(item => {
-    const matchesCategory = selectedCategory === "all" ||
-      (item.products?.category || item.products?.type || "OTROS") === selectedCategory;
-    const matchesSearch = !searchQuery ||
-      item.products?.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const itemCat = (item.products?.category || item.products?.type || "OTROS").trim().toUpperCase();
+    const matchesCategory = selectedCategory === "all" || itemCat === selectedCategory.trim().toUpperCase();
+    const pName = (item.products?.name || "").toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
+    const matchesSearch = !query || pName.includes(query) || itemCat.toLowerCase().includes(query);
     return matchesCategory && matchesSearch;
   });
 
-  // Filtering Movements
+  // Filtering Movements (Robust & Safe)
   const filteredMovements = movements.filter(m => {
-    const matchesType = movementFilterType === "all" || m.type.includes(movementFilterType);
-    const matchesSupplier = movementFilterSupplier === "all" || m.supplier_name === movementFilterSupplier;
-    const matchesInvoice = !movementFilterInvoice || m.invoice_no?.toLowerCase().includes(movementFilterInvoice.toLowerCase());
+    const mType = (m.type || "").toLowerCase();
+    const matchesType = movementFilterType === "all" || (() => {
+      if (movementFilterType === "entry") {
+        return mType === "entry" || mType === "in" || mType.startsWith("entrada");
+      }
+      if (movementFilterType === "exit") {
+        return mType === "exit" || mType === "out" || mType.startsWith("salida") || mType === "waste";
+      }
+      if (movementFilterType === "adjustment") {
+        return mType === "adjustment" || mType.includes("ajuste");
+      }
+      return mType.includes(movementFilterType.toLowerCase());
+    })();
+
+    const matchesSupplier = movementFilterSupplier === "all" ||
+      (m.supplier_name || "").trim().toLowerCase() === movementFilterSupplier.trim().toLowerCase();
+
+    const invFilter = movementFilterInvoice.toLowerCase().trim();
+    const matchesInvoice = !invFilter || (m.invoice_no || "").toLowerCase().includes(invFilter);
+
     return matchesType && matchesSupplier && matchesInvoice;
   });
 
@@ -246,7 +234,9 @@ export function useInventory() {
         productId: prod.id,
         name: prod.name,
         qty: Number(itemQty),
-        total: totalVal
+        total: totalVal,
+        category: prod.category || prod.type || "GENERAL",
+        unit_measure: (!prod.unit_measure || prod.unit_measure.toLowerCase() === "oz" || prod.unit_measure.toLowerCase() === "onza" || prod.unit_measure.toLowerCase() === "onzas") ? "und" : prod.unit_measure,
       }
     ]);
 
@@ -364,6 +354,7 @@ export function useInventory() {
 
   return {
     // Stock panel
+    stockItems,
     categories,
     selectedCategory, setSelectedCategory,
     searchQuery, setSearchQuery,

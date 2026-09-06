@@ -133,6 +133,8 @@ export function useDashboard(storeId: string | null) {
 
     return {
       ...transformed,
+      rawOrders: rawData.orders,
+      rawExpenses: rawData.expenses,
       lowStock,
       sizes: rawData.sizes
     };

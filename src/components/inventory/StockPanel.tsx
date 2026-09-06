@@ -41,28 +41,56 @@ export function StockPanel({
         INVENTARIO
       </h2>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="h-11 bg-white/5 border-white/10 rounded-xl text-xs text-white uppercase font-bold">
-            <SelectValue placeholder="Categoría" />
-          </SelectTrigger>
-          <SelectContent className="bg-slate-950 border-white/10">
-            <SelectItem value="all" className="text-xs">Todas las Categorías</SelectItem>
-            {categories.map(cat => (
-              <SelectItem key={cat} value={cat} className="text-xs uppercase">{cat}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="h-11 bg-white/5 border-white/10 rounded-xl text-xs text-white uppercase font-bold">
+              <SelectValue placeholder="Categoría" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-950 border-white/10 text-white z-50 shadow-2xl max-h-64 overflow-y-auto">
+              <SelectItem value="all" className="text-xs uppercase font-bold cursor-pointer">Todas las Categorías</SelectItem>
+              {categories.map(cat => (
+                <SelectItem key={cat} value={cat} className="text-xs uppercase cursor-pointer">{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <Input
-            placeholder="Nombre..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-11 pl-10 bg-white/5 border-white/10 rounded-xl text-xs text-white"
-          />
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <Input
+              placeholder="Buscar por nombre o categoría..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-11 pl-10 pr-8 bg-white/5 border-white/10 rounded-xl text-xs text-white placeholder:text-slate-500"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold"
+                title="Limpiar búsqueda"
+              >
+                ×
+              </button>
+            )}
+          </div>
         </div>
+
+        {(selectedCategory !== "all" || searchQuery) && (
+          <div className="flex items-center justify-between px-2 text-[10px] text-slate-400">
+            <span>Filtro activo: {selectedCategory !== "all" ? `[${selectedCategory}]` : ""} {searchQuery ? `"${searchQuery}"` : ""}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCategory("all");
+                setSearchQuery("");
+              }}
+              className="text-primary hover:underline font-bold uppercase"
+            >
+              Restablecer filtros
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-white/5 bg-slate-950/40">
@@ -85,7 +113,9 @@ export function StockPanel({
                 <td className="py-3 px-4 font-bold text-slate-300">{item.stores?.name}</td>
                 <td className="py-3 px-4 text-slate-400 uppercase text-[10px]">{item.products?.category || item.products?.type || "OTROS"}</td>
                 <td className="py-3 px-4 font-bold text-slate-100">{item.products?.name}</td>
-                <td className="py-3 px-4 text-slate-400">{item.products?.unit_measure || "un"}</td>
+                <td className="py-3 px-4 text-slate-400 font-semibold uppercase text-[11px]">
+                  {(!item.products?.unit_measure || item.products.unit_measure.toLowerCase() === "oz") ? "und" : item.products.unit_measure}
+                </td>
                 <td className="py-3 px-4 text-center font-bold text-slate-200">{item.qty}</td>
                 <td className="py-3 px-4 text-right text-slate-300">${(item.products?.cost || 0).toLocaleString()}</td>
                 <td className="py-3 px-4 text-right text-slate-200 font-bold">${(item.qty * (item.products?.cost || 0)).toLocaleString()}</td>

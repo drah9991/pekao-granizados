@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Plus, History } from "lucide-react";
@@ -8,6 +9,7 @@ import { MovementFormDialog } from "@/components/inventory/MovementFormDialog";
 
 export default function Inventory() {
   const inv = useInventory();
+  const navigate = useNavigate();
 
   return (
     <Layout>
@@ -31,6 +33,7 @@ export default function Inventory() {
             </Button>
             <Button
               variant="outline"
+              onClick={() => navigate("/movements")}
               className="border-white/10 hover:bg-white/5 text-slate-300 font-black text-xs uppercase tracking-widest px-6 h-12 rounded-xl"
             >
               <History className="w-4 h-4 mr-2" /> Ver Logs de Inventario
@@ -83,6 +86,7 @@ export default function Inventory() {
           selectedProductForItem={inv.selectedProductForItem}
           setSelectedProductForItem={inv.setSelectedProductForItem}
           allProducts={inv.allProducts}
+          stockItems={inv.stockItems}
           itemQty={inv.itemQty}
           setItemQty={inv.setItemQty}
           itemTotal={inv.itemTotal}

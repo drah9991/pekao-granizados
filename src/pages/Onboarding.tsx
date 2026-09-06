@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Rocket, Package, CheckCircle2, ChevronRight, Store } from 'lucide-react';
+import { Rocket, Package, CheckCircle2, ChevronRight, ChevronLeft, Store, LayoutDashboard, Calculator, Boxes, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Onboarding = () => {
@@ -16,6 +16,30 @@ const Onboarding = () => {
 
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
+
+  // Process referral tracking during onboarding
+  React.useEffect(() => {
+    const processReferral = async () => {
+      const referredBy = localStorage.getItem('referred_by');
+      if (referredBy && storeId) {
+        try {
+          // Check if config is null first
+          const { data: storeData } = await supabase.from('stores').select('config').eq('id', storeId).single();
+          const currentConfig = storeData?.config || {};
+          
+          if (!(currentConfig as any).referred_by) {
+            await supabase.from('stores').update({
+              config: { ...(currentConfig as any), referred_by: referredBy }
+            }).eq('id', storeId);
+          }
+          localStorage.removeItem('referred_by'); // Limpiar despues de usar
+        } catch (e) {
+          console.error("Error linking referral:", e);
+        }
+      }
+    };
+    processReferral();
+  }, [storeId]);
 
   const handleCreateProduct = async () => {
     if (!productName || !productPrice) {
@@ -37,7 +61,7 @@ const Onboarding = () => {
 
       if (error) throw error;
       toast.success('Producto creado mágicamente ✨');
-      setStep(3);
+      setStep(4);
     } catch (err: any) {
       toast.error('Error al crear el producto: ' + err.message);
     } finally {
@@ -50,6 +74,10 @@ const Onboarding = () => {
     navigate('/dashboard');
   };
 
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background decoration */}
@@ -58,8 +86,13 @@ const Onboarding = () => {
       <div className="w-full max-w-lg bg-card border shadow-2xl rounded-2xl overflow-hidden relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-500">
         
         {/* Header */}
-        <div className="bg-primary/5 p-8 text-center border-b">
-          <div className="mx-auto w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+        <div className="bg-primary/5 p-8 text-center border-b relative">
+          {step > 1 && step < 4 && (
+            <Button variant="ghost" size="icon" className="absolute left-4 top-4" onClick={handleBack}>
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+          )}
+          <div className="mx-auto w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mt-2">
             <Rocket className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-2xl font-bold">¡Bienvenido a tu Negocio!</h1>
@@ -71,6 +104,7 @@ const Onboarding = () => {
           <div className={`h-2 rounded-full flex-1 ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
           <div className={`h-2 rounded-full flex-1 ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
           <div className={`h-2 rounded-full flex-1 ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
+          <div className={`h-2 rounded-full flex-1 ${step >= 4 ? 'bg-primary' : 'bg-muted'}`} />
         </div>
 
         {/* Step 1: Welcome & Context */}
@@ -81,19 +115,65 @@ const Onboarding = () => {
                 <Store className="w-6 h-6 text-primary mt-1" />
                 <div>
                   <h3 className="font-semibold">Tu Tienda Virtual</h3>
-                  <p className="text-sm text-muted-foreground">Ya hemos configurado tu espacio seguro. Ahora necesitamos algo que vender.</p>
+                  <p className="text-sm text-muted-foreground">Ya hemos configurado tu espacio seguro. Ahora necesitamos conocer un poco más sobre cómo funciona el sistema antes de vender.</p>
                 </div>
               </div>
             </div>
             <Button className="w-full h-12 text-lg group" onClick={() => setStep(2)}>
-              Comenzar Configuración
+              Conocer los Módulos
               <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
         )}
 
-        {/* Step 2: First Product */}
+        {/* Step 2: Modules Info */}
         {step === 2 && (
+          <div className="p-8 space-y-6 animate-in slide-in-from-right-4">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-semibold">Módulos del Sistema</h2>
+              <p className="text-sm text-muted-foreground">Descubre todo lo que puedes hacer con nuestra plataforma.</p>
+            </div>
+            
+            <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
+              <div className="flex gap-4 items-start p-3 rounded-lg bg-muted/30">
+                <Calculator className="w-6 h-6 text-primary mt-1 shrink-0" />
+                <div>
+                  <h3 className="font-semibold">POS (Punto de Venta)</h3>
+                  <p className="text-sm text-muted-foreground">Registra ventas rápidamente, maneja turnos de caja y múltiples métodos de pago.</p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start p-3 rounded-lg bg-muted/30">
+                <Boxes className="w-6 h-6 text-primary mt-1 shrink-0" />
+                <div>
+                  <h3 className="font-semibold">Inventario</h3>
+                  <p className="text-sm text-muted-foreground">Controla tus productos, stock de materias primas y recetas al detalle.</p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start p-3 rounded-lg bg-muted/30">
+                <LayoutDashboard className="w-6 h-6 text-primary mt-1 shrink-0" />
+                <div>
+                  <h3 className="font-semibold">Dashboard y Reportes</h3>
+                  <p className="text-sm text-muted-foreground">Visualiza estadísticas, ganancias y métricas clave de tu negocio en tiempo real.</p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start p-3 rounded-lg bg-muted/30">
+                <Users className="w-6 h-6 text-primary mt-1 shrink-0" />
+                <div>
+                  <h3 className="font-semibold">CRM y Proveedores</h3>
+                  <p className="text-sm text-muted-foreground">Gestiona la información de tus clientes para fidelizarlos y tus proveedores.</p>
+                </div>
+              </div>
+            </div>
+
+            <Button className="w-full h-12 text-lg group" onClick={() => setStep(3)}>
+              Siguiente: Crear Producto
+              <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
+        )}
+
+        {/* Step 3: First Product */}
+        {step === 3 && (
           <div className="p-8 space-y-6 animate-in slide-in-from-right-4">
             <div className="text-center mb-6">
               <Package className="w-12 h-12 text-primary mx-auto mb-3 opacity-80" />
@@ -136,8 +216,8 @@ const Onboarding = () => {
           </div>
         )}
 
-        {/* Step 3: Success & CTA */}
-        {step === 3 && (
+        {/* Step 4: Success & CTA */}
+        {step === 4 && (
           <div className="p-8 space-y-6 text-center animate-in zoom-in-95 duration-500">
             <div className="mx-auto w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
               <CheckCircle2 className="w-12 h-12 text-green-500" />
