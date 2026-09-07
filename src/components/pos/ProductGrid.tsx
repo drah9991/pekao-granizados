@@ -126,23 +126,23 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
           onProductSelect(product);
         }}
         className={cn(
-          "product-card-button group relative rounded-2xl border overflow-hidden transition-all duration-200 text-left",
+          "product-card-button group relative rounded-2xl overflow-hidden transition-all duration-200 ease-in-out text-left border border-white/5",
           isOutOfStock
-            ? "opacity-50 grayscale cursor-not-allowed bg-surface-subtle border-border/50"
+            ? "opacity-50 grayscale cursor-not-allowed bg-card/30"
             : isLowStock
-            ? "bg-rose-500/[0.03] border-rose-500/20 hover:border-rose-500/50 hover:bg-rose-500/[0.06] animate-border-glow-pulse active:scale-[0.98]"
-            : "bg-surface-subtle border-border/50 hover:border-primary/30 hover:bg-surface-active hover:shadow-glow active:scale-[0.98]"
+            ? "bg-rose-500/[0.03] border-rose-500/20 hover:border-rose-500/40 hover:bg-rose-500/[0.08] hover:shadow-lg hover:-translate-y-1 active:scale-[0.98]"
+            : "bg-[#1f2025] hover:bg-[#25262c] hover:border-primary/30 hover:shadow-xl hover:-translate-y-1 active:scale-[0.98]"
         )}
       >
         {/* Ripple Effect elements */}
         <span className="ripple-container" />
 
         {/* Row 1: Image & Stock Badge */}
-        <div className="product-card-header p-5 pb-0 w-full flex items-start justify-between z-10">
+        <div className="product-card-header p-4 pb-0 w-full flex items-start justify-between z-10">
           <div className="flex gap-2">
             <div className={cn(
-              "product-card-emoji-wrapper w-14 h-14 lg:w-20 lg:h-20 rounded-2xl flex items-center justify-center transition-all duration-200 shadow-sm relative overflow-hidden",
-              isOutOfStock ? "bg-muted" : "bg-surface-active border border-border/50 group-hover:scale-105"
+              "product-card-emoji-wrapper w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm relative overflow-hidden",
+              isOutOfStock ? "bg-muted" : "bg-black/20 border border-white/5 group-hover:scale-105"
             )}>
               {product.images && product.images.length > 0 ? (
                 <img 
@@ -152,12 +152,12 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center text-muted-foreground/40 gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 lg:w-10 lg:h-10 opacity-70"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 lg:w-8 lg:h-8 opacity-70"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                 </div>
               )}
             </div>
             {product.is_starred && (
-              <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500 text-xs shadow-glow shrink-0 animate-pulse-subtle">
+              <div className="w-5 h-5 rounded-md bg-amber-500/20 flex items-center justify-center text-amber-500 text-[10px] shadow-glow shrink-0 animate-pulse-subtle">
                 ⭐
               </div>
             )}
@@ -166,62 +166,52 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
           {product.stock !== undefined && (
             <div
               className={cn(
-                "product-card-badge font-bold text-[10px] lg:text-[11px] px-2.5 py-1 rounded-lg border font-dm-sans tracking-wide flex items-center gap-1.5 shrink-0 z-10 shadow-sm",
-                isOutOfStock ? "bg-rose-500/10 text-rose-500 border-rose-500/20" :
-                isLowStock ? "bg-rose-500/10 text-rose-500 border-rose-500/30" :
-                isMediumStock ? "bg-amber-500/10 text-amber-500 border-amber-500/30" :
-                "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+                "product-card-badge font-bold text-[10px] px-2 py-1 rounded-full flex items-center gap-1.5 shrink-0 z-10 shadow-sm backdrop-blur-md",
+                isOutOfStock ? "bg-rose-500/10 text-rose-500" :
+                isLowStock ? "bg-rose-500/10 text-rose-500" :
+                isMediumStock ? "bg-amber-500/10 text-amber-500" :
+                "bg-emerald-500/10 text-emerald-500"
               )}
             >
+              <div className={cn("w-1.5 h-1.5 rounded-full",
+                isOutOfStock || isLowStock ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" :
+                isMediumStock ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]" :
+                "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+              )} />
               {cfg.track_mixture_inventory ? (
-                <span>Stock: {(product.mixtureStock! / 1000).toFixed(1)}L</span>
+                <span>{(product.mixtureStock! / 1000).toFixed(1)}L</span>
               ) : (
-                <span>Stock: {qty || product.mixtureStock || 0}</span>
+                <span>{qty || product.mixtureStock || 0}</span>
               )}
             </div>
           )}
         </div>
 
         {/* Row 2: Title */}
-        <div className="product-card-body px-5 pt-4 w-full text-left z-10">
-          <p className="product-card-title font-bold text-foreground text-base lg:text-lg leading-tight font-dm-sans text-wrap text-pretty line-clamp-2 transition-colors duration-300">
+        <div className="product-card-body px-4 pt-3 w-full text-left z-10">
+          <p className="product-card-title font-medium text-muted-foreground text-sm lg:text-[15px] leading-tight font-dm-sans text-wrap text-pretty line-clamp-2 transition-colors duration-300">
             {product.name}
           </p>
         </div>
 
         {/* Row 3: Price + Add Button */}
-        <div className="product-card-footer px-5 pb-6 pt-3 w-full flex items-end justify-between gap-2 z-10">
-          <p className="product-card-price font-black text-xl lg:text-3xl text-primary font-dm-sans tracking-tighter drop-shadow-sm">
+        <div className="product-card-footer px-4 pb-4 pt-2 w-full flex items-end justify-between gap-2 z-10">
+          <p className="product-card-price font-black text-xl lg:text-2xl text-white font-dm-sans tracking-tighter drop-shadow-sm">
             {formatCOP(product.price)}
           </p>
           {!isOutOfStock && (
             <div className={cn(
-              "product-card-add-btn w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 border",
+              "product-card-add-btn w-8 h-8 lg:w-10 lg:h-10 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 border",
               isLowStock ? "bg-rose-500 text-white border-rose-600/50 shadow-[0_4px_20px_-4px_rgba(244,63,94,0.5)]" : 
               "bg-primary text-white border-primary/20 shadow-[0_4px_20px_-4px_rgba(var(--primary),0.5)]"
             )}>
-              <span className="text-xl lg:text-2xl font-bold">+</span>
+              <span className="text-lg lg:text-xl font-bold">+</span>
             </div>
           )}
         </div>
 
         {/* Decorative glow */}
         <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/5 blur-[40px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-        
-        {/* Color Status Bar at bottom */}
-        {product.stock !== undefined && (
-          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/10 dark:bg-white/5">
-            <div 
-              className={cn(
-                "h-full transition-all duration-500 ease-out",
-                isOutOfStock ? "w-0" :
-                isLowStock ? "w-[25%] bg-rose-500" :
-                isMediumStock ? "w-[60%] bg-amber-500" :
-                "w-full bg-emerald-500"
-              )}
-            />
-          </div>
-        )}
       </button>
     </motion.div>
   );
@@ -435,30 +425,26 @@ const ProductGrid = memo(function ProductGrid({ onProductSelect, searchRef, acti
               </div>
             </div>
 
-            <div className="flex gap-2.5 mb-12 overflow-x-auto pb-4 no-scrollbar scroll-smooth shrink-0">
+            <div className="flex gap-2.5 mb-10 overflow-x-auto pb-4 no-scrollbar scroll-smooth shrink-0">
               {categories.map((cat) => {
                 const cfg = cat === "all" ? null : getTypeConfig(cat);
                 const isActive = activeCategory === cat;
                 return (
-                  <Button
+                  <button
                     key={cat}
-                    variant={isActive ? "default" : "outline"}
                     onClick={() => handleSetActiveCategory(cat)}
                     className={cn(
-                      "h-12 lg:h-14 px-6 lg:px-8 gap-2.5 rounded-xl transition-all duration-300 border font-dm-sans shrink-0",
+                      "h-10 px-5 gap-2 rounded-full transition-all duration-200 ease-in-out font-dm-sans shrink-0 flex items-center justify-center border",
                       isActive
-                        ? "bg-primary text-white border-primary shadow-glow scale-[1.02]"
-                        : "bg-surface-subtle border-border/50 text-muted-foreground hover:bg-surface-active hover:border-border hover:text-foreground"
+                        ? "bg-primary text-white border-primary shadow-glow scale-[0.98]"
+                        : "bg-white/5 border-transparent text-muted-foreground hover:bg-white/10 hover:text-white hover:border-white/10"
                     )}
                   >
-                    <span className="text-xl">{cat === "all" ? "📋" : cfg?.emoji}</span>
-                    <span className="font-semibold flex items-center gap-2 text-xs uppercase tracking-tight">
+                    <span className="text-base">{cat === "all" ? "📋" : cfg?.emoji}</span>
+                    <span className="font-semibold text-xs uppercase tracking-tight">
                       {cat === "all" ? "Todos" : cfg?.label}
-                      <span className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-bold", isActive ? "bg-primary-foreground/20 text-white" : "bg-muted text-muted-foreground")}>
-                        {categoryCounts[cat]}
-                      </span>
                     </span>
-                  </Button>
+                  </button>
                 );
               })}
             </div>

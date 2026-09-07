@@ -65,7 +65,7 @@ export default function POS() {
           </Tooltip>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col lg:flex-row bg-transparent relative h-full overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col lg:flex-row bg-transparent relative h-full overflow-hidden lg:p-6 lg:gap-6">
           <div className="flex lg:hidden glass-pro border-b border-white/10 sticky top-0 z-20 items-center pr-4">
             <button
               onClick={() => setViewMode("products")}
@@ -98,8 +98,9 @@ export default function POS() {
             )}
           </div>
 
+          {/* PANEL IZQUIERDO: PRODUCTOS (65-70%) */}
           <div className={cn(
-            "flex-1 min-h-0 flex flex-col",
+            "flex-1 min-h-0 flex flex-col lg:rounded-3xl lg:border lg:border-white/5 lg:bg-card/40 lg:overflow-hidden lg:shadow-2xl transition-all duration-300",
             viewMode !== "products" && "hidden lg:flex"
           )}>
             {!isOnline && (
@@ -131,8 +132,9 @@ export default function POS() {
             />
           </div>
 
+          {/* PANEL DERECHO: CARRITO (30-35%) */}
           <div className={cn(
-            "w-full flex-1 lg:flex-none lg:w-[420px] xl:w-[480px] 2xl:w-[500px] flex flex-col min-h-0 border-l border-white/5 lg:h-full lg:overflow-hidden",
+            "w-full flex-none lg:w-[32%] xl:w-[35%] 2xl:w-[420px] flex flex-col min-h-0 lg:h-full lg:overflow-hidden lg:rounded-3xl lg:border lg:border-white/5 lg:bg-card/60 lg:shadow-2xl transition-all duration-300",
             viewMode !== "cart" && "hidden lg:flex"
           )}>
             <CartSummary

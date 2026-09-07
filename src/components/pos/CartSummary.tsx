@@ -51,7 +51,7 @@ const CartSummary = memo(function CartSummary({
   updateItemCustomization,
   restoreLastCart
 }: CartSummaryProps) {
-  return (<div className="w-full glass-pro border-t lg:border-t-0 lg:border-l border-white/5 p-4 md:px-6 md:py-4 flex flex-col h-full relative z-10 animate-pro-in">
+  return (<div className="w-full h-full glass-pro p-4 md:px-6 md:py-4 flex flex-col relative z-10 animate-pro-in">
       <div className="flex-none mb-3">
         <CartHeader 
           itemCount={cart.reduce((acc, item) => acc + item.quantity, 0)}
