@@ -8,12 +8,50 @@ import { cn } from "@/lib/utils";
 import type { PaymentMethod } from "@/components/pos/PaymentDialog";
 import type { SplitClient } from "@/hooks/useSplitBill";
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: ReactNode }[] = [
-  { value: "cash", label: "Efectivo", icon: <DollarSign className="w-5 h-5" /> },
-  { value: "card", label: "Tarjeta", icon: <CreditCard className="w-5 h-5" /> },
-  { value: "transfer", label: "Transferencia", icon: <Smartphone className="w-5 h-5" /> },
-  { value: "split", label: "Mixto", icon: <div className="flex"><DollarSign className="w-3.5 h-3.5" /><Smartphone className="w-3.5 h-3.5" /></div> },
-  { value: "qr", label: "QR", icon: <QrCode className="w-5 h-5" /> },
+interface PaymentMethodConfig {
+  value: PaymentMethod;
+  label: string;
+  icon: ReactNode;
+  activeColor: string;
+  idleColor: string;
+}
+
+const PAYMENT_METHODS: PaymentMethodConfig[] = [
+  { 
+    value: "cash", 
+    label: "Efectivo", 
+    icon: <DollarSign className="w-5 h-5" />,
+    activeColor: "border-emerald-500 bg-emerald-500/15 text-emerald-500 shadow-md",
+    idleColor: "border-emerald-500/30 bg-emerald-500/5 text-muted-foreground hover:border-emerald-500/50 hover:bg-emerald-500/10"
+  },
+  { 
+    value: "card", 
+    label: "Tarjeta", 
+    icon: <CreditCard className="w-5 h-5" />,
+    activeColor: "border-sky-500 bg-sky-500/15 text-sky-500 shadow-md",
+    idleColor: "border-sky-500/30 bg-sky-500/5 text-muted-foreground hover:border-sky-500/50 hover:bg-sky-500/10"
+  },
+  { 
+    value: "transfer", 
+    label: "Transferencia", 
+    icon: <Smartphone className="w-5 h-5" />,
+    activeColor: "border-purple-500 bg-purple-500/15 text-purple-500 shadow-md",
+    idleColor: "border-purple-500/30 bg-purple-500/5 text-muted-foreground hover:border-purple-500/50 hover:bg-purple-500/10"
+  },
+  { 
+    value: "split", 
+    label: "Mixto", 
+    icon: <div className="flex items-center"><DollarSign className="w-4 h-4" /><Smartphone className="w-4 h-4" /></div>,
+    activeColor: "border-amber-500 bg-amber-500/15 text-amber-500 shadow-md",
+    idleColor: "border-amber-500/30 bg-amber-500/5 text-muted-foreground hover:border-amber-500/50 hover:bg-amber-500/10"
+  },
+  { 
+    value: "qr", 
+    label: "QR", 
+    icon: <QrCode className="w-5 h-5" />,
+    activeColor: "border-teal-500 bg-teal-500/15 text-teal-500 shadow-md",
+    idleColor: "border-teal-500/30 bg-teal-500/5 text-muted-foreground hover:border-teal-500/50 hover:bg-teal-500/10"
+  },
 ];
 
 interface SplitBillPaymentPanelProps {
@@ -77,14 +115,12 @@ export function SplitBillPaymentPanel({
                 type="button"
                 onClick={() => onSelectMethod(pm.value)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all active:scale-95 min-h-[80px]",
-                  selectedMethod === pm.value
-                    ? "border-primary bg-primary/10 text-primary shadow-md"
-                    : "border-white/10 hover:border-white/35 text-muted-foreground hover:bg-white/5"
+                  "flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all active:scale-95 min-h-[82px] shadow-sm",
+                  selectedMethod === pm.value ? pm.activeColor : pm.idleColor
                 )}
               >
                 {pm.icon}
-                <span className="font-bold text-xs">{pm.label}</span>
+                <span className="font-black text-xs uppercase tracking-wide">{pm.label}</span>
               </button>
             ))}
           </div>

@@ -51,42 +51,43 @@ const CartSummary = memo(function CartSummary({
   updateItemCustomization,
   restoreLastCart
 }: CartSummaryProps) {
-  return (<div className="w-full lg:w-[30rem] glass-pro border-t lg:border-t-0 lg:border-l border-white/5 p-4 md:p-8 flex flex-col h-full min-h-0 relative z-10 animate-pro-in">
-      {/* Header Cart */}
-      <CartHeader 
-        itemCount={cart.reduce((acc, item) => acc + item.quantity, 0)}
-        onClearCart={onClearCart}
-      />
+  return (<div className="w-full glass-pro border-t lg:border-t-0 lg:border-l border-white/5 p-4 md:px-6 md:py-4 flex flex-col h-full relative z-10 animate-pro-in">
+      <div className="flex-none mb-3">
+        <CartHeader 
+          itemCount={cart.reduce((acc, item) => acc + item.quantity, 0)}
+          onClearCart={onClearCart}
+        />
+        <CartCustomerSelector 
+          selectedCustomer={selectedCustomer}
+          setSelectedCustomer={setSelectedCustomer}
+        />
+      </div>
 
-      {/* Customer Area */}
-      <CartCustomerSelector 
-        selectedCustomer={selectedCustomer}
-        setSelectedCustomer={setSelectedCustomer}
-      />
+      <div className="flex-1 min-h-0 -mx-2 mb-3 overflow-y-auto custom-scrollbar">
+        <CartItemList 
+          cart={cart}
+          updateQuantity={updateQuantity}
+          removeItem={removeItem}
+          availableSizes={availableSizes}
+          availableToppings={availableToppings}
+          updateItemCustomization={updateItemCustomization}
+        />
+      </div>
 
-      {/* Items List */}
-      <CartItemList 
-        cart={cart}
-        updateQuantity={updateQuantity}
-        removeItem={removeItem}
-        availableSizes={availableSizes}
-        availableToppings={availableToppings}
-        updateItemCustomization={updateItemCustomization}
-      />
-
-      {/* Footer / Summary Area */}
-      <CartTotals 
-        subtotal={subtotal}
-        discount={discount}
-        setDiscount={setDiscount}
-        discountType={discountType}
-        setDiscountType={setDiscountType}
-        discountAmount={discountAmount}
-        total={total}
-        onQuickPayment={onQuickPayment}
-        onCheckout={onCheckout}
-        onSplitPayment={onSplitPayment}
-      />
+      <div className="flex-none mt-auto">
+        <CartTotals 
+          subtotal={subtotal}
+          discount={discount}
+          setDiscount={setDiscount}
+          discountType={discountType}
+          setDiscountType={setDiscountType}
+          discountAmount={discountAmount}
+          total={total}
+          onQuickPayment={onQuickPayment}
+          onCheckout={onCheckout}
+          onSplitPayment={onSplitPayment}
+        />
+      </div>
     </div>
   );
 });

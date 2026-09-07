@@ -32,12 +32,62 @@ interface PaymentDialogProps {
   defaultMethod?: PaymentMethod;
 }
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
-  { value: "cash", label: "Efectivo", icon: <DollarSign className="w-7 h-7" /> },
-  { value: "card", label: "Tarjeta", icon: <CreditCard className="w-7 h-7" /> },
-  { value: "transfer", label: "Transferencia", icon: <Smartphone className="w-7 h-7" /> },
-  { value: "split", label: "Mixto (Efe+Tra)", icon: <div className="flex"><DollarSign className="w-5 h-5" /><Smartphone className="w-5 h-5" /></div> },
-  { value: "qr", label: "QR", icon: <QrCode className="w-7 h-7" /> },
+interface PaymentMethodConfig {
+  value: PaymentMethod;
+  label: string;
+  sublabel: string;
+  icon: React.ReactNode;
+  activeColor: string;
+  idleColor: string;
+  iconBg: string;
+}
+
+const PAYMENT_METHODS: PaymentMethodConfig[] = [
+  { 
+    value: "cash", 
+    label: "Efectivo", 
+    sublabel: "Dinero físico",
+    icon: <DollarSign className="w-6 h-6" />, 
+    activeColor: "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-emerald-500/20 shadow-md",
+    idleColor: "border-emerald-500/25 bg-emerald-500/5 text-muted-foreground hover:border-emerald-500/50 hover:bg-emerald-500/10",
+    iconBg: "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+  },
+  { 
+    value: "card", 
+    label: "Tarjeta", 
+    sublabel: "Datáfono / POS",
+    icon: <CreditCard className="w-6 h-6" />, 
+    activeColor: "border-sky-500 bg-sky-500/15 text-sky-600 dark:text-sky-400 shadow-sky-500/20 shadow-md",
+    idleColor: "border-sky-500/25 bg-sky-500/5 text-muted-foreground hover:border-sky-500/50 hover:bg-sky-500/10",
+    iconBg: "bg-sky-500/20 text-sky-600 dark:text-sky-400"
+  },
+  { 
+    value: "transfer", 
+    label: "Transferencia", 
+    sublabel: "Nequi / Daviplata",
+    icon: <Smartphone className="w-6 h-6" />, 
+    activeColor: "border-purple-500 bg-purple-500/15 text-purple-600 dark:text-purple-400 shadow-purple-500/20 shadow-md",
+    idleColor: "border-purple-500/25 bg-purple-500/5 text-muted-foreground hover:border-purple-500/50 hover:bg-purple-500/10",
+    iconBg: "bg-purple-500/20 text-purple-600 dark:text-purple-400"
+  },
+  { 
+    value: "split", 
+    label: "Mixto", 
+    sublabel: "Efe + Transf",
+    icon: <div className="flex items-center"><DollarSign className="w-5 h-5" /><Smartphone className="w-5 h-5" /></div>, 
+    activeColor: "border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-amber-500/20 shadow-md",
+    idleColor: "border-amber-500/25 bg-amber-500/5 text-muted-foreground hover:border-amber-500/50 hover:bg-amber-500/10",
+    iconBg: "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+  },
+  { 
+    value: "qr", 
+    label: "Código QR", 
+    sublabel: "Escaneo rápido",
+    icon: <QrCode className="w-6 h-6" />, 
+    activeColor: "border-teal-500 bg-teal-500/15 text-teal-600 dark:text-teal-400 shadow-teal-500/20 shadow-md",
+    idleColor: "border-teal-500/25 bg-teal-500/5 text-muted-foreground hover:border-teal-500/50 hover:bg-teal-500/10",
+    iconBg: "bg-teal-500/20 text-teal-600 dark:text-teal-400"
+  },
 ];
 
 export default function PaymentDialog({
@@ -156,31 +206,32 @@ export default function PaymentDialog({
               </button>
 
               {isDetailsOpen && (
-                <div className="mt-2 pt-2 border-t border-border/40 max-h-40 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar animate-in fade-in duration-200">
-                  {cart.map((item) => (
-                    <div key={item.id} className="flex justify-between items-start text-xs bg-background/60 p-2 rounded-lg border border-border/40 gap-2">
+                <div className="mt-2 pt-2 border-t border-border/40 max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar animate-in fade-in duration-200">
+                  {cart.map((item, index) => (
+                    <div key={item.id} className="flex justify-between items-start text-xs bg-card/90 dark:bg-card/70 p-2.5 rounded-xl border-2 border-border/60 gap-2.5 shadow-xs">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border/50">#{index + 1}</span>
                           <span className="font-black text-primary shrink-0">{item.quantity}x</span>
                           <span className="font-bold text-foreground truncate uppercase">{item.name}</span>
                         </div>
-                        <div className="flex flex-wrap gap-1 mt-1">
+                        <div className="flex flex-wrap gap-1 mt-1.5 pl-6">
                           {item.size && (
                             <span className="text-[9px] font-extrabold bg-primary/15 text-primary px-1.5 py-0.5 rounded border border-primary/20 uppercase">
                               {item.size}
                             </span>
                           )}
                           {item.toppings?.map(t => (
-                            <span key={t.id} className="text-[9px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase">
+                            <span key={t.id} className="text-[9px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase border border-border/40">
                               +{t.name}
                             </span>
                           ))}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-black text-foreground">{formatCOP(item.price * item.quantity)}</span>
+                        <span className="font-black text-sm text-foreground tabular-nums">{formatCOP(item.price * item.quantity)}</span>
                         {item.quantity > 1 && (
-                          <p className="text-[9px] text-muted-foreground font-medium">{formatCOP(item.price)} c/u</p>
+                          <p className="text-[9px] text-muted-foreground font-medium tabular-nums">{formatCOP(item.price)} c/u</p>
                         )}
                       </div>
                     </div>
@@ -257,36 +308,63 @@ export default function PaymentDialog({
           </div>
 
 
-          <div className="flex justify-between items-end pb-2 border-b-2 border-dashed">
-            <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Subtotal: {formatCOP(subtotal)}</p>
-                {currentDeliveryFee > 0 && <p className="text-sm text-blue-500 font-medium">Domicilio: {formatCOP(currentDeliveryFee)}</p>}
+          {/* Total Hero Section */}
+          <div className="relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/15 via-primary/5 to-card/90 p-4 sm:p-5 shadow-md">
+            <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground pb-2 border-b border-border/40">
+              <span className="uppercase tracking-wider">Subtotal Productos</span>
+              <span className="font-bold text-foreground tabular-nums text-sm">{formatCOP(subtotal)}</span>
             </div>
-            <div className="text-right">
-                <p className="text-sm font-semibold uppercase text-muted-foreground mr-1">Total a Pagar</p>
-                <p className="text-2xl lg:text-3xl font-black text-foreground">{formatCOP(finalTotal)}</p>
+            {currentDeliveryFee > 0 && (
+              <div className="flex justify-between items-center text-xs font-semibold text-blue-500 pt-2 pb-2 border-b border-border/40">
+                <span className="uppercase tracking-wider">Costo Domicilio</span>
+                <span className="font-bold tabular-nums text-sm">+{formatCOP(currentDeliveryFee)}</span>
+              </div>
+            )}
+            <div className="pt-3 flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-primary font-dm-sans bg-primary/15 px-2.5 py-1 rounded-full border border-primary/25">
+                Total a Pagar
+              </span>
+              <div className="text-right">
+                <span className="text-3xl sm:text-4xl font-black text-foreground font-dm-sans tracking-tight tabular-nums block leading-none">
+                  {formatCOP(finalTotal)}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Payment Method Grid */}
+          {/* Payment Method Grid - Large Tactile Buttons */}
           <div>
-            <Label className="text-base font-semibold mb-3 block">Método de Pago</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {PAYMENT_METHODS.map((pm) => (
-                <button
-                  key={pm.value}
-                  onClick={() => setPaymentMethod(pm.value)}
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-150 min-h-[90px] active:scale-95",
-                    paymentMethod === pm.value
-                      ? "border-primary bg-primary/10 text-primary shadow-md"
-                      : "border-border hover:border-muted-foreground/50 text-muted-foreground"
-                  )}
-                >
-                  {pm.icon}
-                  <span className="font-semibold text-sm">{pm.label}</span>
-                </button>
-              ))}
+            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 block">
+              Método de Pago
+            </Label>
+            <div className="grid grid-cols-2 gap-2.5">
+              {PAYMENT_METHODS.map((pm) => {
+                const isSelected = paymentMethod === pm.value;
+                return (
+                  <button
+                    key={pm.value}
+                    type="button"
+                    onClick={() => setPaymentMethod(pm.value)}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-2xl border-2 transition-all duration-150 min-h-[80px] active:scale-[0.97] text-left shadow-sm",
+                      isSelected ? pm.activeColor : pm.idleColor,
+                      pm.value === "qr" ? "col-span-2 sm:col-span-1" : ""
+                    )}
+                  >
+                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-current/20", pm.iconBg)}>
+                      {pm.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={cn("font-black text-xs sm:text-sm uppercase tracking-wide leading-tight", isSelected ? "text-foreground" : "")}>
+                        {pm.label}
+                      </div>
+                      <div className="text-[10px] opacity-75 font-medium truncate mt-0.5">
+                        {pm.sublabel}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

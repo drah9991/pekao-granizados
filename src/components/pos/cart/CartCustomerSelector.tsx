@@ -27,7 +27,7 @@ export function CartCustomerSelector({ selectedCustomer, setSelectedCustomer }: 
   };
 
   return (
-    <div className="mb-6 md:mb-10">
+    <div className="mb-3">
       <div className="flex gap-3 items-center">
         <div className="flex-1">
            <CustomerSelection

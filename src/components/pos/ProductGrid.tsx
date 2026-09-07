@@ -59,12 +59,23 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
   const emoji = cfg.emoji;
   const qty = product.stock || 0;
   const isMixtureTracked = cfg.track_mixture_inventory;
+  
+  // Stock thresholds
   const isOutOfStock = isMixtureTracked
     ? (product.mixtureStock === undefined || product.mixtureStock <= 0)
     : (qty <= 0 && (product.mixtureStock === undefined || product.mixtureStock <= 0));
+    
   const isLowStock = isMixtureTracked
     ? (product.mixtureStock !== undefined && product.mixtureStock > 0 && product.mixtureStock < 2000)
     : ((qty > 0 && qty < 10) || (product.mixtureStock !== undefined && product.mixtureStock > 0 && product.mixtureStock < 10));
+
+  const isMediumStock = isMixtureTracked
+    ? (product.mixtureStock !== undefined && product.mixtureStock >= 2000 && product.mixtureStock < 5000)
+    : ((qty >= 10 && qty < 20) || (product.mixtureStock !== undefined && product.mixtureStock >= 10 && product.mixtureStock < 20));
+
+  const isHighStock = isMixtureTracked
+    ? (product.mixtureStock !== undefined && product.mixtureStock >= 5000)
+    : (qty >= 20 || (product.mixtureStock !== undefined && product.mixtureStock >= 20));
 
   const prefersReducedMotion = typeof window !== "undefined"
     ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -117,30 +128,32 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
         className={cn(
           "product-card-button group relative rounded-2xl border overflow-hidden transition-all duration-200 text-left",
           isOutOfStock
-            ? "opacity-30 grayscale cursor-not-allowed bg-surface-subtle border-border/50"
+            ? "opacity-50 grayscale cursor-not-allowed bg-surface-subtle border-border/50"
             : isLowStock
-            ? "bg-amber-500/[0.03] border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/[0.06] animate-border-glow-pulse active:scale-[0.98]"
+            ? "bg-rose-500/[0.03] border-rose-500/20 hover:border-rose-500/50 hover:bg-rose-500/[0.06] animate-border-glow-pulse active:scale-[0.98]"
             : "bg-surface-subtle border-border/50 hover:border-primary/30 hover:bg-surface-active hover:shadow-glow active:scale-[0.98]"
         )}
       >
         {/* Ripple Effect elements */}
         <span className="ripple-container" />
 
-        {/* Row 1: Emoji & Stock Badge */}
+        {/* Row 1: Image & Stock Badge */}
         <div className="product-card-header p-5 pb-0 w-full flex items-start justify-between z-10">
           <div className="flex gap-2">
             <div className={cn(
-              "product-card-emoji-wrapper w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm relative overflow-hidden",
-              isOutOfStock ? "bg-muted" : "bg-surface-active border border-border/50 group-hover:scale-110 group-hover:rotate-3"
+              "product-card-emoji-wrapper w-14 h-14 lg:w-20 lg:h-20 rounded-2xl flex items-center justify-center transition-all duration-200 shadow-sm relative overflow-hidden",
+              isOutOfStock ? "bg-muted" : "bg-surface-active border border-border/50 group-hover:scale-105"
             )}>
               {product.images && product.images.length > 0 ? (
                 <img 
                   src={product.images[0]} 
                   alt={product.name} 
-                  className="w-full h-full object-cover" 
+                  className="w-full h-full object-cover aspect-square" 
                 />
               ) : (
-                <span className="product-card-emoji text-3xl lg:text-4xl filter drop-shadow-lg">{emoji}</span>
+                <div className="flex flex-col items-center justify-center text-muted-foreground/40 gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 lg:w-10 lg:h-10 opacity-70"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                </div>
               )}
             </div>
             {product.is_starred && (
@@ -153,51 +166,62 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
           {product.stock !== undefined && (
             <div
               className={cn(
-                "product-card-badge font-bold text-[10px] px-2.5 py-1 rounded-lg border-none font-dm-sans tracking-tight uppercase flex items-center gap-1.5 shrink-0 z-10",
-                isOutOfStock ? "bg-rose-500/20 text-rose-500" :
-                isLowStock ? "bg-amber-500/20 text-amber-500 animate-pulse" :
-                "bg-muted/50 text-muted-foreground"
+                "product-card-badge font-bold text-[10px] lg:text-[11px] px-2.5 py-1 rounded-lg border font-dm-sans tracking-wide flex items-center gap-1.5 shrink-0 z-10 shadow-sm",
+                isOutOfStock ? "bg-rose-500/10 text-rose-500 border-rose-500/20" :
+                isLowStock ? "bg-rose-500/10 text-rose-500 border-rose-500/30" :
+                isMediumStock ? "bg-amber-500/10 text-amber-500 border-amber-500/30" :
+                "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
               )}
             >
-              {isLowStock && (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0 shadow-glow-pro" />
-              )}
               {cfg.track_mixture_inventory ? (
-                <span>
-                  {(product.mixtureStock! / 1000).toFixed(1)}L
-                </span>
+                <span>Stock: {(product.mixtureStock! / 1000).toFixed(1)}L</span>
               ) : (
-                <span>
-                  {`Stock: ${qty || product.mixtureStock || 0}`}
-                </span>
+                <span>Stock: {qty || product.mixtureStock || 0}</span>
               )}
             </div>
           )}
         </div>
 
         {/* Row 2: Title */}
-        <div className="product-card-body px-5 pt-3 w-full text-left z-10">
-          <p className="product-card-title font-bold text-foreground text-sm lg:text-base leading-snug font-dm-sans text-wrap text-pretty line-clamp-2 transition-colors duration-300">
+        <div className="product-card-body px-5 pt-4 w-full text-left z-10">
+          <p className="product-card-title font-bold text-foreground text-base lg:text-lg leading-tight font-dm-sans text-wrap text-pretty line-clamp-2 transition-colors duration-300">
             {product.name}
           </p>
         </div>
 
         {/* Row 3: Price + Add Button */}
-        <div className="product-card-footer px-5 pb-5 pt-2 w-full flex items-end justify-between gap-2 z-10">
-          <p className="product-card-price font-extrabold text-lg lg:text-2xl text-primary font-dm-sans tracking-tight">
+        <div className="product-card-footer px-5 pb-6 pt-3 w-full flex items-end justify-between gap-2 z-10">
+          <p className="product-card-price font-black text-xl lg:text-3xl text-primary font-dm-sans tracking-tighter drop-shadow-sm">
             {formatCOP(product.price)}
           </p>
           {!isOutOfStock && (
             <div className={cn(
-              "product-card-add-btn w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 border border-primary/20",
-              isLowStock ? "bg-amber-500 text-white" : "bg-primary text-white"
+              "product-card-add-btn w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 border",
+              isLowStock ? "bg-rose-500 text-white border-rose-600/50 shadow-[0_4px_20px_-4px_rgba(244,63,94,0.5)]" : 
+              "bg-primary text-white border-primary/20 shadow-[0_4px_20px_-4px_rgba(var(--primary),0.5)]"
             )}>
-              <span className="text-lg font-bold">+</span>
+              <span className="text-xl lg:text-2xl font-bold">+</span>
             </div>
           )}
         </div>
 
+        {/* Decorative glow */}
         <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/5 blur-[40px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+        
+        {/* Color Status Bar at bottom */}
+        {product.stock !== undefined && (
+          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/10 dark:bg-white/5">
+            <div 
+              className={cn(
+                "h-full transition-all duration-500 ease-out",
+                isOutOfStock ? "w-0" :
+                isLowStock ? "w-[25%] bg-rose-500" :
+                isMediumStock ? "w-[60%] bg-amber-500" :
+                "w-full bg-emerald-500"
+              )}
+            />
+          </div>
+        )}
       </button>
     </motion.div>
   );

@@ -8,7 +8,7 @@ interface CartHeaderProps {
 
 export function CartHeader({ itemCount, onClearCart }: CartHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-6 md:mb-10">
+    <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-4">
         <div className="p-3 bg-primary/10 rounded-xl text-primary border border-primary/20">
           <Receipt className="w-6 h-6" />

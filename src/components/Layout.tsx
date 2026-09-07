@@ -666,7 +666,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             "flex-1 min-h-0 flex flex-col overflow-x-hidden",
             fullWidth ? "p-0 overflow-hidden h-full" : "p-4 md:p-8"
           )} 
-          style={{ zoom: `${uiScale * 0.85}%` } as React.CSSProperties}
+          style={!fullWidth ? { zoom: `${uiScale * 0.85}%` } as React.CSSProperties : undefined}
         >
           <AlertManager />
           <ErrorBoundary fallbackTitle="Módulo Temporalmente No Disponible">

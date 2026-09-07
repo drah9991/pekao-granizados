@@ -41,19 +41,11 @@ export default function POS() {
   }, [resetCart]);
 
   const [syncDrawerIsOpen, setSyncDrawerIsOpen] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  
-  useEffect(() => {
-    // Simulamos un tiempo de carga inicial de la página POS para mostrar el skeleton global
-    const timer = setTimeout(() => setIsReady(true), 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const isBoneyardLoading = useBoneyardLoad(!isReady);
 
   return (
     <Layout fullWidth>
-      <BoneyardSkeleton name="pos-layout-full" isLoading={isBoneyardLoading} animate="wave" className="w-full h-full flex-1">
+      {/* Removed BoneyardSkeleton as it breaks flex height when loading completes */}
+      <div className="w-full h-full flex-1 flex flex-col min-h-0">
         <div className="fixed top-4 right-4 z-[60] hidden lg:block">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -140,8 +132,7 @@ export default function POS() {
           </div>
 
           <div className={cn(
-            "w-full lg:w-[420px] xl:w-[480px] 2xl:w-[500px] flex flex-col min-h-0 border-l border-white/5",
-            "lg:h-full lg:overflow-hidden",
+            "w-full flex-1 lg:flex-none lg:w-[420px] xl:w-[480px] 2xl:w-[500px] flex flex-col min-h-0 border-l border-white/5 lg:h-full lg:overflow-hidden",
             viewMode !== "cart" && "hidden lg:flex"
           )}>
             <CartSummary
@@ -168,7 +159,7 @@ export default function POS() {
             />
           </div>
         </div>
-      </BoneyardSkeleton>
+      </div>
 
       <Suspense fallback={null}>
         <ProductCustomizationDialog

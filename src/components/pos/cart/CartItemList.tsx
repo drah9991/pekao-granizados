@@ -26,12 +26,12 @@ export function CartItemList({
   updateItemCustomization
 }: CartItemListProps) {
   return (
-    <div className="flex-1 overflow-y-auto min-h-0 -mx-2 px-2 mb-6 md:mb-10 custom-scrollbar space-y-3">
+    <div className="px-2 space-y-4">
       {cart.length === 0 ? (
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="h-full flex flex-col items-center justify-center opacity-30 select-none py-10"
+          className="flex flex-col items-center justify-center opacity-30 select-none py-10 my-10"
         >
           <div className="p-8 md:p-12 border border-dashed border-white/10 rounded-3xl flex flex-col items-center text-center">
             <Receipt className="w-12 h-12 text-muted-foreground/30 mb-4" />
@@ -41,7 +41,7 @@ export function CartItemList({
         </motion.div>
       ) : (
         <AnimatePresence initial={false}>
-          {cart.map((item) => {
+          {cart.map((item, index) => {
             const showSizeOptions = item.productType !== 'sachet' && item.productType !== 'sweet';
             
             return (
@@ -51,191 +51,161 @@ export function CartItemList({
                 animate={{ opacity: 1, height: "auto", scale: 1 }}
                 exit={{ opacity: 0, height: 0, scale: 0.95, overflow: "hidden" }}
                 transition={{ duration: 0.2, ease: "easeInOut" }}
-                className="group relative bg-surface-subtle border border-border/50 rounded-2xl p-4 transition-colors duration-300 hover:bg-surface-active hover:border-primary/40 hover:shadow-[0_0_20px_rgba(var(--primary),0.1)] backdrop-blur-md"
+                className="group relative bg-card/90 dark:bg-card/70 border border-border/70 dark:border-white/10 rounded-xl p-2 shadow-sm hover:border-primary/40 hover:shadow-md transition-all duration-200 backdrop-blur-md flex items-center gap-2"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1 min-w-0 pr-3 flex gap-3">
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} className="w-10 h-10 object-cover rounded-xl border border-border shadow-sm shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-xl bg-surface-subtle border border-border flex items-center justify-center text-lg shrink-0">
-                        🍹
-                      </div>
+                {/* 1. Image */}
+                {item.image ? (
+                  <img src={item.image} alt={item.name} className="w-12 h-12 object-cover aspect-square rounded-lg border border-border/80 shadow-sm shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-surface-subtle border border-border flex items-center justify-center text-muted-foreground/40 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 opacity-70"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                  </div>
+                )}
+
+                {/* 2. Content */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="inline-flex items-center justify-center px-1 py-0.5 rounded text-[9px] font-black font-mono bg-primary/10 text-primary border border-primary/20 shrink-0 leading-none">
+                      #{index + 1}
+                    </span>
+                    <p className="font-bold text-foreground text-sm font-dm-sans leading-tight truncate" title={item.name}>
+                      {item.name}
+                    </p>
+                  </div>
+                  
+                  {/* Badges / Toppings */}
+                  <div className="flex flex-wrap gap-1">
+                    {item.size && !showSizeOptions && (
+                      <span className="bg-primary/20 text-primary-foreground text-[8px] uppercase font-bold px-1.5 py-0.5 rounded border border-primary/30 font-dm-sans leading-none flex items-center">
+                        {item.size}
+                      </span>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-foreground text-base mb-1.5 font-dm-sans leading-tight break-words drop-shadow-sm">{item.name}</p>
-                      
-                      {/* Badges/Toppings display row */}
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      {item.size && !showSizeOptions && (
-                        <span className="bg-primary/20 text-primary-foreground text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-primary/30 font-dm-sans shadow-sm">
-                          {item.size}
-                        </span>
-                      )}
-                      
-                      {/* Active toppings as interactive click-to-remove badges */}
-                      {item.toppings?.map((topping) => (
-                        <button
-                          key={topping.id}
-                          onClick={() => {
-                            const currentSizeObj = availableSizes.find(s => s.name === item.size);
-                            const sizeId = currentSizeObj?.id || "";
-                            const newToppingIds = item.toppings?.filter(t => t.id !== topping.id).map(t => t.id) || [];
-                            startTransition(() => {
-                              updateItemCustomization?.(item.id, sizeId, newToppingIds);
-                            });
-                          }}
-                          className="bg-muted hover:bg-rose-500/20 hover:text-rose-600 dark:hover:text-rose-300 text-foreground/90 text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-border transition-all font-dm-sans flex items-center gap-1 group/topping active:scale-95"
-                          title="Click para quitar topping"
-                        >
-                          <span>{topping.name}</span>
-                          <span className="text-muted-foreground group-hover/topping:text-rose-500 font-extrabold ml-0.5 text-[8px]">×</span>
-                        </button>
-                      ))}
+                    
+                    {item.toppings?.map((topping) => (
+                      <button
+                        key={topping.id}
+                        onClick={() => {
+                          const sizeId = availableSizes.find(s => s.name === item.size)?.id || "";
+                          const newToppingIds = item.toppings?.filter(t => t.id !== topping.id).map(t => t.id) || [];
+                          startTransition(() => updateItemCustomization?.(item.id, sizeId, newToppingIds));
+                        }}
+                        className="bg-muted hover:bg-rose-500/20 hover:text-rose-600 dark:hover:text-rose-300 text-foreground/90 text-[8px] uppercase font-bold px-1.5 py-0.5 rounded border border-border transition-all flex items-center gap-0.5 leading-none"
+                      >
+                        {topping.name} <span className="text-muted-foreground ml-0.5 text-[8px]">×</span>
+                      </button>
+                    ))}
 
-                      {/* Add toppings popover */}
-                      {availableToppings.length > 0 && (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button className="bg-primary/20 hover:bg-primary/30 text-primary text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border border-primary/30 hover:border-primary/40 transition-all font-dm-sans flex items-center gap-1 active:scale-95">
-                              <Plus className="w-2.5 h-2.5" /> Topping
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-64 bg-popover/95 border-border backdrop-blur-md p-3 text-popover-foreground rounded-xl shadow-xl z-50">
-                            <h4 className="font-bold text-xs uppercase tracking-wider mb-2 text-muted-foreground font-dm-sans">Agregar Toppings</h4>
-                            <div className="space-y-1 max-h-48 overflow-y-auto no-scrollbar">
-                              {availableToppings.map((topping) => {
-                                const isSelected = item.toppings?.some(t => t.id === topping.id) || false;
-                                return (
-                                  <button
-                                    key={topping.id}
-                                    onClick={() => {
-                                      const currentSizeObj = availableSizes.find(s => s.name === item.size);
-                                      const sizeId = currentSizeObj?.id || "";
-                                      let newToppingIds = item.toppings?.map(t => t.id) || [];
-                                      if (isSelected) {
-                                        newToppingIds = newToppingIds.filter(id => id !== topping.id);
-                                      } else {
-                                        newToppingIds = [...newToppingIds, topping.id];
-                                      }
-                                      startTransition(() => {
-                                        updateItemCustomization?.(item.id, sizeId, newToppingIds);
-                                      });
-                                    }}
-                                    className={cn(
-                                      "w-full flex items-center justify-between p-2 rounded-lg text-xs font-semibold font-dm-sans transition-all active:scale-[0.98]",
-                                      isSelected
-                                        ? "bg-primary/20 text-primary border border-primary/30"
-                                        : "bg-muted/50 hover:bg-muted text-foreground/80 hover:text-foreground border border-transparent"
-                                    )}
-                                  >
-                                    <span>{topping.name}</span>
-                                    <span className={isSelected ? "text-primary font-black" : "text-muted-foreground"}>
-                                      +{formatCOP(topping.price)}
-                                    </span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      )}
-                    </div>
-
-                    {/* Inline Size selection pills */}
-                    {showSizeOptions && availableSizes.length > 0 && (
-                      <div className="flex flex-col gap-1 mt-3 pt-2.5 border-t border-border/50">
-                        <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground/60 font-dm-sans">Tamaño</span>
-                        <div className="flex flex-wrap gap-1">
-                          {availableSizes.map((size) => {
-                            const isSelected = item.size === size.name;
-                            
-                            // Check if this size is enabled for this product/item
-                            const mockProductForSize: Product = {
-                              id: item.productId,
-                              price: item.productPrice ?? item.price,
-                              category: item.productCategory || null,
-                              type: (item.productType || 'granizado') as any,
-                              variants: item.variants || null,
-                            } as Product;
-                            
-                            const sizePricing = calculateItemPrice(mockProductForSize, size as any, [], []);
-                            if (sizePricing.enabled === false) return null;
-
-                            return (
-                              <button
-                                key={size.id}
-                                onClick={() => {
-                                  startTransition(() => {
-                                    updateItemCustomization?.(item.id, size.id, item.toppings?.map(t => t.id) || []);
-                                  });
-                                }}
-                                className={cn(
-                                  "text-[9px] font-bold px-2 py-0.5 rounded-md border transition-all duration-150 active:scale-95 font-dm-sans",
-                                  isSelected
-                                    ? "bg-primary/30 text-primary border-primary/50 shadow-[0_0_10px_rgba(var(--primary),0.2)]"
-                                    : "bg-muted text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground"
-                                )}
-                              >
-                                {size.name}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
+                    {availableToppings.length > 0 && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="bg-primary/10 hover:bg-primary/20 text-primary text-[8px] uppercase font-bold px-1.5 py-0.5 rounded border border-primary/20 transition-all flex items-center gap-0.5 leading-none">
+                            <Plus className="w-2 h-2" /> Top
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 bg-popover/95 border-border backdrop-blur-md p-2 text-popover-foreground rounded-xl shadow-xl z-50">
+                          <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-muted-foreground font-dm-sans px-1">Agregar Toppings</h4>
+                          <div className="space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
+                            {availableToppings.map((topping) => {
+                              const isSelected = item.toppings?.some(t => t.id === topping.id) || false;
+                              return (
+                                <button
+                                  key={topping.id}
+                                  onClick={() => {
+                                    const sizeId = availableSizes.find(s => s.name === item.size)?.id || "";
+                                    let newToppingIds = item.toppings?.map(t => t.id) || [];
+                                    if (isSelected) {
+                                      newToppingIds = newToppingIds.filter(id => id !== topping.id);
+                                    } else {
+                                      newToppingIds = [...newToppingIds, topping.id];
+                                    }
+                                    startTransition(() => updateItemCustomization?.(item.id, sizeId, newToppingIds));
+                                  }}
+                                  className={cn(
+                                    "w-full flex items-center justify-between p-1.5 rounded-lg text-[10px] font-semibold font-dm-sans transition-all active:scale-[0.98]",
+                                    isSelected
+                                      ? "bg-primary/20 text-primary border border-primary/30"
+                                      : "bg-transparent hover:bg-muted text-foreground/80 hover:text-foreground"
+                                  )}
+                                >
+                                  <span>{topping.name}</span>
+                                  <span className={isSelected ? "text-primary font-black" : "text-muted-foreground"}>
+                                    +{formatCOP(topping.price)}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     )}
                   </div>
+
+                  {/* Size selection */}
+                  {showSizeOptions && availableSizes.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {availableSizes.map((size) => {
+                        const isSelected = item.size === size.name;
+                        const mockProductForSize: Product = {
+                          id: item.productId,
+                          price: item.productPrice ?? item.price,
+                          category: item.productCategory || null,
+                          type: (item.productType || 'granizado') as any,
+                          variants: item.variants || null,
+                        } as Product;
+                        
+                        const sizePricing = calculateItemPrice(mockProductForSize, size as any, [], []);
+                        if (sizePricing.enabled === false) return null;
+
+                        return (
+                          <button
+                            key={size.id}
+                            onClick={() => {
+                              startTransition(() => updateItemCustomization?.(item.id, size.id, item.toppings?.map(t => t.id) || []));
+                            }}
+                            className={cn(
+                              "text-[8px] font-bold px-1.5 py-0.5 rounded border transition-all duration-150 leading-none",
+                              isSelected
+                                ? "bg-primary/20 text-primary border-primary/40 shadow-sm"
+                                : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            {size.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                  
-                  <div className="text-right whitespace-nowrap pl-2 flex flex-col items-end justify-start">
-                    <p className="font-black text-lg text-foreground font-dm-sans drop-shadow-sm tabular-nums">
+
+                {/* 3. Quantity Controls */}
+                <div className="flex items-center bg-muted/50 dark:bg-muted/30 rounded-lg p-0.5 border border-border/50 shrink-0">
+                  <Button variant="ghost" size="icon" onClick={() => startTransition(() => updateQuantity(item.id, -1))} className="h-6 w-6 rounded-md hover:bg-background">
+                    <Minus className="w-3 h-3" />
+                  </Button>
+                  <span className="font-black text-[11px] w-5 text-center tabular-nums">{item.quantity}</span>
+                  <Button variant="ghost" size="icon" onClick={() => startTransition(() => updateQuantity(item.id, 1))} className="h-6 w-6 rounded-md text-primary hover:bg-primary/10">
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </div>
+
+                {/* 4. Price & Delete */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-col items-end justify-center min-w-[55px]">
+                    <p className="font-black text-sm text-foreground font-dm-sans tabular-nums leading-none">
                       {formatCOP(item.price * item.quantity)}
                     </p>
                     {item.quantity > 1 && (
-                      <p className="text-[10px] text-muted-foreground/60 font-bold font-dm-sans mt-0.5 uppercase tracking-wider tabular-nums">
-                        {formatCOP(item.price)} c/u
+                      <p className="text-[8px] text-muted-foreground/60 font-bold uppercase mt-0.5">
+                        {formatCOP(item.price)}
                       </p>
                     )}
                   </div>
-                </div>
-                
-                <div className="flex items-center justify-between pt-3 border-t border-border/50 mt-1">
-                  <div className="flex items-center bg-muted/50 rounded-xl p-1 gap-1 border border-border shadow-inner">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        startTransition(() => {
-                          updateQuantity(item.id, -1);
-                        });
-                      }}
-                      className="h-8 w-8 hover:bg-muted/80 hover:text-foreground rounded-lg transition-all text-muted-foreground"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    <span className="font-black text-sm w-8 text-center text-foreground font-dm-sans tabular-nums">{item.quantity}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        startTransition(() => {
-                          updateQuantity(item.id, 1);
-                        });
-                      }}
-                      className="h-8 w-8 hover:bg-primary/20 hover:text-primary rounded-lg transition-all text-muted-foreground"
-                    >
-                      <Plus className="w-4 h-4 text-primary drop-shadow-md" />
-                    </Button>
-                  </div>
+
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => {
-                      startTransition(() => {
-                        removeItem(item.id);
-                      });
-                    }}
-                    className="h-9 w-9 text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 transition-all rounded-xl border border-transparent hover:border-rose-500/20"
+                    onClick={() => startTransition(() => removeItem(item.id))}
+                    className="h-8 w-8 text-rose-500/50 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg shrink-0 ml-1"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
