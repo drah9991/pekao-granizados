@@ -113,6 +113,8 @@ export function usePOS() {
         notifyInfo(`Sincronización completada: ${successCount} pedidos subidos.`);
         queryClient.invalidateQueries({ queryKey: ['tank-status'], refetchType: 'none' });
         queryClient.invalidateQueries({ queryKey: ['products-grid'], refetchType: 'none' });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-v2-raw'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       }
 
       if (hasFailure) {
@@ -174,6 +176,8 @@ export function usePOS() {
         notifyInfo(`Sincronización en segundo plano: ${Number(event.data.successCount || 0)} pedidos subidos.`);
         queryClient.invalidateQueries({ queryKey: ['tank-status'], refetchType: 'none' });
         queryClient.invalidateQueries({ queryKey: ['products-grid'], refetchType: 'none' });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-v2-raw'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       } else if (event.data && event.data.type === 'SYNC_ERROR') {
         notifyWarning(`Error en sincronización en segundo plano: ${String(event.data.message || '')}`);
       }
@@ -328,6 +332,8 @@ export function usePOS() {
           // Revalidación silenciosa tras éxito (evita llamadas de red HTTP innecesarias en caliente)
           queryClient.invalidateQueries({ queryKey: ['products-grid'], refetchType: 'none' });
           queryClient.invalidateQueries({ queryKey: ['tank-status'], refetchType: 'none' });
+          queryClient.invalidateQueries({ queryKey: ['dashboard-v2-raw'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
         } catch (error: unknown) {
           console.error("Error processing sale online:", error);
           if (isValidationError(error)) {

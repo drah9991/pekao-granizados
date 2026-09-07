@@ -26,50 +26,60 @@ export function useDashboard(storeId: string | null) {
 
   const ranges = useMemo(() => getDashboardRanges(period), [period]);
 
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
+
   useEffect(() => {
     if (!storeId) return;
 
+    const triggerRefresh = () => {
+      // Invalida todas las variantes de periodo de la sucursal para que la caché esté fresca
+      queryClient.invalidateQueries({ 
+        queryKey: ["dashboard-v2-raw", storeId] 
+      });
+      // Fuerza el refetch inmediato del periodo actualmente visualizado
+      queryClient.refetchQueries({ 
+        queryKey: ["dashboard-v2-raw", storeId, period],
+        type: 'active'
+      });
+    };
+
     const channel = supabase
-      .channel(`dashboard-sync-${storeId}`)
+      .channel(`dashboard-sync-${storeId}-${Date.now()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${storeId}` },
-        () => {
-          // Usamos refetchQueries para asegurar que se dispare la recarga inmediata
-          queryClient.refetchQueries({ 
-            queryKey: ["dashboard-v2-raw", storeId],
-            type: 'active'
-          });
+        (payload) => {
+          console.log('[Dashboard Realtime] Evento en orders:', payload.eventType);
+          triggerRefresh();
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'inventory_items', filter: `store_id=eq.${storeId}` },
-        () => {
-          queryClient.refetchQueries({ 
-            queryKey: ["dashboard-v2-raw", storeId],
-            type: 'active'
-          });
+        (payload) => {
+          console.log('[Dashboard Realtime] Evento en inventory_items:', payload.eventType);
+          triggerRefresh();
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'expenses', filter: `store_id=eq.${storeId}` },
-        () => {
-          queryClient.refetchQueries({ 
-            queryKey: ["dashboard-v2-raw", storeId],
-            type: 'active'
-          });
+        (payload) => {
+          console.log('[Dashboard Realtime] Evento en expenses:', payload.eventType);
+          triggerRefresh();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        setIsLiveConnected(status === 'SUBSCRIBED');
+      });
 
     return () => {
+      setIsLiveConnected(false);
       supabase.removeChannel(channel);
     };
-  }, [storeId, queryClient]);
+  }, [storeId, period, queryClient]);
 
-  const { data: rawData, isLoading, error } = useQuery({
+  const { data: rawData, isLoading, isRefetching, error, refetch } = useQuery({
     queryKey: ["dashboard-v2-raw", storeId, period],
     queryFn: async () => {
       if (!storeId) return null;
@@ -173,6 +183,9 @@ export function useDashboard(storeId: string | null) {
     isSavingConfig,
     isLoading: isLoading && !dashboardData,
     isPending,
+    isRefetching,
+    isLiveConnected,
+    refetch,
     error,
     dashboardData,
     comparisonLabel,

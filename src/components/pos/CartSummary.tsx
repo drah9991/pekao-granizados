@@ -51,7 +51,7 @@ const CartSummary = memo(function CartSummary({
   updateItemCustomization,
   restoreLastCart
 }: CartSummaryProps) {
-  return (<div className="w-full lg:w-[30rem] glass-pro border-t lg:border-t-0 lg:border-l border-white/5 p-4 md:p-8 flex flex-col h-full relative z-10 animate-pro-in">
+  return (<div className="w-full lg:w-[30rem] glass-pro border-t lg:border-t-0 lg:border-l border-white/5 p-4 md:p-8 flex flex-col h-full min-h-0 relative z-10 animate-pro-in">
       {/* Header Cart */}
       <CartHeader 
         itemCount={cart.reduce((acc, item) => acc + item.quantity, 0)}

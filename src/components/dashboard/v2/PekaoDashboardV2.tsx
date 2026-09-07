@@ -72,6 +72,9 @@ export function PekaoDashboardV2() {
     setPeriod,
     isLoading,
     isPending,
+    isRefetching,
+    isLiveConnected,
+    refetch,
     error,
     dashboardData,
     comparisonLabel
@@ -121,13 +124,30 @@ export function PekaoDashboardV2() {
             <h1 className="text-xl font-black uppercase tracking-tight text-white italic">
               Pekao <span className="text-[#FF007F]">Analytics V2</span>
             </h1>
+            
+            {/* Live Indicator */}
+            <div 
+              className={cn(
+                "ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border",
+                isLiveConnected
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                  : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+              )}
+              title={isLiveConnected ? "Conectado a Supabase Realtime (Actualizaciones en vivo)" : "Conectando a tiempo real..."}
+            >
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                isLiveConnected ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-amber-400"
+              )} />
+              <span>{isLiveConnected ? "En Vivo" : "Sincronizando"}</span>
+            </div>
           </div>
           <p className="text-xs text-slate-400 font-medium">
             Monitor operativo y financiero restobar en tiempo real
           </p>
         </div>
 
-        {/* Period Selector Tabs */}
+        {/* Period Selector Tabs & Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
             {[
@@ -150,6 +170,18 @@ export function PekaoDashboardV2() {
               </button>
             ))}
           </div>
+
+          <Button
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            variant="outline"
+            size="sm"
+            className="h-9 border-slate-700 bg-slate-950/60 hover:bg-slate-800/80 text-slate-300 font-black text-xs uppercase tracking-wider rounded-xl px-3 flex items-center gap-1.5 cursor-pointer"
+            title="Refrescar datos ahora"
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5", isRefetching && "animate-spin text-[#39FF14]")} />
+            <span className="hidden sm:inline">{isRefetching ? "Actualizando..." : "Refrescar"}</span>
+          </Button>
 
           <Button
             onClick={() => navigate('/pos')}

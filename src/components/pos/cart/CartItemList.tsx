@@ -26,7 +26,7 @@ export function CartItemList({
   updateItemCustomization
 }: CartItemListProps) {
   return (
-    <div className="flex-1 overflow-auto -mx-2 px-2 mb-6 md:mb-10 no-scrollbar space-y-3">
+    <div className="flex-1 overflow-y-auto min-h-0 -mx-2 px-2 mb-6 md:mb-10 custom-scrollbar space-y-3">
       {cart.length === 0 ? (
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
