@@ -12,7 +12,7 @@ const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, storeId } = useAuth();
+  const { user, storeId, userRole } = useAuth();
 
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
@@ -87,9 +87,14 @@ const Onboarding = () => {
         
         {/* Header */}
         <div className="bg-primary/5 p-8 text-center border-b relative">
-          {step > 1 && step < 4 && (
-            <Button variant="ghost" size="icon" className="absolute left-4 top-4" onClick={handleBack}>
-              <ChevronLeft className="w-5 h-5" />
+          {(userRole === 'admin' || userRole === 'owner') && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="absolute right-4 top-4 text-xs font-bold text-muted-foreground hover:text-foreground"
+              onClick={() => navigate('/dashboard')}
+            >
+              Salir (Admin)
             </Button>
           )}
           <div className="mx-auto w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mt-2">
@@ -165,10 +170,15 @@ const Onboarding = () => {
               </div>
             </div>
 
-            <Button className="w-full h-12 text-lg group" onClick={() => setStep(3)}>
-              Siguiente: Crear Producto
-              <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="h-12 px-6" onClick={handleBack}>
+                Volver
+              </Button>
+              <Button className="flex-1 h-12 text-lg group" onClick={() => setStep(3)}>
+                Siguiente: Crear Producto
+                <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
           </div>
         )}
 
@@ -206,13 +216,18 @@ const Onboarding = () => {
               </div>
             </div>
 
-            <Button 
-              className="w-full h-12 text-lg" 
-              onClick={handleCreateProduct}
-              disabled={loading || !productName || !productPrice}
-            >
-              {loading ? 'Creando...' : 'Guardar Producto'}
-            </Button>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="h-12 px-6" onClick={handleBack} disabled={loading}>
+                Volver
+              </Button>
+              <Button 
+                className="flex-1 h-12 text-lg" 
+                onClick={handleCreateProduct}
+                disabled={loading || !productName || !productPrice}
+              >
+                {loading ? 'Creando...' : 'Guardar Producto'}
+              </Button>
+            </div>
           </div>
         )}
 
