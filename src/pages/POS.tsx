@@ -183,7 +183,10 @@ export default function POS() {
 
         <SplitBillDialog
           isOpen={splitBillDialogIsOpen}
-          onClose={() => setSplitBillDialogIsOpen(false)}
+          onClose={() => {
+            setSplitBillDialogIsOpen(false);
+            setViewMode("products");
+          }}
           cart={cart}
           subtotal={subtotal}
           discountAmount={discountAmount}
@@ -198,6 +201,7 @@ export default function POS() {
           onClose={() => {
             setReceiptDialogIsOpen(false);
             setLastOrder(null);
+            setViewMode("products");
           }}
           lastOrder={lastOrder}
         />
