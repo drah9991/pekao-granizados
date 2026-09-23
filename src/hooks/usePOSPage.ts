@@ -116,10 +116,12 @@ export function usePOSPage() {
     if (orderData) {
       setLastOrder(orderData);
       setPaymentDialogIsOpen(false);
+      
+      // Delay opening the receipt dialog to allow Radix UI to clear pointer-events: none from body
       setTimeout(() => {
         setReceiptDialogIsOpen(true);
         resetCart();
-      }, 0);
+      }, 400);
     }
   }, [cart, total, subtotal, discountAmount, selectedCustomer, processSale, resetCart]);
 

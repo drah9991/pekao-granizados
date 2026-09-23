@@ -79,9 +79,14 @@ const App = () => {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 1000 * 60 * 5, // 5 minutos
+        staleTime: 1000 * 60 * 15, // 15 minutos (optimizado para datos casi estáticos)
+        gcTime: 1000 * 60 * 30, // 30 minutos en caché
         retry: 1,
+        refetchOnWindowFocus: false, // Evita refetch innecesarios
       },
+      mutations: {
+        retry: 2, // Retry en mutaciones para resiliencia
+      }
     },
   }));
 

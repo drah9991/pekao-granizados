@@ -12,6 +12,7 @@ import SyncDrawer from "@/components/pos/SyncDrawer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { BoneyardSkeleton } from "@/components/ui/BoneyardSkeleton";
 import { useBoneyardLoad } from "@/hooks/useBoneyardLoad";
+import ModuleErrorBoundary from "@/components/ModuleErrorBoundary";
 
 const ProductCustomizationDialog = lazy(() => import("@/components/pos/ProductCustomizationDialog"));
 const PaymentDialog = lazy(() => import("@/components/pos/PaymentDialog"));
