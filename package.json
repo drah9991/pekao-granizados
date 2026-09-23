@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:staging": "vite --mode staging",
     "bones:capture": "boneyard-js build --routes src/routes.ts --output src/bones",
     "bones:watch": "boneyard-js watch --output src/bones",
-    "build": "vite build",
+    "build": "vite build --mode production",
+    "build:staging": "vite build --mode staging",
     "build:dev": "vite build --mode development",
+    "build:analyze": "vite build --mode analyze",
     "lint": "eslint .",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -17,7 +20,11 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "playwright:install": "playwright install chromium",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:staging": "vite preview --mode staging",
+    "staging:migrate": "bash scripts/migrate-staging.sh",
+    "staging:test": "bash scripts/test-staging.sh",
+    "staging:test-rate-limit": "node scripts/test-rate-limiting.js"
   },
   "dependencies": {
     "@fontsource/caveat": "^5.2.8",
