@@ -27,6 +27,7 @@
     "staging:test-rate-limit": "node scripts/test-rate-limiting.js"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.89",
     "@fontsource/caveat": "^5.2.8",
     "@fontsource/orbitron": "^5.2.8",
     "@fontsource/permanent-marker": "^5.2.7",
@@ -64,11 +65,13 @@
     "@tanstack/react-query": "^5.83.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "ai": "^7.0.133",
     "boneyard-js": "^1.8.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
+    "dotenv": "^18.0.3",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.38.0",
     "idb": "^8.0.3",
@@ -94,13 +97,14 @@
     "vite-plugin-node-polyfills": "^0.25.0",
     "vite-plugin-pwa": "^1.2.0",
     "xlsx": "^0.18.5",
-    "zod": "^4.4.3",
+    "zod": "^4.6.5",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/typography": "^0.5.16",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
