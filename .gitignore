@@ -40,3 +40,12 @@ project_package.zip
 
 # One-off scripts
 src/fix_tanks.ts
+
+# Environment files with real credentials
+.env.staging
+.env.production
+
+# Data exports and test output
+backups/
+playwright-report/
+test-results/
