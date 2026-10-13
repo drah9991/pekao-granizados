@@ -16,8 +16,54 @@ if [ ! -f .env.staging ]; then
     exit 1
 fi
 
-# Cargar variables
-source .env.staging
+# Cargar variables sin depender de shell nativo
+load_env_file() {
+    local env_file="$1"
+    if [ ! -f "$env_file" ]; then
+        echo -e "${RED}❌ Error: $env_file no encontrado${NC}"
+        exit 1
+    fi
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ''|\#*)
+                continue
+                ;;
+        esac
+
+        local key="${line%%=*}"
+        local value="${line#*=}"
+
+        if [ -z "$key" ]; then
+            continue
+        fi
+
+        value="${value#\'}"
+        value="${value%\'}"
+        value="${value#\"}"
+        value="${value%\"}"
+
+        export "$key=$value"
+    done < "$env_file"
+}
+
+load_env_file .env.staging
+
+# Validar dependencias de PostgreSQL
+USE_DOCKER_POSTGRES=false
+if ! command -v psql >/dev/null 2>&1 || ! command -v pg_dump >/dev/null 2>&1; then
+    if command -v docker >/dev/null 2>&1; then
+        USE_DOCKER_POSTGRES=true
+        echo -e "${YELLOW}⚠️  psql/pg_dump no están instalados; se usará PostgreSQL mediante Docker${NC}"
+    else
+    echo -e "${RED}❌ Error: faltan las herramientas de PostgreSQL (psql/pg_dump)${NC}"
+    echo "Instala PostgreSQL Client en tu sistema antes de continuar:"
+    echo "- macOS: brew install postgresql"
+    echo "- Ubuntu/Debian: sudo apt-get install postgresql-client"
+    echo "- Windows: instala PostgreSQL y agrega el directorio bin al PATH"
+    exit 1
+    fi
+fi
 
 # Solicitar confirmación
 echo -e "${YELLOW}⚠️  Estás a punto de aplicar migraciones a STAGING${NC}"
@@ -37,9 +83,28 @@ echo ""
 PROJECT_ID=$(echo $VITE_SUPABASE_URL | sed 's/https:\/\///' | sed 's/.supabase.co//')
 STAGING_DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_ID}.supabase.co:5432/postgres"
 
+run_pg_dump() {
+    if [ "$USE_DOCKER_POSTGRES" = true ]; then
+        docker run --rm -i -e "PGPASSWORD=$DB_PASSWORD" postgres:17-alpine \
+            pg_dump -h "db.${PROJECT_ID}.supabase.co" -p 5432 -U postgres -d postgres
+    else
+        pg_dump "$STAGING_DB_URL"
+    fi
+}
+
+run_psql() {
+    if [ "$USE_DOCKER_POSTGRES" = true ]; then
+        docker run --rm -i -e "PGPASSWORD=$DB_PASSWORD" postgres:17-alpine \
+            psql -h "db.${PROJECT_ID}.supabase.co" -p 5432 -U postgres -d postgres "$@"
+    else
+        psql "$STAGING_DB_URL" "$@"
+    fi
+}
+
 echo -e "${GREEN}📦 Creando backup antes de migración...${NC}"
 BACKUP_FILE="backups/staging-pre-migration-$(date +%Y%m%d-%H%M%S).sql"
-pg_dump "$STAGING_DB_URL" > "$BACKUP_FILE" 2>/dev/null
+mkdir -p backups
+run_pg_dump > "$BACKUP_FILE" 2>/dev/null
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Backup creado: $BACKUP_FILE${NC}"
@@ -52,7 +117,7 @@ else
 fi
 
 echo -e "${GREEN}📝 Aplicando migración: Rate Limiting${NC}"
-psql "$STAGING_DB_URL" < supabase/migrations/20260923000000_add_rate_limiting.sql
+run_psql < supabase/migrations/20260923000000_add_rate_limiting.sql
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Migración aplicada exitosamente${NC}"
@@ -65,7 +130,7 @@ echo -e "${GREEN}🔍 Verificando instalación...${NC}"
 
 # Verificar tabla
 echo "Verificando tabla login_attempts..."
-psql "$STAGING_DB_URL" -c "SELECT COUNT(*) as table_exists FROM pg_tables WHERE tablename = 'login_attempts';" | grep -q "1"
+run_psql -c "SELECT COUNT(*) as table_exists FROM pg_tables WHERE tablename = 'login_attempts';" | grep -q "1"
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Tabla login_attempts creada${NC}"
@@ -78,7 +143,7 @@ echo "Verificando funciones..."
 FUNCTIONS=("is_account_locked" "record_login_attempt" "get_lockout_remaining_time" "clear_login_attempts")
 
 for func in "${FUNCTIONS[@]}"; do
-    psql "$STAGING_DB_URL" -c "SELECT proname FROM pg_proc WHERE proname = '$func';" | grep -q "$func"
+    run_psql -c "SELECT proname FROM pg_proc WHERE proname = '$func';" | grep -q "$func"
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}  ✅ Función $func creada${NC}"
     else
@@ -91,7 +156,7 @@ echo "Verificando índices..."
 INDEXES=("idx_login_attempts_email" "idx_login_attempts_ip" "idx_login_attempts_time")
 
 for idx in "${INDEXES[@]}"; do
-    psql "$STAGING_DB_URL" -c "SELECT indexname FROM pg_indexes WHERE indexname = '$idx';" | grep -q "$idx"
+    run_psql -c "SELECT indexname FROM pg_indexes WHERE indexname = '$idx';" | grep -q "$idx"
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}  ✅ Índice $idx creado${NC}"
     else

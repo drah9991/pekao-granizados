@@ -75,6 +75,14 @@ npm run test:e2e
 
 ### Migración falla
 ```bash
+# El script usa Docker automáticamente si psql/pg_dump no están instalados.
+# Verifica que Docker Desktop esté iniciado:
+docker version
+
+# Si prefieres PostgreSQL local, verifica:
+psql --version
+pg_dump --version
+
 # Ejecutar rollback
 psql "$STAGING_DB_URL" < supabase/migrations/20260923000000_rollback_rate_limiting.sql
 

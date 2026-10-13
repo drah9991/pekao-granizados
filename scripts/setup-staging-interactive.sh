@@ -19,6 +19,29 @@ pause() {
     echo ""
 }
 
+# WSL no siempre hereda las rutas de Windows. Usa Node.js de Windows si es la
+# instalación disponible, invocando npm mediante cmd.exe.
+NODE_BIN="node"
+USE_WINDOWS_NPM=false
+if ! command -v node &> /dev/null; then
+    if command -v node.exe &> /dev/null; then
+        NODE_BIN="node.exe"
+    else
+        WINDOWS_NODE=$(find /mnt/c/Users -path '*/AppData/Local/studio/bin/node.exe' -type f -print -quit 2>/dev/null)
+        if [ -n "$WINDOWS_NODE" ] && [ -x "$WINDOWS_NODE" ]; then
+            NODE_BIN="$WINDOWS_NODE"
+        fi
+    fi
+fi
+
+run_npm() {
+    if [ "$USE_WINDOWS_NPM" = true ]; then
+        cmd.exe /c npm "$@"
+    else
+        npm "$@"
+    fi
+}
+
 # PASO 1: Verificar prerrequisitos
 echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════${NC}"
 echo -e "${BLUE}  PASO 0: Verificando prerrequisitos...${NC}"
@@ -26,8 +49,8 @@ echo -e "${BLUE}═════════════════════�
 echo ""
 
 # Verificar Node
-if command -v node &> /dev/null; then
-    NODE_VERSION=$(node -v)
+if [ "$NODE_BIN" != "node" ] || command -v node &> /dev/null; then
+    NODE_VERSION=$("$NODE_BIN" -v)
     echo -e "${GREEN}✅ Node.js instalado: $NODE_VERSION${NC}"
 else
     echo -e "${RED}❌ Node.js no encontrado. Por favor instala Node.js 18 o superior.${NC}"
@@ -35,9 +58,12 @@ else
 fi
 
 # Verificar npm
-if command -v npm &> /dev/null; then
-    NPM_VERSION=$(npm -v)
+if command -v npm &> /dev/null && NPM_VERSION=$(npm -v 2>/dev/null) && [ -n "$NPM_VERSION" ]; then
     echo -e "${GREEN}✅ npm instalado: $NPM_VERSION${NC}"
+elif [ "$NODE_BIN" != "node" ] && command -v cmd.exe &> /dev/null; then
+    USE_WINDOWS_NPM=true
+    NPM_VERSION=$(run_npm -v)
+    echo -e "${GREEN}✅ npm de Windows instalado: $NPM_VERSION${NC}"
 else
     echo -e "${RED}❌ npm no encontrado.${NC}"
     exit 1
@@ -113,8 +139,8 @@ if [ ! -f ".env.staging" ]; then
     # Crear archivo .env.staging
     cat > .env.staging <<EOF
 # Supabase Staging
-VITE_SUPABASE_URL=$SUPABASE_URL
-VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+VITE_SUPABASE_URL='$SUPABASE_URL'
+VITE_SUPABASE_ANON_KEY='$SUPABASE_ANON_KEY'
 
 # Environment
 VITE_ENV=staging
@@ -126,8 +152,8 @@ VITE_ENABLE_ERROR_BOUNDARIES=true
 
 # Testing
 VITE_E2E_BASE_URL=http://localhost:5173
-TEST_EMAIL=$TEST_EMAIL
-TEST_PASSWORD=$TEST_PASSWORD
+TEST_EMAIL='$TEST_EMAIL'
+TEST_PASSWORD='$TEST_PASSWORD'
 
 # Performance
 VITE_BUNDLE_ANALYZE=false
@@ -136,7 +162,7 @@ VITE_SOURCE_MAPS=true
 
 # Staging Banner
 VITE_SHOW_STAGING_BANNER=true
-VITE_STAGING_MESSAGE=Entorno de Pruebas - No usar en producción
+VITE_STAGING_MESSAGE='Entorno de Pruebas - No usar en producción'
 EOF
 
     echo -e "${GREEN}✅ Archivo .env.staging creado${NC}"
@@ -155,11 +181,11 @@ if [ -d "node_modules" ]; then
     read -p "¿Deseas reinstalar dependencias? (s/n): " REINSTALAR
     if [ "$REINSTALAR" == "s" ]; then
         echo "Instalando dependencias..."
-        npm install --legacy-peer-deps
+        run_npm install --legacy-peer-deps
     fi
 else
     echo "Instalando dependencias..."
-    npm install --legacy-peer-deps
+    run_npm install --legacy-peer-deps
 fi
 
 echo -e "${GREEN}✅ Dependencias instaladas${NC}"
@@ -216,7 +242,7 @@ read -p "¿Deseas ejecutar los tests ahora? (s/n): " EJECUTAR_TESTS
 if [ "$EJECUTAR_TESTS" == "s" ]; then
     echo ""
     echo "Ejecutando tests unitarios..."
-    npm run test -- --run
+    run_npm run test -- --run
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Tests unitarios pasaron${NC}"
@@ -232,10 +258,10 @@ if [ "$EJECUTAR_TESTS" == "s" ]; then
 
     if [ "$EJECUTAR_E2E" == "s" ]; then
         echo "Instalando navegadores de Playwright..."
-        npm run playwright:install
+        run_npm run playwright:install
 
         echo "Ejecutando tests E2E..."
-        npm run test:e2e
+        run_npm run test:e2e
 
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✅ Tests E2E pasaron${NC}"
@@ -259,7 +285,7 @@ read -p "¿Deseas hacer el build ahora? (s/n): " HACER_BUILD
 
 if [ "$HACER_BUILD" == "s" ]; then
     echo "Construyendo aplicación..."
-    npm run build:staging
+    run_npm run build:staging
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Build exitoso${NC}"
@@ -319,7 +345,7 @@ case $OPCION_DEPLOY in
     3)
         echo "Iniciando preview local..."
         echo "Abriendo en http://localhost:4173"
-        npm run preview:staging &
+        run_npm run preview:staging &
         sleep 2
 
         if command -v xdg-open &> /dev/null; then
