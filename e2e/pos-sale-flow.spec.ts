@@ -14,14 +14,20 @@ test.describe('POS Sale Flow', () => {
     await page.waitForLoadState('networkidle');
 
     // Check if we need to login (adapt based on your auth flow)
-    const loginButton = page.locator('button:has-text("Iniciar Sesión"), button:has-text("Login")');
-    if (await loginButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      // If there's a login, you'll need to add credentials
-      // For now, we skip this or you can add env variables
+    const loginButton = page.locator('button:has-text("Iniciar Sesión"), button:has-text("Login"), button[type="submit"]');
+    const isLoginVisible = await loginButton.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (isLoginVisible) {
+      // Fill in credentials from environment variables
       await page.fill('input[type="email"]', process.env.TEST_EMAIL || 'test@example.com');
       await page.fill('input[type="password"]', process.env.TEST_PASSWORD || 'password');
       await page.click('button[type="submit"]');
-      await page.waitForLoadState('networkidle');
+
+      // Wait for navigation after login
+      await page.waitForLoadState('networkidle', { timeout: 15000 });
+
+      // Wait a bit more for any redirects
+      await page.waitForTimeout(2000);
     }
 
     // Navigate to POS

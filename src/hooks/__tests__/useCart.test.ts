@@ -3,6 +3,14 @@ import { renderHook, act } from '@testing-library/react';
 import { useCart } from '../useCart';
 
 describe('useCart - Critical Calculations', () => {
+  beforeEach(() => {
+    // Reset cart state before each test
+    const { result } = renderHook(() => useCart());
+    act(() => {
+      result.current.resetCart();
+    });
+  });
+
   it('should calculate subtotal correctly', () => {
     const { result } = renderHook(() => useCart());
 
@@ -30,7 +38,10 @@ describe('useCart - Critical Calculations', () => {
         false,
         1
       );
-      result.current.setDiscountType('percentage');
+    });
+
+    act(() => {
+      result.current.setDiscountType('percent'); // Fixed: 'percent' not 'percentage'
       result.current.setDiscount(10);
     });
 
@@ -71,14 +82,15 @@ describe('useCart - Critical Calculations', () => {
         false,
         2
       );
-      cartItemId = result.current.cart[0].id;
     });
 
+    cartItemId = result.current.cart[0].id;
     expect(result.current.cart[0].quantity).toBe(2);
     expect(result.current.subtotal).toBe(10000);
 
+    // updateQuantity uses delta (increment), not absolute value
     act(() => {
-      result.current.updateQuantity(cartItemId, 5);
+      result.current.updateQuantity(cartItemId, 3); // 2 + 3 = 5
     });
 
     expect(result.current.cart[0].quantity).toBe(5);
@@ -97,8 +109,9 @@ describe('useCart - Critical Calculations', () => {
         false,
         1
       );
-      cartItemId = result.current.cart[0].id;
     });
+
+    cartItemId = result.current.cart[0].id;
 
     expect(result.current.cart.length).toBe(1);
 

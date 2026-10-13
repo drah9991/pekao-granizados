@@ -32,3 +32,13 @@ global.IntersectionObserver = class IntersectionObserver {
   }
   unobserve() {}
 } as any;
+
+// Mock OfflineService to avoid IndexedDB complexity
+vi.mock('../lib/OfflineService', () => ({
+  default: class MockOfflineService {
+    isOnline = true;
+    async saveProduct() {}
+    async getProduct() { return null; }
+    async syncPendingChanges() {}
+  },
+}));
