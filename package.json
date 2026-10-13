@@ -23,6 +23,7 @@
     "preview": "vite preview",
     "preview:staging": "vite preview --mode staging",
     "staging:migrate": "bash scripts/migrate-staging.sh",
+    "staging:rebuild": "bash scripts/rebuild-staging-schema.sh",
     "staging:test": "bash scripts/test-staging.sh",
     "staging:test-rate-limit": "node scripts/test-rate-limiting.js"
   },
