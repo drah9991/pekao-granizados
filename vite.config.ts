@@ -8,7 +8,7 @@ import { visualizer } from 'rollup-plugin-visualizer';
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: mode === 'staging' ? 8085 : 8080,
   },
   plugins: [
     react(),

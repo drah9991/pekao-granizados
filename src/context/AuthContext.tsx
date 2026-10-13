@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Enums, Tables } from '@/integrations/supabase/types';
 import { identifyUser, clearUser } from '@/lib/sentry';
 import { offlineService } from '@/lib/OfflineService';
+import { useNotificationStore, captureErrorDetails } from '@/stores/notificationStore';
 
 type AppRole = Enums<'app_role'>;
 type Profile = Tables<'profiles'>;
@@ -72,6 +73,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (profileError || !profile) {
       console.error("Error fetching user profile:", profileError);
+
+      // Agregar a notificaciones
+      const { addNotification } = useNotificationStore.getState();
+      addNotification({
+        level: 'error',
+        title: 'Error al cargar perfil',
+        message: profileError?.message || 'No se pudo cargar el perfil de usuario',
+        details: captureErrorDetails(profileError),
+        context: {
+          component: 'AuthContext',
+          action: 'fetchProfileAndRole',
+          userId,
+        },
+      });
+
       if (isMounted.current) {
         setAuthState(prev => ({ ...prev, user: null, userRole: null, storeId: null, storeName: null }));
       }
@@ -86,6 +102,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (roleError) {
       console.error("Error fetching user role:", roleError);
+
+      // Agregar a notificaciones
+      const { addNotification } = useNotificationStore.getState();
+      addNotification({
+        level: 'warning',
+        title: 'Error al cargar rol',
+        message: roleError?.message || 'No se pudo cargar el rol de usuario',
+        details: captureErrorDetails(roleError),
+        context: {
+          component: 'AuthContext',
+          action: 'fetchUserRole',
+          userId,
+        },
+      });
     }
 
     let storeName = null;

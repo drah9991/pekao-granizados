@@ -39,25 +39,50 @@ export default function MenuPhotoDialog({
     }
   };
 
-  const handleStartAnalysis = () => {
+  const handleStartAnalysis = async () => {
     if (!selectedFile) {
       toast.error("Por favor seleccione un archivo para analizar");
       return;
     }
 
     setIsAnalyzing(true);
-    // Simulate AI reading the menu photo (Gemini extraction simulation)
-    setTimeout(() => {
-      setExtractedProducts([
-        { name: "GRANIZADO COCO LOCO", price: 8500, category: "Granizados" },
-        { name: "GRANIZADO MANGO BENTON", price: 9000, category: "Granizados" },
-        { name: "TOPPING M&M GLOW", price: 1500, category: "Toppings" },
-        { name: "SACHET DE CEREZA", price: 1200, category: "Sachets" }
-      ]);
-      setStep(2);
+    try {
+      // Convertir la imagen a base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(selectedFile);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+      });
+
+      const response = await fetch('/api/extract-menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          imageBase64: base64,
+          mimeType: selectedFile.type
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al comunicarse con el AI Gateway");
+      }
+
+      const products = await response.json();
+      
+      if (products && products.length > 0) {
+        setExtractedProducts(products);
+        setStep(2);
+        toast.success(`Análisis completado: ${products.length} productos detectados`);
+      } else {
+        toast.warning("No se detectaron productos en la imagen. Intenta con otra foto.");
+      }
+    } catch (error) {
+      console.error("AI Error:", error);
+      toast.error("Hubo un error procesando la imagen con IA.");
+    } finally {
       setIsAnalyzing(false);
-      toast.success("Análisis completado: 4 productos detectados");
-    }, 3000);
+    }
   };
 
   const handleProductChange = (index: number, key: keyof ExtractedProduct, value: any) => {

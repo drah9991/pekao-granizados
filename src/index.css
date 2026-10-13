@@ -765,3 +765,34 @@ select:user-invalid:focus {
   color: #ffffff !important;
   background-color: rgba(255, 0, 127, 0.1) !important;
 }
+
+/* NotificationCenter Dark Mode Fix */
+.dark [data-radix-dialog-content] {
+  background-color: rgb(2 6 23) !important;
+  color: rgb(226 232 240) !important;
+}
+
+.dark [data-radix-dialog-content] * {
+  border-color: rgb(30 41 59) !important;
+}
+
+.dark [data-radix-dialog-content] [class*="bg-white"] {
+  background-color: rgb(2 6 23) !important;
+}
+
+.dark [data-radix-dialog-content] [class*="text-slate-900"] {
+  color: rgb(226 232 240) !important;
+}
+
+/* Force all divs in notification panel to be dark */
+.dark div[class*="fixed"][class*="right-0"] {
+  background-color: rgb(2 6 23) !important;
+}
+
+.dark div[class*="fixed"][class*="right-0"] div {
+  background-color: transparent !important;
+}
+
+.dark div[class*="fixed"][class*="right-0"] div[class*="bg-white"] {
+  background-color: rgb(2 6 23) !important;
+}

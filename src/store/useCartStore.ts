@@ -137,6 +137,14 @@ export const useCartStore = create<CartStoreState>()(
         const cart = state.cart;
         const typeCfg = state.productTypes.find(t => t.code === product.type);
 
+        console.log('[CartStore] Adding to cart:', {
+          product: product.name,
+          selectedSizeId,
+          selectedToppingIds,
+          availableSizes: state.availableSizes.length,
+          availableToppings: state.availableToppings.length
+        });
+
         const productNeedsSize = product.type !== 'sachet' && product.type !== 'sweet';
         let sizeId = selectedSizeId;
         if (!sizeId && productNeedsSize && state.availableSizes.length > 0) {
@@ -145,6 +153,8 @@ export const useCartStore = create<CartStoreState>()(
         const size = sizeId ? state.availableSizes.find(s => s.id === sizeId) : null;
         const itemMultiplier = size?.multiplier || 1;
 
+        console.log('[CartStore] Size resolved:', size?.name || 'none');
+
         // Stock validation using utility
         if (!hasEnoughStock(product, cart, quantity, itemMultiplier, typeCfg)) {
           if (notifyCritical) notifyCritical(`No hay suficiente stock de ${product.name} disponible para ${quantity} porciones.`);
@@ -152,6 +162,7 @@ export const useCartStore = create<CartStoreState>()(
         }
 
         const validToppings = state.availableToppings.filter(t => selectedToppingIds.includes(t.id));
+        console.log('[CartStore] Valid toppings:', validToppings.length, validToppings.map(t => t.name));
 
         const pricingResult = calculateItemPrice(
           product,

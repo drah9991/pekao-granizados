@@ -126,12 +126,12 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
           onProductSelect(product);
         }}
         className={cn(
-          "product-card-button group relative rounded-2xl overflow-hidden transition-all duration-200 ease-in-out text-left border border-white/5",
+          "product-card-button group relative rounded-2xl overflow-hidden transition-all duration-200 ease-in-out text-left border",
           isOutOfStock
-            ? "opacity-50 grayscale cursor-not-allowed bg-card/30"
+            ? "opacity-50 grayscale cursor-not-allowed bg-card/30 border-border"
             : isLowStock
             ? "bg-rose-500/[0.03] border-rose-500/20 hover:border-rose-500/40 hover:bg-rose-500/[0.08] hover:shadow-lg hover:-translate-y-1 active:scale-[0.98]"
-            : "bg-[#1f2025] hover:bg-[#25262c] hover:border-primary/30 hover:shadow-xl hover:-translate-y-1 active:scale-[0.98]"
+            : "bg-card hover:bg-accent border-border/50 hover:border-primary/30 hover:shadow-xl hover:-translate-y-1 active:scale-[0.98]"
         )}
       >
         {/* Ripple Effect elements */}
@@ -142,7 +142,7 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
           <div className="flex gap-2">
             <div className={cn(
               "product-card-emoji-wrapper w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm relative overflow-hidden",
-              isOutOfStock ? "bg-muted" : "bg-black/20 border border-white/5 group-hover:scale-105"
+              isOutOfStock ? "bg-muted" : "bg-muted/30 border border-border/30 group-hover:scale-105"
             )}>
               {product.images && product.images.length > 0 ? (
                 <img 
@@ -189,14 +189,14 @@ const ProductCard = memo(function ProductCard({ product, onProductSelect, getTyp
 
         {/* Row 2: Title */}
         <div className="product-card-body px-4 pt-3 w-full text-left z-10">
-          <p className="product-card-title font-medium text-muted-foreground text-sm lg:text-[15px] leading-tight font-dm-sans text-wrap text-pretty line-clamp-2 transition-colors duration-300">
+          <p className="product-card-title font-medium text-foreground text-sm lg:text-[15px] leading-tight font-dm-sans text-wrap text-pretty line-clamp-2 transition-colors duration-300">
             {product.name}
           </p>
         </div>
 
         {/* Row 3: Price + Add Button */}
         <div className="product-card-footer px-4 pb-4 pt-2 w-full flex items-end justify-between gap-2 z-10">
-          <p className="product-card-price font-black text-xl lg:text-2xl text-white font-dm-sans tracking-tighter drop-shadow-sm">
+          <p className="product-card-price font-black text-xl lg:text-2xl text-foreground font-dm-sans tracking-tighter drop-shadow-sm">
             {formatCOP(product.price)}
           </p>
           {!isOutOfStock && (

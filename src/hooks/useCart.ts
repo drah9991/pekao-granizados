@@ -42,6 +42,8 @@ export const useCart = () => {
 
   const fetchDynamicData = async (storeId: string) => {
     try {
+      console.log('[useCart] Fetching dynamic data for store:', storeId);
+
       const [sizesResult, toppingsResult, typesResult, rulesResult] = await Promise.all([
         supabase
           .from('sizes')
@@ -66,6 +68,11 @@ export const useCart = () => {
           .eq('active', true)
       ]);
 
+      console.log('[useCart] Sizes loaded:', sizesResult.data?.length || 0);
+      console.log('[useCart] Toppings loaded:', toppingsResult.data?.length || 0);
+      console.log('[useCart] Types loaded:', typesResult.data?.length || 0);
+      console.log('[useCart] Rules loaded:', rulesResult.data?.length || 0);
+
       if (sizesResult.error) throw sizesResult.error;
       if (toppingsResult.error) throw toppingsResult.error;
       if (typesResult.error) throw typesResult.error;
@@ -77,6 +84,8 @@ export const useCart = () => {
         typesResult.data || [],
         rulesResult.data || []
       );
+
+      console.log('[useCart] Dynamic data set successfully');
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error desconocido";
       console.error("Error fetching dynamic data in parallel:", error);

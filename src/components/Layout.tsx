@@ -2,6 +2,7 @@ import { ReactNode, useState, useEffect, Suspense, useMemo, useTransition } from
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { FloatingChat } from "@/components/chat/FloatingChat";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -34,7 +35,8 @@ import { toast } from "sonner";
 import { useTurn } from "@/hooks/useTurn";
 import { SidebarHeader } from "./SidebarHeader";
 import { ActiveShiftCard } from "./ActiveShiftCard";
-import NotificationCenter from "@/components/pos/NotificationCenter";
+import { NotificationCenter } from "@/components/NotificationCenter";
+import { DesignInspector } from "@/components/DesignInspector";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertManager } from "./alerts/AlertManager";
 import { useAlerts } from "@/hooks/useAlerts";
@@ -46,6 +48,7 @@ import { Badge } from "@/components/ui/badge";
 import { InteractiveCursor } from "./ui/InteractiveCursor";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { DatabaseIndicator } from "@/components/DatabaseIndicator";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -546,9 +549,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             </div>
           )}
 
-          {/* Notificaciones y Tema */}
+          {/* Notificaciones, Base de Datos y Tema */}
           <div className="flex items-center gap-2">
+            <DesignInspector />
             <NotificationCenter />
+            <DatabaseIndicator />
             <ThemeToggle />
           </div>
 
@@ -673,6 +678,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             {children}
           </ErrorBoundary>
         </div>
+        <FloatingChat />
       </main>
     </div>
   );

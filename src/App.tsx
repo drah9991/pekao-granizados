@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -14,6 +14,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
+import { ToastContainer, setupGlobalErrorHandling } from "@/lib/toast";
 
 // Eager imports — critical path (landing, login, 404)
 import Index from "./pages/Index";
@@ -75,6 +76,11 @@ const PageLoader = () => (
 );
 
 const App = () => {
+  // Setup global error handling
+  useEffect(() => {
+    setupGlobalErrorHandling();
+  }, []);
+
   // Inicialización estable del QueryClient
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -97,7 +103,7 @@ const App = () => {
           <ThemeProvider defaultTheme="system" attribute="class">
             <TooltipProvider>
               <Toaster />
-        <Sonner />
+        <ToastContainer />
         <SpeedInsights />
         <Analytics />
         <BrandingProvider>
