@@ -52,7 +52,7 @@ export function useAuthPage() {
         // Fetch active stores
         const { data: stores } = await supabase
           .from("stores")
-          .select("id, name, address, city")
+          .select("id, name, address")
           .order("name", { ascending: true });
 
         if (stores && stores.length > 1) {

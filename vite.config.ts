@@ -9,6 +9,11 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: mode === 'staging' ? 8085 : 8080,
+    // Pre-transforma las páginas al arrancar para descubrir todas las dependencias
+    // de una vez; si no, Vite recarga a mitad de navegación y los módulos lazy fallan.
+    warmup: {
+      clientFiles: ['./src/pages/**/*.tsx'],
+    },
   },
   plugins: [
     react(),
