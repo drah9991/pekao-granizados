@@ -5,18 +5,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { useChatbotSettings } from '@/hooks/useChatbotSettings';
+
+interface FloatingChatPanelProps {
+  welcomeMessage: string;
+}
+
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export function FloatingChat() {
+  const { storeId } = useAuth();
+  const { settings } = useChatbotSettings(storeId);
+
+  if (!settings?.enabled) return null;
+
+  return <FloatingChatPanel key={settings.welcome_message} welcomeMessage={settings.welcome_message} />;
+}
+
+function FloatingChatPanel({ welcomeMessage }: FloatingChatPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useTextChat({
     api: '/api/chat',
-    initialMessages: [
-      {
-        id: 'welcome',
-        role: 'assistant',
-        content: '¡Hola! Soy el asistente virtual de Pekao Central. ¿En qué te puedo ayudar hoy con tu punto de venta o inventario?',
-      },
-    ],
+    getHeaders: getAuthHeaders,
+    initialMessages: [{ id: 'welcome', role: 'assistant', content: welcomeMessage }],
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);

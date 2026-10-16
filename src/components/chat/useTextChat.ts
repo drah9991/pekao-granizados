@@ -10,11 +10,21 @@ export interface ChatMessage {
 interface UseTextChatOptions {
   api: string;
   initialMessages?: ChatMessage[];
+  getHeaders?: () => Promise<Record<string, string>>;
 }
 
 const ERROR_MESSAGE = 'No pude responder en este momento. Intenta de nuevo.';
 
-export function useTextChat({ api, initialMessages = [] }: UseTextChatOptions) {
+async function readErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { error?: string };
+    return body.error || ERROR_MESSAGE;
+  } catch {
+    return ERROR_MESSAGE;
+  }
+}
+
+export function useTextChat({ api, initialMessages = [], getHeaders }: UseTextChatOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,15 +51,23 @@ export function useTextChat({ api, initialMessages = [] }: UseTextChatOptions) {
         setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content } : m)));
 
       try {
+        const extraHeaders = getHeaders ? await getHeaders() : {};
         const response = await fetch(api, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...extraHeaders },
           body: JSON.stringify({
-            messages: history.map(({ role, content }) => ({ role, content })),
+            // El mensaje de bienvenida es local; no se envía al modelo
+            messages: history
+              .filter((m) => m.id !== 'welcome')
+              .map(({ role, content }) => ({ role, content })),
           }),
         });
 
-        if (!response.ok || !response.body) {
+        if (!response.ok) {
+          setAssistantContent(await readErrorMessage(response));
+          return;
+        }
+        if (!response.body) {
           throw new Error(`Chat request failed: ${response.status}`);
         }
 
@@ -72,7 +90,7 @@ export function useTextChat({ api, initialMessages = [] }: UseTextChatOptions) {
         setIsLoading(false);
       }
     },
-    [api, input, isLoading, messages],
+    [api, getHeaders, input, isLoading, messages],
   );
 
   return { messages, input, handleInputChange, handleSubmit, isLoading };

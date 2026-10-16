@@ -161,6 +161,22 @@ export interface ProfileFields {
   email?: string | null;
 }
 
+/**
+ * Maestro del asistente IA por sede (la clave vive en chatbot_secrets, inaccesible desde el cliente)
+ */
+export interface ChatbotSettingsRow {
+  store_id: string;
+  enabled: boolean;
+  model: string;
+  system_prompt: string;
+  welcome_message: string;
+  temperature: number;
+  max_tokens: number;
+  api_key_hint: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
 // ============================================================
 // Typed query builders for missing tables
 // ============================================================
@@ -186,6 +202,13 @@ export const typedFrom = {
     supabase.from('cash_turns') as unknown as PostgrestQueryBuilder<
       CashTurnRow,
       CashTurnRow,
+      unknown
+    >,
+
+  chatbot_settings: () =>
+    supabase.from('chatbot_settings') as unknown as PostgrestQueryBuilder<
+      ChatbotSettingsRow,
+      ChatbotSettingsRow,
       unknown
     >,
 

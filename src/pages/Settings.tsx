@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { Palette, Shield, Building2, Receipt, Ruler, Tag, Bell, Box, Printer, Loader2 } from "lucide-react";
+import { Palette, Shield, Building2, Receipt, Ruler, Tag, Bell, Box, Printer, Loader2, Bot } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useConfigStore } from "@/store/useConfigStore";
 
@@ -18,6 +18,7 @@ const NotificationSettings = lazy(() => import("@/components/settings/Notificati
 const ProductTypesMaster = lazy(() => import("@/components/settings/ProductTypesMaster"));
 const CategoryManager = lazy(() => import("@/components/settings/CategoryManager"));
 const CopyCenterSettings = lazy(() => import("@/components/settings/CopyCenterSettings"));
+const ChatbotSettings = lazy(() => import("@/components/settings/ChatbotSettings"));
 
 const TabLoadingSkeleton = () => (
     <div className="flex flex-col items-center justify-center py-24 gap-6 animate-pro-in">
@@ -51,7 +52,7 @@ export default function Settings() {
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.set("tab", value);
     
-    const validTabs = ["branding", "roles", "business", "receipts", "sizes", "sku", "notifications", "categories", "print_center"];
+    const validTabs = ["branding", "roles", "business", "receipts", "sizes", "sku", "notifications", "categories", "print_center", "assistant"];
     if (!validTabs.includes(value)) {
       newSearchParams.delete("tab");
     }
@@ -91,6 +92,7 @@ export default function Settings() {
                   { value: "notifications", label: "Alertas", icon: Bell },
                   { value: "categories", label: "Categorías", icon: Tag },
                   { value: "print_center", label: "Centro de Copiado", icon: Printer },
+                  { value: "assistant", label: "Asistente IA", icon: Bot },
                 ].map((tab) => (
                   <TabsTrigger
                     key={tab.value}
@@ -143,6 +145,10 @@ export default function Settings() {
 
                         <TabsContent value="print_center" className="m-0 animate-pro-in">
                             <CopyCenterSettings />
+                        </TabsContent>
+
+                        <TabsContent value="assistant" className="m-0 animate-pro-in">
+                            <ChatbotSettings />
                         </TabsContent>
                     </Tabs>
                 </Suspense>
