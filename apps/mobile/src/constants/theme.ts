@@ -16,6 +16,8 @@ export const Colors = {
     textSecondary: '#60646C',
     accent: '#0284C7',
     onAccent: '#ffffff',
+    card: '#FFFFFF',
+    cardBorder: '#E3E4E8',
   },
   dark: {
     text: '#ffffff',
@@ -25,6 +27,8 @@ export const Colors = {
     textSecondary: '#B0B4BA',
     accent: '#38BDF8',
     onAccent: '#04121C',
+    card: '#1C1C1E',
+    cardBorder: '#2C2C2E',
   },
 } as const;
 

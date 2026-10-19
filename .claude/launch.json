@@ -16,7 +16,7 @@
     {
       "name": "mobile-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "apps/mobile", "run", "web", "--", "--port", "8086"],
+      "runtimeArgs": ["--prefix", "apps/mobile", "run", "web:clean", "--", "--port", "8086"],
       "port": 8086
     }
   ]

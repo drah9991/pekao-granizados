@@ -2,13 +2,13 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
+import { FilterChips } from '@/components/filter-chips';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useAdminScope } from '@/features/admin/api/use-admin-scope';
 import { useOrders } from '@/features/admin/api/use-orders';
-import { FilterChips } from '@/features/admin/components/filter-chips';
 import { StatusBadge } from '@/features/admin/components/status-badge';
 import type { OrderStatus, OrderSummary } from '@/features/admin/types';
 import { formatDateTime, formatPrice } from '@/lib/format';
