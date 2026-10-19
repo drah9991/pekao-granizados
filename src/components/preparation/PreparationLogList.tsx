@@ -12,9 +12,11 @@ interface PreparationLogListProps {
   logs: PreparationLog[];
   loading: boolean;
   onDelete: (log: PreparationLog) => void;
+  /** Eliminar un registro devuelve insumos al inventario: solo admin/gerente. */
+  canDelete: boolean;
 }
 
-export default function PreparationLogList({ logs, loading, onDelete }: PreparationLogListProps) {
+export default function PreparationLogList({ logs, loading, onDelete, canDelete }: PreparationLogListProps) {
   return (
     <Card className="glass-pro border-white/10 shadow-pro rounded-[2.5rem] overflow-hidden h-fit flex flex-col">
         <CardHeader className="bg-white/5 border-b border-white/5 py-10 relative overflow-hidden">
@@ -67,14 +69,17 @@ export default function PreparationLogList({ logs, loading, onDelete }: Preparat
                                 >
                                     {log.type === 'exit' ? '-' : '+'} {(log.qty / 1000).toFixed(1)} L
                                 </Badge>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => onDelete(log)}
-                                    className="h-10 w-10 rounded-xl text-muted-foreground/20 hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all active:scale-95"
-                                >
-                                    <Trash2 className="w-5 h-5" />
-                                </Button>
+                                {canDelete && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => onDelete(log)}
+                                        aria-label="Eliminar registro de preparación"
+                                        className="h-10 w-10 rounded-xl text-muted-foreground/20 hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all active:scale-95"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     ))}

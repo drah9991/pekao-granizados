@@ -3,10 +3,14 @@ import Layout from "@/components/Layout";
 import { FlaskConical } from "lucide-react";
 import { motion } from "framer-motion";
 import { usePreparation } from "@/hooks/usePreparation";
+import { useAuth } from "@/context/AuthContext";
+import { canAddStock } from "@/lib/permissions";
 import PreparationForm from "@/components/preparation/PreparationForm";
 import PreparationLogList from "@/components/preparation/PreparationLogList";
 
 export default function Preparation() {
+  const { userRole, isSuperAdmin } = useAuth();
+  const canAdd = canAddStock({ userRole, isSuperAdmin });
   const {
     products, sizes, logs, loading, isProcessing, isEmptying,
     selectedProductId, setSelectedProductId,
@@ -51,12 +55,14 @@ export default function Preparation() {
                     isProcessing={isProcessing}
                     isEmptying={isEmptying}
                     sizes={sizes}
+                    canRegister={canAdd}
                 />
 
                 <PreparationLogList 
                     logs={logs}
                     loading={loading}
                     onDelete={handleDeleteLog}
+                    canDelete={canAdd}
                 />
             </div>
         </motion.div>

@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { canAddStock, isStockIncreaseMovement, STOCK_INCREASE_DENIED_MESSAGE } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,6 +91,14 @@ export function MovementFormDialog({
   isSaving,
   handleSaveMovement,
 }: MovementFormDialogProps) {
+  const { userRole, isSuperAdmin } = useAuth();
+  const canAdd = canAddStock({ userRole, isSuperAdmin });
+
+  // Sin permiso para sumar, el tipo por defecto no puede ser una entrada.
+  useEffect(() => {
+    if (!canAdd && isStockIncreaseMovement(tipo)) setTipo("Salida - Ajuste");
+  }, [canAdd, tipo, setTipo]);
+
   const stockMap = useMemo(() => {
     const map = new Map<string, number>();
     (stockItems || []).forEach((s) => {
@@ -131,16 +141,25 @@ export function MovementFormDialog({
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-950 border-white/10">
-                  <SelectItem value="Entrada - Compra" className="text-xs">Entrada - Compra</SelectItem>
-                  <SelectItem value="Entrada - Devolución" className="text-xs">Entrada - Devolución</SelectItem>
-                  <SelectItem value="Entrada - Ajuste" className="text-xs">Entrada - Ajuste</SelectItem>
-                  <SelectItem value="Entrada - Otro" className="text-xs">Entrada - Otro</SelectItem>
+                  {canAdd && (
+                    <>
+                      <SelectItem value="Entrada - Compra" className="text-xs">Entrada - Compra</SelectItem>
+                      <SelectItem value="Entrada - Devolución" className="text-xs">Entrada - Devolución</SelectItem>
+                      <SelectItem value="Entrada - Ajuste" className="text-xs">Entrada - Ajuste</SelectItem>
+                      <SelectItem value="Entrada - Otro" className="text-xs">Entrada - Otro</SelectItem>
+                    </>
+                  )}
                   <SelectItem value="Salida - Devolución" className="text-xs">Salida - Devolución</SelectItem>
                   <SelectItem value="Salida - Ajuste" className="text-xs">Salida - Ajuste</SelectItem>
                   <SelectItem value="Salida - Otro" className="text-xs">Salida - Otro</SelectItem>
                   <SelectItem value="Salida - Merma" className="text-xs">Salida - Merma</SelectItem>
                 </SelectContent>
               </Select>
+              {!canAdd && (
+                <p role="note" className="text-[10px] font-bold text-amber-400">
+                  {STOCK_INCREASE_DENIED_MESSAGE}
+                </p>
+              )}
             </div>
 
             {/* Factura No */}

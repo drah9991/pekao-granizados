@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Beaker, Scale } from "lucide-react";
+import { STOCK_INCREASE_DENIED_MESSAGE } from "@/lib/permissions";
 import YieldProjection from "./YieldProjection";
 
 interface PreparationFormProps {
@@ -21,13 +22,15 @@ interface PreparationFormProps {
   isProcessing: boolean;
   isEmptying: boolean;
   sizes: Record<string, unknown>[];
+  /** Registrar una preparación suma litros: solo admin/gerente. */
+  canRegister: boolean;
 }
 
 export default function PreparationForm({
   products, selectedProductId, onProductChange,
   liters, onLitersChange, currentStock, mixtureName,
   onAutoLink, onEmptyTank, onRegister,
-  isProcessing, isEmptying, sizes
+  isProcessing, isEmptying, sizes, canRegister
 }: PreparationFormProps) {
   const selectedFlavor = products.find(p => p.id === selectedProductId);
 
@@ -137,9 +140,15 @@ export default function PreparationForm({
                 />
             )}
 
-            <Button 
+            {!canRegister && (
+                <p role="note" className="text-xs font-bold text-amber-400 text-center">
+                    {STOCK_INCREASE_DENIED_MESSAGE}
+                </p>
+            )}
+
+            <Button
                 onClick={onRegister}
-                disabled={isProcessing || !liters || !selectedProductId}
+                disabled={!canRegister || isProcessing || !liters || !selectedProductId}
                 className="w-full h-16 lg:h-20 rounded-[2rem] bg-foreground text-background hover:bg-primary hover:text-primary-foreground font-black uppercase tracking-[0.4em] text-sm italic font-space-grotesk transition-all shadow-glow-pro active:scale-95 group overflow-hidden relative"
             >
                 <span className="relative z-10">{isProcessing ? "PROCESANDO LOTE..." : "CONFIRMAR PRODUCCIÓN"}</span>
