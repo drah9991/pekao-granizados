@@ -1,16 +1,113 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { supabaseRpc } from "@/integrations/supabase/types-extensions";
+import {
+  parsePublicMenu,
+  sortByCategoryOrder,
+  type MenuCategory,
+  type MenuItem,
+  type StockStatus,
+} from "@/lib/digitalMenu";
 
-export type MenuItem = Tables<"products"> & {
-  stock_status: 'available' | 'low_stock' | 'out_of_stock';
-  available_qty: number;
-  min_qty?: number;
-};
+export type { MenuCategory, MenuItem } from "@/lib/digitalMenu";
 
-export type MenuCategory = Tables<"product_types_config"> & {
-  items: MenuItem[];
-};
+const CATEGORY_ORDER_KEY = "pekao_menu_categories_order";
+/** La carta pública no recibe eventos en tiempo real (RLS); se refresca así. */
+const PUBLIC_REFRESH_MS = 60_000;
+
+function readSavedOrder(): string | null {
+  try {
+    return localStorage.getItem(CATEGORY_ORDER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Carta pública: la disponibilidad se calcula en el servidor (get_digital_menu),
+ * así que anon nunca lee stock, recetas ni tanques directamente.
+ */
+async function fetchPublicMenu(storeId: string): Promise<MenuCategory[]> {
+  const { data, error } = await supabaseRpc<unknown>("get_digital_menu", { p_store_id: storeId });
+  if (error) throw error;
+  return parsePublicMenu(data);
+}
+
+/** Vista de administración: personal con sesión, incluye productos no públicos. */
+async function fetchAdminMenu(storeId: string): Promise<MenuCategory[]> {
+  const [{ data: configData }, { data: productsData }, { data: tanksData }, { data: stockData }] = await Promise.all([
+    supabase
+      .from("product_types_config")
+      .select("*")
+      .eq("active", true)
+      .or(`store_id.eq.${storeId},store_id.is.null`),
+    supabase
+      .from("products")
+      .select(`
+        *,
+        recipes (
+          inventory_item_id,
+          quantity_required,
+          inventory_items (
+            id,
+            stock,
+            is_mixture
+          )
+        )
+      `)
+      .eq("active", true)
+      .or(`store_id.eq.${storeId},store_id.is.null`),
+    supabase.from("machine_tanks").select("*").eq("store_id", storeId),
+    supabase.from("store_stock").select("*").eq("store_id", storeId),
+  ]);
+
+  return (configData || [])
+    .map((cat): MenuCategory => {
+      const catProducts = (productsData || []).filter((p) => p.type === cat.code);
+
+      const items: MenuItem[] = catProducts.map((prod) => {
+        let stock_status: StockStatus = "available";
+        let available_qty = 0;
+
+        const prodStock = (stockData || []).find((s) => s.product_id === prod.id);
+        const min_qty = prodStock?.min_qty || 10;
+
+        if (prodStock && prodStock.qty !== undefined && prodStock.qty !== null) {
+          available_qty = prodStock.qty;
+        } else if (prod.recipes && Array.isArray(prod.recipes) && prod.recipes.length > 0) {
+          const recipe = prod.recipes[0] as { inventory_items?: { stock?: number | null } | null } | undefined;
+          const recipeStock = recipe?.inventory_items?.stock;
+          if (recipeStock !== undefined && recipeStock !== null) {
+            available_qty = recipeStock;
+          }
+        }
+
+        // Check if it relies on tanks (liquids)
+        if (cat.track_mixture_inventory) {
+          const relatedTanks = (tanksData || []).filter((t) => t.current_volume_ml <= 1000);
+          if (relatedTanks.length > 0) {
+            stock_status = "low_stock";
+          }
+          if (available_qty <= 0 && prodStock) {
+            stock_status = "out_of_stock";
+          }
+        } else {
+          if (available_qty <= 0) stock_status = "out_of_stock";
+          else if (available_qty <= min_qty) stock_status = "low_stock";
+        }
+
+        return {
+          ...prod,
+          stock_status,
+          available_qty,
+          min_qty,
+        };
+      });
+
+      return { ...cat, items };
+    })
+    .filter((cat) => cat.items.length > 0);
+}
 
 export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = false) {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -24,119 +121,9 @@ export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = fa
     const fetchMenuData = async () => {
       try {
         setLoading(true);
-        // Fetch configs (Categories)
-        const { data: configData } = await supabase
-          .from("product_types_config")
-          .select("*")
-          .eq("active", true)
-          .or(`store_id.eq.${storeId},store_id.is.null`);
-
-        // Fetch products with recipes & inventory_items
-        let query = supabase
-          .from("products")
-          .select(`
-            *,
-            recipes (
-              inventory_item_id,
-              quantity_required,
-              inventory_items (
-                id,
-                stock,
-                is_mixture
-              )
-            )
-          `)
-          .eq("active", true)
-          .or(`store_id.eq.${storeId},store_id.is.null`);
-
-        // Si no está en modo admin, filtrar por los productos marcados como públicos (is_public = true)
-        if (!isAdminMode) {
-          query = query.eq("is_public", true);
-        }
-
-        const { data: productsData } = await query;
-
-        // Fetch machine tanks (liquids)
-        const { data: tanksData } = await supabase
-          .from("machine_tanks")
-          .select("*")
-          .eq("store_id", storeId);
-
-        // Fetch store stock (units)
-        const { data: stockData } = await supabase
-          .from("store_stock")
-          .select("*")
-          .eq("store_id", storeId);
-
+        const menu = isAdminMode ? await fetchAdminMenu(storeId) : await fetchPublicMenu(storeId);
         if (!isMounted) return;
-
-        // Process data
-        let processedCategories: MenuCategory[] = (configData || []).map(cat => {
-          const catProducts = (productsData || []).filter(p => p.type === cat.code);
-          
-          const items: MenuItem[] = catProducts.map(prod => {
-            let stock_status: 'available' | 'low_stock' | 'out_of_stock' = 'available';
-            let available_qty = 0;
-
-            const prodStock = (stockData || []).find(s => s.product_id === prod.id);
-            const min_qty = prodStock?.min_qty || 10;
-
-            if (prodStock && prodStock.qty !== undefined && prodStock.qty !== null) {
-              available_qty = prodStock.qty;
-            } else if (prod.recipes && Array.isArray(prod.recipes) && prod.recipes.length > 0) {
-              const recipe = prod.recipes[0] as any;
-              if (recipe?.inventory_items?.stock !== undefined) {
-                available_qty = recipe.inventory_items.stock;
-              }
-            }
-
-            // Check if it relies on tanks (liquids)
-            if (cat.track_mixture_inventory) {
-               const relatedTanks = (tanksData || []).filter(t => t.current_volume_ml <= 1000); 
-               if (relatedTanks.length > 0) {
-                  stock_status = 'low_stock';
-               }
-               if (available_qty <= 0 && prodStock) {
-                  stock_status = 'out_of_stock';
-               }
-            } else {
-               if (available_qty <= 0) stock_status = 'out_of_stock';
-               else if (available_qty <= min_qty) stock_status = 'low_stock';
-            }
-
-            return {
-              ...prod,
-              stock_status,
-              available_qty,
-              min_qty
-            };
-          });
-
-          return {
-            ...cat,
-            items
-          };
-        }).filter(cat => cat.items.length > 0);
-
-        // Sort categories by localStorage order
-        const savedOrderStr = localStorage.getItem("pekao_menu_categories_order");
-        if (savedOrderStr) {
-          try {
-            const savedOrder: string[] = JSON.parse(savedOrderStr);
-            processedCategories.sort((a, b) => {
-              const idxA = savedOrder.indexOf(a.code);
-              const idxB = savedOrder.indexOf(b.code);
-              if (idxA === -1 && idxB === -1) return 0;
-              if (idxA === -1) return 1;
-              if (idxB === -1) return -1;
-              return idxA - idxB;
-            });
-          } catch (e) {
-            console.error("Error parsing saved categories order:", e);
-          }
-        }
-
-        setCategories(processedCategories);
+        setCategories(sortByCategoryOrder(menu, readSavedOrder()));
       } catch (error) {
         console.error("Error fetching menu data:", error);
       } finally {
@@ -146,7 +133,15 @@ export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = fa
 
     fetchMenuData();
 
-    // Subscribe to realtime changes
+    if (!isAdminMode) {
+      const interval = setInterval(fetchMenuData, PUBLIC_REFRESH_MS);
+      return () => {
+        isMounted = false;
+        clearInterval(interval);
+      };
+    }
+
+    // Subscribe to realtime changes (staff session only)
     const channel = supabase.channel('menu_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'machine_tanks' }, fetchMenuData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'store_stock' }, fetchMenuData)
@@ -162,7 +157,7 @@ export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = fa
   const reorderCategories = (newCategories: MenuCategory[]) => {
     setCategories(newCategories);
     const codes = newCategories.map(cat => cat.code);
-    localStorage.setItem("pekao_menu_categories_order", JSON.stringify(codes));
+    localStorage.setItem(CATEGORY_ORDER_KEY, JSON.stringify(codes));
   };
 
   const toggleProductVisibility = async (productId: string, currentStatus: boolean): Promise<boolean> => {
@@ -171,7 +166,7 @@ export function useDigitalMenu(storeId: string | null, isAdminMode: boolean = fa
         .from("products")
         .update({ is_public: !currentStatus })
         .eq("id", productId);
-        
+
       if (error) throw error;
       return true;
     } catch (err) {
