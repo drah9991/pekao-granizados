@@ -22,6 +22,8 @@ En staging, 18 tablas tienen RLS desactivado. Con la clave pública (que va dent
 | `supabase/staging/build-rls-test.sh` | Une migración y comprobaciones en un `DO` que termina con `RAISE EXCEPTION` (todo se revierte). |
 | `supabase/staging/rls_lockdown_rollback.sql` | Reversión de emergencia si el POS falla tras aplicar. |
 | `supabase/staging/sales_functions_guard.sql` | Fase 3: las funciones de ventas solo aceptan personal (o `service_role`). |
+| `supabase/staging/align_schema.sql` | Alinea las tablas de staging con el esquema que espera el POS (ver «Alineación de esquema»). |
+| `supabase/staging/align_schema.checks.sql` y `build-align-test.sh` | Prueba en seco: aplica el script dos veces, comprueba columnas y permisos, y lo revierte todo. |
 
 ## Modelo de acceso
 
@@ -172,7 +174,51 @@ Revisa que estén bien antes de aplicar:
 3. Los cajeros no registran gastos ni borran recetas.
 4. Los clientes con sesión pueden leer tamaños, categorías activas y tipos de producto (no sensible).
 
+## Alineación de esquema — APLICADA (2026-10-19)
+
+**Causa:** staging se creó con `20250131000000_staging_consolidation.sql`. Muchas migraciones posteriores constan en `schema_migrations` pero no surtieron efecto, porque usaban `CREATE TABLE IF NOT EXISTS` sobre tablas que ya existían con otra forma.
+
+**Cambios** (`supabase/staging/align_schema.sql`, aplicado como `staging_align_schema`). Todas las tablas afectadas estaban vacías.
+
+| Tabla | Antes | Ahora |
+|---|---|---|
+| `product_types_config` | `id`, `type_name`, `config` | Forma de producción: clave `code`, `label`, `store_id`, `sales_mode`, `track_mixture_inventory`, `active`, etc. Sin semilla: el catálogo se importa desde producción. |
+| `machine_tanks` | `capacity`, `current_level` | `max_capacity_ml`, `current_volume_ml`, `updated_at`, `UNIQUE (store_id, name)`. Se agrega la vista `vw_tank_percentages` (`security_invoker`). |
+| `inventory_items` | `unit_of_measure` | `unit` (la columna que escribe el POS) e `is_mixture`. `check_inventory_stock_trigger` ahora lee `unit`. |
+| `expenses` | `date` (timestamptz) | `expense_date` (date, como lo envía el formulario). |
+| `sizes` | sin sede | `store_id`, `capacity_value`, `capacity_unit`, `updated_at`. |
+| `sku_acronyms` | `word`, `acronym` | `type`, `code`, `store_id`. |
+| `categories` | — | `image_url`, `sort_order` y los campos de comportamiento de venta. |
+| `roles` | no existía | Creada con RLS y los 4 roles base. `user_roles.role` sigue siendo el enum `app_role`. |
+
+**Políticas:**
+
+- `roles`: la leen usuarios con sesión; solo admin o superadmin escriben.
+- `sizes_write` y `sku_acronyms_write` exigen ahora además `rls_can_access_store(store_id)`: un gerente solo edita los de su sede. Las filas sin sede quedan para admin y superadmin.
+- Se añadieron índices en `store_id` donde las políticas lo usan.
+- **Ojo:** `rls_lockdown.sql` crea las versiones anteriores de esas dos políticas. Si se vuelve a aplicar, hay que ejecutar `align_schema.sql` después.
+
+**Efecto colateral bueno:** `process_sale_unchecked`, `update_order_with_stock`, `cancel_sale_with_stock_restore` y `get_digital_menu` ya mencionaban `current_volume_ml` y `track_mixture_inventory`. Ahora esas columnas existen.
+
+**Prueba en seco (revertida):**
+
+- El script corre dos veces sin errores ni restricciones duplicadas.
+- anon recibe la carta con 4 granizados y 1 topping, lee los 3 tipos activos y no puede crear roles.
+- El gerente de A crea tallas, SKU, tanques y gastos en A, pero no en B ni globales, y no crea roles.
+- El cajero de A lee tallas, SKU y tanques, crea mezclas (`unit`, `is_mixture`) y no crea tallas.
+
+**Navegador (sin sesión):** `/digital-menu?store=8cfcf12f-…` muestra los 4 granizados de prueba y el topping. `roles`, `sizes`, `sku_acronyms` y `product_types_config` responden 200.
+
+**Pendiente:**
+
+- `useDigitalMenuConfigForm` pide `profiles.full_name`, que no existe en ninguna migración ni en `types.ts` (la columna es `name`). Da 400 en staging y probablemente también en producción. Es un error del código, no del esquema.
+- Siguen faltando en staging las funciones `adjust_inventory_item_stock` e `initialize_store_tanks`, que el POS llama por RPC.
+- Tampoco existen las tablas de traslados (`inventory_transfers` y relacionadas).
+- No se agregó `customers.store_id` (NOT NULL en producción): rompería `create_mobile_order` y `upsert_my_customer` en staging.
+- El catálogo (tipos, tallas, productos, insumos, recetas, stock y tanques) se importa desde producción en otra sesión; este script no siembra datos.
+- Columnas que producción tiene y staging no, cuyo tipo no figura en el repo: `stores.opening_hours`, `stores.updated_at`, `sku_acronyms.description`, `sku_acronyms.updated_at`, `products.updated_at`, `inventory_items.alert_threshold`, `inventory_items.lot_number` y `recipes.unit`. Deben añadirse con el tipo exacto de producción.
+
 ## Limitaciones
 
-- **Staging está desfasado del código.** Por ejemplo, `product_types_config` tiene `type_name`/`config` y no las columnas `code`/`active`/`store_id` que lee el POS, e `inventory_items` no tiene `is_mixture`. Algunas pantallas ya fallan en staging por eso, con o sin RLS.
+- **Staging seguía desfasado del código.** Corregido para las tablas de la sección anterior; quedan las funciones y tablas listadas allí.
 - **Reglas que dependen del rol de la cuenta:** las pruebas simulan sesiones con `request.jwt.claims`, que es lo que usa PostgREST. Las políticas basadas en `has_role` funcionan igual, pero conviene la fase 2.
