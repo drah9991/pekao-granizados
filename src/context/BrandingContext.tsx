@@ -198,9 +198,11 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
 
       if (!targetStoreId) {
         try {
+          // Sin orden, Postgres devuelve cualquier sede y el login sale con la marca de otro negocio.
           const { data: firstStore } = await supabase
             .from('stores')
             .select('id, name')
+            .order('created_at', { ascending: true })
             .limit(1)
             .maybeSingle();
           if (firstStore) {

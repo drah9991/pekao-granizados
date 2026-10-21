@@ -24,13 +24,16 @@ En staging, 18 tablas tienen RLS desactivado. Con la clave pública (que va dent
 | `supabase/staging/sales_functions_guard.sql` | Fase 3: las funciones de ventas solo aceptan personal (o `service_role`). |
 | `supabase/staging/align_schema.sql` | Alinea las tablas de staging con el esquema que espera el POS (ver «Alineación de esquema»). |
 | `supabase/staging/align_schema.checks.sql` y `build-align-test.sh` | Prueba en seco: aplica el script dos veces, comprueba columnas y permisos, y lo revierte todo. |
+| `supabase/staging/function_grants_hardening.sql` | Fase 5: quita EXECUTE a anon/authenticated en funciones que no deben llamar, limita `has_role` y el bloqueo de login, y fija `search_path`. |
+| `supabase/staging/function_grants_hardening.checks.sql` y `build-grants-test.sh` | Prueba en seco de la fase 5: aplica el script dos veces, comprueba por rol y lo revierte todo. |
+| `supabase/staging/remove_test_stores.sql` | Borra las 3 sedes de prueba vacías (ver «Sedes de prueba»). |
 
 ## Modelo de acceso
 
 Es el que el POS ya asume; las políticas solo lo hacen cumplir.
 
 - **Personal:** tiene fila en `user_roles` (admin, manager, cashier, driver) o es superadmin.
-- **Sede del usuario:** `profiles.store_id`; el personal la elige al iniciar sesión.
+- **Sede del usuario:** `profiles.store_id`. Al iniciar sesión, admin y superadmin eligen entre todas las sedes; el resto del personal entra a la de su perfil, que asigna un admin (`storesForLogin` en `src/lib/permissions.ts`).
 - **Acceso a una sede:** superadmin, admin, o personal cuya sede es esa.
 - **Privilegiado:** superadmin, admin o gerente.
 
@@ -165,6 +168,61 @@ No se consultó producción. Antes de llevar nada allí:
 - comparar sus políticas `tenant_*` con este modelo;
 - escribir una migración propia para producción. Esta no sirve allí.
 
+### Fase 5: permisos de funciones — APLICADA (2026-10-20)
+
+El *security advisor* avisaba de 18 funciones `SECURITY DEFINER` que anon podía llamar por `/rest/v1/rpc`, 26 que podía llamar un usuario con sesión, y 7 con `search_path` mutable.
+
+Solución (`supabase/staging/function_grants_hardening.sql`, aplicada como `staging_function_grants_hardening`):
+
+- **Funciones de trigger:** sin EXECUTE para `PUBLIC`, anon y authenticated. Son `check_inventory_stock_trigger`, `check_store_stock_trigger`, `handle_new_user`, `rls_auto_enable`, `sync_product_recipe_to_relational_recipes`, `update_updated_at_column` y `update_pricing_rules_updated_at`. Los triggers siguen disparándose: Postgres solo exige EXECUTE al crear el trigger.
+- **Bloqueo de login:** `src/lib/rateLimiting.ts` envuelve las cuatro funciones, pero **ningún archivo lo importa**, así que hoy nadie las llama.
+  - `is_account_locked` y `get_lockout_remaining_time`: solo `service_role`.
+  - `record_login_attempt` y `clear_login_attempts`: solo con sesión, y solo sobre el correo de `auth.uid()`; otro correo da `42501`. Antes anon podía desbloquear cualquier cuenta o bloquear cuentas ajenas.
+  - Si se quiere un bloqueo real, debe ir en el servidor (Auth hook o edge function con `service_role`). El que registra el navegador se puede saltar.
+- **`has_role(_user_id, _role)`:** responde `false` si `_user_id` no es `auth.uid()` (salvo `service_role`). Todas las políticas y funciones la llaman con `auth.uid()`, así que no cambia nada para el POS. Ya no sirve para averiguar el rol de otro usuario.
+- **anon sin `has_role` ni `rls_*`:** 12 políticas `TO public` de `public` usaban `has_role`, por ejemplo «Admins and managers can manage products». Postgres exige EXECUTE sobre las funciones de **todas** las políticas que aplican, aunque den `false`. Al quitarle EXECUTE a anon, leer la carta habría fallado. Por eso esas políticas pasan a `TO authenticated`. Para anon daban siempre `false` (`auth.uid()` es nulo), así que nadie gana ni pierde acceso. Ninguna política que aplique a anon usa `rls_*`.
+- **`search_path = public`:** en `process_sale_unchecked`, `process_sale_with_stock_unchecked`, `increment_inventory_stock_unchecked`, `update_order_with_stock`, `cancel_sale_with_stock_restore`, `check_store_stock_trigger` y `update_pricing_rules_updated_at`. Ninguna usa funciones de `extensions`.
+
+**Advisor después:**
+
+| Aviso | Antes | Después |
+|---|---|---|
+| SECURITY DEFINER ejecutable por anon | 18 | 2 |
+| SECURITY DEFINER ejecutable con sesión | 26 | 18 |
+| `search_path` mutable | 7 | 0 |
+
+Siguen a propósito:
+
+- **anon:** `get_digital_menu` y `create_mobile_order`, que son la carta y los pedidos móviles.
+- **Con sesión:** ventas, inventario, `can_increase_stock`, `set_chatbot_api_key`, `upsert_my_customer`, `has_role`, `rls_*` y los dos de login. Cada una valida al llamador o la usan las políticas.
+- **Protección de contraseñas filtradas:** sigue desactivada. Es un ajuste de Auth en el dashboard.
+
+**Prueba en seco (revertida):** el script corre dos veces sin errores.
+
+| Rol | Resultado |
+|---|---|
+| anon | Lee `products` (37), `stores`, `public_menu` y `get_digital_menu`. `42501` en `has_role`, `rls_is_staff`, las 4 de login y las de trigger. |
+| Cliente con sesión | `has_role` de otro usuario da `false`. Registra y limpia intentos de su correo (aunque lo escriba con mayúsculas), pero no de uno ajeno. |
+| Gerente | `has_role` propio da `true`. Al editar `store_stock` se disparan `update_updated_at_column` y `check_store_stock_trigger`, y se crea la notificación de stock bajo. |
+| Admin | Edita la sede y lee `role_permissions`. |
+| `service_role` | `has_role` de cualquiera y `is_account_locked`. |
+
+Aparte, en la sede `c72851e5-…`, con datos revertidos:
+
+- un cajero vende con `process_sale` (stock de 10 a 9);
+- un gerente la anula con `cancel_sale_with_stock_restore` (stock vuelve a 10, pedido `cancelled`).
+
+**Navegador:**
+
+- `/digital-menu?store=c72851e5-…` muestra la carta sin sesión, y `get_digital_menu` responde 200.
+- `/digital-menu?store=8cfcf12f-…` sale vacía porque la sede A ya no tiene productos tras importar el catálogo; `get_digital_menu` responde 200 con `[]`.
+- **Login y venta desde el POS no se probaron en el navegador:** no había sesión y la cuenta de prueba de `.env.staging` es la del usuario. Equivalen a la fase 2.
+
+**Pendiente:**
+
+- Las funciones nuevas en `public` reciben EXECUTE para anon y authenticated por los privilegios por defecto de Supabase. Se podría cambiar con `ALTER DEFAULT PRIVILEGES … REVOKE EXECUTE ON FUNCTIONS FROM anon`, pero entonces cada RPC pública necesitaría su `GRANT`.
+- Las políticas de `storage.objects` para subir branding siguen `TO public` con `has_role`. Su dueño es `supabase_storage_admin`, así que no se tocaron. Si anon intenta subir, recibe «permiso denegado sobre la función» en vez de un rechazo de RLS; en ambos casos no puede.
+
 ## Decisiones que cambian el comportamiento
 
 Revisa que estén bien antes de aplicar:
@@ -217,6 +275,49 @@ Revisa que estén bien antes de aplicar:
 - No se agregó `customers.store_id` (NOT NULL en producción): rompería `create_mobile_order` y `upsert_my_customer` en staging.
 - El catálogo (tipos, tallas, productos, insumos, recetas, stock y tanques) se importa desde producción en otra sesión; este script no siembra datos.
 - Columnas que producción tiene y staging no, cuyo tipo no figura en el repo: `stores.opening_hours`, `stores.updated_at`, `sku_acronyms.description`, `sku_acronyms.updated_at`, `products.updated_at`, `inventory_items.alert_threshold`, `inventory_items.lot_number` y `recipes.unit`. Deben añadirse con el tipo exacto de producción.
+
+## Sedes de prueba — BORRADAS (2026-10-20)
+
+Al iniciar sesión salían 5 sedes, 3 con el mismo nombre («Pekao Granizados - Staging»).
+
+**Datos** (`supabase/staging/remove_test_stores.sql`, aplicado como `staging_remove_test_stores`):
+
+- Se borraron las 3 sedes de prueba del 24-sep: `8cfcf12f-…`, `c1b3c246-…` y `7cdb8def-…`. No tenían productos, pedidos ni movimientos.
+- Con ellas se borraron en cascada 2 turnos de caja de prueba, que seguían abiertos.
+- El único perfil asignado a una de ellas (la cuenta admin) pasó a SUCURSAL PRINCIPAL (`c72851e5-…`).
+- Quedan CLICK & SNACK y PEKAO GRANIZADOS - SUCURSAL PRINCIPAL, copiadas de producción por `scripts/copy-catalog-to-staging.js`.
+- Los scripts de prueba (`build-rls-test.sh`, `build-align-test.sh`, `build-grants-test.sh`) usan ahora SUCURSAL PRINCIPAL como sede A y CLICK & SNACK como sede B. El producto de prueba se toma de la sede A, porque la importación reemplazó el anterior.
+
+**Código** (`src/hooks/useAuthPage.ts`):
+
+- Antes el selector mostraba todas las sedes a cualquier usuario. Así un cajero podía elegir otra sede y, con ella, ver sus datos.
+- Ahora admin y superadmin eligen entre todas.
+- El resto del personal entra directo a la sede de su perfil. Si no tiene sede asignada, entra sin elegir y un admin debe asignársela.
+- Las consultas posteriores al login usan el mismo cliente con el que se inició sesión. Con «Recordarme» apagado, antes se hacían sin sesión.
+
+**Marca del login sin sesión** (`src/context/BrandingContext.tsx`):
+
+- Tomaba «la primera» sede con `limit(1)` sin orden, así que Postgres devolvía cualquiera. Tras el borrado salía «CLICK & SNACK», que es otro negocio.
+- Ahora ordena por `created_at` y toma la más antigua, PEKAO GRANIZADOS - SUCURSAL PRINCIPAL.
+- anon no podía leer `stores.created_at` (daba 401), así que se añadió a sus columnas en `rls_lockdown.sql` y se aplicó como `staging_stores_created_at_anon`.
+
+**Validación (2026-10-21):**
+
+- **Login sin sesión:** muestra «PEKAO GRANIZADOS - SUCURSAL PRINCIPAL», y las consultas a `stores` responden 200.
+- **Consultas que el login hace al entrar, simuladas con RLS:**
+  - La cuenta admin ve 2 sedes, su perfil está en SUCURSAL PRINCIPAL y su rol es `admin`, así que el selector muestra esas 2.
+  - Un cajero de prueba lee su rol y su sede (CLICK & SNACK), así que entra directo.
+- **Prueba en seco de la fase 5 con SUCURSAL PRINCIPAL como sede A:**
+  - Las mismas 2 funciones expuestas a anon y ninguna con `search_path` mutable.
+  - La carta tiene 4 productos.
+  - Los permisos por rol y los triggers funcionan.
+- **Advisor:** sin cambios. Siguen 2 funciones expuestas a anon, 18 con sesión y 0 con `search_path` mutable.
+- **Tests:** `vitest` pasa los 28 tests. Fallan al cargar 8 archivos que importan `bun:test`; eso ya pasaba antes.
+
+**Pendiente:**
+
+- Un admin sigue viendo CLICK & SNACK, que es otro negocio. Staging no tiene modelo de tenant; producción tiene políticas `tenant_*`.
+- **El selector tras iniciar sesión no se probó en el navegador:** hace falta entrar con la cuenta real.
 
 ## Limitaciones
 

@@ -188,7 +188,8 @@ CREATE POLICY "sku_acronyms_write" ON public.sku_acronyms FOR ALL TO authenticat
 -- Solo columnas de vitrina; nunca datos de suscripción.
 CREATE POLICY "stores_public_select" ON public.stores FOR SELECT TO anon USING (true);
 REVOKE ALL ON public.stores FROM anon;
-GRANT SELECT (id, name, address, currency, config) ON public.stores TO anon;
+-- created_at: BrandingContext ordena por él para elegir la marca del login.
+GRANT SELECT (id, name, address, currency, config, created_at) ON public.stores TO anon;
 
 -- 6. Activar RLS ------------------------------------------------------------------------
 -- orders, order_items, invoices, store_stock: conservan sus políticas actuales.

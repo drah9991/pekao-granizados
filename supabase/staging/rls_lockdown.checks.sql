@@ -35,7 +35,7 @@
   INSERT INTO public.sku_acronyms (word, acronym) VALUES ('prueba', 'PRB');
   INSERT INTO public.product_types_config (type_name) VALUES ('prueba');
   INSERT INTO public.machine_tanks (store_id, name, capacity) VALUES (s_a, 'Tanque A (prueba)', 10), (s_b, 'Tanque B (prueba)', 10);
-  INSERT INTO public.store_stock (store_id, product_id, qty) VALUES (s_a, p_mora, 5);
+  INSERT INTO public.store_stock (store_id, product_id, qty) VALUES (s_a, p_prod, 5) ON CONFLICT DO NOTHING;  -- la sede real puede tener ya stock
 
   -- anon -------------------------------------------------------------------------------
   RESET ROLE;
@@ -80,9 +80,9 @@
   res := res || ' insert_insumo_A='           || pg_temp.chk(format('INSERT INTO public.inventory_items (id, store_id, name) VALUES (%L, %L, ''Tanque prueba'')', v_item_a, s_a));
   res := res || ' insert_insumo_B='           || pg_temp.chk(format('INSERT INTO public.inventory_items (store_id, name) VALUES (%L, ''x'')', s_b));
   res := res || ' vaciar_tanque_A='           || pg_temp.chk(format('UPDATE public.inventory_items SET stock = 0 WHERE id = %L', v_item_a));
-  res := res || ' vincular_receta='           || pg_temp.chk(format('INSERT INTO public.recipes (product_id, inventory_item_id, quantity_required) VALUES (%L, %L, 4)', p_mora, v_item_a));
+  res := res || ' vincular_receta='           || pg_temp.chk(format('INSERT INTO public.recipes (product_id, inventory_item_id, quantity_required) VALUES (%L, %L, 4)', p_prod, v_item_a));
   res := res || ' borrar_receta='             || pg_temp.chk(format('DELETE FROM public.recipes WHERE inventory_item_id = %L', v_item_a));
-  res := res || ' insert_movimiento_A='       || pg_temp.chk(format('INSERT INTO public.movements (product_id, store_id, qty, type, user_id) VALUES (%L, %L, 1, ''adjustment'', %L)', p_mora, s_a, v_cashier));
+  res := res || ' insert_movimiento_A='       || pg_temp.chk(format('INSERT INTO public.movements (product_id, store_id, qty, type, user_id) VALUES (%L, %L, 1, ''adjustment'', %L)', p_prod, s_a, v_cashier));
   res := res || ' orders_A='                  || pg_temp.chk(format('SELECT 1 FROM public.orders WHERE store_id = %L', s_a));
   res := res || ' insert_user_roles='         || pg_temp.chk(format('INSERT INTO public.user_roles (user_id, role) VALUES (%L, ''admin'')', v_cashier));
   res := res || ' user_roles='                || pg_temp.chk('SELECT 1 FROM public.user_roles');

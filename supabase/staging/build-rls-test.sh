@@ -11,9 +11,9 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 cat <<'SQL'
 DO $t$
 DECLARE
-  s_a uuid := '8cfcf12f-196f-43ac-a240-6976b7044de7';  -- sede A (staging)
-  s_b uuid := 'c1b3c246-cba3-432b-a2fc-2ec37715d4fe';  -- sede B (staging)
-  p_mora uuid := '8b1c7e93-72d9-416c-82cf-5ae34a28ec58';
+  s_a uuid := 'c72851e5-380d-4e1c-952b-34713638e70b';  -- sede A: SUCURSAL PRINCIPAL
+  s_b uuid := '252ded6a-21cb-4b8e-8e3d-89f7d74c3610';  -- sede B: CLICK & SNACK
+  p_prod uuid := (SELECT id FROM public.products WHERE store_id = 'c72851e5-380d-4e1c-952b-34713638e70b' LIMIT 1);
   v_cashier uuid := gen_random_uuid();
   v_manager uuid := gen_random_uuid();
   v_customer uuid := gen_random_uuid();

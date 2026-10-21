@@ -16,6 +16,23 @@ export function canAddStock({ userRole, isSuperAdmin }: PermissionSubject): bool
   return isSuperAdmin || (userRole != null && STOCK_INCREASE_ROLES.includes(userRole));
 }
 
+/** Igual que rls_can_access_store: admin y superadmin operan en cualquier sede. */
+export function canChooseAnyStore({ userRole, isSuperAdmin }: PermissionSubject): boolean {
+  return isSuperAdmin || userRole === "admin";
+}
+
+/**
+ * Sedes que se ofrecen al iniciar sesión. Admin y superadmin eligen entre todas;
+ * el resto del personal solo tiene la de su perfil (la asigna un admin).
+ */
+export function storesForLogin<T extends { id: string }>(
+  stores: T[],
+  subject: PermissionSubject & { profileStoreId: string | null | undefined }
+): T[] {
+  if (canChooseAnyStore(subject)) return stores;
+  return stores.filter((store) => store.id === subject.profileStoreId);
+}
+
 /** Un tipo de movimiento de inventario suma cantidades si es una entrada. */
 export function isStockIncreaseMovement(movementType: string): boolean {
   return movementType.trim().toLowerCase().startsWith("entrada");

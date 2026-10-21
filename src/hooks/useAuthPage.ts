@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
+import { storesForLogin } from "@/lib/permissions";
 
 export interface StoreOption {
   id: string;
@@ -21,6 +22,7 @@ export function useAuthPage() {
   const [storeModalIsOpen, setStoreModalIsOpen] = useState(false);
   const [availableStores, setAvailableStores] = useState<StoreOption[]>([]);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const loginClientRef = useRef(supabase);
 
   const handleLogin = async (email: string, password: string) => {
     setIsLoading(true);
@@ -49,20 +51,29 @@ export function useAuthPage() {
 
       const user = authData?.user;
       if (user) {
-        // Fetch active stores
-        const { data: stores } = await supabase
-          .from("stores")
-          .select("id, name, address")
-          .order("name", { ascending: true });
+        // La sesión vive en clientToUse (con "recordarme" apagado no es el cliente global).
+        loginClientRef.current = clientToUse;
+        const [{ data: allStores }, { data: profile }, { data: roleRow }] = await Promise.all([
+          clientToUse.from("stores").select("id, name, address").order("name", { ascending: true }),
+          // is_superadmin existe en la base pero no en types.ts: se pide con "*".
+          clientToUse.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+          clientToUse.from("user_roles").select("role").eq("user_id", user.id).maybeSingle(),
+        ]);
 
-        if (stores && stores.length > 1) {
+        const stores = storesForLogin(allStores ?? [], {
+          userRole: roleRow?.role ?? null,
+          isSuperAdmin: profile != null && "is_superadmin" in profile && profile.is_superadmin === true,
+          profileStoreId: profile?.store_id,
+        });
+
+        if (stores.length > 1) {
           setAvailableStores(stores);
           setPendingUserId(user.id);
           setStoreModalIsOpen(true);
           toast.success("Credenciales validadas. Elige tu sucursal para continuar.");
           return true;
-        } else if (stores && stores.length === 1) {
-          await supabase.from("profiles").update({ store_id: stores[0].id }).eq("id", user.id);
+        } else if (stores.length === 1 && stores[0].id !== profile?.store_id) {
+          await clientToUse.from("profiles").update({ store_id: stores[0].id }).eq("id", user.id);
         }
       }
 
@@ -83,7 +94,7 @@ export function useAuthPage() {
     setIsLoading(true);
     try {
       if (pendingUserId) {
-        const { error } = await supabase
+        const { error } = await loginClientRef.current
           .from("profiles")
           .update({ store_id: storeId })
           .eq("id", pendingUserId);
