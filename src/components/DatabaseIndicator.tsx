@@ -42,7 +42,8 @@ export function DatabaseIndicator() {
             <span className="text-[7px] uppercase opacity-70 tracking-wider font-space-grotesk">
               {environmentLabel}
             </span>
-            <span className="text-[10px] font-bold">
+            {/* Solo en pantallas anchas: el tooltip ya muestra el project id. */}
+            <span className="hidden xl:inline text-[10px] font-bold">
               {projectId}
             </span>
           </div>

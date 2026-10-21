@@ -55,10 +55,16 @@ interface LayoutProps {
   fullWidth?: boolean;
 }
 
+// El navbar superior se salía de la pantalla. Por debajo de 1024px se usa el menú
+// lateral; hasta 1760px el menú queda en iconos (el texto sigue para lectores de
+// pantalla y como title). Medido con el indicador de staging visible.
+const DRAWER_NAV_BREAKPOINT = 1024;
+const NAV_LABEL_CLASS = "sr-only min-[1760px]:not-sr-only";
+
 export default function Layout({ children, fullWidth = false }: LayoutProps) {
   const { isInstallable, installApp } = usePWAInstall();
   const location = useLocation();
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(DRAWER_NAV_BREAKPOINT);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { favorites, toggleFavorite, isFavorite } = useFavoritesStore();
   const { logoUrl } = useBranding();
@@ -194,7 +200,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
 
           <Link to="/dashboard" className="flex items-center gap-2">
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="h-9 object-contain" />
+              <img src={logoUrl} alt="Logo" className="h-9 max-w-[140px] object-contain" />
             ) : (
               <div className="flex items-center gap-1.5 font-space-grotesk font-black text-sm uppercase italic tracking-tighter">
                 <span className="text-rose-600 font-extrabold">loggro</span>
@@ -209,7 +215,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
           <nav className="flex items-center gap-1 md:gap-2">
             
             {/* Dashboard */}
-            <Link
+            <Link title="Dashboard"
               to="/dashboard"
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
@@ -219,11 +225,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               )}
             >
               <LayoutDashboard className="w-4 h-4" />
-              <span>Dashboard</span>
+              <span className={NAV_LABEL_CLASS}>Dashboard</span>
             </Link>
 
             {/* Vender (POS) */}
-            <Link
+            <Link title="Vender"
               to="/pos"
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
@@ -233,11 +239,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               )}
             >
               <ShoppingCart className="w-4 h-4" />
-              <span>Vender</span>
+              <span className={NAV_LABEL_CLASS}>Vender</span>
             </Link>
 
             {/* Ventas */}
-            <Link
+            <Link title="Ventas"
               to="/sales"
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
@@ -247,13 +253,13 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               )}
             >
               <ReceiptText className="w-4 h-4" />
-              <span>Ventas</span>
+              <span className={NAV_LABEL_CLASS}>Ventas</span>
             </Link>
 
             {/* PRODUCTOS & CATEGORÍAS DROPDOWN (Captura 1 del paso anterior) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
+                <button title="Productos"
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all outline-none cursor-pointer",
                     location.pathname.startsWith("/products") || location.pathname.includes("tab=categories") || location.pathname.startsWith("/recipes") || location.pathname.startsWith("/inventory") || location.pathname.startsWith("/suppliers")
@@ -262,7 +268,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                   )}
                 >
                   <Tag className="w-4 h-4" />
-                  <span>Productos</span>
+                  <span className={NAV_LABEL_CLASS}>Productos</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                 </button>
               </DropdownMenuTrigger>
@@ -325,7 +331,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             </DropdownMenu>
 
             {/* Menú Digital */}
-            <Link
+            <Link title="Menú Digital"
               to="/digital-menu"
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
@@ -335,13 +341,13 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               )}
             >
               <MonitorPlay className="w-4 h-4" />
-              <span>Menú Digital</span>
+              <span className={NAV_LABEL_CLASS}>Menú Digital</span>
             </Link>
 
             {/* CONTABILIDAD DROPDOWN (Captura 1) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
+                <button title="Contabilidad"
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all outline-none cursor-pointer",
                     location.pathname.startsWith("/expenses") || location.pathname.startsWith("/cash-register") || location.pathname.startsWith("/customers")
@@ -350,7 +356,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                   )}
                 >
                   <Coins className="w-4 h-4" />
-                  <span>Contabilidad</span>
+                  <span className={NAV_LABEL_CLASS}>Contabilidad</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                 </button>
               </DropdownMenuTrigger>
@@ -437,7 +443,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
             </DropdownMenu>
 
             {/* Estadísticas */}
-            <Link
+            <Link title="Estadísticas"
               to="/reports"
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
@@ -447,13 +453,13 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
               )}
             >
               <BarChart3 className="w-4 h-4" />
-              <span>Estadísticas</span>
+              <span className={NAV_LABEL_CLASS}>Estadísticas</span>
             </Link>
 
             {/* Configuración Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
+                <button title="Configuración"
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all outline-none cursor-pointer",
                     location.pathname.startsWith("/settings") || location.pathname.startsWith("/users") || location.pathname.startsWith("/superadmin")
@@ -462,7 +468,7 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                   )}
                 >
                   <Settings className="w-4 h-4" />
-                  <span>Configuración</span>
+                  <span className={NAV_LABEL_CLASS}>Configuración</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                 </button>
               </DropdownMenuTrigger>
@@ -500,8 +506,8 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
         )}
 
         {/* Lado Derecho: Acciones, Nodo selector, Notificaciones */}
-        <div className="flex items-center gap-3">
-          
+        <div className="flex items-center gap-2 xl:gap-3 shrink-0">
+
           {/* Nodo Switcher (Solo Desktop) */}
           {!isMobile && storeId && stores.length > 0 && (
             <div className="flex items-center gap-2 border-r border-slate-200 dark:border-white/10 pr-3 mr-1">
@@ -509,10 +515,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                 <DropdownMenuTrigger asChild>
                   <button 
                     disabled={isSwitchingNode}
+                    title="Cambiar de sede"
                     className="flex items-center gap-2 text-left hover:opacity-85 transition-opacity focus:outline-none cursor-pointer group"
                   >
                     <Building2 className="w-4 h-4 text-rose-600 group-hover:scale-105 transition-transform" />
-                    <div className="flex flex-col items-start leading-none">
+                    <div className="hidden xl:flex flex-col items-start leading-none">
                       <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-0.5 flex items-center gap-1">
                         NODO <ChevronDown className="w-2.5 h-2.5 text-muted-foreground/40" />
                       </span>
@@ -560,10 +567,11 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
           {/* Recomienda y Gana (Destacado Captura 1) */}
           {!isMobile && (
             <Button
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider px-5 h-9 rounded-full border-none shadow-sm flex items-center gap-1.5 cursor-pointer ml-1"
+              title="Recomienda y Gana"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider px-2.5 min-[2048px]:px-5 h-9 rounded-full border-none shadow-sm flex items-center gap-1.5 cursor-pointer ml-1"
             >
               <Gift className="w-4 h-4" />
-              Recomienda y Gana
+              <span className="sr-only min-[2048px]:not-sr-only">Recomienda y Gana</span>
             </Button>
           )}
 
@@ -615,6 +623,10 @@ export default function Layout({ children, fullWidth = false }: LayoutProps) {
                     { label: "Recetas", href: "/recipes", icon: FileText },
                     { label: "Inventario", href: "/inventory", icon: Package },
                     { label: "Menú Digital", href: "/digital-menu", icon: Bike },
+                    // Contabilidad y Estadísticas del navbar: entre 768 y 1023px solo hay este menú.
+                    { label: "Gastos", href: "/expenses", icon: Coins },
+                    { label: "Clientes", href: "/customers", icon: Users },
+                    { label: "Estadísticas", href: "/reports", icon: BarChart3 },
                     { label: "Configuración", href: "/settings", icon: Settings },
                     ...(userRole === "admin" || userRole === "owner" ? [{ label: "Usuarios", href: "/users", icon: UserCog }] : []),
                     ...(userRole === "admin" || userRole === "owner" ? [{ label: "Embajadores", href: "/settings/affiliates", icon: Gift }] : []),
