@@ -84,7 +84,7 @@ psql --version
 pg_dump --version
 
 # Ejecutar rollback
-psql "$STAGING_DB_URL" < supabase/migrations/20260923000000_rollback_rate_limiting.sql
+psql "$STAGING_DB_URL" < supabase/staging/20260923000000_rollback_rate_limiting.sql
 
 # Revisar error y corregir
 # Re-intentar migración

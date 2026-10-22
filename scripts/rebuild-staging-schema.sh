@@ -16,7 +16,7 @@ STAGING_PROJECT_ID="llzdxcujvagctnzjymqh"
 PENDING_MIGRATIONS=(
     "supabase/migrations/20260923000000_add_rate_limiting.sql"
     "supabase/migrations/20261001000200_create_workflow_versions.sql"
-    "supabase/migrations/20250131000001_add_exec_sql_function.sql"
+    "supabase/staging/20250131000001_add_exec_sql_function.sql"
 )
 
 echo -e "${GREEN}🚀 Reconstrucción de esquema STAGING desde PRODUCCIÓN${NC}"

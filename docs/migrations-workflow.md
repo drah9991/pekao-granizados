@@ -137,7 +137,7 @@ node scripts/migrate-staging.js --dry-run
 node scripts/migrate-staging.js
 
 # 4. Aplicar una específica
-node scripts/migrate-staging.js --file=20250131000000_staging_consolidation.sql
+psql "$STAGING_DB_URL" < supabase/staging/20250131000000_staging_consolidation.sql
 ```
 
 ### Proceso Paso a Paso
@@ -382,8 +382,9 @@ Opción 2: Feature Flag
 ```
 pekao-granizados/
 ├── supabase/
-│   └── migrations/
-│       ├── 20251015032609_..._base_schema.sql    # Schema inicial
+│   ├── migrations/                     # Van a producción
+│   │   └── 20251015032609_..._base_schema.sql    # Schema inicial
+│   └── staging/                        # Solo staging, nunca en producción
 │       └── 20250131000000_staging_consolidation.sql  # Corrección staging
 ├── scripts/
 │   ├── audit-staging-schema.js      # Auditoría completa

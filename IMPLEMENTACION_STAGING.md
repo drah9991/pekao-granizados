@@ -36,7 +36,7 @@
 1. **src/components/StagingBanner.tsx** - Banner visual para staging
 
 ### Database (1 archivo)
-1. **supabase/migrations/20260923000000_rollback_rate_limiting.sql** - Rollback
+1. **supabase/staging/20260923000000_rollback_rate_limiting.sql** - Rollback
 
 ---
 

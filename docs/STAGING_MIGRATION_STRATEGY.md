@@ -77,10 +77,10 @@
 ```bash
 1. Apply exec_sql function first (manual)
    - Go to Supabase SQL Editor
-   - Run: supabase/migrations/20250131000001_add_exec_sql_function.sql
+   - Run: supabase/staging/20250131000001_add_exec_sql_function.sql
 
 2. Apply consolidation migration
-   node scripts/migrate-staging.js --file=20250131000000_staging_consolidation.sql
+   psql "$STAGING_DB_URL" < supabase/staging/20250131000000_staging_consolidation.sql
 
 3. Apply remaining 94 migrations sequentially
    node scripts/migrate-staging.js
@@ -132,7 +132,7 @@
 
 ```sql
 -- Run this in Supabase SQL Editor FIRST
--- File: supabase/migrations/20250131000001_add_exec_sql_function.sql
+-- File: supabase/staging/20250131000001_add_exec_sql_function.sql
 
 create or replace function public.exec_sql(sql_query text)
 returns json

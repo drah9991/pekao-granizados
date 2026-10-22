@@ -405,7 +405,7 @@ testRateLimiting().catch(console.error);
 
 ### Plan de Rollback para Migraciones
 
-**Archivo: `supabase/migrations/20260923000000_rollback_rate_limiting.sql`**
+**Archivo: `supabase/staging/20260923000000_rollback_rate_limiting.sql`**
 ```sql
 -- ROLLBACK: Eliminar rate limiting
 
@@ -423,7 +423,7 @@ COMMENT ON DATABASE postgres IS 'Rate limiting rollback executed';
 
 **Ejecutar rollback:**
 ```bash
-psql "$STAGING_DB_URL" < supabase/migrations/20260923000000_rollback_rate_limiting.sql
+psql "$STAGING_DB_URL" < supabase/staging/20260923000000_rollback_rate_limiting.sql
 ```
 
 ### Backup antes de cambios

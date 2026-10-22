@@ -178,7 +178,7 @@ A: RLS es "defense in depth":
 **Q: ¿Las migraciones son reversibles?**
 A: Sí, incluimos rollback SQL:
 ```bash
-psql "$STAGING_DB_URL" < supabase/migrations/20260923000000_rollback_rate_limiting.sql
+psql "$STAGING_DB_URL" < supabase/staging/20260923000000_rollback_rate_limiting.sql
 ```
 
 **Q: ¿Cómo verificar que RLS está activo?**
