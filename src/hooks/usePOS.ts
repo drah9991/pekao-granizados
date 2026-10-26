@@ -27,6 +27,8 @@ export function usePOS() {
   // al terminar reactivaría el botón de cobro mientras una venta sigue esperando respuesta.
   const [isSyncing, setIsSyncing] = useState(false);
   const saleInFlightRef = useRef(false);
+  // Evita dos sincronizaciones a la vez (evento online + montaje) enviando la misma cola.
+  const syncInFlightRef = useRef(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [retryBackoffDelay, setRetryBackoffDelay] = useState(1000);
   const [consecutiveFailures, setConsecutiveFailures] = useState(0);
@@ -50,7 +52,7 @@ export function usePOS() {
 
   // ── handleSync must be declared BEFORE any useEffect that calls it ──────────
   const handleSync = useCallback(async () => {
-    if (!navigator.onLine) {
+    if (!navigator.onLine || syncInFlightRef.current) {
       return;
     }
 
@@ -61,6 +63,7 @@ export function usePOS() {
       return;
     }
 
+    syncInFlightRef.current = true;
     setIsSyncing(true);
     let successCount = 0;
     let hasFailure = false;
@@ -125,6 +128,7 @@ export function usePOS() {
       const msg = error instanceof Error ? error.message : "Error desconocido";
       notifyCritical("Error durante la sincronización: " + msg);
     } finally {
+      syncInFlightRef.current = false;
       setIsSyncing(false);
     }
   }, [queryClient, notifyInfo, notifyCritical]);
