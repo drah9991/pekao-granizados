@@ -15,6 +15,7 @@ import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { Printer, Search, Plus, Calendar, RotateCcw, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { escapeHtml } from "@/utils/Sales/printUtils";
 import { bogotaDateKey, bogotaDayStart, bogotaDaysAgo, bogotaNextDayStart } from "@/utils/bogotaDate";
 
 export default function CashReconciliations() {
@@ -182,7 +183,7 @@ export default function CashReconciliations() {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Reporte de Arqueo - ${turn.store?.name || "Caja"}</title>
+          <title>Reporte de Arqueo - ${escapeHtml(turn.store?.name || "Caja")}</title>
           <style>
             body { font-family: 'Courier New', Courier, monospace; padding: 20px; color: #000; }
             .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 20px; }
@@ -195,18 +196,18 @@ export default function CashReconciliations() {
         <body onload="window.print(); window.close();">
           <div class="header">
             <div class="title">PEKAO GRANIZADOS</div>
-            <div>${turn.store?.name || "Caja Principal"}</div>
+            <div>${escapeHtml(turn.store?.name || "Caja Principal")}</div>
             <div>Reporte de Cuadre de Caja</div>
           </div>
           <div class="row"><strong>Fecha Inicio:</strong> <span>${format(new Date(turn.opened_at), "dd/MM/yyyy HH:mm")}</span></div>
           <div class="row"><strong>Fecha Fin:</strong> <span>${turn.closed_at ? format(new Date(turn.closed_at), "dd/MM/yyyy HH:mm") : "ACTIVO"}</span></div>
-          <div class="row"><strong>Responsable:</strong> <span>${turn.profile?.name || "Desconocido"}</span></div>
+          <div class="row"><strong>Responsable:</strong> <span>${escapeHtml(turn.profile?.name || "Desconocido")}</span></div>
           <div class="row"><strong>Estado:</strong> <span>${turn.status === "closed" ? "Cerrado" : "Abierto"}</span></div>
           
           <div class="totals">
             <div class="row"><strong>Monto Inicial:</strong> <span>$${Number(turn.opening_amount || 0).toLocaleString()}</span></div>
             <div class="row"><strong>Monto Cierre:</strong> <span>$${turn.closing_amount !== null ? "$" + Number(turn.closing_amount).toLocaleString() : "N/A"}</span></div>
-            <div class="row"><strong>Notas:</strong> <span>${turn.notes || "Sin observaciones"}</span></div>
+            <div class="row"><strong>Notas:</strong> <span>${escapeHtml(turn.notes || "Sin observaciones")}</span></div>
           </div>
           <div class="footer">
             <p>Impreso el ${format(new Date(), "dd/MM/yyyy HH:mm")}</p>

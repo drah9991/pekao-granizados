@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
-  const { user, isLoading, userRole } = useAuth();
+  const { user, isLoading, userRole, isSuperAdmin } = useAuth();
 
   if (isLoading) {
     return (
@@ -27,9 +27,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     return <Navigate to="/auth" replace />;
   }
 
-  if (requiredRole && userRole) {
+  // Sin rol (cliente de la app móvil, o alta de usuario a medias) no se entra a
+  // una pantalla que exige rol; antes `userRole` nulo se saltaba la comprobación.
+  if (requiredRole && !isSuperAdmin) {
     const rolesArray = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    if (!rolesArray.includes(userRole)) {
+    if (!userRole || !rolesArray.includes(userRole)) {
       return <Navigate to="/dashboard" replace />;
     }
   }

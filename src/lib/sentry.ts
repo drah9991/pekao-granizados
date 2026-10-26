@@ -14,9 +14,10 @@ export function initSentry() {
     enabled: import.meta.env.PROD,      // only send in production
     integrations: [
       Sentry.browserTracingIntegration(),
+      // Los replays no deben llevar nombres, teléfonos ni documentos de clientes (Ley 1581).
       Sentry.replayIntegration({
-        maskAllText: false,
-        blockAllMedia: false,
+        maskAllText: true,
+        blockAllMedia: true,
       }),
     ],
     ignoreErrors: [

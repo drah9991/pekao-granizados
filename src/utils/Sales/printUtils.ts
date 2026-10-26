@@ -8,7 +8,7 @@ import { toast } from "sonner";
  * Sanitizes a value for safe HTML injection via document.write.
  * Prevents DOM-based XSS by escaping all HTML special characters.
  */
-function escapeHtml(value: unknown): string {
+export function escapeHtml(value: unknown): string {
   const str = String(value ?? "");
   return str
     .replace(/&/g, "&amp;")

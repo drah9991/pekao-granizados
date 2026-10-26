@@ -11,6 +11,7 @@ import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { Printer, FileSpreadsheet, Search, Calendar, RefreshCcw } from "lucide-react";
 import { bogotaDateKey, bogotaDayStart, bogotaDaysAgo, bogotaNextDayStart } from "@/utils/bogotaDate";
+import { escapeHtml } from "@/utils/Sales/printUtils";
 
 export default function CanceledOrders() {
   const { storeId } = useAuth();
@@ -119,11 +120,11 @@ export default function CanceledOrders() {
       <tr>
         <td>${format(new Date(item.created_at), "dd/MM/yyyy HH:mm")}</td>
         <td>${item.cancelled_at ? format(new Date(item.cancelled_at), "dd/MM/yyyy HH:mm") : "N/A"}</td>
-        <td>${item.product_name}</td>
-        <td>${item.quantity}</td>
-        <td>${item.cancellation_reason}</td>
-        <td>${item.cancelled_by}</td>
-        <td>${item.created_by}</td>
+        <td>${escapeHtml(item.product_name)}</td>
+        <td>${escapeHtml(item.quantity)}</td>
+        <td>${escapeHtml(item.cancellation_reason)}</td>
+        <td>${escapeHtml(item.cancelled_by)}</td>
+        <td>${escapeHtml(item.created_by)}</td>
       </tr>
     `).join("");
 
