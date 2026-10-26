@@ -55,9 +55,15 @@ export default function MenuPhotoDialog({
         reader.onerror = error => reject(error);
       });
 
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("Tu sesión expiró. Vuelve a iniciar sesión.");
+      }
+
       const response = await fetch('/api/extract-menu', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ 
           imageBase64: base64,
           mimeType: selectedFile.type
@@ -65,7 +71,8 @@ export default function MenuPhotoDialog({
       });
 
       if (!response.ok) {
-        throw new Error("Error al comunicarse con el AI Gateway");
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || "Error al comunicarse con el AI Gateway");
       }
 
       const products = await response.json();
@@ -79,7 +86,7 @@ export default function MenuPhotoDialog({
       }
     } catch (error) {
       console.error("AI Error:", error);
-      toast.error("Hubo un error procesando la imagen con IA.");
+      toast.error(error instanceof Error ? error.message : "Hubo un error procesando la imagen con IA.");
     } finally {
       setIsAnalyzing(false);
     }
