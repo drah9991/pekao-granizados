@@ -226,6 +226,8 @@ interface EditOrderDialogProps {
 }
 
 export function EditOrderDialog({ order, isOpen, onClose, onSave }: EditOrderDialogProps) {
+  // La base rechaza cambios directos a órdenes cerradas: una completada se anula con el botón ⊘ (RPC que devuelve stock).
+  const isClosed = order?.status === "completed" || order?.status === "cancelled";
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md bg-background border-border/40 rounded-[2.5rem] p-10 shadow-pro max-h-[90dvh] overflow-y-auto custom-scrollbar">
@@ -243,8 +245,9 @@ export function EditOrderDialog({ order, isOpen, onClose, onSave }: EditOrderDia
         <div className="space-y-6">
           <div className="space-y-3">
             <label className="text-[9px] font-black text-[#00F3FF] uppercase tracking-[0.3em] italic pl-2">Estado de la Orden</label>
-            <Select 
-              defaultValue={order.status} 
+            <Select
+              defaultValue={order.status}
+              disabled={isClosed}
               onValueChange={(val: OrderStatus) => onSave(order.id, { status: val })}
             >
               <SelectTrigger className="h-16 rounded-[1.5rem] bg-muted/40 border-border text-[11px] font-black uppercase tracking-widest italic font-space-grotesk shadow-pro">
@@ -258,6 +261,13 @@ export function EditOrderDialog({ order, isOpen, onClose, onSave }: EditOrderDia
                 ))}
               </SelectContent>
             </Select>
+            {isClosed && (
+              <p className="text-[10px] font-bold text-muted-foreground pl-2">
+                {order.status === "completed"
+                  ? "Para anular una venta completada usa el botón ⊘ de la fila: devuelve el stock."
+                  : "Una orden anulada no se puede reabrir."}
+              </p>
+            )}
           </div>
         </div>
 
