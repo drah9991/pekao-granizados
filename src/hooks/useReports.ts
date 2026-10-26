@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
 import { toast } from "sonner";
 import { reportService, type ReportConfig } from "@/lib/ReportService";
 import { formatCOP } from "@/lib/currency";
@@ -76,8 +76,9 @@ export function useReports(storeId: string | null) {
         customers (name)
       `)
       .eq('store_id', storeId)
-      .gte('created_at', dateRange.from.toISOString())
-      .lte('created_at', dateRange.to.toISOString())
+      // El calendario devuelve "hasta" a las 00:00: sin endOfDay se perdía el último día.
+      .gte('created_at', startOfDay(dateRange.from).toISOString())
+      .lte('created_at', endOfDay(dateRange.to).toISOString())
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -127,8 +128,8 @@ export function useReports(storeId: string | null) {
         products (name)
       `)
       .eq('store_id', storeId)
-      .gte('created_at', dateRange.from.toISOString())
-      .lte('created_at', dateRange.to.toISOString())
+      .gte('created_at', startOfDay(dateRange.from).toISOString())
+      .lte('created_at', endOfDay(dateRange.to).toISOString())
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -145,8 +146,15 @@ export function useReports(storeId: string | null) {
 
   const calculateSummary = (data: Record<string, unknown>[]) => {
     if (reportType === "sales") {
-      const total = data.reduce((acc, curr) => acc + (curr.Total || 0), 0);
-      setSummary({ total, count: data.length, secondary: `TICKET PROMEDIO: ${formatCOP(total / (data.length || 1))}` });
+      // Las anuladas se listan en el reporte, pero no cuentan como ventas.
+      const completed = data.filter(o => o.Estado === "completed");
+      const total = completed.reduce((acc, curr) => acc + (Number(curr.Total) || 0), 0);
+      const cancelled = data.length - completed.length;
+      setSummary({
+        total,
+        count: completed.length,
+        secondary: `TICKET PROMEDIO: ${formatCOP(total / (completed.length || 1))} · ANULADAS: ${cancelled}`
+      });
     } else if (reportType === "inventory") {
       const lowStock = data.filter(i => i.Estado === "BAJO").length;
       setSummary({ count: data.length, secondary: `ITEMS BAJO STOCK: ${lowStock}` });

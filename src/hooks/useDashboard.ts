@@ -95,7 +95,7 @@ export function useDashboard(storeId: string | null) {
         : null;
 
       const [currentRes, comparisonRes, inventoryRes, sizesRes, expensesRes] = await Promise.all([
-        supabase.from("orders").select("id, total, subtotal, tip_amount, delivery_fee, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end),
+        supabase.from("orders").select("id, total, subtotal, tip_amount, delivery_fee, status, created_at, payment, order_items(qty, name, price)").eq("store_id", storeId).gte("created_at", ranges.current.start).lte("created_at", ranges.current.end).order("created_at", { ascending: false }),
         supabase.from("orders").select("total, status").eq("store_id", storeId).gte("created_at", ranges.comparison.start).lte("created_at", ranges.comparison.end),
         supabase.from("inventory_items").select("name, stock, min_stock, is_mixture").eq("store_id", storeId),
         supabase.from("sizes").select("name, multiplier").eq("store_id", storeId),

@@ -15,6 +15,7 @@ import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { Printer, Search, Plus, Calendar, RotateCcw, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { bogotaDateKey, bogotaDayStart, bogotaDaysAgo, bogotaNextDayStart } from "@/utils/bogotaDate";
 
 export default function CashReconciliations() {
   const { storeId, user } = useAuth();
@@ -22,12 +23,8 @@ export default function CashReconciliations() {
   const navigate = useNavigate();
 
   // Filters
-  const [fromDate, setFromDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30); // 30 days ago
-    return d.toISOString().split("T")[0];
-  });
-  const [toDate, setToDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
+  const [fromDate, setFromDate] = useState<string>(() => bogotaDaysAgo(30));
+  const [toDate, setToDate] = useState<string>(() => bogotaDateKey());
   const [selectedCaja, setSelectedCaja] = useState<string>("all");
   const [selectedResponsable, setSelectedResponsable] = useState<string>("all");
   const [selectedState, setSelectedState] = useState<string>("all");
@@ -79,10 +76,10 @@ export default function CashReconciliations() {
         `, { count: "exact" });
 
       if (fromDate) {
-        query = query.gte("opened_at", `${fromDate}T00:00:00Z`);
+        query = query.gte("opened_at", bogotaDayStart(fromDate));
       }
       if (toDate) {
-        query = query.lte("opened_at", `${toDate}T23:59:59Z`);
+        query = query.lt("opened_at", bogotaNextDayStart(toDate));
       }
       if (selectedCaja !== "all") {
         query = query.eq("store_id", selectedCaja);

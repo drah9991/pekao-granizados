@@ -10,17 +10,14 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { Printer, FileSpreadsheet, Search, Calendar, RefreshCcw } from "lucide-react";
+import { bogotaDateKey, bogotaDayStart, bogotaDaysAgo, bogotaNextDayStart } from "@/utils/bogotaDate";
 
 export default function CanceledOrders() {
   const { storeId } = useAuth();
 
   // Filters
-  const [fromDate, setFromDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 7); // 7 days ago
-    return d.toISOString().split("T")[0];
-  });
-  const [toDate, setToDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
+  const [fromDate, setFromDate] = useState<string>(() => bogotaDaysAgo(7));
+  const [toDate, setToDate] = useState<string>(() => bogotaDateKey());
 
   // Data State
   const [items, setItems] = useState<any[]>([]);
@@ -28,6 +25,10 @@ export default function CanceledOrders() {
 
   // Fetch Canceled Orders with Items
   const fetchCanceledOrders = async () => {
+    if (!storeId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       // 1. Fetch cancelled orders
@@ -42,17 +43,19 @@ export default function CanceledOrders() {
           cancelled_by_profile:profiles!orders_cancelled_by_fkey(name),
           order_items(
             id,
-            quantity,
+            qty,
             products(name)
           )
         `)
-        .eq("status", "cancelled");
+        .eq("status", "cancelled")
+        .eq("store_id", storeId);
 
+      // Se filtra por fecha de anulación, en hora de Bogotá.
       if (fromDate) {
-        query = query.gte("created_at", `${fromDate}T00:00:00Z`);
+        query = query.gte("cancelled_at", bogotaDayStart(fromDate));
       }
       if (toDate) {
-        query = query.lte("created_at", `${toDate}T23:59:59Z`);
+        query = query.lt("cancelled_at", bogotaNextDayStart(toDate));
       }
 
       const { data, error } = await query.order("cancelled_at", { ascending: false });
@@ -84,7 +87,7 @@ export default function CanceledOrders() {
               created_by: order.created_by_profile?.name || "Desconocido",
               cancelled_by: order.cancelled_by_profile?.name || "Desconocido",
               product_name: item.products?.name || "Producto desconocido",
-              quantity: item.quantity
+              quantity: item.qty
             });
           });
         }
@@ -100,7 +103,8 @@ export default function CanceledOrders() {
 
   useEffect(() => {
     fetchCanceledOrders();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recarga solo cuando la sede está disponible; los filtros se aplican con el botón
+  }, [storeId]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
