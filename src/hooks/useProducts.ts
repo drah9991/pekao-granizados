@@ -258,12 +258,13 @@ export function useProducts() {
         if (insError) throw insError;
 
         if (formData.stock && parseFloat(formData.stock) > 0 && storeId) {
-            await supabase.from('store_stock').insert({
+            const { error: stockErr } = await supabase.from('store_stock').insert({
                 product_id: newProd.id,
                 store_id: storeId,
                 qty: parseFloat(formData.stock),
                 min_qty: 10
             });
+            if (stockErr) toast.error("Producto creado, pero no se pudo registrar su stock inicial: " + stockErr.message);
         }
       }
 

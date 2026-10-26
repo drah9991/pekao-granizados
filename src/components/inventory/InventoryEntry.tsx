@@ -160,24 +160,27 @@ export default function InventoryEntry({ storeId, onSuccess }: InventoryEntryPro
       // 2. Sync with inventory_items (Recipe/Mixture level) if applicable
       // This is crucial for Granizados and products that deduct from tanks
       try {
-        const { data: recipes } = await supabase
+        const { data: recipes, error: recipesErr } = await supabase
           .from("recipes")
           .select("inventory_item_id, quantity_required")
           .eq("product_id", selectedProductId);
+        if (recipesErr) throw recipesErr;
 
         if (recipes && recipes.length > 0) {
           for (const recipe of recipes) {
             // Use the security definer RPC to bypass RLS for inventory items
-            await supabase.rpc('increment_inventory_stock', {
+            const { error: incrementErr } = await supabase.rpc('increment_inventory_stock', {
               p_item_id: recipe.inventory_item_id,
               p_store_id: activeStoreId,
               p_amount: qtyNum * (recipe.quantity_required || 1)
             });
+            if (incrementErr) throw incrementErr;
           }
         }
       } catch (recipeErr) {
         console.error("Recipe Sync Error (Non-critical):", recipeErr);
         // We don't block the whole process if recipe sync fails, as store_stock is updated
+        toast.warning("Stock del producto actualizado, pero no se pudo sumar al tanque. Revísalo en Preparación.");
       }
 
       // 3. Log movement for audit

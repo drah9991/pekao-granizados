@@ -32,7 +32,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [amount, setAmount] = useState<string>("");
   const [notes, setNotes] = useState("");
-  const { showBlockingModal } = useAlerts();
+  const { showBlockingModal, notifyCritical } = useAlerts();
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -51,6 +51,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
       setAmount("");
     } catch (e) {
       console.error('Error al abrir turno:', e);
+      notifyCritical("No se pudo abrir el turno. Revisa la conexión e intenta de nuevo.");
     }
   };
 
@@ -63,12 +64,14 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
       let cashExpenses = 0;
 
       // Calcular ventas en efectivo durante el turno
-      const { data: orders } = await supabase
+      const { data: orders, error: ordersError } = await supabase
         .from("orders")
         .select("total, payment")
         .eq("store_id", activeTurn.store_id)
         .eq("status", "completed")
         .gte("created_at", activeTurn.opened_at);
+      // Sin las ventas el esperado saldría solo con la base: mejor no cerrar.
+      if (ordersError) throw ordersError;
 
       if (orders) {
         orders.forEach((order: any) => {
@@ -84,11 +87,14 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
       }
 
       // Calcular gastos registrados durante el turno
-      const { data: expenses } = await supabase
+      // expense_date es un día (date): compararlo con el instante de apertura omitía
+      // los gastos de un turno abierto de noche. Se usa la hora de registro.
+      const { data: expenses, error: expensesError } = await supabase
         .from("expenses")
         .select("amount")
         .eq("store_id", activeTurn.store_id)
-        .gte("expense_date", activeTurn.opened_at);
+        .gte("created_at", activeTurn.opened_at);
+      if (expensesError) throw expensesError;
         
       if (expenses) {
         cashExpenses = expenses.reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
@@ -117,6 +123,7 @@ export function ActiveShiftCard({ className }: ActiveShiftCardProps) {
       navigate('/cash-register');
     } catch (e) {
       console.error('Error al cerrar turno:', e);
+      notifyCritical("No se pudo calcular el esperado de caja ni cerrar el turno. Intenta de nuevo.");
     }
   };
 

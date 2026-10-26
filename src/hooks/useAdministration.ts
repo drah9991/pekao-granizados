@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { typedFrom } from "@/integrations/supabase/types-extensions";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
@@ -39,35 +40,51 @@ export function useAdministration() {
     setIsProcessing(true);
     try {
       if (editingUser) {
-        await supabase.from("profiles").update({
+        const { error: profileErr } = await supabase.from("profiles").update({
           name: formData.name,
           phone: formData.phone,
           store_id: formData.store_id,
           document_id: formData.document_id,
           consent_habeas_data: formData.consent_habeas_data,
         }).eq("id", editingUser.id);
+        if (profileErr) throw profileErr;
 
         if (formData.password) {
-            await supabase.functions.invoke('update-user', { body: { userId: editingUser.id, password: formData.password } });
+            const { error: passwordErr } = await supabase.functions.invoke('update-user', { body: { userId: editingUser.id, password: formData.password } });
+            if (passwordErr) throw passwordErr;
         }
 
-        await supabase.from("user_roles").delete().eq("user_id", editingUser.id);
-        await supabase.from("user_roles").insert({ user_id: editingUser.id, role: formData.role as string });
+        const { error: roleDeleteErr } = await supabase.from("user_roles").delete().eq("user_id", editingUser.id);
+        if (roleDeleteErr) throw roleDeleteErr;
+        const { error: roleInsertErr } = await supabase.from("user_roles").insert({ user_id: editingUser.id, role: formData.role as string });
+        if (roleInsertErr) {
+          // Sin rol el usuario pierde acceso a todo (ProtectedRoute): se le devuelve el anterior.
+          const previousRole = editingUser.role as string | null;
+          if (previousRole) {
+            // types.ts está desactualizado (role es texto en la base): de ahí el cast.
+            await supabase.from("user_roles").insert({ user_id: String(editingUser.id), role: previousRole } as TablesInsert<"user_roles">);
+          }
+          throw roleInsertErr;
+        }
       } else {
-        const { data: authData } = await supabase.auth.signUp({
+        const { data: authData, error: signUpErr } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: { data: { name: formData.name } }
         });
+        if (signUpErr) throw signUpErr;
         if (authData.user) {
-            await supabase.from("profiles").update({ store_id: formData.store_id as string, document_id: formData.document_id as string, consent_habeas_data: formData.consent_habeas_data as boolean }).eq("id", authData.user.id);
-            await supabase.from("user_roles").insert({ user_id: authData.user.id, role: formData.role as string });
+            const { error: newProfileErr } = await supabase.from("profiles").update({ store_id: formData.store_id as string, document_id: formData.document_id as string, consent_habeas_data: formData.consent_habeas_data as boolean }).eq("id", authData.user.id);
+            if (newProfileErr) throw newProfileErr;
+            const { error: newRoleErr } = await supabase.from("user_roles").insert({ user_id: authData.user.id, role: formData.role as string });
+            if (newRoleErr) throw newRoleErr;
         }
       }
       toast.success("Usuario guardado");
       fetchUsers();
     } catch (e) {
-      toast.error("Error al guardar usuario");
+      const msg = e instanceof Error ? e.message : (e as { message?: string })?.message;
+      toast.error("Error al guardar usuario" + (msg ? ": " + msg : ""));
     } finally {
       setIsProcessing(false);
     }

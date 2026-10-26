@@ -24,7 +24,11 @@ export function useCashRegister(storeId: string | null) {
       .eq("store_id", storeId)
       .order("opened_at", { ascending: false })
       .limit(50);
-    if (!error && data) {
+    if (error) {
+      toast.error("Error al cargar el historial de turnos");
+      return;
+    }
+    if (data) {
       setTurnsHistory(data as unknown as CashTurn[]);
     }
   };

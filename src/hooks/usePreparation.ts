@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseRpc } from "@/integrations/supabase/types-extensions";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
@@ -293,8 +294,9 @@ export function usePreparation() {
         return;
       }
 
-      await supabase.from("inventory_items").update({ stock: 0 }).eq("id", mixtureId);
-      await supabase.from("movements").insert({
+      const { error: emptyErr } = await supabase.from("inventory_items").update({ stock: 0 }).eq("id", mixtureId);
+      if (emptyErr) throw emptyErr;
+      const { error: emptyMoveErr } = await supabase.from("movements").insert({
         product_id: selectedProductId,
         store_id: storeId,
         qty: currentStockBefore,
@@ -302,6 +304,11 @@ export function usePreparation() {
         reason: `VACIADO DE TANQUE: ${selectedFlavor?.name} (${(currentStockBefore / 1000).toFixed(1)}L)`,
         user_id: user?.id
       });
+      if (emptyMoveErr) {
+        // Sin el movimiento el kardex no cuadra: se deshace el vaciado.
+        await supabase.from("inventory_items").update({ stock: currentStockBefore }).eq("id", mixtureId);
+        throw emptyMoveErr;
+      }
 
       toast.success("Tanque vaciado.");
       setCurrentMixtureStock(0);
@@ -338,12 +345,15 @@ export function usePreparation() {
     
     setIsProcessing(true);
     try {
-      await supabase.rpc('adjust_inventory_item_stock', {
+      // Desde 20261019040000 un cajero no puede sumar stock: sin revisar el error, el
+      // kardex registraba la preparación aunque el tanque no cambiara.
+      const { error: adjustErr } = await supabase.rpc('adjust_inventory_item_stock', {
         item_id: inventoryItemId,
         quantity: volumeMl
       });
+      if (adjustErr) throw adjustErr;
 
-      await supabase.from("movements").insert({
+      const { error: prepMoveErr } = await supabase.from("movements").insert({
         product_id: selectedProductId,
         store_id: storeId,
         qty: volumeMl,
@@ -351,6 +361,11 @@ export function usePreparation() {
         reason: `Preparación Lote: ${liters}L para ${product?.name}`,
         user_id: user?.id
       });
+      if (prepMoveErr) {
+        // Se revierte la suma para que reintentar no la aplique dos veces.
+        await supabaseRpc('adjust_inventory_item_stock', { item_id: inventoryItemId, quantity: -volumeMl });
+        throw prepMoveErr;
+      }
 
       toast.success(`Se han añadido ${liters}L a ${product?.name}`);
       // No reiniciamos el producto para que el usuario vea su stock actualizado
@@ -378,11 +393,18 @@ export function usePreparation() {
 
       if (recipeData && recipeData.length > 0) {
         const invId = recipeData[0].inventory_item_id;
-        await supabase.rpc('adjust_inventory_item_stock', {
+        // Solo se borra el registro si el stock se pudo revertir.
+        const { error: revertErr } = await supabase.rpc('adjust_inventory_item_stock', {
           item_id: invId,
           quantity: -log.qty
         });
-        await supabase.from("movements").delete().eq("id", log.id);
+        if (revertErr) throw revertErr;
+        const { error: deleteErr } = await supabase.from("movements").delete().eq("id", log.id);
+        if (deleteErr) {
+          // El registro sigue visible: se vuelve a sumar para que borrarlo otra vez no reste dos veces.
+          await supabaseRpc('adjust_inventory_item_stock', { item_id: invId, quantity: log.qty });
+          throw deleteErr;
+        }
         toast.success("Registro eliminado.");
         fetchRecentLogs(selectedProductId);
         fetchCurrentMixtureStock();

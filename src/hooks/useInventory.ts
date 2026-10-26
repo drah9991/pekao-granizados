@@ -149,10 +149,10 @@ export function useInventory() {
       const cats = Array.from(new Set([...stockCats, ...prodCats].filter(Boolean))).sort();
       setCategories(cats);
 
-      // Extract unique suppliers from movements AND database suppliers
-      const moveSups = (formattedMove || []).map(m => m.supplier_name?.trim()).filter(Boolean) as string[];
+      // Proveedores de la tabla suppliers. (La lista de movimientos ya no se carga
+      // aquí desde b49a7e9; su referencia rompía la carga de Inventario.)
       const dbSupNames = (supsData || []).map(s => s.name?.trim()).filter(Boolean) as string[];
-      const sups = Array.from(new Set([...moveSups, ...dbSupNames])).sort();
+      const sups = Array.from(new Set(dbSupNames)).sort();
       setSuppliers(sups);
     } catch (err) {
       console.error("Error loading inventory:", err);
@@ -287,12 +287,14 @@ export function useInventory() {
         if (moveErr) throw moveErr;
 
         // 2. Adjust Stock qty in store_stock
-        const { data: existingStock } = await supabase
+        const { data: existingStock, error: stockReadErr } = await supabase
           .from("store_stock")
           .select("id, qty")
           .eq("product_id", item.productId)
           .eq("store_id", storeId)
           .maybeSingle();
+        // Si la lectura falla no hay que tratarlo como "no existe" e insertar otra fila.
+        if (stockReadErr) throw stockReadErr;
 
         if (existingStock) {
           const newQty = tipo.startsWith("Entrada")
@@ -324,7 +326,7 @@ export function useInventory() {
       // If saleDeCaja is checked and we have a cost, record cash register movement or expense
       if (saleDeCaja && calculatedPurchaseTotal > 0) {
         // Insert expense record
-        await supabase
+        const { error: expenseErr } = await supabase
           .from("expenses" as any)
           .insert({
             store_id: storeId,
@@ -333,6 +335,12 @@ export function useInventory() {
             category: "Mercancía / Insumos",
             created_at: new Date().toISOString()
           } as any);
+        // El stock ya se movió: no se aborta (reintentar duplicaría el movimiento),
+        // pero sin el gasto la caja no cuadra al cerrar, así que se avisa.
+        if (expenseErr) {
+          console.error("Error registering purchase expense:", expenseErr);
+          toast.warning("Movimiento registrado, pero el gasto no se pudo guardar: regístralo en Gastos.");
+        }
       }
 
       toast.success("Movimiento registrado con éxito");

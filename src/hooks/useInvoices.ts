@@ -62,13 +62,16 @@ export function useInvoices() {
     if (!storeId) return;
     setLoadingOrders(true);
     try {
-      const { data: orders } = await supabase
+      const { data: orders, error: ordersErr } = await supabase
         .from("orders")
         .select(`id, total, created_at, customer_details:customers!orders_customer_id_fkey(name)`)
         .eq('store_id', storeId)
         .eq('status', 'completed');
+      if (ordersErr) throw ordersErr;
 
-      const { data: existingInvoices } = await supabase.from("invoices").select('order_id');
+      // Si esta consulta falla, todas las ventas parecerían facturables (doble facturación).
+      const { data: existingInvoices, error: invoicesErr } = await supabase.from("invoices").select('order_id');
+      if (invoicesErr) throw invoicesErr;
       const invoicedIds = new Set(existingInvoices?.map(inv => inv.order_id));
       
       const available = orders?.filter(o => !invoicedIds.has(o.id)).map(o => ({
@@ -79,6 +82,10 @@ export function useInvoices() {
       })) || [];
 
       setAvailableOrders(available);
+    } catch (error: unknown) {
+      console.error("Error fetching available orders:", error);
+      toast.error("Error al cargar las ventas por facturar");
+      setAvailableOrders([]);
     } finally {
       setLoadingOrders(false);
     }
