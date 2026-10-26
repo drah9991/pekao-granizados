@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { calculateOptimisticTanks, calculateOptimisticProducts } from "./inventory-sync-utils";
 
 // Mock validation checking helper

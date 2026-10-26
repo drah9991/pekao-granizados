@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { formatCOP, formatCOPCompact, parseCOP } from "../lib/currency";
 
 describe("Currency Utilities (COP)", () => {

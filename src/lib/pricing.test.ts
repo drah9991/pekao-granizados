@@ -4,7 +4,7 @@
  * Run with: bun test src/lib/pricing.test.ts
  */
 
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   hasEnoughStock,
   hasEnoughStockForUpdate,

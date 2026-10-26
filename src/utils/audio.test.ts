@@ -1,22 +1,22 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ── Mocks for browser APIs not available in Bun ──────────────────────────────
 
 const mockOscillator = {
   type: "sine",
-  frequency: { setValueAtTime: mock(() => {}) },
-  connect: mock(() => {}),
-  start: mock(() => {}),
-  stop: mock(() => {}),
+  frequency: { setValueAtTime: vi.fn(() => {}) },
+  connect: vi.fn(() => {}),
+  start: vi.fn(() => {}),
+  stop: vi.fn(() => {}),
 };
 
 const mockGain = {
   gain: {
-    setValueAtTime: mock(() => {}),
-    linearRampToValueAtTime: mock(() => {}),
-    exponentialRampToValueAtTime: mock(() => {}),
+    setValueAtTime: vi.fn(() => {}),
+    linearRampToValueAtTime: vi.fn(() => {}),
+    exponentialRampToValueAtTime: vi.fn(() => {}),
   },
-  connect: mock(() => {}),
+  connect: vi.fn(() => {}),
 };
 
 // Factory to create a fresh mock AudioContext for each test
@@ -25,9 +25,9 @@ function makeMockAudioCtx(state: "running" | "suspended" | "closed" = "running")
     state,
     currentTime: 0,
     destination: {},
-    resume: mock(async () => {}),
-    createOscillator: mock(() => ({ ...mockOscillator })),
-    createGain: mock(() => ({ ...mockGain })),
+    resume: vi.fn(async () => {}),
+    createOscillator: vi.fn(() => ({ ...mockOscillator })),
+    createGain: vi.fn(() => ({ ...mockGain })),
   };
 }
 

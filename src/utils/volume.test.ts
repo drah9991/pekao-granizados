@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { mlToLiters, litersToMl, mlToCups, mlToServings, OZ_TO_ML, STANDARD_SERVING_ML, CUP_YIELD_BASE_ML } from "./volume";
 
 describe("Volume Utilities", () => {
