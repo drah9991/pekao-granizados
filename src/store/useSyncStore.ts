@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, StateStorage, createJSONStorage } from "zustand/middleware";
 import { offlineService } from "@/lib/OfflineService";
+import { isJsonSerializable } from "@/lib/salePayload";
 
 export interface SyncOrder {
   id: string;
@@ -47,6 +48,10 @@ export const useSyncStore = create<SyncStoreState>()(
       syncQueue: [],
       failedQueue: [],
       addToQueue: (payload) => {
+        // Una sola venta no serializable impediría persistir toda la cola (se pierden las demás).
+        if (!isJsonSerializable(payload)) {
+          throw new Error("La venta no se puede guardar en la cola offline: datos inválidos.");
+        }
         const id = (payload.id as string) || crypto.randomUUID();
         const syncOrder: SyncOrder = {
           id,

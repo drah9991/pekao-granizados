@@ -47,4 +47,16 @@ describe("useSyncStore failed queue", () => {
     expect(syncQueue[0].id).toBe("sale-1");
     expect(syncQueue[0].payload).toEqual(SALE);
   });
+
+  it("refuses a payload that cannot be serialized, keeping the rest of the queue persistable", () => {
+    useSyncStore.getState().addToQueue(SALE);
+    const circular: Record<string, unknown> = { id: "sale-2" };
+    circular.payment = { method: circular };
+
+    expect(() => useSyncStore.getState().addToQueue(circular)).toThrow(/cola offline/);
+
+    const { syncQueue } = useSyncStore.getState();
+    expect(syncQueue).toHaveLength(1);
+    expect(syncQueue[0].id).toBe("sale-1");
+  });
 });

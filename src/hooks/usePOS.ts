@@ -13,6 +13,7 @@ import type { PaymentMethod } from "@/components/pos/PaymentDialog";
 import { calculateOptimisticTanks, calculateOptimisticProducts } from "@/lib/inventory-sync-utils";
 import type { Product, CartItem, TankStatus } from "@/lib/inventory-sync-utils";
 import { classifySyncError } from "@/lib/syncErrorPolicy";
+import { isJsonSerializable } from "@/lib/salePayload";
 import type { SyncOutcome } from "@/lib/syncErrorPolicy";
 
 export function usePOS() {
@@ -276,6 +277,12 @@ export function usePOS() {
         items: mappedItems,
         idempotency_key: saleIdempotencyKey
       };
+
+      // Un payload no serializable no llega al servidor ni se puede guardar en la cola:
+      // mejor frenar aquí, con el carrito intacto, que mostrar una venta "exitosa" perdida.
+      if (!isJsonSerializable(salePayload)) {
+        throw new Error("No se pudo preparar la venta (datos de pago inválidos). Elige de nuevo el método de pago.");
+      }
 
       const optimisticOrderId = `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 

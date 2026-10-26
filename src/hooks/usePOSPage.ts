@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAlerts } from "@/hooks/useAlerts";
 import type { Product } from "@/lib/pos-types";
 import { buildCheckoutKey } from "@/lib/checkoutKey";
+import { toPaymentMethod } from "@/lib/salePayload";
 import { useCartStore } from "@/store/useCartStore";
 import type { PaymentMethod } from "@/components/pos/PaymentDialog";
 
@@ -80,7 +81,8 @@ export function usePOSPage() {
       return;
     }
     startTransition(() => {
-      setDefaultPaymentMethod(method);
+      // Defensa: si llega algo que no es un método (p. ej. un evento de clic), efectivo.
+      setDefaultPaymentMethod(toPaymentMethod(method));
       setPaymentDialogIsOpen(true);
     });
   }, [cart.length, selectedCustomer, notifyWarning]);

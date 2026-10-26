@@ -161,7 +161,8 @@ export function CartTotals({
       {/* Final Action */}
       <Button
         className="w-full h-14 sm:h-16 text-base sm:text-lg font-black uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-95 transition-all active:scale-[0.98] rounded-2xl gap-3 relative overflow-hidden group font-dm-sans shadow-lg shadow-primary/20"
-        onClick={onCheckout}
+        // Sin el wrapper, el evento del clic llegaba a onCheckout como método de pago.
+        onClick={() => onCheckout()}
       >
         <Receipt className="w-5 h-5 sm:w-6 sm:h-6" />
         <div className="flex flex-col items-start leading-none">
