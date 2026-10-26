@@ -18,7 +18,8 @@ export function usePOSPage() {
   } = useCart();
 
   const {
-    isProcessing, isOnline, pendingOrdersCount, pendingOrders, processSale, handleSync, checkPendingOrders
+    isProcessing, isOnline, pendingOrdersCount, pendingOrders, failedOrders, retryFailedOrder,
+    processSale, handleSync, checkPendingOrders
   } = usePOS();
 
   const { notifyWarning } = useAlerts();
@@ -128,7 +129,8 @@ export function usePOSPage() {
   return {
     cart, addToCart, updateQuantity, removeItem, subtotal, discount, setDiscount, discountType, setDiscountType,
     discountAmount, total, resetCart, restoreLastCart, selectedCustomer, setSelectedCustomer,
-    isProcessing, isOnline, pendingOrdersCount, pendingOrders, processSale, handleSync, checkPendingOrders,
+    isProcessing, isOnline, pendingOrdersCount, pendingOrders, failedOrders, retryFailedOrder,
+    processSale, handleSync, checkPendingOrders,
     selectedProduct, setSelectedProduct,
     customizeDialogIsOpen, setCustomizeDialogIsOpen,
     paymentDialogIsOpen, setPaymentDialogIsOpen,

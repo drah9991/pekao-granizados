@@ -5,6 +5,7 @@ import { CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { openDB } from 'idb';
+import { classifySyncError } from './lib/syncErrorPolicy';
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -62,6 +63,12 @@ async function syncOrders() {
     interface SyncOrder {
       id: string;
       payload: unknown;
+      timestamp?: string;
+    }
+
+    interface FailedSyncOrder extends SyncOrder {
+      error: { code: string; message: string };
+      failedAt: string;
     }
 
     const parsed = JSON.parse(rawStore);
@@ -82,8 +89,10 @@ async function syncOrders() {
       return;
     }
 
-    let successCount = 0;
-    const remainingQueue = [...queue];
+    // Ids enviados con éxito y ventas rechazadas. Se aplican sobre una lectura fresca de IndexedDB
+    // al final, porque la página puede encolar o mover ventas mientras el SW sincroniza.
+    const syncedIds = new Set<string>();
+    const newlyFailed: FailedSyncOrder[] = [];
 
     /* 
      * INTENTIONAL N+1 PATTERN: Orders must be synchronized sequentially (FIFO) 
@@ -105,42 +114,34 @@ async function syncOrders() {
         });
 
         if (response.ok) {
-          const index = remainingQueue.findIndex((o) => o.id === order.id);
-          if (index > -1) {
-            remainingQueue.splice(index, 1);
-          }
-          successCount++;
+          syncedIds.add(order.id);
         } else {
           const errText = await response.text();
           console.error(`[SW] Order sync failed for order ${order.id}:`, errText);
-          
+
           let pgCode = '';
+          let pgMessage = errText;
           try {
             const parsedErr = JSON.parse(errText);
             pgCode = String(parsedErr.code || '');
+            pgMessage = String(parsedErr.message || errText);
           } catch (_) {
             // ignore JSON parse errors
           }
 
-          const status = response.status;
-          const isValidation = (
-            status === 400 ||
-            status === 409 ||
-            pgCode === 'P0001' ||
-            pgCode.startsWith('23')
-          );
+          const outcome = classifySyncError({ code: pgCode, status: response.status, message: pgMessage });
 
-          if (isValidation) {
-            const index = remainingQueue.findIndex((o) => o.id === order.id);
-            if (index > -1) {
-              remainingQueue.splice(index, 1);
-            }
-            successCount++; // Increment to trigger writing queue updates back to IDB
-          } else if (status === 401 || status === 403) {
-            // Keep in queue and stop processing so it can be retried once user logs back in
-            break;
+          if (outcome === 'synced') {
+            syncedIds.add(order.id);
+          } else if (outcome === 'failed') {
+            // La venta ya se cobró: pasa a la cola de fallidas, nunca se borra.
+            newlyFailed.push({
+              ...order,
+              error: { code: pgCode, message: pgMessage },
+              failedAt: new Date().toISOString(),
+            });
           } else {
-            // Stop processing for other transient errors
+            // Red, sesión vencida o error transitorio: se conserva y se reintenta después
             break;
           }
         }
@@ -150,16 +151,27 @@ async function syncOrders() {
       }
     }
 
-    if (successCount > 0) {
-      // Save updated queue back to IndexedDB
-      parsed.state.syncQueue = remainingQueue;
-      await db.put('sync_store', JSON.stringify(parsed), 'oasis-eon-sync-queue');
+    if (syncedIds.size > 0 || newlyFailed.length > 0) {
+      const freshRaw = await db.get('sync_store', 'oasis-eon-sync-queue');
+      const fresh = freshRaw ? JSON.parse(freshRaw) : parsed;
+      const freshQueue = (fresh.state?.syncQueue || []) as SyncOrder[];
+      const freshFailed = (fresh.state?.failedQueue || []) as FailedSyncOrder[];
+
+      const failedIds = new Set(newlyFailed.map((o) => o.id));
+      const knownFailedIds = new Set(freshFailed.map((o) => o.id));
+      fresh.state = {
+        ...fresh.state,
+        syncQueue: freshQueue.filter((o) => !syncedIds.has(o.id) && !failedIds.has(o.id)),
+        failedQueue: [...freshFailed, ...newlyFailed.filter((o) => !knownFailedIds.has(o.id))],
+      };
+      await db.put('sync_store', JSON.stringify(fresh), 'oasis-eon-sync-queue');
 
       // Notify active clients to reload state
       await notifyClients({
         type: 'SYNC_COMPLETED',
-        successCount,
-        remainingCount: remainingQueue.length,
+        successCount: syncedIds.size,
+        failedCount: newlyFailed.length,
+        remainingCount: fresh.state.syncQueue.length,
       });
     }
   } catch (err) {

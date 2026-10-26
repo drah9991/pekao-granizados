@@ -14,15 +14,19 @@ import {
   AlertTriangle, 
   Loader2,
   Trash2,
-  Calendar
+  Calendar,
+  RotateCcw
 } from "lucide-react";
 import type { OfflineOrder } from "@/lib/OfflineService";
+import type { FailedSyncOrder } from "@/store/useSyncStore";
 import { cn } from "@/lib/utils";
 
 interface SyncDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   pendingOrders: OfflineOrder[];
+  failedOrders: FailedSyncOrder[];
+  onRetryFailed: (id: string) => void;
   isOnline: boolean;
   isProcessing: boolean;
   onSync: () => Promise<void>;
@@ -33,6 +37,8 @@ export default function SyncDrawer({
   isOpen,
   onClose,
   pendingOrders,
+  failedOrders,
+  onRetryFailed,
   isOnline,
   isProcessing,
   onSync,
@@ -102,6 +108,40 @@ export default function SyncDrawer({
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden flex flex-col">
+          {failedOrders.length > 0 && (
+            <div className="px-6 py-4 border-b border-red-500/20 bg-red-500/5 space-y-3 max-h-[45%] overflow-y-auto">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-red-400 italic font-space-grotesk">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>Ventas rechazadas por el servidor ({failedOrders.length})</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground font-dm-sans">
+                Ya se cobraron pero no quedaron registradas. Revisa el motivo y reintenta, o repórtalas al administrador.
+              </p>
+              {failedOrders.map((order) => (
+                <div key={order.id} className="flex items-start justify-between gap-3 rounded-xl border border-red-500/20 bg-white/[0.02] p-3">
+                  <div className="min-w-0 space-y-0.5">
+                    <div className="text-[11px] font-black font-space-grotesk text-red-400 uppercase">
+                      #{order.id.slice(0, 8).toUpperCase()} · {formatCOP(Number(order.payload.total) || 0)}
+                    </div>
+                    <div className="text-[9px] text-muted-foreground/60 font-bold">{formatDate(order.timestamp)}</div>
+                    <div className="text-[10px] text-muted-foreground break-words">
+                      {order.error.code && <span className="font-mono mr-1">[{order.error.code}]</span>}
+                      {order.error.message || "Sin detalle del error"}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 shrink-0 gap-1 rounded-lg border-red-500/40 text-[10px] text-red-400 hover:bg-red-500/10"
+                    onClick={() => onRetryFailed(order.id)}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Reintentar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
           {pendingOrders.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-glow-pro">

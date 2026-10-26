@@ -6,25 +6,14 @@ import { useAuth } from "@/context/AuthContext";
 import { useTurn } from "@/hooks/useTurn";
 import { offlineService } from "@/lib/OfflineService";
 import { useSyncStore } from "@/store/useSyncStore";
+import type { SyncFailure } from "@/store/useSyncStore";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useQueryClient } from "@tanstack/react-query";
 import type { PaymentMethod } from "@/components/pos/PaymentDialog";
 import { calculateOptimisticTanks, calculateOptimisticProducts } from "@/lib/inventory-sync-utils";
 import type { Product, CartItem, TankStatus } from "@/lib/inventory-sync-utils";
-
-const isValidationError = (error: unknown): boolean => {
-  if (!error || typeof error !== 'object') return false;
-  const err = error as Record<string, unknown>;
-  const code = String(err.code || '');
-  const status = Number(err.status || 0);
-  
-  return (
-    code === 'P0001' ||
-    code.startsWith('23') ||
-    status === 400 ||
-    status === 409
-  );
-};
+import { classifySyncError } from "@/lib/syncErrorPolicy";
+import type { SyncOutcome } from "@/lib/syncErrorPolicy";
 
 export function usePOS() {
   const { user, storeId } = useAuth();
@@ -39,6 +28,8 @@ export function usePOS() {
   
   const pendingOrders = useSyncStore((state) => state.syncQueue);
   const pendingOrdersCount = pendingOrders.length;
+  const failedOrders = useSyncStore((state) => state.failedQueue);
+  const retryFailedOrder = useSyncStore((state) => state.retryFailed);
 
   const registerBackgroundSync = async () => {
     if ('serviceWorker' in navigator && 'SyncManager' in window) {
@@ -71,42 +62,39 @@ export function usePOS() {
 
     try {
       for (const order of pending) {
+        let outcome: SyncOutcome = 'synced';
+        let failure: SyncFailure = { code: '', message: '' };
         try {
-          const { error } = await supabaseRpc('process_sale', {
+          const { error, status } = await supabaseRpc('process_sale', {
             sale_data: order.payload as Record<string, unknown>
           });
-          if (!error) {
-            useSyncStore.getState().removeFromQueue(order.id);
-            successCount++;
-          } else {
-            console.error("Error syncing order:", order.id, error);
-            hasFailure = true;
-            const status = error && typeof error === 'object' ? Number((error as Record<string, unknown>).status || 0) : 0;
-            if (status === 401 || status === 403) {
-              break;
-            }
-            if (isValidationError(error)) {
-              useSyncStore.getState().removeFromQueue(order.id);
-              notifyWarning(`Pedido eliminado de la cola debido a un error de validación permanente: ${String((error as Record<string, unknown>).message || JSON.stringify(error))}`);
-            } else {
-              break;
-            }
+          if (error) {
+            failure = { code: error.code || '', message: error.message || '' };
+            outcome = classifySyncError({ code: error.code, status, message: error.message });
           }
         } catch (e: unknown) {
-          console.error("Error syncing order:", order.id, e);
-          hasFailure = true;
-          const err = e as Record<string, unknown>;
-          const status = err && typeof err === 'object' ? Number(err.status || 0) : 0;
-          if (status === 401 || status === 403) {
-            break;
-          }
-          if (isValidationError(e)) {
-            useSyncStore.getState().removeFromQueue(order.id);
-            notifyWarning(`Pedido eliminado de la cola debido a un error de validación permanente: ${String(err.message || e)}`);
-          } else {
-            break;
-          }
+          failure = { code: '', message: e instanceof Error ? e.message : String(e) };
+          outcome = 'retry';
         }
+
+        if (outcome === 'synced') {
+          useSyncStore.getState().removeFromQueue(order.id);
+          successCount++;
+          continue;
+        }
+
+        console.error("Error syncing order:", order.id, failure);
+        hasFailure = true;
+        if (outcome === 'retry') {
+          break;
+        }
+
+        // La venta ya se cobró: se conserva como fallida, nunca se borra.
+        useSyncStore.getState().moveToFailed(order.id, failure);
+        Sentry.captureException(new Error(`process_sale rechazó una venta offline (${failure.code})`), {
+          extra: { orderId: order.id, ...failure },
+        });
+        notifyCritical(`Venta offline rechazada por el servidor; quedó guardada para revisión: ${failure.message}`);
       }
 
       if (successCount > 0) {
@@ -134,7 +122,7 @@ export function usePOS() {
     } finally {
       setIsProcessing(false);
     }
-  }, [queryClient, notifyInfo, notifyWarning, notifyCritical]);
+  }, [queryClient, notifyInfo, notifyCritical]);
   // ────────────────────────────────────────────────────────────────────────────
 
   // Reintento periódico con Backoff Exponencial en background
@@ -174,6 +162,9 @@ export function usePOS() {
     const handleSWMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === 'SYNC_COMPLETED') {
         notifyInfo(`Sincronización en segundo plano: ${Number(event.data.successCount || 0)} pedidos subidos.`);
+        if (Number(event.data.failedCount || 0) > 0) {
+          notifyCritical(`${Number(event.data.failedCount)} ventas offline fueron rechazadas y quedaron guardadas para revisión.`);
+        }
         queryClient.invalidateQueries({ queryKey: ['tank-status'], refetchType: 'none' });
         queryClient.invalidateQueries({ queryKey: ['products-grid'], refetchType: 'none' });
         queryClient.invalidateQueries({ queryKey: ['dashboard-v2-raw'] });
@@ -192,7 +183,7 @@ export function usePOS() {
         navigator.serviceWorker.removeEventListener('message', handleSWMessage);
       }
     };
-  }, [queryClient, notifyInfo, notifyWarning]);
+  }, [queryClient, notifyInfo, notifyWarning, notifyCritical]);
 
   const checkPendingOrders = async () => {
     // Reactivo mediante useSyncStore
@@ -320,29 +311,38 @@ export function usePOS() {
       }
 
       if (isOnline) {
+        let rpcOutcome: SyncOutcome = 'synced';
+        let rpcFailure: unknown = null;
         try {
-          const { data: rpcData, error: rpcError } = await supabaseRpc<string>('process_sale', {
+          const { error: rpcError, status: rpcStatus } = await supabaseRpc<string>('process_sale', {
             sale_data: salePayload as Record<string, unknown>
           });
-
           if (rpcError) {
-            throw rpcError;
+            rpcFailure = rpcError;
+            rpcOutcome = classifySyncError({ code: rpcError.code, status: rpcStatus, message: rpcError.message });
           }
-          
+        } catch (error: unknown) {
+          rpcFailure = error;
+          rpcOutcome = 'retry';
+        }
+
+        if (rpcOutcome === 'failed') {
+          // Rechazo de la base con el cajero presente: se muestra el error y la venta no se registra.
+          console.error("Error processing sale online:", rpcFailure);
+          throw rpcFailure;
+        }
+
+        if (rpcOutcome === 'retry') {
+          console.error("Error processing sale online:", rpcFailure);
+          useSyncStore.getState().addToQueue(salePayload);
+          await registerBackgroundSync();
+          notifyWarning("Red inestable: Venta guardada offline para reintento automático.");
+        } else {
           // Revalidación silenciosa tras éxito (evita llamadas de red HTTP innecesarias en caliente)
           queryClient.invalidateQueries({ queryKey: ['products-grid'], refetchType: 'none' });
           queryClient.invalidateQueries({ queryKey: ['tank-status'], refetchType: 'none' });
           queryClient.invalidateQueries({ queryKey: ['dashboard-v2-raw'] });
           queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-        } catch (error: unknown) {
-          console.error("Error processing sale online:", error);
-          if (isValidationError(error)) {
-            throw error;
-          } else {
-            useSyncStore.getState().addToQueue(salePayload);
-            await registerBackgroundSync();
-            notifyWarning("Red inestable: Venta guardada offline para reintento automático.");
-          }
         }
       } else {
         useSyncStore.getState().addToQueue(salePayload);
@@ -442,6 +442,8 @@ export function usePOS() {
     isOnline,
     pendingOrdersCount,
     pendingOrders,
+    failedOrders,
+    retryFailedOrder,
     processSale,
     handleSync,
     checkPendingOrders

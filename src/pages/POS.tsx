@@ -24,7 +24,8 @@ export default function POS() {
   const {
     cart, updateQuantity, removeItem, subtotal, discount, setDiscount, discountType, setDiscountType,
     discountAmount, total, resetCart, restoreLastCart, selectedCustomer, setSelectedCustomer,
-    isProcessing, isOnline, pendingOrdersCount, pendingOrders, processSale, handleSync, checkPendingOrders,
+    isProcessing, isOnline, pendingOrdersCount, pendingOrders, failedOrders, retryFailedOrder,
+    processSale, handleSync, checkPendingOrders,
     selectedProduct, customizeDialogIsOpen, setCustomizeDialogIsOpen,
     paymentDialogIsOpen, setPaymentDialogIsOpen,
     splitBillDialogIsOpen, setSplitBillDialogIsOpen,
@@ -92,8 +93,8 @@ export default function POS() {
               )}
             </button>
             
-            {pendingOrdersCount > 0 && (
-              <Button size="icon" variant="ghost" className="text-amber-500 animate-pulse" onClick={() => setSyncDrawerIsOpen(true)} aria-label="Ver y sincronizar pedidos locales pendientes">
+            {(pendingOrdersCount > 0 || failedOrders.length > 0) && (
+              <Button size="icon" variant="ghost" className={failedOrders.length > 0 ? "text-red-500 animate-pulse" : "text-amber-500 animate-pulse"} onClick={() => setSyncDrawerIsOpen(true)} aria-label="Ver y sincronizar pedidos locales pendientes">
                 <CloudUpload size={20} />
               </Button>
             )}
@@ -217,6 +218,8 @@ export default function POS() {
         isOpen={syncDrawerIsOpen}
         onClose={() => setSyncDrawerIsOpen(false)}
         pendingOrders={pendingOrders}
+        failedOrders={failedOrders}
+        onRetryFailed={retryFailedOrder}
         isOnline={isOnline}
         isProcessing={isProcessing}
         onSync={handleSync}
