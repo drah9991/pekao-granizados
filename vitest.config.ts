@@ -7,6 +7,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // Los tests no deben depender del .env (en CI no existe, y el local apunta a
+    // producción): el cliente de Supabase se crea con valores ficticios.
+    env: {
+      VITE_SUPABASE_URL: 'http://localhost:54321',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'test-publishable-key',
+    },
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: [
