@@ -14,7 +14,8 @@ export default defineConfig({
       VITE_SUPABASE_PUBLISHABLE_KEY: 'test-publishable-key',
     },
     setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // _shared: reglas puras de las edge functions (sin imports de Deno), testeables aquí.
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'supabase/functions/_shared/**/*.test.ts'],
     exclude: [
       'node_modules/**',
       'dist/**',

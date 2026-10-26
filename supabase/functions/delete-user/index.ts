@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { loadManagedUser } from '../_shared/managedUser.ts';
+import { canManageUser, FORBIDDEN_MESSAGES } from '../_shared/userAdminPolicy.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,20 +39,6 @@ serve(async (req) => {
       });
     }
 
-    // Verifica si el usuario autenticado tiene el rol de 'admin' o 'store_manager'
-    const { data: roleData, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (roleError || !roleData || !['admin', 'manager', 'store_manager'].includes(roleData.role as string)) {
-      return new Response(JSON.stringify({ error: 'Forbidden: User does not have sufficient permissions' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const { userId } = await req.json();
 
     if (!userId) {
@@ -60,9 +48,21 @@ serve(async (req) => {
       });
     }
 
-    // Evita que un usuario se elimine a sí mismo a través de esta función
-    if (userId === user.id) {
-      return new Response(JSON.stringify({ error: 'Cannot delete your own account via this function' }), {
+    // Rol de gestión, misma sede, sin borrarse a sí mismo ni a cuentas de mayor privilegio
+    // (ver _shared/userAdminPolicy.ts).
+    const [caller, target] = await Promise.all([
+      loadManagedUser(supabaseAdmin, user.id),
+      loadManagedUser(supabaseAdmin, userId),
+    ]);
+    if (!target) {
+      return new Response(JSON.stringify({ error: 'User not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const decision = caller ? canManageUser(caller, target, 'delete') : { allowed: false as const, reason: 'no_role' as const };
+    if (!decision.allowed) {
+      return new Response(JSON.stringify({ error: FORBIDDEN_MESSAGES[decision.reason] }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
