@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseRpc } from "@/integrations/supabase/types-extensions";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +22,10 @@ export function usePOS() {
   const { notifyInfo, notifyWarning, notifyCritical } = useAlerts();
 
   const [isProcessing, setIsProcessing] = useState(false);
+  // La sincronización de la cola tiene su propio estado: si compartiera isProcessing,
+  // al terminar reactivaría el botón de cobro mientras una venta sigue esperando respuesta.
+  const [isSyncing, setIsSyncing] = useState(false);
+  const saleInFlightRef = useRef(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [retryBackoffDelay, setRetryBackoffDelay] = useState(1000);
   const [consecutiveFailures, setConsecutiveFailures] = useState(0);
@@ -56,7 +60,7 @@ export function usePOS() {
       return;
     }
 
-    setIsProcessing(true);
+    setIsSyncing(true);
     let successCount = 0;
     let hasFailure = false;
 
@@ -120,7 +124,7 @@ export function usePOS() {
       const msg = error instanceof Error ? error.message : "Error desconocido";
       notifyCritical("Error durante la sincronización: " + msg);
     } finally {
-      setIsProcessing(false);
+      setIsSyncing(false);
     }
   }, [queryClient, notifyInfo, notifyCritical]);
   // ────────────────────────────────────────────────────────────────────────────
@@ -204,8 +208,13 @@ export function usePOS() {
       phone: string;
     },
     splitDetails?: { cash: number; transfer: number },
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
+    // Clave estable del checkout (lib/checkoutKey); sin ella, una por llamada (cuenta dividida).
+    idempotencyKey?: string
   ) => {
+    // Un segundo clic mientras la venta espera respuesta no abre otro cobro.
+    if (saleInFlightRef.current) return null;
+    saleInFlightRef.current = true;
     setIsProcessing(true);
 
     try {
@@ -251,7 +260,7 @@ export function usePOS() {
         ...metadata
       } : { method, ...metadata };
 
-      const idempotencyKey = crypto.randomUUID();
+      const saleIdempotencyKey = idempotencyKey ?? crypto.randomUUID();
 
       const salePayload = {
         store_id: storeId,
@@ -265,7 +274,7 @@ export function usePOS() {
         total: saleTotal + (deliveryData?.fee || 0),
         payment: paymentData,
         items: mappedItems,
-        idempotency_key: idempotencyKey
+        idempotency_key: saleIdempotencyKey
       };
 
       const optimisticOrderId = `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -359,6 +368,8 @@ export function usePOS() {
       console.error("Error processing sale:", error);
       notifyCritical("Error al procesar la venta: " + msg);
       return null;
+    } finally {
+      saleInFlightRef.current = false;
     }
   };
 
@@ -439,6 +450,7 @@ export function usePOS() {
 
   return {
     isProcessing,
+    isSyncing,
     isOnline,
     pendingOrdersCount,
     pendingOrders,

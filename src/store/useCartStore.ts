@@ -41,6 +41,8 @@ export interface CartStoreState {
   discount: number;
   discountType: "percent" | "fixed";
   selectedCustomer: Customer | null;
+  /** Se renueva al vaciar el carrito; junto con su contenido forma la clave de idempotencia del cobro (lib/checkoutKey). */
+  checkoutNonce: string;
   lastRemovedCart: {
     items: CartItem[];
     discount: number;
@@ -98,6 +100,7 @@ export const useCartStore = create<CartStoreState>()(
       discount: 0,
       discountType: "percent",
       selectedCustomer: null,
+      checkoutNonce: crypto.randomUUID(),
       lastRemovedCart: null,
 
       availableSizes: [],
@@ -328,14 +331,16 @@ export const useCartStore = create<CartStoreState>()(
               cart: [],
               discount: 0,
               discountType: "percent",
-              selectedCustomer: null
+              selectedCustomer: null,
+              checkoutNonce: crypto.randomUUID()
             };
           }
           return {
             cart: [],
             discount: 0,
             discountType: "percent",
-            selectedCustomer: null
+            selectedCustomer: null,
+            checkoutNonce: crypto.randomUUID()
           };
         });
       },
@@ -367,7 +372,8 @@ export const useCartStore = create<CartStoreState>()(
         cart: state.cart,
         discount: state.discount,
         discountType: state.discountType,
-        selectedCustomer: state.selectedCustomer
+        selectedCustomer: state.selectedCustomer,
+        checkoutNonce: state.checkoutNonce
       })
     }
   )

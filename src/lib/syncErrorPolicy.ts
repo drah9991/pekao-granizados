@@ -32,6 +32,12 @@ export function classifySyncError({ code = "", status = 0, message = "" }: SyncE
   // Sin EXECUTE sobre la función (token anon o vencido): no es un rechazo de la venta.
   if (code === "42501" && message.includes("permission denied for function")) return "retry";
 
+  // Sin respuesta del servidor (red caída o timeout del cliente). postgrest-js pone en
+  // `code` el código numérico del DOMException (23 TimeoutError, 20 AbortError), que
+  // no es un SQLSTATE: no hay que leerlo como "clase 23 = violación de integridad".
+  const isSqlState = /^[0-9A-Z]{5}$/.test(code);
+  if (status === 0 && !isSqlState) return "retry";
+
   if (PERMANENT_ERROR_CODES.has(code) || PERMANENT_ERROR_CLASSES.some((cls) => code.startsWith(cls))) {
     return "failed";
   }

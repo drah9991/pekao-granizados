@@ -8,12 +8,36 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Una venta colgada dejaba al cajero esperando sin límite. Pasado este tiempo la
+// venta se encola offline con su misma idempotency_key (process_sale no la duplica).
+// Solo para process_sale: otras escrituras no son idempotentes y los reportes
+// pueden tardar más. AbortController + setTimeout funciona también en Safari < 16,
+// que no tiene AbortSignal.timeout.
+export const SALE_TIMEOUT_MS = 15000;
+
+const fetchWithSaleTimeout: typeof fetch = (input, init) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (!url.includes("/rest/v1/rpc/process_sale")) return fetch(input, init);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SALE_TIMEOUT_MS);
+  const callerSignal = init?.signal;
+  if (callerSignal) {
+    if (callerSignal.aborted) controller.abort();
+    else callerSignal.addEventListener("abort", () => controller.abort(), { once: true });
+  }
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+};
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   // Existing auth config
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+  },
+  global: {
+    fetch: fetchWithSaleTimeout,
   },
 });
 

@@ -24,7 +24,7 @@ export default function POS() {
   const {
     cart, updateQuantity, removeItem, subtotal, discount, setDiscount, discountType, setDiscountType,
     discountAmount, total, resetCart, restoreLastCart, selectedCustomer, setSelectedCustomer,
-    isProcessing, isOnline, pendingOrdersCount, pendingOrders, failedOrders, retryFailedOrder,
+    isProcessing, isSyncing, isOnline, pendingOrdersCount, pendingOrders, failedOrders, retryFailedOrder,
     processSale, handleSync, checkPendingOrders,
     selectedProduct, customizeDialogIsOpen, setCustomizeDialogIsOpen,
     paymentDialogIsOpen, setPaymentDialogIsOpen,
@@ -111,7 +111,7 @@ export default function POS() {
                   <WifiOff className="h-4 w-4" /> MODO OFFLINE ACTIVO
                 </div>
                 {pendingOrdersCount > 0 && (
-                  <Button size="sm" variant="outline" className="h-7 rounded-lg border-amber-500/50 text-[9px]" onClick={() => setSyncDrawerIsOpen(true)} disabled={isProcessing}>
+                  <Button size="sm" variant="outline" className="h-7 rounded-lg border-amber-500/50 text-[9px]" onClick={() => setSyncDrawerIsOpen(true)} disabled={isSyncing}>
                     Sincronizar {pendingOrdersCount} pedidos
                   </Button>
                 )}
@@ -122,7 +122,7 @@ export default function POS() {
                 <div className="flex items-center gap-2">
                   <CloudUpload className="h-4 w-4 text-primary" /> Sincronización pendiente ({pendingOrdersCount} órdenes en cola local)
                 </div>
-                <Button size="sm" variant="outline" className="h-7 rounded-lg border-primary/50 text-[9px] text-primary hover:bg-primary/15" onClick={() => setSyncDrawerIsOpen(true)} disabled={isProcessing}>
+                <Button size="sm" variant="outline" className="h-7 rounded-lg border-primary/50 text-[9px] text-primary hover:bg-primary/15" onClick={() => setSyncDrawerIsOpen(true)} disabled={isSyncing}>
                   Ver Cola / Sincronizar
                 </Button>
               </div>
@@ -221,7 +221,7 @@ export default function POS() {
         failedOrders={failedOrders}
         onRetryFailed={retryFailedOrder}
         isOnline={isOnline}
-        isProcessing={isProcessing}
+        isProcessing={isSyncing}
         onSync={handleSync}
         checkPendingOrders={checkPendingOrders}
       />

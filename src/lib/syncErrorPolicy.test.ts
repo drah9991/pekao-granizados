@@ -41,6 +41,12 @@ describe("classifySyncError", () => {
     expect(classifySyncError({ status: 503 })).toBe("retry");
   });
 
+  it("retries a request aborted by the client timeout, whose DOMException code is not a SQLSTATE", () => {
+    // AbortSignal.timeout → TimeoutError (code 23); AbortController.abort → AbortError (code 20)
+    expect(classifySyncError({ code: "23", status: 0, message: "TimeoutError: signal timed out" })).toBe("retry");
+    expect(classifySyncError({ code: "20", status: 0, message: "AbortError: signal is aborted" })).toBe("retry");
+  });
+
   it("retries unknown errors so the queue keeps them", () => {
     expect(classifySyncError({ code: "PGRST202", status: 404 })).toBe("retry");
   });

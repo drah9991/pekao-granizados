@@ -6,6 +6,8 @@ import { usePOSShortcuts } from "@/hooks/usePOSShortcuts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAlerts } from "@/hooks/useAlerts";
 import type { Product } from "@/lib/pos-types";
+import { buildCheckoutKey } from "@/lib/checkoutKey";
+import { useCartStore } from "@/store/useCartStore";
 import type { PaymentMethod } from "@/components/pos/PaymentDialog";
 
 export function usePOSPage() {
@@ -18,7 +20,7 @@ export function usePOSPage() {
   } = useCart();
 
   const {
-    isProcessing, isOnline, pendingOrdersCount, pendingOrders, failedOrders, retryFailedOrder,
+    isProcessing, isSyncing, isOnline, pendingOrdersCount, pendingOrders, failedOrders, retryFailedOrder,
     processSale, handleSync, checkPendingOrders
   } = usePOS();
 
@@ -103,6 +105,11 @@ export function usePOSPage() {
     deliveryData?: Record<string, unknown>,
     splitDetails?: Record<string, unknown>
   ) => {
+    const checkoutKey = buildCheckoutKey(useCartStore.getState().checkoutNonce, {
+      items: cart.map((item) => ({ id: String(item.id), quantity: Number(item.quantity), price: Number(item.price) })),
+      total,
+      customerId: selectedCustomer?.id ? String(selectedCustomer.id) : null,
+    });
     const orderData = await processSale(
       cart,
       total,
@@ -112,7 +119,9 @@ export function usePOSPage() {
       method, 
       amountReceived, 
       deliveryData, 
-      splitDetails
+      splitDetails,
+      undefined,
+      checkoutKey
     );
     if (orderData) {
       setLastOrder(orderData);
@@ -129,7 +138,7 @@ export function usePOSPage() {
   return {
     cart, addToCart, updateQuantity, removeItem, subtotal, discount, setDiscount, discountType, setDiscountType,
     discountAmount, total, resetCart, restoreLastCart, selectedCustomer, setSelectedCustomer,
-    isProcessing, isOnline, pendingOrdersCount, pendingOrders, failedOrders, retryFailedOrder,
+    isProcessing, isSyncing, isOnline, pendingOrdersCount, pendingOrders, failedOrders, retryFailedOrder,
     processSale, handleSync, checkPendingOrders,
     selectedProduct, setSelectedProduct,
     customizeDialogIsOpen, setCustomizeDialogIsOpen,
