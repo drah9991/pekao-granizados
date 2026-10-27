@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type Json =
   | string
   | number
@@ -25,7 +24,6 @@ export type Database = {
           name: string | null
           phone: string | null
           total_spent: number | null
-          profile_id: string | null
         }
         Insert: {
           addresses?: Json | null
@@ -36,7 +34,6 @@ export type Database = {
           name?: string | null
           phone?: string | null
           total_spent?: number | null
-          profile_id?: string | null
         }
         Update: {
           addresses?: Json | null
@@ -47,17 +44,8 @@ export type Database = {
           name?: string | null
           phone?: string | null
           total_spent?: number | null
-          profile_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "customers_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
       invoices: {
         Row: {
@@ -104,13 +92,6 @@ export type Database = {
           store_id: string
           type: string
           user_id: string
-          invoice_no: string | null
-          supplier_name: string | null
-          total_price: number | null
-          total_paid: number | null
-          debe: number | null
-          sale_from_cash: boolean | null
-          movement_date: string | null
         }
         Insert: {
           created_at?: string | null
@@ -121,13 +102,6 @@ export type Database = {
           store_id: string
           type: string
           user_id: string
-          invoice_no?: string | null
-          supplier_name?: string | null
-          total_price?: number | null
-          total_paid?: number | null
-          debe?: number | null
-          sale_from_cash?: boolean | null
-          movement_date?: string | null
         }
         Update: {
           created_at?: string | null
@@ -138,13 +112,6 @@ export type Database = {
           store_id?: string
           type?: string
           user_id?: string
-          invoice_no?: string | null
-          supplier_name?: string | null
-          total_price?: number | null
-          total_paid?: number | null
-          debe?: number | null
-          sale_from_cash?: boolean | null
-          movement_date?: string | null
         }
         Relationships: [
           {
@@ -292,71 +259,6 @@ export type Database = {
           },
         ]
       }
-      expenses: {
-        Row: {
-          id: string
-          store_id: string
-          amount: number
-          expense_date: string
-          description: string | null
-          category: string | null
-          created_at: string | null
-        }
-        Insert: any
-        Update: any
-        Relationships: []
-      }
-      inventory_items: {
-        Row: {
-          id: string
-          store_id: string
-          name: string
-          stock: number
-          min_stock: number | null
-          is_mixture: boolean
-          unit: string | null
-          created_at: string | null
-        }
-        Insert: any
-        Update: any
-        Relationships: []
-      }
-      pricing_rules: {
-        Row: {
-          id: string
-          store_id: string
-          name: string
-          active: boolean
-          type: string
-          target_type: string
-          target_id: string | null
-          discount_type: string
-          discount_value: number
-          start_time: string | null
-          end_time: string | null
-          days_of_week: number[] | null
-          created_at: string
-        }
-        Insert: any
-        Update: any
-        Relationships: []
-      }
-      product_types_config: {
-        Row: {
-          id: string
-          code: string
-          label: string
-          emoji_icon: string
-          color_theme: string
-          track_mixture_inventory: boolean
-          sales_mode: string
-          active: boolean
-          created_at: string
-        }
-        Insert: any
-        Update: any
-        Relationships: []
-      }
       products: {
         Row: {
           active: boolean | null
@@ -374,11 +276,6 @@ export type Database = {
           store_id: string | null
           type: Database["public"]["Enums"]["product_type"] | null
           variants: Json | null
-          margin_target: number | null
-          commission_rate: number | null
-          supplier_name: string | null
-          is_starred: boolean | null
-          supplier_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -396,11 +293,6 @@ export type Database = {
           store_id?: string | null
           type?: Database["public"]["Enums"]["product_type"] | null
           variants?: Json | null
-          margin_target?: number | null
-          commission_rate?: number | null
-          supplier_name?: string | null
-          is_starred?: boolean | null
-          supplier_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -418,11 +310,6 @@ export type Database = {
           store_id?: string | null
           type?: Database["public"]["Enums"]["product_type"] | null
           variants?: Json | null
-          margin_target?: number | null
-          commission_rate?: number | null
-          supplier_name?: string | null
-          is_starred?: boolean | null
-          supplier_id?: string | null
         }
         Relationships: [
           {
@@ -432,13 +319,6 @@ export type Database = {
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "products_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          }
         ]
       }
       profiles: {
@@ -652,8 +532,6 @@ export type Database = {
           currency: string | null
           id: string
           name: string
-          subscription_status: string | null
-          subscription_end_date: string | null
           tax_rate: number | null
         }
         Insert: {
@@ -663,8 +541,6 @@ export type Database = {
           currency?: string | null
           id?: string
           name: string
-          subscription_status?: string | null
-          subscription_end_date?: string | null
           tax_rate?: number | null
         }
         Update: {
@@ -674,54 +550,7 @@ export type Database = {
           currency?: string | null
           id?: string
           name?: string
-          subscription_status?: string | null
-          subscription_end_date?: string | null
           tax_rate?: number | null
-        }
-        Relationships: []
-      }
-      units: {
-        Row: {
-          id: string
-          name: string
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      suppliers: {
-        Row: {
-          id: string
-          name: string
-          phone: string | null
-          email: string | null
-          address: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          phone?: string | null
-          email?: string | null
-          address?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          phone?: string | null
-          email?: string | null
-          address?: string | null
-          created_at?: string | null
         }
         Relationships: []
       }
@@ -751,84 +580,9 @@ export type Database = {
           },
         ]
       }
-      machine_tanks: {
-        Row: {
-          id: string
-          store_id: string
-          name: string
-          current_volume_ml: number
-          max_capacity_ml: number
-          inventory_item_id: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          store_id: string
-          name: string
-          current_volume_ml?: number
-          max_capacity_ml?: number
-          inventory_item_id?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          store_id?: string
-          name?: string
-          current_volume_ml?: number
-          max_capacity_ml?: number
-          inventory_item_id?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "machine_tanks_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "stores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "machine_tanks_inventory_item_id_fkey"
-            columns: ["inventory_item_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_items"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
     }
     Views: {
-      vw_tank_percentages: {
-        Row: {
-          id: string
-          store_id: string
-          name: string
-          current_volume_ml: number
-          max_capacity_ml: number
-          percentage: number
-          updated_at: string | null
-          inventory_item_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "machine_tanks_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "stores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "machine_tanks_inventory_item_id_fkey"
-            columns: ["inventory_item_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_items"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       has_role: {
@@ -840,8 +594,8 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "manager" | "cashier" | "driver" | "owner" | "store_manager"
-      product_type: "granizado" | "topping" | "sachet" | "sweet" | "other" | "combo"
+      app_role: "admin" | "manager" | "cashier" | "driver"
+      product_type: "granizado" | "topping" | "sachet" | "sweet" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -857,12 +611,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -886,11 +640,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -911,11 +665,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -936,11 +690,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -953,11 +707,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -969,8 +723,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "cashier", "driver", "owner", "store_manager"],
-      product_type: ["granizado", "topping", "sachet", "sweet", "other", "combo"],
+      app_role: ["admin", "manager", "cashier", "driver"],
+      product_type: ["granizado", "topping", "sachet", "sweet", "other"],
     },
   },
 } as const
