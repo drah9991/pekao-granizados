@@ -110,6 +110,41 @@ jobs:
           path: dist/
           retention-days: 7
 
+  # Compila como en producción, sirve el build y lo abre en Chromium. Bloquea: el
+  # 2026-10-27 un build que compilaba dejó la app en blanco (createContext) y nada
+  # lo detectó porque ningún job abría la app compilada.
+  smoke:
+    name: Smoke Test (build en navegador)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # playwright.smoke.config.ts compila y levanta `vite preview` con un Supabase ficticio.
+      - name: Run smoke test
+        run: npm run test:smoke
+
+      - name: Upload smoke test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-test-results
+          path: test-results/
+          retention-days: 7
+
   security:
     name: Security Audit
     runs-on: ubuntu-latest
