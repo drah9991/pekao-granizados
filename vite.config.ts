@@ -74,33 +74,13 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Vendor chunking for better caching
+          // Solo librerías grandes y autocontenidas. Separar React de las librerías que lo
+          // usan (y de sus dependencias, como scheduler) crea chunks que se importan entre
+          // sí: en producción React llegaba undefined y la app no arrancaba (createContext).
           if (id.includes('node_modules')) {
-            // Charts libraries (large)
             if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
-
-            // Animation library
             if (id.includes('framer-motion')) return 'vendor-motion';
-
-            // Export libraries (PDF, Excel)
             if (id.includes('jspdf') || id.includes('xlsx')) return 'vendor-exports';
-
-            // UI Component libraries
-            if (id.includes('@radix-ui')) return 'vendor-ui';
-
-            // React core
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-
-            // Supabase
-            if (id.includes('@supabase') || id.includes('postgrest-js')) return 'vendor-supabase';
-
-            // React Query
-            if (id.includes('@tanstack/react-query')) return 'vendor-query';
-
-            // Other large vendors
-            return 'vendor';
           }
         }
       }
