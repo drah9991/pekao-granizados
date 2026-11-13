@@ -85,8 +85,18 @@ Quedan en Auth, sin equivalente en Astryx: la columna de presentación (hero) y 
 
 ### POS (en curso)
 
-Migrado: carrito: `CartHeader`, `CartCustomerSelector`, `CartTotals` y `DiscountField`, con tests en
-`src/components/pos/__tests__/CartPanel.test.tsx`. Verificado en el navegador con sesión de staging.
+Migrado: el carrito completo (`src/components/pos/cart/`): `CartHeader`, `CartCustomerSelector`,
+`CartTotals`, `DiscountField`, `CartItemList`, `CartItemRow`, `ToppingPicker` y `cartItemOptions`.
+Tests en `src/components/pos/__tests__/CartPanel.test.tsx` y `CartItemList.test.tsx`. Verificado en
+el navegador con sesión de staging (descuento, Público, toppings, cantidades y totales).
+
+- **Botones solo-ícono:** `IconButton` con `label` que nombra la acción y el producto ("Agregar uno de
+  Fresa", "Eliminar Fresa"); antes no tenían nombre accesible.
+- **Etiquetas removibles** (toppings): `Token` con `onRemove`.
+- **Tamaños de un ítem:** `SegmentedControl`; la regla de tamaños habilitados por precio está en
+  `cartItemOptions.ts` (llama a `calculateItemPrice`), no en el JSX.
+- **Animaciones de framer-motion:** se conservan como envoltorio (`motion.div`) alrededor del
+  componente de Astryx.
 
 - **Montos que se editan en vivo:** `NumberInput` de Astryx solo confirma al salir del campo o con
   Enter. Si el total debe actualizarse mientras se escribe, usar `TextInput` con
@@ -98,7 +108,7 @@ Migrado: carrito: `CartHeader`, `CartCustomerSelector`, `CartTotals` y `Discount
   `isPressed` genera un selector que nunca coincide (Astryx 0.7.15).
 - **Montos en tests:** `formatCOP` usa espacio duro; normalizar el texto esperado.
 
-Siguiente en POS: `CartItemList`, luego `CustomerSelection`, `ProductGrid`, diálogos
+Siguiente en POS: `CustomerSelection`, `ProductGrid`, diálogos
 (`ProductCustomizationDialog`, `ReceiptDialog`, `ShortcutsHelpDialog`, `SplitBillDialog`) y por
 último `PaymentDialog`.
 
