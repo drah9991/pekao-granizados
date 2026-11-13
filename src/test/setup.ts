@@ -33,6 +33,13 @@ global.IntersectionObserver = class IntersectionObserver {
   unobserve() {}
 } as any;
 
+// jsdom no implementa ResizeObserver; Radix y Astryx lo usan para medir controles.
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;
+
 // Mock OfflineService to avoid IndexedDB complexity
 vi.mock('../lib/OfflineService', () => ({
   default: class MockOfflineService {

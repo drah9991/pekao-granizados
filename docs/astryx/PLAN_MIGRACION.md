@@ -27,7 +27,7 @@ golpe, y tema propio en vez de Astryx neutral tal cual.
 |------|-----------|--------|
 | 0 | Tema `pekao` que extiende neutral con colores, fuentes y radios de la app | Hecha |
 | 1 | Inventario shadcn → Astryx: tabla de equivalencias y huecos sin equivalente | Hecha (abajo) |
-| 2 | Primitivos de formulario: Button, Input, TextArea, Select, Checkbox, Switch, Label/Field | Pendiente |
+| 2 | Primitivos de formulario: Button, Input, TextArea, Select, Checkbox, Switch, Label/Field | En curso: estilo en el tema y piloto en `LoginForm` |
 | 3 | Superposiciones: Dialog, AlertDialog, Drawer, Popover, Tooltip, DropdownMenu, Toast | Pendiente |
 | 4 | Datos: Table, Tabs, Badge, Card, Skeleton, Pagination, Calendar | Pendiente |
 | 5 | Estructura: AppShell, SideNav/TopNav en lugar del layout y `navConfig` actual | Pendiente |
@@ -44,6 +44,26 @@ golpe, y tema propio en vez de Astryx neutral tal cual.
   token `--font-family-body`, la adaptación táctil de neutral (tablets < 1024 px) volvería a Figtree.
 - `astryx doctor` avisa que no se importa la hoja de fuentes: es esperable, Plus Jakarta Sans la carga
   `src/main.tsx` con `@fontsource`.
+
+## Fase 2: primitivos (patrón validado en `src/components/auth/LoginForm.tsx`)
+
+- **Colores del tema = variables de la app.** `pekaoTheme.ts` apunta a `oklch(var(--background))`,
+  `var(--brand-primary-color)`, etc. El acento sigue la marca de cada sede (BrandingContext) y el
+  modo claro/oscuro sin duplicar valores. No usar colores fijos en el tema.
+- **Tamaños por token:** `--size-element-lg` = 56 px y `--radius-element` = 1 rem; los controles
+  táctiles de caja usan `size="lg"`. Los rasgos de marca (etiquetas y botón principal en
+  mayúsculas, cursiva y espaciadas) están en `components` del tema, no en cada pantalla.
+- **react-hook-form:** los inputs de Astryx son controlados (`value` + `onChange(value)`), así que
+  se conectan con `Controller`, no con `register`.
+- **Contenido al final de un campo** (p. ej. mostrar contraseña): `InputGroup` con `TextInput` y un
+  `Button` `isIconOnly` `variant="secondary"`.
+- **Errores:** `status={{ type: "error", message }}` en el campo; en tests usar `getAllByText`,
+  porque Astryx repite el mensaje para lectores de pantalla.
+- **Tests:** escribir tests de comportamiento antes de migrar una pantalla y mantenerlos verdes
+  después. `src/test/setup.ts` simula `ResizeObserver` para jsdom.
+
+Siguiente: `SignupForm` y `StoreSelectorDialog` (resto de Auth); luego los primitivos más usados
+(`button`, `input`, `label`, `card`) por módulo.
 
 ## Fase 1: equivalencias shadcn → Astryx
 

@@ -114,24 +114,24 @@ export const pekaoTheme = {
     "--color-syntax-diff-header": "transparent",
     "--color-syntax-added-marker": "var(--color-syntax-punctuation)",
     "--color-syntax-removed-marker": "var(--color-syntax-punctuation)",
-    "--color-background-surface": "light-dark(oklch(1 0 0), oklch(0.18 0.02 240))",
-    "--color-background-body": "light-dark(oklch(0.98 0.01 240), oklch(0.15 0.02 240))",
-    "--color-background-card": "light-dark(oklch(1 0 0), oklch(0.18 0.02 240))",
-    "--color-background-popover": "light-dark(oklch(1 0 0), oklch(0.16 0.02 240))",
-    "--color-background-muted": "light-dark(oklch(0.96 0.01 240), oklch(0.2 0.02 240))",
-    "--color-accent": "light-dark(oklch(0.58 0.23 260), oklch(0.55 0.2 260))",
-    "--color-accent-muted": "light-dark(#d4d4d4, #474747)",
+    "--color-background-surface": "oklch(var(--card))",
+    "--color-background-body": "oklch(var(--background))",
+    "--color-background-card": "oklch(var(--card))",
+    "--color-background-popover": "oklch(var(--popover))",
+    "--color-background-muted": "oklch(var(--muted))",
+    "--color-accent": "var(--brand-primary-color, oklch(0.55 0.2 260))",
+    "--color-accent-muted": "color-mix(in oklch, var(--brand-primary-color, oklch(0.55 0.2 260)) 20%, transparent)",
     "--color-neutral": "light-dark(#0000000F, #ffffff1A)",
     "--color-overlay": "light-dark(#00000080, #000000CC)",
     "--color-overlay-hover": "light-dark(#0000000D, #ffffff0D)",
     "--color-overlay-pressed": "light-dark(#0000001A, #ffffff1A)",
-    "--color-text-primary": "light-dark(oklch(0.21 0.04 220), oklch(0.98 0.01 240))",
-    "--color-text-secondary": "light-dark(oklch(0.45 0.03 240), oklch(0.65 0.02 240))",
+    "--color-text-primary": "oklch(var(--foreground))",
+    "--color-text-secondary": "oklch(var(--muted-foreground))",
     "--color-text-disabled": "light-dark(#919191, #525252)",
-    "--color-text-accent": "light-dark(#1b1b1b, #f1f1f1)",
+    "--color-text-accent": "var(--brand-primary-color, oklch(0.55 0.2 260))",
     "--color-on-dark": "#ffffff",
     "--color-on-light": "#111111",
-    "--color-on-accent": "light-dark(oklch(0.99 0 0), oklch(1 0 0))",
+    "--color-on-accent": "oklch(1 0 0)",
     "--color-on-success": "light-dark(#ffffff, #111111)",
     "--color-on-error": "light-dark(#ffffff, #111111)",
     "--color-on-warning": "#111111",
@@ -146,17 +146,17 @@ export const pekaoTheme = {
     "--color-on-success-muted": "light-dark(#00490b, #90ca90)",
     "--color-on-warning-muted": "light-dark(#4b3900, #eec448)",
     "--color-on-error-muted": "light-dark(#76000c, #ffaea7)",
-    "--color-icon-accent": "light-dark(#1b1b1b, #f1f1f1)",
-    "--color-icon-primary": "light-dark(oklch(0.21 0.04 220), oklch(0.98 0.01 240))",
-    "--color-icon-secondary": "light-dark(oklch(0.45 0.03 240), oklch(0.65 0.02 240))",
+    "--color-icon-accent": "var(--brand-primary-color, oklch(0.55 0.2 260))",
+    "--color-icon-primary": "oklch(var(--foreground))",
+    "--color-icon-secondary": "oklch(var(--muted-foreground))",
     "--color-icon-disabled": "light-dark(#919191, #525252)",
     "--color-success": "light-dark(#198100, #64af4c)",
     "--color-warning": "#ffce2f",
-    "--color-error": "light-dark(oklch(0.62 0.21 29), oklch(0.62 0.21 29))",
+    "--color-error": "oklch(var(--destructive))",
     "--color-success-muted": "light-dark(#bce0bb, #90ca903D)",
     "--color-error-muted": "light-dark(#ffc4be, #ff98903D)",
     "--color-warning-muted": "light-dark(#fae19e, #e2b6233D)",
-    "--color-border": "light-dark(oklch(0.92 0.01 240), oklch(0.24 0.02 240))",
+    "--color-border": "oklch(var(--border))",
     "--color-border-emphasized": "light-dark(#d4d4d4, #525252)",
     "--color-skeleton": "light-dark(#f1f1f1, #525252)",
     "--color-shadow": "light-dark(#0000001A, #0000004D)",
@@ -203,7 +203,7 @@ export const pekaoTheme = {
     "--color-text-gray": "light-dark(#1b1b1b, #d4d4d4)",
     "--radius-none": "0px",
     "--radius-inner": "0.5rem",
-    "--radius-element": "0.875rem",
+    "--radius-element": "1rem",
     "--radius-container": "1.25rem",
     "--radius-page": "1.75rem",
     "--radius-full": "9999px",
@@ -214,7 +214,9 @@ export const pekaoTheme = {
     "--shadow-inset-selected": "inset 0px 0px 0px 2px #0074e280",
     "--shadow-inset-success": "inset 0px 0px 0px 2px #2f7d334D",
     "--shadow-inset-warning": "inset 0px 0px 0px 2px #f8d36a4D",
-    "--shadow-inset-error": "inset 0px 0px 0px 2px #de47454D"
+    "--shadow-inset-error": "inset 0px 0px 0px 2px #de47454D",
+    "--focus-outline-color": "var(--brand-primary-color, oklch(0.55 0.2 260))",
+    "--size-element-lg": "3.5rem"
   },
   localTokens: {
     "--astryx-theme-neutral-color-status-fill-accent": "light-dark(#0074e2, #6d9cfe)"
@@ -343,6 +345,16 @@ export const pekaoTheme = {
       "variant:destructive": {
         "backgroundColor": "var(--color-error-muted)",
         "color": "var(--color-on-error-muted)"
+      },
+      "variant:primary": {
+        "textTransform": "uppercase",
+        "fontStyle": "italic",
+        "fontWeight": "900",
+        "letterSpacing": "0.25em",
+        "boxShadow": "0 0 30px color-mix(in oklch, var(--brand-primary-color, oklch(0.55 0.2 260)) 35%, transparent)"
+      },
+      "size:lg": {
+        "fontSize": "0.6875rem"
       }
     },
     "badge": {
@@ -431,6 +443,16 @@ export const pekaoTheme = {
     "section": {
       "base": {
         "padding": "var(--spacing-3)"
+      }
+    },
+    "field-label": {
+      "base": {
+        "textTransform": "uppercase",
+        "fontStyle": "italic",
+        "fontWeight": "900",
+        "letterSpacing": "0.2em",
+        "fontSize": "0.625rem",
+        "color": "var(--color-text-secondary)"
       }
     }
   },
