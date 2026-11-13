@@ -4,6 +4,11 @@ export default {
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
+  // El preflight se carga dentro de una capa CSS en src/styles/astryx-base.css,
+  // para que no anule los estilos de los componentes de Astryx.
+  corePlugins: {
+    preflight: false,
+  },
   theme: {
     container: {
       center: true,

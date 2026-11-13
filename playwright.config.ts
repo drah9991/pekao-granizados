@@ -6,6 +6,8 @@ dotenv.config({ path: '.env.staging' });
 
 export default defineConfig({
   testDir: './e2e',
+  // La prueba de arranque levanta su propio build: playwright.smoke.config.ts.
+  testIgnore: '**/smoke/**',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
