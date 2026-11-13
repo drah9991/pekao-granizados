@@ -1,9 +1,0 @@
-/*
- * Reemplaza a @astryxdesign/theme-neutral/fonts.css (alias en vite.config.ts).
- * El original carga Figtree desde fonts.googleapis.com con un @import que bloquea el primer
- * render y falla sin conexión; aquí se sirve local con @fontsource, como el resto de fuentes.
- */
-@import "@fontsource/figtree/400.css";
-@import "@fontsource/figtree/500.css";
-@import "@fontsource/figtree/600.css";
-@import "@fontsource/figtree/700.css";
