@@ -64,11 +64,18 @@ golpe, y tema propio en vez de Astryx neutral tal cual.
 - **Errores:** `status={{ type: "error", message }}` en el campo; en tests usar `getAllByText`,
   porque Astryx repite el mensaje para lectores de pantalla.
 - **Tests:** escribir tests de comportamiento antes de migrar una pantalla y mantenerlos verdes
-  después. `src/test/setup.ts` simula `ResizeObserver` para jsdom.
+  después. `src/test/setup.ts` simula `ResizeObserver` y `showModal`/`close` de `<dialog>` para jsdom.
+- **Diálogos:** `Dialog` + `DialogHeader` (con `onOpenChange` muestra la X). `onOpenChange` recibe
+  el nuevo estado: cerrar solo cuando llega `false`. Astryx deja el contenido montado en el
+  `<dialog>` cerrado, así que en tests comprobar `not.toBeVisible()` y no ausencia del DOM.
+- **Listas de opciones:** filas (`List` + `ListItem` con `onClick`, `isSelected`, `isDisabled`), no
+  tarjetas; estados como "Activo" con `Token`, no `Badge` (Badge es solo para conteos).
+- **Colores fijos de la pantalla** (`slate-950`, `rose-500`…) se sustituyen por los del tema: la
+  pantalla pasa a seguir el modo claro/oscuro y la marca de la sede.
 
-Migrados: `LoginForm`, `SignupForm` (con tests de comportamiento).
+Migrados: `LoginForm`, `SignupForm`, `StoreSelectorDialog` (con tests de comportamiento).
 
-Siguiente: `StoreSelectorDialog` y el resto de `src/pages/Auth.tsx` (pestañas, `MagneticButton`);
+Siguiente: el resto de `src/pages/Auth.tsx` (pestañas → `TabList`, `Card`, `MagneticButton`);
 luego los primitivos más usados (`button`, `input`, `label`, `card`) por módulo.
 
 ## Fase 1: equivalencias shadcn → Astryx
