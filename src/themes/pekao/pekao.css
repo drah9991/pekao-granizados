@@ -244,18 +244,18 @@
     --color-border-red: light-dark(#ffaea7, #fa6762);
     --color-icon-red: light-dark(#76000c, #ff9890);
     --color-text-red: light-dark(#76000c, #ffaea7);
-    --color-background-orange: light-dark(#ffc7a1, #503424);
-    --color-border-orange: light-dark(#ffc7a1, #df843f);
-    --color-icon-orange: light-dark(#622700, #ff9e55);
-    --color-text-orange: light-dark(#622700, #ffb37e);
+    --color-background-orange: color-mix(in oklch, #f59e0b 14%, transparent);
+    --color-border-orange: color-mix(in oklch, #f59e0b 45%, transparent);
+    --color-icon-orange: light-dark(#b45309, #fbbf24);
+    --color-text-orange: light-dark(#b45309, #fbbf24);
     --color-background-yellow: light-dark(#fae19e, #453a1c);
     --color-border-yellow: light-dark(#e3c36c, #c29900);
     --color-icon-yellow: light-dark(#4b3900, #e2b623);
     --color-text-yellow: light-dark(#4b3900, #eec448);
-    --color-background-green: light-dark(#bce0bb, #2b422b);
-    --color-border-green: light-dark(#aad4a9, #6ab26b);
-    --color-icon-green: light-dark(#00490b, #90ca90);
-    --color-text-green: light-dark(#00490b, #90ca90);
+    --color-background-green: color-mix(in oklch, #10b981 14%, transparent);
+    --color-border-green: color-mix(in oklch, #10b981 45%, transparent);
+    --color-icon-green: light-dark(#047857, #34d399);
+    --color-text-green: light-dark(#047857, #34d399);
     --color-background-teal: light-dark(#a9e2d6, #28413c);
     --color-border-teal: light-dark(#90d7c8, #4fb1a0);
     --color-icon-teal: light-dark(#00463d, #81c9bb);
@@ -264,14 +264,14 @@
     --color-border-cyan: light-dark(#85d5e9, #49adc4);
     --color-icon-cyan: light-dark(#004351, #71c7dd);
     --color-text-cyan: light-dark(#004351, #85d5e9);
-    --color-background-blue: light-dark(#b9d7ff, #253c5a);
-    --color-border-blue: light-dark(#a1caff, #5aa0f8);
-    --color-icon-blue: light-dark(#003978, #88bcff);
-    --color-text-blue: light-dark(#003978, #a1caff);
-    --color-background-purple: light-dark(#f7d5ff, #4a2f51);
-    --color-border-purple: light-dark(#f3bfff, #d885eb);
-    --color-icon-purple: light-dark(#5c0e6c, #e496f6);
-    --color-text-purple: light-dark(#5c0e6c, #eaacf8);
+    --color-background-blue: color-mix(in oklch, #0ea5e9 14%, transparent);
+    --color-border-blue: color-mix(in oklch, #0ea5e9 45%, transparent);
+    --color-icon-blue: light-dark(#0369a1, #38bdf8);
+    --color-text-blue: light-dark(#0369a1, #38bdf8);
+    --color-background-purple: color-mix(in oklch, #a855f7 14%, transparent);
+    --color-border-purple: color-mix(in oklch, #a855f7 45%, transparent);
+    --color-icon-purple: light-dark(#7e22ce, #c084fc);
+    --color-text-purple: light-dark(#7e22ce, #c084fc);
     --color-background-pink: light-dark(#ffc0d7, #572b3d);
     --color-border-pink: light-dark(#ffc0d7, #fc78b1);
     --color-icon-pink: light-dark(#70003f, #fd92bd);
@@ -552,6 +552,30 @@
     --astryx-card-padding: var(--spacing-3);
   }
 
+  .astryx-card[data-variant="green"] {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--color-border-green);
+  }
+
+  .astryx-card[data-variant="blue"] {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--color-border-blue);
+  }
+
+  .astryx-card[data-variant="purple"] {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--color-border-purple);
+  }
+
+  .astryx-card[data-variant="orange"] {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--color-border-orange);
+  }
+
   .astryx-section {
     --astryx-section-padding: var(--spacing-3);
   }
@@ -563,6 +587,12 @@
     letter-spacing: 0.2em;
     font-size: 0.625rem;
     color: var(--color-text-secondary);
+  }
+
+  .astryx-toggle-button[data-is-pressed="true"] {
+    background-color: var(--brand-primary-color, oklch(0.55 0.2 260));
+    color: oklch(1 0 0);
+    box-shadow: 0 0 20px color-mix(in oklch, var(--brand-primary-color, oklch(0.55 0.2 260)) 35%, transparent);
   }
 
   .astryx-text[data-color="primary"] { color: var(--color-text-primary); }

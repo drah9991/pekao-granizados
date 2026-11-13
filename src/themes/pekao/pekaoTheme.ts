@@ -17,6 +17,34 @@ const app = (variable: string) => `oklch(var(${variable}))`;
 const BRAND = "var(--brand-primary-color, oklch(0.55 0.2 260))";
 const brandMix = (percent: number) => `color-mix(in oklch, ${BRAND} ${percent}%, transparent)`;
 
+/**
+ * Colores de categoría (p. ej. los métodos de pago del POS): fondo translúcido y borde del color
+ * vivo, como en la app. Los de neutral son tonos apagados que en oscuro se ven terrosos.
+ * `text` es [claro, oscuro] para mantener contraste en ambos modos.
+ */
+const CATEGORY_COLORS: Record<string, { base: string; text: [string, string] }> = {
+  green: { base: "#10b981", text: ["#047857", "#34d399"] },
+  blue: { base: "#0ea5e9", text: ["#0369a1", "#38bdf8"] },
+  purple: { base: "#a855f7", text: ["#7e22ce", "#c084fc"] },
+  orange: { base: "#f59e0b", text: ["#b45309", "#fbbf24"] },
+};
+
+const categoryTokens = Object.fromEntries(
+  Object.entries(CATEGORY_COLORS).flatMap(([name, { base, text }]) => [
+    [`--color-background-${name}`, `color-mix(in oklch, ${base} 14%, transparent)`],
+    [`--color-border-${name}`, `color-mix(in oklch, ${base} 45%, transparent)`],
+    [`--color-text-${name}`, text],
+    [`--color-icon-${name}`, text],
+  ]),
+);
+
+const categoryCardBorders = Object.fromEntries(
+  Object.keys(CATEGORY_COLORS).map((name) => [
+    `variant:${name}`,
+    { borderWidth: "2px", borderStyle: "solid", borderColor: `var(--color-border-${name})` },
+  ]),
+);
+
 export const pekaoTheme = defineTheme({
   name: "pekao",
   extends: neutralTheme,
@@ -53,6 +81,8 @@ export const pekaoTheme = defineTheme({
     "--focus-outline-color": BRAND,
     "--color-error": app("--destructive"),
 
+    ...categoryTokens,
+
     // Pekao usa esquinas suaves (--radius: 1.25rem en la app).
     "--radius-inner": "0.5rem",
     "--radius-element": "1rem",
@@ -84,6 +114,17 @@ export const pekaoTheme = defineTheme({
       },
       "size:lg": {
         fontSize: "0.6875rem",
+      },
+    },
+    card: categoryCardBorders,
+    // Interruptores activos (p. ej. cliente "Público" en el POS) con el color de la marca.
+    // Clave de propiedad y no de estado: el componente pone data-is-pressed="true" y la clave de
+    // estado `isPressed` genera [data-is-pressed="isPressed"], que nunca coincide (Astryx 0.7.15).
+    "toggle-button": {
+      "isPressed:true": {
+        backgroundColor: BRAND,
+        color: "oklch(1 0 0)",
+        boxShadow: `0 0 20px ${brandMix(35)}`,
       },
     },
     // Selector de modo (p. ej. Acceso / Registro): píldora rellena con el color de la marca.

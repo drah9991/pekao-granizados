@@ -83,8 +83,24 @@ Migrados: módulo Auth completo en lo que toca a primitivos: `LoginForm`, `Signu
 `StoreSelectorDialog` y la tarjeta de `src/pages/Auth.tsx` (Card + SegmentedControl), con tests.
 Quedan en Auth, sin equivalente en Astryx: la columna de presentación (hero) y `MagneticButton`.
 
-Siguiente: los primitivos más usados (`button`, `input`, `label`, `card`) por módulo, empezando por
-el que más tráfico tenga (POS).
+### POS (en curso)
+
+Migrado: carrito: `CartHeader`, `CartCustomerSelector`, `CartTotals` y `DiscountField`, con tests en
+`src/components/pos/__tests__/CartPanel.test.tsx`. Verificado en el navegador con sesión de staging.
+
+- **Montos que se editan en vivo:** `NumberInput` de Astryx solo confirma al salir del campo o con
+  Enter. Si el total debe actualizarse mientras se escribe, usar `TextInput` con
+  `inputMode="decimal"` y un borrador de texto (ver `DiscountField`): convertir a número en cada
+  tecla impide escribir decimales ("7." vuelve a "7"). Aceptar coma decimal.
+- **Colores de categoría** (green, blue, purple, orange): en el tema son translúcidos y vivos, con
+  borde de 2 px en `Card`/`ClickableCard`. Para íconos usar `var(--color-icon-<color>)`.
+- **`ToggleButton` activo:** el tema lo estiliza con la clave `"isPressed:true"`; la clave de estado
+  `isPressed` genera un selector que nunca coincide (Astryx 0.7.15).
+- **Montos en tests:** `formatCOP` usa espacio duro; normalizar el texto esperado.
+
+Siguiente en POS: `CartItemList`, luego `CustomerSelection`, `ProductGrid`, diálogos
+(`ProductCustomizationDialog`, `ReceiptDialog`, `ShortcutsHelpDialog`, `SplitBillDialog`) y por
+último `PaymentDialog`.
 
 ## Fase 1: equivalencias shadcn → Astryx
 
