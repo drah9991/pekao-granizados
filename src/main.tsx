@@ -1,3 +1,5 @@
+// Primero: declara el orden de capas CSS (preflight de Tailwind + base de Astryx).
+import "./styles/astryx-base.css";
 import { createRoot } from "react-dom/client";
 import { Buffer } from "buffer";
 import "@fontsource/plus-jakarta-sans/400.css";

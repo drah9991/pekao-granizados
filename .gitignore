@@ -49,3 +49,6 @@ src/fix_tanks.ts
 backups/
 playwright-report/
 test-results/
+
+# Diagnósticos internos (contienen detalles de seguridad; el repo es público)
+docs/diagnostico/

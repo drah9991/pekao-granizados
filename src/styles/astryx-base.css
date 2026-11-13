@@ -1,0 +1,53 @@
+/*
+ * Base de Astryx sobre Tailwind v3. DEBE ser el primer CSS que carga la app (ver src/main.tsx):
+ * el primer @layer que ve la página fija el orden de las capas.
+ *
+ * Tailwind v3 emite su preflight sin @layer, y un estilo sin capa gana a cualquier capa: anularía
+ * los estilos de los componentes de Astryx (capa astryx-base). Por eso el preflight está desactivado
+ * en tailwind.config.ts (corePlugins.preflight) y se carga aquí, dentro de la capa tw-preflight.
+ *
+ * Orden resultante (de menor a mayor prioridad):
+ *   reset (Astryx) < tw-preflight < astryx-base < astryx-theme < CSS sin capa (index.css y utilidades)
+ */
+@layer reset, tw-preflight, astryx-base, astryx-theme;
+
+@import "tailwindcss/lib/css/preflight.css" layer(tw-preflight);
+@import "@astryxdesign/core/reset.css";
+@import "@astryxdesign/core/astryx.css";
+
+@layer tw-preflight {
+  /*
+   * El tema neutral da fuente, tamaño, interlineado y color a h1–h6, p, small y code dentro de
+   * [data-astryx-theme], atributo que el <Theme> raíz pone en <html>. La app estiliza esos
+   * elementos con Tailwind y espera que hereden, así que aquí se restaura la herencia. Los
+   * componentes de Astryx no dependen de esto: llevan sus propias clases en astryx-base.
+   */
+  :where(h1, h2, h3, h4, h5, h6, p, small) {
+    font-family: inherit;
+    line-height: inherit;
+    color: inherit;
+  }
+
+  :where(p) {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  :where(small) {
+    font-weight: inherit;
+  }
+
+  :where(code, pre) {
+    line-height: inherit;
+  }
+}
+
+/*
+ * Sin capa a propósito: el tema pone la fuente (Figtree) y el color de texto de Astryx en el
+ * contenedor de <Theme>. Ese contenedor envuelve toda la app con display: contents, así que sin
+ * esto la app entera heredaría la fuente y el color de Astryx en vez de los suyos.
+ */
+body [data-astryx-theme] {
+  font-family: inherit;
+  color: inherit;
+}

@@ -120,6 +120,8 @@ const Dialog = ({
     </DialogContext.Provider>
   );
 };
+type ClickableProps = { onClick?: (e: React.MouseEvent) => void };
+
 interface DialogTriggerProps {
   children: React.ReactNode;
   asChild?: boolean;
@@ -133,10 +135,10 @@ const DialogTrigger = ({ children, asChild }: DialogTriggerProps) => {
     context.setOpen(true);
   };
 
-  if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+  if (asChild && React.isValidElement<ClickableProps>(children)) {
+    return React.cloneElement(children, {
       onClick: (e: React.MouseEvent) => {
-        if (children.props.onClick) children.props.onClick(e);
+        children.props.onClick?.(e);
         handleClick(e);
       }
     });
@@ -166,10 +168,10 @@ const DialogClose = ({ children, asChild }: DialogCloseProps) => {
     context.setOpen(false);
   };
 
-  if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+  if (asChild && React.isValidElement<ClickableProps>(children)) {
+    return React.cloneElement(children, {
       onClick: (e: React.MouseEvent) => {
-        if (children.props.onClick) children.props.onClick(e);
+        children.props.onClick?.(e);
         handleClick(e);
       }
     });

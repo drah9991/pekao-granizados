@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { AstryxThemeBridge } from "@/components/AstryxThemeBridge";
 import { BrandingProvider } from "@/context/BrandingContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { TurnProvider } from "@/context/TurnContext";
@@ -101,6 +102,7 @@ const App = () => {
       <AuthProvider>
         <TurnProvider>
           <ThemeProvider defaultTheme="system" attribute="class">
+            <AstryxThemeBridge>
             <TooltipProvider>
               <Toaster />
         <ToastContainer />
@@ -456,6 +458,7 @@ const App = () => {
           </BrowserRouter>
         </BrandingProvider>
       </TooltipProvider>
+            </AstryxThemeBridge>
     </ThemeProvider>
     </TurnProvider>
     </AuthProvider>
