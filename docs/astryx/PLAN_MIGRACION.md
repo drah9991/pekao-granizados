@@ -56,14 +56,20 @@ golpe, y tema propio en vez de Astryx neutral tal cual.
 - **react-hook-form:** los inputs de Astryx son controlados (`value` + `onChange(value)`), así que
   se conectan con `Controller`, no con `register`.
 - **Contenido al final de un campo** (p. ej. mostrar contraseña): `InputGroup` con `TextInput` y un
-  `Button` `isIconOnly` `variant="secondary"`.
+  `Button` `isIconOnly` `variant="secondary"`. Para contraseñas ya existe
+  `src/components/auth/PasswordInput.tsx`.
+- **Validación:** los campos de Astryx no ponen el `required` nativo del navegador (solo
+  `aria-required`). Un formulario que dependía de `required` debe validar con zod al migrarlo, o
+  se podrá enviar vacío.
 - **Errores:** `status={{ type: "error", message }}` en el campo; en tests usar `getAllByText`,
   porque Astryx repite el mensaje para lectores de pantalla.
 - **Tests:** escribir tests de comportamiento antes de migrar una pantalla y mantenerlos verdes
   después. `src/test/setup.ts` simula `ResizeObserver` para jsdom.
 
-Siguiente: `SignupForm` y `StoreSelectorDialog` (resto de Auth); luego los primitivos más usados
-(`button`, `input`, `label`, `card`) por módulo.
+Migrados: `LoginForm`, `SignupForm` (con tests de comportamiento).
+
+Siguiente: `StoreSelectorDialog` y el resto de `src/pages/Auth.tsx` (pestañas, `MagneticButton`);
+luego los primitivos más usados (`button`, `input`, `label`, `card`) por módulo.
 
 ## Fase 1: equivalencias shadcn → Astryx
 

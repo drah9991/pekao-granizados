@@ -1,13 +1,12 @@
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@astryxdesign/core/Button";
 import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
-import { InputGroup } from "@astryxdesign/core/InputGroup";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { VStack } from "@astryxdesign/core/VStack";
-import { Eye, EyeOff, LogIn, Mail } from "lucide-react";
+import { LogIn, Mail } from "lucide-react";
+import { PasswordInput } from "./PasswordInput";
 
 const loginSchema = z.object({
   email: z
@@ -32,8 +31,6 @@ const errorStatus = (message?: string) =>
   message ? ({ type: "error", message } as const) : undefined;
 
 export default function LoginForm({ isLoading, onLogin, rememberMe, onRememberMeChange }: LoginFormProps) {
-  const [showPassword, setShowPassword] = useState(false);
-
   const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
@@ -42,8 +39,6 @@ export default function LoginForm({ isLoading, onLogin, rememberMe, onRememberMe
   const onSubmit = (data: LoginFormData) => {
     onLogin(data.email, data.password);
   };
-
-  const passwordToggleLabel = showPassword ? "Ocultar contraseña" : "Mostrar contraseña";
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -73,29 +68,15 @@ export default function LoginForm({ isLoading, onLogin, rememberMe, onRememberMe
           name="password"
           control={control}
           render={({ field }) => (
-            <InputGroup
+            <PasswordInput
               label="Contraseña de Acceso"
-              size="lg"
+              autoComplete="current-password"
+              htmlName={field.name}
+              value={field.value}
+              onChange={field.onChange}
               isDisabled={isLoading}
-              status={errorStatus(errors.password?.message)}
-            >
-              <TextInput
-                label="Contraseña de Acceso"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                htmlName={field.name}
-                value={field.value}
-                onChange={(value) => field.onChange(value)}
-              />
-              <Button
-                label={passwordToggleLabel}
-                variant="secondary"
-                isIconOnly
-                icon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                onClick={() => setShowPassword((shown) => !shown)}
-              />
-            </InputGroup>
+              errorMessage={errors.password?.message}
+            />
           )}
         />
 
