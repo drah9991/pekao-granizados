@@ -86,5 +86,20 @@ export const pekaoTheme = defineTheme({
         fontSize: "0.6875rem",
       },
     },
+    // Selector de modo (p. ej. Acceso / Registro): píldora rellena con el color de la marca.
+    "segmented-control-item": {
+      base: {
+        textTransform: "uppercase",
+        fontStyle: "italic",
+        fontWeight: "900",
+        letterSpacing: "0.15em",
+        fontSize: "0.6875rem",
+      },
+      selected: {
+        backgroundColor: BRAND,
+        color: "oklch(1 0 0)",
+        boxShadow: `0 0 20px ${brandMix(35)}`,
+      },
+    },
   },
 });

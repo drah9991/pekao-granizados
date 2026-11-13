@@ -73,10 +73,18 @@ golpe, y tema propio en vez de Astryx neutral tal cual.
 - **Colores fijos de la pantalla** (`slate-950`, `rose-500`…) se sustituyen por los del tema: la
   pantalla pasa a seguir el modo claro/oscuro y la marca de la sede.
 
-Migrados: `LoginForm`, `SignupForm`, `StoreSelectorDialog` (con tests de comportamiento).
+- **Selector de modo dentro de una pantalla** (Acceso/Registro, vistas de una misma sección):
+  `SegmentedControl`, no `TabList` (que es navegación). El segmento seleccionado lleva la marca
+  desde el tema (`segmented-control-item.selected`). Su rol accesible es `radio`.
+- **Efectos propios de Pekao** (`glass-pro`, fondo aurora): se conservan con `className` en el
+  componente de Astryx mientras no exista un equivalente en el tema.
 
-Siguiente: el resto de `src/pages/Auth.tsx` (pestañas → `TabList`, `Card`, `MagneticButton`);
-luego los primitivos más usados (`button`, `input`, `label`, `card`) por módulo.
+Migrados: módulo Auth completo en lo que toca a primitivos: `LoginForm`, `SignupForm`,
+`StoreSelectorDialog` y la tarjeta de `src/pages/Auth.tsx` (Card + SegmentedControl), con tests.
+Quedan en Auth, sin equivalente en Astryx: la columna de presentación (hero) y `MagneticButton`.
+
+Siguiente: los primitivos más usados (`button`, `input`, `label`, `card`) por módulo, empezando por
+el que más tráfico tenga (POS).
 
 ## Fase 1: equivalencias shadcn → Astryx
 

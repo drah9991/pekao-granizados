@@ -410,7 +410,12 @@ export const pekaoTheme = {
     },
     "segmented-control-item": {
       "base": {
-        "--color-text-secondary": "light-dark(#474747, #c6c6c6)"
+        "--color-text-secondary": "light-dark(#474747, #c6c6c6)",
+        "textTransform": "uppercase",
+        "fontStyle": "italic",
+        "fontWeight": "900",
+        "letterSpacing": "0.15em",
+        "fontSize": "0.6875rem"
       },
       "size:sm": {
         "height": "calc(var(--size-element-sm) - 8px)"
@@ -422,7 +427,9 @@ export const pekaoTheme = {
         "height": "calc(var(--size-element-lg) - 8px)"
       },
       "selected": {
-        "boxShadow": "none"
+        "boxShadow": "0 0 20px color-mix(in oklch, var(--brand-primary-color, oklch(0.55 0.2 260)) 35%, transparent)",
+        "backgroundColor": "var(--brand-primary-color, oklch(0.55 0.2 260))",
+        "color": "oklch(1 0 0)"
       }
     },
     "switch": {

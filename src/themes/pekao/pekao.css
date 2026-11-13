@@ -515,6 +515,11 @@
 
   .astryx-segmented-control-item {
     --color-text-secondary: light-dark(#474747, #c6c6c6);
+    text-transform: uppercase;
+    font-style: italic;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    font-size: 0.6875rem;
   }
 
   .astryx-segmented-control-item[data-size="sm"] {
@@ -530,7 +535,9 @@
   }
 
   .astryx-segmented-control-item[data-selected="selected"] {
-    box-shadow: none;
+    box-shadow: 0 0 20px color-mix(in oklch, var(--brand-primary-color, oklch(0.55 0.2 260)) 35%, transparent);
+    background-color: var(--brand-primary-color, oklch(0.55 0.2 260));
+    color: oklch(1 0 0);
   }
 
   .astryx-switch {
