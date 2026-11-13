@@ -96,8 +96,6 @@ export default defineConfig(({ mode }) => ({
   },
   resolve: {
     alias: {
-      // Figtree local en vez de Google Fonts (ver src/styles/astryx-fonts.css).
-      "@astryxdesign/theme-neutral/fonts.css": path.resolve(__dirname, "./src/styles/astryx-fonts.css"),
       "@": path.resolve(__dirname, "./src"),
     },
   },

@@ -1,0 +1,86 @@
+# Migración de la UI a Astryx
+
+Objetivo: que toda la interfaz de Pekao use los componentes de Astryx (`@astryxdesign/core`), con un
+tema Astryx que conserve la identidad de Pekao. Decidido el 2026-11-13: migración por fases, no de
+golpe, y tema propio en vez de Astryx neutral tal cual.
+
+## Punto de partida (2026-11-13)
+
+- React 19 + Astryx 0.7.15 conectados en producción (`e953a8c`): estilos base en
+  `src/styles/astryx-base.css`, tema montado con `src/components/AstryxThemeBridge.tsx`.
+- Tailwind 3: su preflight vive en la capa `tw-preflight` (ver comentario en `astryx-base.css`).
+- Superficie a migrar: 210 archivos `.tsx` (~33.000 líneas), 55 componentes shadcn en
+  `src/components/ui/`, 167 archivos que los importan. Astryx ofrece 108 componentes.
+
+## Reglas de la migración
+
+- Una fase o módulo por commit, probado en `staging` antes de pasar a `main`.
+- Cada pantalla migrada debe verse y comportarse igual o mejor; comparar antes/después en el navegador.
+- Antes de usar un componente: `npx astryx component <Nombre>` para leer sus props.
+- Colores, fuentes y radios van en el tema (`src/themes/pekao/`), no en `:root` ni en clases sueltas.
+- Mientras convivan shadcn y Astryx, no borrar un componente de `src/components/ui/` hasta que no
+  quede ningún import suyo.
+
+## Fases
+
+| Fase | Contenido | Estado |
+|------|-----------|--------|
+| 0 | Tema `pekao` que extiende neutral con colores, fuentes y radios de la app | Hecha |
+| 1 | Inventario shadcn → Astryx: tabla de equivalencias y huecos sin equivalente | Hecha (abajo) |
+| 2 | Primitivos de formulario: Button, Input, TextArea, Select, Checkbox, Switch, Label/Field | Pendiente |
+| 3 | Superposiciones: Dialog, AlertDialog, Drawer, Popover, Tooltip, DropdownMenu, Toast | Pendiente |
+| 4 | Datos: Table, Tabs, Badge, Card, Skeleton, Pagination, Calendar | Pendiente |
+| 5 | Estructura: AppShell, SideNav/TopNav en lugar del layout y `navConfig` actual | Pendiente |
+| 6 | Módulos, uno por commit: Auth, POS, Inventario, Ventas, Caja, Dashboard, Configuración, Carta digital | Pendiente |
+| 7 | Limpieza: borrar `src/components/ui/` sin uso, dependencias Radix/shadcn y CSS muerto | Pendiente |
+
+## Fase 0: tema Pekao
+
+- Fuente: `src/themes/pekao/pekaoTheme.ts` (extiende neutral). Tras editarlo:
+  `npx astryx theme build src/themes/pekao/pekaoTheme.ts`. Los `pekao.*` generados se versionan.
+- Es el único tema de la app (`src/astryx-themes.ts`); neutral sigue instalado porque el tema lo
+  extiende y toma sus íconos.
+- `typography` se define completa (escala de neutral + Plus Jakarta Sans): si solo se cambiara el
+  token `--font-family-body`, la adaptación táctil de neutral (tablets < 1024 px) volvería a Figtree.
+- `astryx doctor` avisa que no se importa la hoja de fuentes: es esperable, Plus Jakarta Sans la carga
+  `src/main.tsx` con `@fontsource`.
+
+## Fase 1: equivalencias shadcn → Astryx
+
+Medido el 2026-11-13. "Usos" = archivos que importan el componente (sin contar `ui/`).
+
+| shadcn (`src/components/ui/`) | Usos | Astryx | Notas |
+|---|---|---|---|
+| button | 125 | Button, IconButton | IconButton para botones solo-ícono |
+| input | 71 | TextInput, NumberInput | NumberInput para precios y cantidades |
+| card | 63 | Card, ClickableCard, SelectableCard | Regla Astryx: datos densos en filas, no en tarjetas |
+| label | 58 | Field | Field envuelve etiqueta + control + estado |
+| dialog | 41 | Dialog | |
+| select | 37 | Selector | MultiSelector / Typeahead si hay búsqueda |
+| badge | 25 | Badge, Token, StatusDot | Regla Astryx: Badge solo para conteos; estados → StatusDot/Token |
+| switch | 12 | Switch | |
+| table | 11 | Table | |
+| tooltip | 9 | Tooltip, InfoTip | |
+| textarea | 9 | TextArea | |
+| tabs | 8 | TabList, SegmentedControl | |
+| popover | 6 | Popover | |
+| scroll-area | 4 | ScrollableArea | |
+| AdvancedPagination | 3 | Pagination | |
+| toast, toaster, sonner, use-toast | 5 | Toast | Unificar los dos sistemas de toasts en uno |
+| skeleton, BoneyardSkeleton | 4 | Skeleton | |
+| sheet | 2 | Drawer, BottomSheet | |
+| progress | 2 | ProgressBar | |
+| dropdown-menu | 2 | DropdownMenu, MoreMenu | |
+| checkbox | 2 | CheckboxInput, CheckboxList | |
+| calendar | 2 | Calendar, DateInput, DateRangeInput | Al migrarlo se puede quitar `react-day-picker` |
+| toggle | 1 | ToggleButton | |
+| separator | 1 | Divider | |
+
+**Sin equivalente directo (componentes propios de Pekao):** `Panel` → Card o Section;
+`MagneticButton`, `InteractiveCursor` (efectos decorativos) y `OptimizedImg` se revisan caso por caso.
+Astryx no trae gráficos: `recharts` se queda.
+
+**Sin uso hoy (borrar en la fase 7, tras confirmar con grep):** accordion, alert, alert-dialog,
+aspect-ratio, avatar, breadcrumb, carousel, chart, collapsible, command, context-menu, drawer, form,
+hover-card, input-otp, menubar, navigation-menu, pagination, radio-group, resizable, sidebar,
+slider, toggle-group.
