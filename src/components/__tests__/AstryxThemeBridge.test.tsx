@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const useThemeMock = vi.fn();
 vi.mock("next-themes", () => ({ useTheme: () => useThemeMock() }));
 
+import { TextInput } from "@astryxdesign/core/TextInput";
 import { AstryxThemeBridge } from "../AstryxThemeBridge";
 import { toAstryxMode } from "@/lib/astryxMode";
 
@@ -35,6 +36,19 @@ describe("AstryxThemeBridge", () => {
 
     expect(screen.getByText("contenido")).toBeInTheDocument();
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+
+  it("shows Astryx built-in texts in Spanish", () => {
+    useThemeMock.mockReturnValue({ resolvedTheme: "dark" });
+
+    render(
+      <AstryxThemeBridge>
+        <TextInput label="Nombre" isRequired value="" onChange={() => {}} />
+      </AstryxThemeBridge>,
+    );
+
+    expect(screen.getByText(/obligatorio/i)).toBeInTheDocument();
+    expect(screen.queryByText(/required/i)).not.toBeInTheDocument();
   });
 
   it("syncs the light mode to <html>", () => {

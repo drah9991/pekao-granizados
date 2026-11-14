@@ -98,6 +98,22 @@ el navegador con sesión de staging (descuento, Público, toppings, cantidades y
 - **Animaciones de framer-motion:** se conservan como envoltorio (`motion.div`) alrededor del
   componente de Astryx.
 
+Migrado también: `CustomerSelection` → `Typeahead` (búsqueda con espera de 300 ms y mínimo 2
+caracteres) con "Crear Nuevo Cliente" en `emptySearchText`; acceso a datos en
+`src/components/pos/customer/customerApi.ts`, `SelectedCustomerCard` y `CreateCustomerDialog`.
+Tests en `CustomerSelection.test.tsx` (con Supabase simulado).
+
+- **Idioma:** `AstryxThemeBridge` monta `InternationalizationProvider` con `es-CO` y el catálogo
+  `es-ES` de Astryx. Sin él, los textos internos (p. ej. "Required", quitar ficha) salen en inglés.
+- **Menús dentro de diálogos:** al abrir un `Dialog` desde el menú de un `Typeahead`, cerrar antes
+  el menú con `handleRef.current.close()`; si no, queda abierto detrás.
+- **Servidor de desarrollo:** al importar un componente de Astryx por primera vez, Vite reoptimiza
+  dependencias y recarga; una pantalla abierta puede mostrar "Failed to fetch dynamically imported
+  module". Se resuelve recargando; no afecta al build.
+- **Pendiente fuera de la migración:** `searchCustomers` mete el texto sin escapar en `.or()` de
+  Supabase (una coma o un paréntesis altera el filtro) y `types.ts` no tiene `customers.document_id`
+  aunque la migración `20260308000000` lo crea.
+
 - **Montos que se editan en vivo:** `NumberInput` de Astryx solo confirma al salir del campo o con
   Enter. Si el total debe actualizarse mientras se escribe, usar `TextInput` con
   `inputMode="decimal"` y un borrador de texto (ver `DiscountField`): convertir a número en cada
@@ -108,7 +124,7 @@ el navegador con sesión de staging (descuento, Público, toppings, cantidades y
   `isPressed` genera un selector que nunca coincide (Astryx 0.7.15).
 - **Montos en tests:** `formatCOP` usa espacio duro; normalizar el texto esperado.
 
-Siguiente en POS: `CustomerSelection`, `ProductGrid`, diálogos
+Siguiente en POS: `ProductGrid`, diálogos
 (`ProductCustomizationDialog`, `ReceiptDialog`, `ShortcutsHelpDialog`, `SplitBillDialog`) y por
 último `PaymentDialog`.
 
