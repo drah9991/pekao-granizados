@@ -27,6 +27,7 @@ const CATEGORY_COLORS: Record<string, { base: string; text: [string, string] }> 
   blue: { base: "#0ea5e9", text: ["#0369a1", "#38bdf8"] },
   purple: { base: "#a855f7", text: ["#7e22ce", "#c084fc"] },
   orange: { base: "#f59e0b", text: ["#b45309", "#fbbf24"] },
+  red: { base: "#f43f5e", text: ["#be123c", "#fb7185"] },
 };
 
 const categoryTokens = Object.fromEntries(

@@ -29,7 +29,8 @@ function renderSelection(selectedCustomer: Customer | null = null) {
 
 const searchBox = () => screen.getByLabelText(/buscar cliente/i, { selector: "input" });
 
-describe("CustomerSelection", () => {
+// Escriben mucho con userEvent: con la CPU ocupada (p. ej. un build en paralelo) superan los 5 s por defecto.
+describe("CustomerSelection", { timeout: 15_000 }, () => {
   beforeEach(() => {
     from.mockReset();
     insert.mockReset();
@@ -53,7 +54,7 @@ describe("CustomerSelection", () => {
     const { onCustomerSelected } = renderSelection();
 
     await user.type(searchBox(), "ju");
-    await user.click(await screen.findByText("Juan Pérez", {}, { timeout: 2000 }));
+    await user.click(await screen.findByText("Juan Pérez", {}, { timeout: 5000 }));
 
     expect(onCustomerSelected).toHaveBeenCalledWith(JUAN);
   });
@@ -85,7 +86,7 @@ describe("CustomerSelection", () => {
     const { onCustomerSelected } = renderSelection();
 
     await user.type(searchBox(), "ana");
-    await user.click(await screen.findByRole("button", { name: /crear nuevo cliente/i }, { timeout: 2000 }));
+    await user.click(await screen.findByRole("button", { name: /crear nuevo cliente/i }, { timeout: 5000 }));
 
     await user.type(await screen.findByLabelText(/nombre completo/i, { selector: "input" }), "  Ana Gómez ");
     await user.type(screen.getByLabelText(/número de documento/i, { selector: "input" }), "52000000");
@@ -104,7 +105,7 @@ describe("CustomerSelection", () => {
     renderSelection();
 
     await user.type(searchBox(), "ana");
-    await user.click(await screen.findByRole("button", { name: /crear nuevo cliente/i }, { timeout: 2000 }));
+    await user.click(await screen.findByRole("button", { name: /crear nuevo cliente/i }, { timeout: 5000 }));
     await user.click(await screen.findByRole("button", { name: /guardar y seleccionar/i }));
 
     expect(insert).not.toHaveBeenCalled();

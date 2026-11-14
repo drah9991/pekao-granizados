@@ -161,10 +161,10 @@ export const pekaoTheme = {
     "--color-skeleton": "light-dark(#f1f1f1, #525252)",
     "--color-shadow": "light-dark(#0000001A, #0000004D)",
     "--color-tint-hover": "light-dark(#000000, #ffffff)",
-    "--color-background-red": "light-dark(#ffc4be, #5b2b28)",
-    "--color-border-red": "light-dark(#ffaea7, #fa6762)",
-    "--color-icon-red": "light-dark(#76000c, #ff9890)",
-    "--color-text-red": "light-dark(#76000c, #ffaea7)",
+    "--color-background-red": "color-mix(in oklch, #f43f5e 14%, transparent)",
+    "--color-border-red": "color-mix(in oklch, #f43f5e 45%, transparent)",
+    "--color-icon-red": "light-dark(#be123c, #fb7185)",
+    "--color-text-red": "light-dark(#be123c, #fb7185)",
     "--color-background-orange": "color-mix(in oklch, #f59e0b 14%, transparent)",
     "--color-border-orange": "color-mix(in oklch, #f59e0b 45%, transparent)",
     "--color-icon-orange": "light-dark(#b45309, #fbbf24)",
@@ -465,6 +465,11 @@ export const pekaoTheme = {
         "borderWidth": "2px",
         "borderStyle": "solid",
         "borderColor": "var(--color-border-orange)"
+      },
+      "variant:red": {
+        "borderWidth": "2px",
+        "borderStyle": "solid",
+        "borderColor": "var(--color-border-red)"
       }
     },
     "section": {

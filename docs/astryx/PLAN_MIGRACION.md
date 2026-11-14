@@ -124,7 +124,22 @@ Tests en `CustomerSelection.test.tsx` (con Supabase simulado).
   `isPressed` genera un selector que nunca coincide (Astryx 0.7.15).
 - **Montos en tests:** `formatCOP` usa espacio duro; normalizar el texto esperado.
 
-Siguiente en POS: `ProductGrid`, diálogos
+Migrado también: `ProductGrid` → buscador `TextInput` (con ⌘K), categorías `TabList role="tablist"`,
+tarjetas `ClickableCard` con `StatusDot` de stock, `EmptyState`. La consulta pasó a
+`src/hooks/usePosProducts.ts` (misma clave y forma de la caché `['products-grid', storeId]`, que usan
+usePOS, useProducts, useSales y usePrintCenter) y las reglas a `product-grid/productStock.ts` y
+`productFilter.ts`, con tests.
+
+- **`BoneyardSkeleton`** mantiene el esqueleto al menos 400 ms: en tests, esperar al contenido
+  (`findBy…`) antes de interactuar.
+- **Tests con mucho `userEvent.type`:** dar `{ timeout: 15_000 }` al `describe`; con la CPU ocupada
+  superan los 5 s por defecto.
+- **Pendiente fuera de la migración:** la grilla busca la categoría de un producto por
+  `product.type` y no por `category_id` (que sí usa `mapProductStock`), así que los granizados nunca
+  muestran litros ni usan los umbrales en ml. Se conservó tal cual; corregirlo cambia lo que ven los
+  cajeros y debe decidirse aparte.
+
+Siguiente en POS: diálogos
 (`ProductCustomizationDialog`, `ReceiptDialog`, `ShortcutsHelpDialog`, `SplitBillDialog`) y por
 último `PaymentDialog`.
 
