@@ -18,7 +18,8 @@ const emailInput = () => screen.getByLabelText(/correo electrónico/i, { selecto
 const passwordInput = () => screen.getByLabelText(/contraseña de seguridad/i, { selector: "input" });
 const submitButton = () => screen.getByRole("button", { name: /registrar en el sistema|creando perfil/i });
 
-describe("SignupForm", () => {
+// Escriben mucho con userEvent: con la CPU ocupada (p. ej. un build en paralelo) superan los 5 s por defecto.
+describe("SignupForm", { timeout: 15_000 }, () => {
   it("submits email, password and full name", async () => {
     const user = userEvent.setup();
     const { onSignup } = renderForm();

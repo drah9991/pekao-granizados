@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@astryxdesign/core/Card";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
+import { VStack } from "@astryxdesign/core/VStack";
 import { IceCream, ShieldCheck, Zap, Layers } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import { InteractiveCursor } from "@/components/ui/InteractiveCursor";
@@ -12,7 +13,10 @@ import { StoreSelectorDialog } from "@/components/auth/StoreSelectorDialog";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import ThemeToggle from "@/components/ThemeToggle";
 
+type AuthMode = "login" | "signup";
+
 export default function Auth() {
+  const [mode, setMode] = useState<AuthMode>("login");
   const { logoUrl, brandName, isLoadingBranding } = useBranding();
   const { 
     isLoading, 
@@ -149,43 +153,31 @@ export default function Auth() {
             </p>
           </div>
 
-          <Card className="glass-pro border-border/60 shadow-pro rounded-[2.5rem] overflow-hidden p-2 backdrop-blur-xl">
-            <Tabs defaultValue="login" className="w-full">
-              <div className="px-4 pt-4 pb-1">
-                <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 rounded-2xl h-12 border border-border/50 shadow-inner">
-                  <TabsTrigger 
-                    value="login" 
-                    className="rounded-xl font-black font-space-grotesk italic text-[11px] tracking-[0.15em] uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro transition-all"
-                  >
-                    ACCESO
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="signup" 
-                    className="rounded-xl font-black font-space-grotesk italic text-[11px] tracking-[0.15em] uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow-pro transition-all"
-                  >
-                    REGISTRO
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+          {/* glass-pro conserva el efecto vidrio de Pekao sobre el fondo aurora. */}
+          <Card elevation="high" padding={6} className="glass-pro backdrop-blur-xl">
+            <VStack gap={6}>
+              <SegmentedControl
+                label="Acceso o registro"
+                size="lg"
+                layout="fill"
+                value={mode}
+                onChange={(value) => setMode(value as AuthMode)}
+              >
+                <SegmentedControlItem value="login" label="Acceso" />
+                <SegmentedControlItem value="signup" label="Registro" />
+              </SegmentedControl>
 
-              <div className="p-6 sm:p-8">
-                <TabsContent value="login" className="mt-0">
-                  <LoginForm 
-                    isLoading={isLoading}
-                    rememberMe={rememberMe}
-                    onRememberMeChange={setRememberMe}
-                    onLogin={handleLogin}
-                  />
-                </TabsContent>
-
-                <TabsContent value="signup" className="mt-0">
-                  <SignupForm 
-                    isLoading={isLoading}
-                    onSignup={handleSignup}
-                  />
-                </TabsContent>
-              </div>
-            </Tabs>
+              {mode === "login" ? (
+                <LoginForm
+                  isLoading={isLoading}
+                  rememberMe={rememberMe}
+                  onRememberMeChange={setRememberMe}
+                  onLogin={handleLogin}
+                />
+              ) : (
+                <SignupForm isLoading={isLoading} onSignup={handleSignup} />
+              )}
+            </VStack>
           </Card>
 
           <div className="mt-6 text-center">

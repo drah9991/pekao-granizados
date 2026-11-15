@@ -18,7 +18,8 @@ function renderForm(overrides: Partial<React.ComponentProps<typeof LoginForm>> =
 // El grupo del campo de contraseña y el propio <input> comparten nombre accesible.
 const passwordInput = () => screen.getByLabelText(/contraseña de acceso/i, { selector: "input" });
 
-describe("LoginForm", () => {
+// Escriben mucho con userEvent: con la CPU ocupada (p. ej. un build en paralelo) superan los 5 s por defecto.
+describe("LoginForm", { timeout: 15_000 }, () => {
   it("submits the typed email and password", async () => {
     const user = userEvent.setup();
     const { onLogin } = renderForm();

@@ -1,5 +1,8 @@
 import { Receipt } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Heading } from "@astryxdesign/core/Heading";
+import { HStack } from "@astryxdesign/core/HStack";
 
 interface CartHeaderProps {
   itemCount: number;
@@ -8,26 +11,13 @@ interface CartHeaderProps {
 
 export function CartHeader({ itemCount, onClearCart }: CartHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-primary/10 rounded-xl text-primary border border-primary/20">
-          <Receipt className="w-6 h-6" />
-        </div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-3 font-dm-sans uppercase">
-          Orden
-          <span className="bg-white/5 text-primary text-[10px] font-bold px-2 py-1 rounded-md border border-white/5 tabular-nums">
-            {itemCount} items
-          </span>
-        </h2>
-      </div>
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={onClearCart}
-        className="text-muted-foreground/40 hover:text-rose-500 hover:bg-rose-500/5 transition-all text-[10px] font-bold uppercase tracking-wider font-dm-sans"
-      >
-        Vaciar
-      </Button>
-    </div>
+    <HStack justify="between" vAlign="center">
+      <HStack gap={3} vAlign="center">
+        <Receipt className="size-6 text-primary" aria-hidden />
+        <Heading level={2}>Orden</Heading>
+        <Badge variant="purple" label={`${itemCount} items`} />
+      </HStack>
+      <Button label="Vaciar" variant="ghost" size="sm" onClick={onClearCart} />
+    </HStack>
   );
 }

@@ -73,10 +73,75 @@ golpe, y tema propio en vez de Astryx neutral tal cual.
 - **Colores fijos de la pantalla** (`slate-950`, `rose-500`…) se sustituyen por los del tema: la
   pantalla pasa a seguir el modo claro/oscuro y la marca de la sede.
 
-Migrados: `LoginForm`, `SignupForm`, `StoreSelectorDialog` (con tests de comportamiento).
+- **Selector de modo dentro de una pantalla** (Acceso/Registro, vistas de una misma sección):
+  `SegmentedControl`, no `TabList` (que es navegación). El segmento seleccionado lleva la marca
+  desde el tema (`segmented-control-item.selected`). Su rol accesible es `radio`.
+- **Efectos propios de Pekao** (`glass-pro`, fondo aurora): se conservan con `className` en el
+  componente de Astryx mientras no exista un equivalente en el tema.
 
-Siguiente: el resto de `src/pages/Auth.tsx` (pestañas → `TabList`, `Card`, `MagneticButton`);
-luego los primitivos más usados (`button`, `input`, `label`, `card`) por módulo.
+Migrados: módulo Auth completo en lo que toca a primitivos: `LoginForm`, `SignupForm`,
+`StoreSelectorDialog` y la tarjeta de `src/pages/Auth.tsx` (Card + SegmentedControl), con tests.
+Quedan en Auth, sin equivalente en Astryx: la columna de presentación (hero) y `MagneticButton`.
+
+### POS (en curso)
+
+Migrado: el carrito completo (`src/components/pos/cart/`): `CartHeader`, `CartCustomerSelector`,
+`CartTotals`, `DiscountField`, `CartItemList`, `CartItemRow`, `ToppingPicker` y `cartItemOptions`.
+Tests en `src/components/pos/__tests__/CartPanel.test.tsx` y `CartItemList.test.tsx`. Verificado en
+el navegador con sesión de staging (descuento, Público, toppings, cantidades y totales).
+
+- **Botones solo-ícono:** `IconButton` con `label` que nombra la acción y el producto ("Agregar uno de
+  Fresa", "Eliminar Fresa"); antes no tenían nombre accesible.
+- **Etiquetas removibles** (toppings): `Token` con `onRemove`.
+- **Tamaños de un ítem:** `SegmentedControl`; la regla de tamaños habilitados por precio está en
+  `cartItemOptions.ts` (llama a `calculateItemPrice`), no en el JSX.
+- **Animaciones de framer-motion:** se conservan como envoltorio (`motion.div`) alrededor del
+  componente de Astryx.
+
+Migrado también: `CustomerSelection` → `Typeahead` (búsqueda con espera de 300 ms y mínimo 2
+caracteres) con "Crear Nuevo Cliente" en `emptySearchText`; acceso a datos en
+`src/components/pos/customer/customerApi.ts`, `SelectedCustomerCard` y `CreateCustomerDialog`.
+Tests en `CustomerSelection.test.tsx` (con Supabase simulado).
+
+- **Idioma:** `AstryxThemeBridge` monta `InternationalizationProvider` con `es-CO` y el catálogo
+  `es-ES` de Astryx. Sin él, los textos internos (p. ej. "Required", quitar ficha) salen en inglés.
+- **Menús dentro de diálogos:** al abrir un `Dialog` desde el menú de un `Typeahead`, cerrar antes
+  el menú con `handleRef.current.close()`; si no, queda abierto detrás.
+- **Servidor de desarrollo:** al importar un componente de Astryx por primera vez, Vite reoptimiza
+  dependencias y recarga; una pantalla abierta puede mostrar "Failed to fetch dynamically imported
+  module". Se resuelve recargando; no afecta al build.
+- **Pendiente fuera de la migración:** `searchCustomers` mete el texto sin escapar en `.or()` de
+  Supabase (una coma o un paréntesis altera el filtro) y `types.ts` no tiene `customers.document_id`
+  aunque la migración `20260308000000` lo crea.
+
+- **Montos que se editan en vivo:** `NumberInput` de Astryx solo confirma al salir del campo o con
+  Enter. Si el total debe actualizarse mientras se escribe, usar `TextInput` con
+  `inputMode="decimal"` y un borrador de texto (ver `DiscountField`): convertir a número en cada
+  tecla impide escribir decimales ("7." vuelve a "7"). Aceptar coma decimal.
+- **Colores de categoría** (green, blue, purple, orange): en el tema son translúcidos y vivos, con
+  borde de 2 px en `Card`/`ClickableCard`. Para íconos usar `var(--color-icon-<color>)`.
+- **`ToggleButton` activo:** el tema lo estiliza con la clave `"isPressed:true"`; la clave de estado
+  `isPressed` genera un selector que nunca coincide (Astryx 0.7.15).
+- **Montos en tests:** `formatCOP` usa espacio duro; normalizar el texto esperado.
+
+Migrado también: `ProductGrid` → buscador `TextInput` (con ⌘K), categorías `TabList role="tablist"`,
+tarjetas `ClickableCard` con `StatusDot` de stock, `EmptyState`. La consulta pasó a
+`src/hooks/usePosProducts.ts` (misma clave y forma de la caché `['products-grid', storeId]`, que usan
+usePOS, useProducts, useSales y usePrintCenter) y las reglas a `product-grid/productStock.ts` y
+`productFilter.ts`, con tests.
+
+- **`BoneyardSkeleton`** mantiene el esqueleto al menos 400 ms: en tests, esperar al contenido
+  (`findBy…`) antes de interactuar.
+- **Tests con mucho `userEvent.type`:** dar `{ timeout: 15_000 }` al `describe`; con la CPU ocupada
+  superan los 5 s por defecto.
+- **Pendiente fuera de la migración:** la grilla busca la categoría de un producto por
+  `product.type` y no por `category_id` (que sí usa `mapProductStock`), así que los granizados nunca
+  muestran litros ni usan los umbrales en ml. Se conservó tal cual; corregirlo cambia lo que ven los
+  cajeros y debe decidirse aparte.
+
+Siguiente en POS: diálogos
+(`ProductCustomizationDialog`, `ReceiptDialog`, `ShortcutsHelpDialog`, `SplitBillDialog`) y por
+último `PaymentDialog`.
 
 ## Fase 1: equivalencias shadcn → Astryx
 
