@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { HStack } from "@astryxdesign/core/HStack";
+import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { VStack } from "@astryxdesign/core/VStack";
 import { toast } from "sonner";
@@ -47,53 +48,66 @@ export function CreateCustomerDialog({ isOpen, onOpenChange, onCreated }: Create
 
   return (
     <Dialog isOpen={isOpen} onOpenChange={onOpenChange} width={448} purpose="form">
-      <DialogHeader
-        title="Nuevo Cliente Rápido"
-        subtitle="Registra un cliente nuevo directamente desde la caja."
-        onOpenChange={onOpenChange}
-      />
-      <VStack gap={4} padding={4}>
-        <TextInput
-          label="Nombre Completo"
-          isRequired
-          value={form.name}
-          onChange={setField("name")}
-          placeholder="Ej: Juan Pérez"
-          hasAutoFocus
-          status={isNameMissing ? { type: "error", message: "El nombre es obligatorio" } : undefined}
-          statusVariant="detached"
-        />
-        <TextInput
-          label="Número de Documento (C.C.)"
-          inputMode="numeric"
-          value={form.documentId}
-          onChange={setField("documentId")}
-          placeholder="Ej: 1000123456"
-        />
-        <TextInput
-          label="Teléfono / WhatsApp"
-          type="tel"
-          value={form.phone}
-          onChange={setField("phone")}
-          placeholder="Ej: 3001234567"
-        />
-        <TextInput
-          label="Correo Electrónico"
-          type="email"
-          value={form.email}
-          onChange={setField("email")}
-          placeholder="Ej: cliente@ejemplo.com"
-        />
-        <HStack justify="end" gap={2}>
-          <Button label="Cancelar" variant="secondary" isDisabled={isCreating} onClick={() => onOpenChange(false)} />
-          <Button
-            label={isCreating ? "Guardando..." : "Guardar y Seleccionar"}
-            variant="primary"
-            isLoading={isCreating}
-            onClick={handleSave}
+      {/* Layout: en pantallas bajas los campos se desplazan y los botones quedan visibles. */}
+      <Layout
+        header={
+          <DialogHeader
+            title="Nuevo Cliente Rápido"
+            subtitle="Registra un cliente nuevo directamente desde la caja."
+            onOpenChange={onOpenChange}
           />
-        </HStack>
-      </VStack>
+        }
+        footer={
+          <LayoutFooter hasDivider>
+            <HStack justify="end" gap={2}>
+              <Button label="Cancelar" variant="secondary" isDisabled={isCreating} onClick={() => onOpenChange(false)} />
+              <Button
+                label={isCreating ? "Guardando..." : "Guardar y Seleccionar"}
+                variant="primary"
+                isLoading={isCreating}
+                onClick={handleSave}
+              />
+            </HStack>
+          </LayoutFooter>
+        }
+        content={
+          <LayoutContent>
+            <VStack gap={4}>
+              <TextInput
+                label="Nombre Completo"
+                isRequired
+                value={form.name}
+                onChange={setField("name")}
+                placeholder="Ej: Juan Pérez"
+                hasAutoFocus
+                status={isNameMissing ? { type: "error", message: "El nombre es obligatorio" } : undefined}
+                statusVariant="detached"
+              />
+              <TextInput
+                label="Número de Documento (C.C.)"
+                inputMode="numeric"
+                value={form.documentId}
+                onChange={setField("documentId")}
+                placeholder="Ej: 1000123456"
+              />
+              <TextInput
+                label="Teléfono / WhatsApp"
+                type="tel"
+                value={form.phone}
+                onChange={setField("phone")}
+                placeholder="Ej: 3001234567"
+              />
+              <TextInput
+                label="Correo Electrónico"
+                type="email"
+                value={form.email}
+                onChange={setField("email")}
+                placeholder="Ej: cliente@ejemplo.com"
+              />
+            </VStack>
+          </LayoutContent>
+        }
+      />
     </Dialog>
   );
 }
