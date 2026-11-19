@@ -139,9 +139,22 @@ usePOS, useProducts, useSales y usePrintCenter) y las reglas a `product-grid/pro
   muestran litros ni usan los umbrales en ml. Se conservó tal cual; corregirlo cambia lo que ven los
   cajeros y debe decidirse aparte.
 
-Siguiente en POS: diálogos
-(`ProductCustomizationDialog`, `ReceiptDialog`, `ShortcutsHelpDialog`, `SplitBillDialog`) y por
-último `PaymentDialog`.
+Migrado también: `ShortcutsHelpDialog` (`List` + `Kbd`) y `ReceiptDialog` (`Card`, `List`, `Grid`).
+Tests en `src/components/pos/__tests__/PosInfoDialogs.test.tsx`. En el recibo, la clave de cada línea
+pasó de `item.name` a `item.id`: el mismo producto puede ir en varias líneas con distinta
+personalización y con el nombre como clave React mezclaba esas filas.
+
+- **Cuerpo de un `Dialog`:** siempre `Layout` con `header={<DialogHeader/>}`,
+  `content={<LayoutContent>…</LayoutContent>}` y, si hay acciones, `footer={<LayoutFooter hasDivider>}`.
+  El contenedor interno del diálogo tiene `overflow: hidden`: sin `LayoutContent` lo que no cabe se
+  corta y los botones finales quedan inalcanzables (el recibo medía 937 px en un diálogo de 691).
+  Corregidos con este patrón: `ReceiptDialog`, `ShortcutsHelpDialog`, `StoreSelectorDialog` y
+  `CreateCustomerDialog` (estos dos ya estaban en producción).
+- **`ListItem` con `label` string** se trunca a una línea; para textos largos pasar un nodo
+  (`<Text>…</Text>`), que sí hace salto de línea.
+
+Siguiente en POS: `ProductCustomizationDialog`, `SplitBillDialog` (y `split-bill/`), `SyncDrawer`,
+`TankLevelIndicator`, `NotificationCenter`, `POS.tsx` y por último `PaymentDialog`.
 
 ## Fase 1: equivalencias shadcn → Astryx
 
